@@ -1,29 +1,11 @@
-/**
- * 🏆 獨立卡片配置區 (支援雙模式)
- */
-const bottomCardConfig = {
-    hex: '#D3D3D3',       
-    hue: 50,             
-    title: '運行情報',     
-    status: 'Info',       
-    description: '運行状況に関する詳細な情報は、各カードをタップして確認してください。', 
-    borderColorOpacity: 0.15, 
-    tagBgOpacity: 0.25        
-};
+// script.js - 主邏輯與物理引擎模組
+
+import { bottomCardConfig, railwayData } from './data.js';
 
 // 狀態旗標
 let isInitialLoad = true;
 let isAnimating = false;
 let liftTimer = null; 
-
-// 1. 地區資料庫
-const railwayData = [
-    { id: 'tokyo', name: '東京都', kana: 'toukyouto toukyouto', status: '正常運転', hue: 140, desc: '現在、全線で概ね正常通り運行しています。', detail: ['標誌: 銀杏綠', '主要站: 東京、新宿'] },
-    { id: 'kanagawa', name: '神奈川県', kana: 'kanagawa kanagawa', status: '正常運転', hue: 200, desc: '港灣部を含め、順調に運行されています。', detail: ['標誌: 海洋藍', '主要站: 橫濱、川崎'] },
-    { id: 'saitama', name: '埼玉県', kana: 'saitama saitama', status: '正常運転', hue: 15, desc: '內陸各線、大きな混雜は見られません。', detail: ['標誌: 勾玉紅', '主要站: 大宮、浦和'] },
-    { id: 'chiba', name: '千葉県', kana: 'chiba chiba', status: '一部遅延', hue: 50, desc: '強風の影響により、一部路線で速度を落として運轉しています。', detail: ['代表色: 菜花黃', '主要站: 千葉、柏'] },
-    { id: 'toei-oedo', name: '都營 大江戸線', kana: 'おおえどせん oedo', status: '正常運転', hue: 325, desc: '大江戸線は全線で正常通り運轉しています。', detail: ['次發: 2分', '代表色: 洋紅'] }
-];
 
 function getPremiumGradient(hue) {
     const colorTop = `hsl(${hue}, 65%, 40%)`;    
@@ -52,16 +34,13 @@ const touchSettings = { pullFactor: 2.2, tension: 0.7, spreadRatio: 0.18 };
 const mouseSettings = { pullFactor: 0.3, tension: 0.7, spreadRatio: 0.15 };
 const config = isTouchDevice ? touchSettings : mouseSettings;
 
-// 🏆 光影物理緩衝系統 (Physics Buffer System) - 效能優化版
-let currentGlareAngle = 135; // 當前顯示值
-let targetGlareAngle = 135;  // 目標值 (手指決定)
-let isGlareAnimating = false; // 🟢 新增：渲染迴圈狀態旗標
+// 🏆 光影物理緩衝系統
+let currentGlareAngle = 135; 
+let targetGlareAngle = 135;  
+let isGlareAnimating = false; 
 
-// 計算目標角度 (只負責計算，不直接寫入 DOM)
 const updateGlareTarget = () => {
     const baseAngle = 135;
-    
-    // 靈敏度設定
     const pullSensitivity = 0.7;   
     const scrollSensitivity = 0.7; 
 
@@ -70,17 +49,13 @@ const updateGlareTarget = () => {
     
     let calculated = baseAngle + pullOffset - scrollOffset;
 
-    // 角度夾具
     const minAngle = 95; 
     const maxAngle = 175; 
 
     targetGlareAngle = Math.max(minAngle, Math.min(maxAngle, calculated));
-
-    // 🟢 喚醒機制：只要目標值改變，就嘗試啟動渲染迴圈
     startGlareLoop();
 };
 
-// 🟢 新增：啟動渲染迴圈 (如果尚未啟動)
 const startGlareLoop = () => {
     if (!isGlareAnimating) {
         isGlareAnimating = true;
@@ -88,24 +63,16 @@ const startGlareLoop = () => {
     }
 };
 
-// 🏆 獨立渲染循環 (Smooth Loop) - 🟢 已加入自動休眠
 const animateGlareLoop = () => {
-    // 緩衝係數 (0.1 = 非常滑順重手感, 0.2 = 跟手)
     const smoothing = 0.08;
-
     const diff = targetGlareAngle - currentGlareAngle;
     
-    // 🟢 判斷是否繼續渲染：
-    // 1. 差異大於 0.01 (肉眼可見的變化)
-    // 2. 或者使用者正在拖曳中 (確保互動時絕對流暢)
     if (Math.abs(diff) > 0.01 || isDragging) {
         currentGlareAngle += diff * smoothing;
         document.documentElement.style.setProperty('--glare-angle', `${currentGlareAngle}deg`);
         requestAnimationFrame(animateGlareLoop);
     } else {
-        // 🟢 進入休眠模式：停止迴圈，節省效能
         isGlareAnimating = false;
-        // 可選：強制對齊一次以消除微小誤差
         if (Math.abs(diff) > 0) {
              currentGlareAngle = targetGlareAngle;
              document.documentElement.style.setProperty('--glare-angle', `${currentGlareAngle}deg`);
@@ -113,29 +80,18 @@ const animateGlareLoop = () => {
     }
 };
 
-// 初始啟動一次 (確保畫面載入時正確)
 startGlareLoop();
 
 const updateUI = () => {
     let displayY = currentPullY;
     let spreadValue = 0;
 
-    // 更新光影目標值 (這會自動喚醒 Glare Loop)
     updateGlareTarget();
 
-    // 🏆 物理核心：雙向動態
     if (currentPullY > 0) {
-        // --- 🔽 下拉邏輯 (先收納，後推開) ---
-        
-        // 容器位移：調低係數讓整體沈重感增加
         displayY = currentPullY * 0.2; 
-
-        // 展開邏輯：線性方程式 y = 0.6x - 25
-        // 剛開始拉會是負值 (收納)，拉多了變成正值 (推開)
         spreadValue = (currentPullY * 0.6) - 25;
-
     } else {
-        // --- 🔼 上滑邏輯 ---
         spreadValue = currentPullY * 0.45; 
         const limitY = -(mainStack.offsetTop + 30);
         if (currentPullY < limitY) displayY = limitY;
@@ -158,7 +114,6 @@ const resetBounce = () => {
     mainStack.classList.add('bounce-back');
     currentPullY = 0;
     
-    // 讓光影目標歸位 (Loop 會自動處理緩衝)
     updateGlareTarget();
     
     if (!rafId) rafId = requestAnimationFrame(updateUI);
@@ -177,7 +132,6 @@ mainStack.addEventListener('touchmove', (e) => {
     const isAtBottom = mainStack.scrollTop + mainStack.clientHeight >= mainStack.scrollHeight - 1;
     const isLocked = mainStack.classList.contains('has-active');
 
-    // 拖曳時持續更新目標，這會保持 Loop 喚醒
     if (!isDragging) updateGlareTarget();
 
     if (isLocked || (isAtTop && deltaY > 0) || (isAtBottom && deltaY < 0)) {
@@ -189,7 +143,6 @@ mainStack.addEventListener('touchmove', (e) => {
 }, { passive: false });
 
 mainStack.addEventListener('scroll', () => {
-    // 滾動時持續更新目標，這會保持 Loop 喚醒
     if (!isDragging) updateGlareTarget();
 }, { passive: true });
 
@@ -291,29 +244,38 @@ function renderCards(data) {
         return;
     }
     
-    mainStack.innerHTML = data.map((line, index) => {
-        const gradient = getPremiumGradient(line.hue); 
-        const delay = isInitialLoad ? (data.length - index) * 0.08 : 0;
-        const animationClass = isInitialLoad ? 'opening-pull' : '';
-        const delayStyle = isInitialLoad ? `animation-delay: ${delay}s;` : '';
+    mainStack.innerHTML = '';
+    const template = document.getElementById('railway-card-template');
 
-        return `
-            <div class="card ${animationClass}" id="card-${line.id}" 
-                 style="background: ${gradient}; ${delayStyle}" 
-                 onclick="handleCardClick('${line.id}')">
-                <div class="card-header">
-                    <span class="line-name">${line.name}</span>
-                    <span class="status-tag">${line.status}</span>
-                </div>
-                <div class="card-content">
-                    <div class="info-tags-container">
-                        ${line.detail.map(info => `<div class="info-tag-item">${info}</div>`).join('')}
-                    </div>
-                    <p class="description">${line.desc}</p>
-                </div>
-            </div>
-        `;
-    }).join('');
+    data.forEach((line, index) => {
+        const clone = template.content.cloneNode(true);
+        const card = clone.querySelector('.card');
+        
+        card.id = `card-${line.id}`;
+        card.style.background = getPremiumGradient(line.hue);
+        
+        if (isInitialLoad) {
+            card.classList.add('opening-pull');
+            card.style.animationDelay = `${(data.length - index) * 0.08}s`;
+        }
+        
+        // 綁定點擊事件
+        card.onclick = () => handleCardClick(line.id);
+        
+        clone.querySelector('.line-name').textContent = line.name;
+        clone.querySelector('.status-tag').textContent = line.status;
+        clone.querySelector('.description').textContent = line.desc;
+        
+        const tagsContainer = clone.querySelector('.info-tags-container');
+        line.detail.forEach(info => {
+            const tagDiv = document.createElement('div');
+            tagDiv.className = 'info-tag-item';
+            tagDiv.textContent = info;
+            tagsContainer.appendChild(tagDiv);
+        });
+
+        mainStack.appendChild(clone);
+    });
 
     if (isInitialLoad) {
         setTimeout(() => { 
@@ -334,19 +296,25 @@ function handleCardClick(id) {
     activeCardId = id;
     isAnimating = true; 
 
-    detailContainer.innerHTML = `
-        <div class="detail-card-inner" style="background: ${getPremiumGradient(data.hue)};">
-            <div class="card-header">
-                <span class="line-name">${data.name}</span>
-                <span class="status-tag">${data.status}</span>
-            </div>
-            <div class="card-content">
-                <div class="info-tags-container">
-                    ${data.detail.map(info => `<div class="info-tag-item">${info}</div>`).join('')}
-                </div>
-                <p class="description">${data.desc}</p>
-            </div>
-        </div>`;
+    detailContainer.innerHTML = '';
+    const template = document.getElementById('detail-card-template');
+    const clone = template.content.cloneNode(true);
+    const inner = clone.querySelector('.detail-card-inner');
+    
+    inner.style.background = getPremiumGradient(data.hue);
+    clone.querySelector('.line-name').textContent = data.name;
+    clone.querySelector('.status-tag').textContent = data.status;
+    clone.querySelector('.description').textContent = data.desc;
+    
+    const tagsContainer = clone.querySelector('.info-tags-container');
+    data.detail.forEach(info => {
+        const tagDiv = document.createElement('div');
+        tagDiv.className = 'info-tag-item';
+        tagDiv.textContent = info;
+        tagsContainer.appendChild(tagDiv);
+    });
+
+    detailContainer.appendChild(clone);
     
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -400,19 +368,24 @@ function handleBottomCardClick() {
         bgStyle = `linear-gradient(135deg, ${colorTop}, ${colorBottom})`;
     }
 
-    detailContainer.innerHTML = `
-        <div class="detail-card-inner" style="background: ${bgStyle}; color: var(--card-text-color) !important;">
-            <div class="card-header">
-                <span class="line-name">${bottomCardConfig.title}</span>
-                <span class="status-tag">${bottomCardConfig.status}</span>
-            </div>
-            <div class="card-content">
-                <div class="info-tags-container">
-                    <div class="info-tag-item">最終更新</div>
-                </div>
-                <p class="description">${bottomCardConfig.description}</p>
-            </div>
-        </div>`;
+    detailContainer.innerHTML = '';
+    const template = document.getElementById('detail-card-template');
+    const clone = template.content.cloneNode(true);
+    const inner = clone.querySelector('.detail-card-inner');
+
+    inner.style.background = bgStyle;
+    inner.style.setProperty('color', 'var(--card-text-color)', 'important');
+    clone.querySelector('.line-name').textContent = bottomCardConfig.title;
+    clone.querySelector('.status-tag').textContent = bottomCardConfig.status;
+    clone.querySelector('.description').textContent = bottomCardConfig.description;
+
+    const tagsContainer = clone.querySelector('.info-tags-container');
+    const tagDiv = document.createElement('div');
+    tagDiv.className = 'info-tag-item';
+    tagDiv.textContent = '最終更新';
+    tagsContainer.appendChild(tagDiv);
+
+    detailContainer.appendChild(clone);
 
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -534,7 +507,6 @@ function initOverlayGestures() {
         inner.style.transition = 'none'; 
         if (dismissIcon) dismissIcon.style.transition = 'none';
         
-        // 🟢 喚醒光影引擎
         startGlareLoop();
     };
     
@@ -551,9 +523,8 @@ function initOverlayGestures() {
 
             inner.style.transform = `translate3d(0, ${resistedY}px, 0)`;
             
-            // 🟢 動態光影計算：隨拖曳距離偏轉角度
             targetGlareAngle = 135 + (resistedY * 0.15);
-            startGlareLoop(); // 保持運算
+            startGlareLoop(); 
 
             if (dismissIcon) {
                 const newOpacity = Math.max(0, 1 - (rawMoveY / 150));
@@ -568,7 +539,6 @@ function initOverlayGestures() {
         inner.style.transition = 'transform 0.6s var(--active-bounce)';
         if (dismissIcon) dismissIcon.style.transition = 'opacity 0.3s ease';
 
-        // 🟢 手指放開，光影彈回原位
         targetGlareAngle = 135;
         startGlareLoop();
 
@@ -592,7 +562,6 @@ function initOverlayGestures() {
         inner.style.transition = 'none';
         inner.style.transform = `translate3d(0, ${resistedY}px, 0)`;
 
-        // 🟢 滑鼠滾輪也要同步光影
         targetGlareAngle = 135 + (resistedY * 0.15);
         startGlareLoop();
 
@@ -615,7 +584,6 @@ function initOverlayGestures() {
                 inner.style.transition = 'transform 0.6s var(--active-bounce)';
                 inner.style.transform = 'translate3d(0, 0, 0)';
                 
-                // 滾輪停止，光影歸位
                 targetGlareAngle = 135;
                 startGlareLoop();
                 
@@ -699,3 +667,10 @@ initDismissIcon();
 document.addEventListener('gesturestart', function(e) {
     e.preventDefault();
 });
+
+// 🟢 核心修復：將函數暴露到全域，確保 HTML 中的 onclick 能夠順利呼叫
+window.toggleSearch = toggleSearch;
+window.handleCapsuleMainClick = handleCapsuleMainClick;
+window.toggleCapsuleMenu = toggleCapsuleMenu;
+window.handleBottomCardClick = handleBottomCardClick;
+window.handleOverlayClick = handleOverlayClick;
