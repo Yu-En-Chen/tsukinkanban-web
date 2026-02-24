@@ -166,14 +166,10 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
    卡片堆疊與物理邏輯
    ========================================================================== */
 .card-stack {
-    flex: 1; width: 100%; overflow-y: auto; display: flex; flex-direction: column; align-items: center; 
-    /* 🟢 修正：從 center 改為 flex-start，避免初始化動畫時高度塌陷 */
-    justify-content: flex-start; 
-    padding-top: 140px; 
-    padding-bottom: calc(180px + env(safe-area-inset-bottom));
-    -webkit-overflow-scrolling: touch; 
-    transition: transform 0.8s var(--premium-ease), filter 0.8s ease;
-    will-change: transform, filter; 
+    flex: 1; width: 100%; overflow-y: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; 
+    padding-top: 140px; padding-bottom: calc(120px + env(safe-area-inset-bottom));
+    -webkit-overflow-scrolling: touch; transition: transform 0.8s var(--premium-ease), filter 0.8s ease;
+    will-change: transform, filter, opacity; transform: translate3d(0, 0, 0); 
 }
 
 .card-stack.bounce-back { transition: transform 0.5s var(--ios-snap) !important; }
@@ -181,21 +177,12 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 .card-stack::-webkit-scrollbar { display: none; }
 
 .card {
-    width: var(--card-width); 
-    max-width: 420px; 
-    aspect-ratio: var(--card-ratio); 
-    /* 🟢 修正：強制高度自動，並禁止 Flex 擠壓 */
-    height: auto !important;
-    flex-shrink: 0 !important;
-    border-radius: var(--card-radius);
+    width: var(--card-width); max-width: 420px; aspect-ratio: var(--card-ratio); border-radius: var(--card-radius);
     margin-bottom: calc(-1 * (var(--card-width) / 1.586) + 21% + var(--stack-spread, 0px)); 
     position: relative; border: 1px solid var(--border-color); box-shadow: var(--ray-shadow-resting);
-    isolation: isolate; overflow: hidden; 
+    isolation: isolate; transform: translateZ(0); overflow: hidden; will-change: transform, opacity; z-index: 1; 
     transition: transform var(--dynamic-speed, 0.65s) var(--active-bounce), opacity 0.3s ease, box-shadow 0.6s var(--premium-ease);
     cursor: pointer; color: var(--card-text-color); text-shadow: var(--text-shadow-subtle);
-    /* 穩定渲染 */
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
 }
 .card:last-child { margin-bottom: 0; }
 
