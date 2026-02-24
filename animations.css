@@ -1,19 +1,20 @@
-/* animations.css - 純動畫關鍵影格定義 */
+/* animations.css - 純動畫關鍵影格定義 (修復進場質感版) */
 
+/* 修正：讓卡片從下方透明處彈入，恢復鋼琴動畫質感 */
 @keyframes openingPull {
-    0% { transform: translate3d(0, 0, 0); opacity: 1; }
-    50% { transform: translate3d(0, -10px, 0); opacity: 1; } 
+    0% { transform: translate3d(0, 40px, 0); opacity: 0; }
+    60% { transform: translate3d(0, -8px, 0); opacity: 1; } 
     100% { transform: translate3d(0, 0, 0); opacity: 1; }
 }
 
 @keyframes openingPullFixed {
-    0% { transform: translate3d(-50%, 0, 0); opacity: 1; }
-    50% { transform: translate3d(-50%, -10px, 0); opacity: 1; } 
-    100% { transform: translate3d(-50%, 0, 0); opacity: 1; }
+    0% { transform: translateX(-50%) translate3d(0, 40px, 0); opacity: 0; }
+    60% { transform: translateX(-50%) translate3d(0, -8px, 0); opacity: 1; } 
+    100% { transform: translateX(-50%) translate3d(0, 0, 0); opacity: 1; }
 }
 
-.opening-pull { animation: openingPull 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
-.opening-pull-fixed { animation: openingPullFixed 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.opening-pull { animation: openingPull 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.opening-pull-fixed { animation: openingPullFixed 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 
 @keyframes snapIn {
     0% { transform: translate3d(0, -100px, 0); }
