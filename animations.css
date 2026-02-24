@@ -34,8 +34,6 @@
 
 .opening-pull { 
     animation: openingPull 0.8s cubic-bezier(0.2, 1.2, 0.4, 1) both; 
-    /* 確保動畫過程中不會因為縮放而改變排版高度 */
-    will-change: transform, opacity;
 }
 
 .opening-pull-fixed { 
