@@ -115,7 +115,7 @@ function renderCards(data) {
         if (isInitialLoad) {
             card.classList.add('opening-pull');
             //鋼琴
-            card.style.animationDelay = `${(data.length - index) * 0.04}s`;
+            card.style.animationDelay = `${(data.length - index) * 0.05}s`;
         }
         
         card.onclick = () => handleCardClick(line.id);
