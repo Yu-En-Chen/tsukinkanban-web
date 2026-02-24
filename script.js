@@ -1,4 +1,4 @@
-// script.js - 主 UI 邏輯與狀態控制
+// script.js - 主 UI 邏輯與狀態控制 (History API 補完版)
 
 import { bottomCardConfig, railwayData } from './data.js';
 import { initPhysics } from './physics.js'; 
@@ -24,15 +24,15 @@ const detailContainer = document.getElementById('detail-card-container');
 const physicsEngine = initPhysics(
     mainStack, 
     () => activeCardId, 
-    closeAllCards       
+    () => closeAllCards(false) // 手動點擊 X 或空白處關閉
 );
 
-// 🟢 啟動 Header 模組，傳入過濾函數與當前卡片狀態
+// 啟動 Header 模組
 initHeader(filterCards, () => activeCardId);
 
 // 點擊空白處關閉卡片
 mainStack.addEventListener('click', (e) => { 
-    if (activeCardId && e.target === mainStack) closeAllCards(); 
+    if (activeCardId && e.target === mainStack) closeAllCards(false); 
 });
 
 function renderCards(data) {
@@ -92,6 +92,9 @@ function handleCardClick(id) {
     const originalCard = document.getElementById(`card-${id}`);
     activeCardId = id;
     isAnimating = true; 
+
+    // 🟢 History API: 點開卡片時寫入歷史紀錄
+    history.pushState({ cardActive: true }, '');
 
     detailContainer.innerHTML = '';
     const template = document.getElementById('detail-card-template');
@@ -153,6 +156,9 @@ function handleBottomCardClick() {
 
     activeCardId = id;
     isAnimating = true;
+
+    // 🟢 History API: 點開置底卡片也寫入歷史紀錄
+    history.pushState({ cardActive: true }, '');
 
     let bgStyle = '';
     if (bottomCardConfig.hex) {
@@ -216,11 +222,22 @@ function handleBottomCardClick() {
 
 function handleOverlayClick(e) {
     if (isAnimating) return; 
-    if (e.target === detailOverlay) closeAllCards();
+    if (e.target === detailOverlay) closeAllCards(false);
 }
 
-function closeAllCards() {
-    if (isAnimating) return;
+/**
+ * 🟢 關閉卡片
+ * @param {boolean} isPopState - 是否是由瀏覽器返回鍵觸發
+ */
+function closeAllCards(isPopState = false) {
+    if (!activeCardId || isAnimating) return;
+    
+    // 如果是手動觸發(點X、點遮罩、下拉關閉)，則主動回退歷史紀錄
+    if (!isPopState && history.state && history.state.cardActive) {
+        history.back();
+        return; // 交由 onpopstate 處理後續 UI 邏輯
+    }
+
     isAnimating = true; 
 
     const dismissIcon = document.getElementById('dismiss-icon');
@@ -237,43 +254,41 @@ function closeAllCards() {
     detailOverlay.classList.remove('active');
     mainStack.classList.remove('has-active'); 
     
-    if (activeCardId) {
-        let originalCard;
-        if (activeCardId === 'fixed-bottom') {
-            originalCard = document.getElementById('fixed-info-card');
-        } else {
-            originalCard = document.getElementById(`card-${activeCardId}`);
-        }
+    let originalCard;
+    if (activeCardId === 'fixed-bottom') {
+        originalCard = document.getElementById('fixed-info-card');
+    } else {
+        originalCard = document.getElementById(`card-${activeCardId}`);
+    }
 
-        if (originalCard) {
-            originalCard.classList.remove('hidden-placeholder');
-            originalCard.classList.remove('lifted-state');
-            originalCard.style.transform = ''; 
-            originalCard.classList.add('returning');
-            
-            if (activeCardId !== 'fixed-bottom') {
-                let nextCard = originalCard.nextElementSibling;
-                let delay = 0;
-                while (nextCard) {
-                    if (nextCard.classList.contains('card')) {
-                        nextCard.style.animationDelay = `${delay}s`;
-                        nextCard.classList.add('piano-ripple');
-                        delay += 0.05; 
-                    }
-                    nextCard = nextCard.nextElementSibling;
+    if (originalCard) {
+        originalCard.classList.remove('hidden-placeholder');
+        originalCard.classList.remove('lifted-state');
+        originalCard.style.transform = ''; 
+        originalCard.classList.add('returning');
+        
+        if (activeCardId !== 'fixed-bottom') {
+            let nextCard = originalCard.nextElementSibling;
+            let delay = 0;
+            while (nextCard) {
+                if (nextCard.classList.contains('card')) {
+                    nextCard.style.animationDelay = `${delay}s`;
+                    nextCard.classList.add('piano-ripple');
+                    delay += 0.05; 
                 }
+                nextCard = nextCard.nextElementSibling;
             }
-
-            setTimeout(() => {
-                originalCard.classList.remove('returning');
-                const allCards = document.querySelectorAll('.card');
-                allCards.forEach(c => {
-                    c.classList.remove('piano-ripple');
-                    c.style.animationDelay = '';
-                });
-                if (window.navigator.vibrate) window.navigator.vibrate(5);
-            }, 550); 
         }
+
+        setTimeout(() => {
+            originalCard.classList.remove('returning');
+            const allCards = document.querySelectorAll('.card');
+            allCards.forEach(c => {
+                c.classList.remove('piano-ripple');
+                c.style.animationDelay = '';
+            });
+            if (window.navigator.vibrate) window.navigator.vibrate(5);
+        }, 550); 
     }
 
     activeCardId = null;
@@ -309,7 +324,7 @@ function initOverlayGestures() {
             inner.style.transform = `translate3d(0, ${resistedY}px, 0)`;
             physicsEngine.updateGlare(135 + (resistedY * 0.15)); 
             if (dismissIcon) dismissIcon.style.opacity = Math.max(0, 1 - (rawMoveY / 150));
-            if (rawMoveY > 200) closeAllCards();
+            if (rawMoveY > 200) closeAllCards(false); // 手動下拉關閉
         }
     };
     
@@ -340,7 +355,7 @@ function initOverlayGestures() {
         }
 
         if (overlayWheelSum > 200) {
-            closeAllCards();
+            closeAllCards(false); // 手動滾輪關閉
             physicsEngine.updateGlare(135);
             overlayWheelSum = 0; 
             return;
@@ -420,13 +435,21 @@ function initDismissIcon() {
     document.body.appendChild(iconDiv);
 }
 
-// 🟢 初始渲染
+// 🟢 監聽瀏覽器返回鍵
+window.addEventListener('popstate', (e) => {
+    // 如果目前有卡片開啟，則執行關閉 UI 的動作
+    if (activeCardId) {
+        closeAllCards(true); // 傳入 true 表示這是由歷史紀錄觸發的
+    }
+});
+
+// 初始渲染
 renderCards(railwayData);
 initBottomCard();
 initDismissIcon(); 
 
 document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
 
-// 暴露需要的全域函數給 HTML onClick 使用
+// 暴露全域函數
 window.handleBottomCardClick = handleBottomCardClick;
 window.handleOverlayClick = handleOverlayClick;
