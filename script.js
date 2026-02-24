@@ -1,14 +1,14 @@
 // script.js - 主 UI 邏輯與狀態控制
 
 import { bottomCardConfig, railwayData } from './data.js';
-import { initPhysics } from './physics.js'; // 導入物理引擎
+import { initPhysics } from './physics.js'; 
+import { initHeader } from './header.js'; 
 
 // 狀態旗標
 let isInitialLoad = true;
 let isAnimating = false;
 let liftTimer = null; 
 let activeCardId = null; 
-let isComposing = false; 
 
 function getPremiumGradient(hue) {
     const colorTop = `hsl(${hue}, 65%, 40%)`;    
@@ -19,81 +19,20 @@ function getPremiumGradient(hue) {
 const mainStack = document.getElementById('main-stack');
 const detailOverlay = document.getElementById('detail-overlay');
 const detailContainer = document.getElementById('detail-card-container');
-const searchInput = document.getElementById('search-input');
-const searchContainer = document.getElementById('search-container');
 
-// 啟動物理引擎，並建立通訊橋樑
+// 啟運動理引擎
 const physicsEngine = initPhysics(
     mainStack, 
-    () => activeCardId, // 讓物理引擎能隨時取得當前開啟的卡片 ID
-    closeAllCards       // 讓物理引擎在下拉超過臨界點時能觸發關閉
+    () => activeCardId, 
+    closeAllCards       
 );
+
+// 🟢 啟動 Header 模組，傳入過濾函數與當前卡片狀態
+initHeader(filterCards, () => activeCardId);
 
 // 點擊空白處關閉卡片
 mainStack.addEventListener('click', (e) => { 
     if (activeCardId && e.target === mainStack) closeAllCards(); 
-});
-
-function toggleSearch(show) {
-    const dismissIcon = document.getElementById('dismiss-icon');
-    
-    if (show) {
-        const capsule = document.getElementById('action-capsule');
-        if (capsule && capsule.classList.contains('menu-expanded')) {
-            capsule.classList.remove('menu-expanded');
-            searchContainer.classList.remove('menu-open'); 
-            document.body.classList.remove('menu-active');
-        }
-    }
-
-    if (show) {
-        searchContainer.classList.add('active');
-        document.body.classList.add('searching'); 
-        if (dismissIcon) dismissIcon.style.opacity = '0';
-        setTimeout(() => { searchInput.focus(); }, 300);
-    } else {
-        searchContainer.classList.remove('active');
-        document.body.classList.remove('searching'); 
-        searchInput.value = '';
-        searchInput.blur();
-        filterCards(''); 
-        if (dismissIcon && activeCardId) dismissIcon.style.opacity = '1';
-    }
-}
-
-function handleCapsuleMainClick() {
-    const capsule = document.getElementById('action-capsule');
-    if (capsule.classList.contains('menu-expanded')) {
-        toggleCapsuleMenu();
-    } else {
-        console.log('Plus Action Triggered');
-    }
-}
-
-function toggleCapsuleMenu() {
-    const capsule = document.getElementById('action-capsule');
-    if (capsule.classList.contains('menu-expanded')) {
-        capsule.classList.remove('menu-expanded');
-        searchContainer.classList.remove('menu-open'); 
-        document.body.classList.remove('menu-active');
-    } else {
-        capsule.classList.add('animating-shrink');
-        setTimeout(() => {
-            capsule.classList.remove('animating-shrink');
-            capsule.classList.add('menu-expanded');
-            searchContainer.classList.add('menu-open'); 
-            document.body.classList.add('menu-active');
-        }, 150);
-    }
-}
-
-document.addEventListener('click', (e) => {
-    const capsule = document.getElementById('action-capsule');
-    if (capsule && capsule.classList.contains('menu-expanded') && !capsule.contains(e.target)) {
-        capsule.classList.remove('menu-expanded');
-        searchContainer.classList.remove('menu-open');
-        document.body.classList.remove('menu-active');
-    }
 });
 
 function renderCards(data) {
@@ -114,8 +53,7 @@ function renderCards(data) {
         
         if (isInitialLoad) {
             card.classList.add('opening-pull');
-            //鋼琴
-            card.style.animationDelay = `${(data.length - index) * 0.05}s`;
+            card.style.animationDelay = `${index * 0.06}s`;
         }
         
         card.onclick = () => handleCardClick(line.id);
@@ -139,7 +77,9 @@ function renderCards(data) {
         setTimeout(() => { 
             isInitialLoad = false;
             document.querySelectorAll('.card').forEach(c => c.classList.remove('opening-pull'));
-        }, 1000);
+            const fixedCard = document.getElementById('fixed-info-card');
+            if(fixedCard) fixedCard.classList.remove('opening-pull-fixed');
+        }, 1200); 
     }
 }
 
@@ -358,7 +298,7 @@ function initOverlayGestures() {
         overlayStartY = e.touches[0].pageY; 
         inner.style.transition = 'none'; 
         if (dismissIcon) dismissIcon.style.transition = 'none';
-        physicsEngine.updateGlare(135); // 🟢 呼叫物理引擎
+        physicsEngine.updateGlare(135); 
     };
     
     detailOverlay.ontouchmove = e => {
@@ -367,7 +307,7 @@ function initOverlayGestures() {
             if (rawMoveY > 10 && e.cancelable) e.preventDefault(); 
             const resistedY = rawMoveY * 0.5;
             inner.style.transform = `translate3d(0, ${resistedY}px, 0)`;
-            physicsEngine.updateGlare(135 + (resistedY * 0.15)); // 🟢 同步光影
+            physicsEngine.updateGlare(135 + (resistedY * 0.15)); 
             if (dismissIcon) dismissIcon.style.opacity = Math.max(0, 1 - (rawMoveY / 150));
             if (rawMoveY > 200) closeAllCards();
         }
@@ -428,7 +368,7 @@ function initBottomCard() {
     
     if (isInitialLoad) {
         card.classList.add('opening-pull-fixed');
-        card.style.animationDelay = '0s';
+        card.style.animationDelay = `${railwayData.length * 0.06}s`;
     }
 
     let finalBg;
@@ -480,19 +420,13 @@ function initDismissIcon() {
     document.body.appendChild(iconDiv);
 }
 
-searchInput.addEventListener('compositionstart', () => { isComposing = true; });
-searchInput.addEventListener('compositionend', (e) => { isComposing = false; filterCards(e.target.value); });
-searchInput.addEventListener('input', (e) => { if (!isComposing) filterCards(e.target.value); });
-window.onpopstate = () => closeAllCards();
-
+// 🟢 初始渲染
 renderCards(railwayData);
 initBottomCard();
 initDismissIcon(); 
 
 document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
 
-window.toggleSearch = toggleSearch;
-window.handleCapsuleMainClick = handleCapsuleMainClick;
-window.toggleCapsuleMenu = toggleCapsuleMenu;
+// 暴露需要的全域函數給 HTML onClick 使用
 window.handleBottomCardClick = handleBottomCardClick;
 window.handleOverlayClick = handleOverlayClick;
