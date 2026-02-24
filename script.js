@@ -22,7 +22,7 @@ const detailContainer = document.getElementById('detail-card-container');
 const searchInput = document.getElementById('search-input');
 const searchContainer = document.getElementById('search-container');
 
-// 🟢 啟動物理引擎，並建立通訊橋樑
+// 啟動物理引擎，並建立通訊橋樑
 const physicsEngine = initPhysics(
     mainStack, 
     () => activeCardId, // 讓物理引擎能隨時取得當前開啟的卡片 ID
@@ -114,6 +114,7 @@ function renderCards(data) {
         
         if (isInitialLoad) {
             card.classList.add('opening-pull');
+            //鋼琴
             card.style.animationDelay = `${(data.length - index) * 0.04}s`;
         }
         
