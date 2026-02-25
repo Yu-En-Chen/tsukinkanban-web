@@ -188,6 +188,7 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     isolation: isolate; transform: translateZ(0); overflow: hidden; will-change: transform, opacity; z-index: 1; 
     transition: transform var(--dynamic-speed, 0.65s) var(--active-bounce), opacity 0.3s ease, box-shadow 0.6s var(--premium-ease);
     cursor: pointer; color: var(--card-text-color); text-shadow: var(--text-shadow-subtle);
+    flex-shrink: 0;
 }
 .card:last-child { margin-bottom: 0; }
 
