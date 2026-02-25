@@ -64,20 +64,29 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
 
     startGlareLoop();
 
-    const updateUI = () => {
-        let displayY = currentPullY;
+const updateUI = () => {
+        let displayY = 0;
         let spreadValue = 0;
 
         updateGlareTarget();
 
         if (currentPullY > 0) {
-            displayY = currentPullY * 0.2; 
-            spreadValue = (currentPullY * 0.6) - 25;
-        } else {
-            spreadValue = currentPullY * 0.45; 
-            const limitY = -(mainStack.offsetTop + 30);
-            if (currentPullY < limitY) displayY = limitY;
-            else displayY = currentPullY;
+            // --- 🔽 頂部下拉邏輯 (橡皮筋與展開) ---
+            displayY = currentPullY * 0.25; 
+            
+            // 🟢 修復裁切穿幫：加上 Math.min 限制最大展開值 (最高 30px)
+            // 防止拉力過大時，卡片無限制推開飛出螢幕
+            spreadValue = Math.min((currentPullY * 0.4) - 15, 30);
+
+        } else if (currentPullY < 0) {
+            // --- 🔼 底部上滑邏輯 (置底回彈) ---
+            
+            // 🟢 修復卡頓掉落：絕對禁止在此時壓縮卡片 (設定負值)
+            // 保持 0，讓容器總高度不變，就不會觸發瀏覽器強制鎖定
+            spreadValue = 0; 
+            
+            // 純粹讓整個容器往上平移產生阻尼感
+            displayY = currentPullY * 0.4; 
         }
 
         mainStack.style.transform = `translate3d(0, ${displayY}px, 0)`;
