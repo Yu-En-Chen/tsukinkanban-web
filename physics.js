@@ -110,9 +110,10 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
         mainStack.classList.remove('bounce-back');
     }, { passive: true });
 
-    mainStack.addEventListener('touchmove', (e) => {
+   mainStack.addEventListener('touchmove', (e) => {
         const touchY = e.touches[0].pageY;
-        const deltaY = touchY - startTouchY;
+        let deltaY = touchY - startTouchY; // 注意這裡改成 let
+        
         const isAtTop = mainStack.scrollTop <= 0;
         const isAtBottom = mainStack.scrollTop + mainStack.clientHeight >= mainStack.scrollHeight - 1;
         const isLocked = mainStack.classList.contains('has-active');
@@ -120,8 +121,17 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
         if (!isDragging) updateGlareTarget();
 
         if (isLocked || (isAtTop && deltaY > 0) || (isAtBottom && deltaY < 0)) {
-            isDragging = true;
+            
+            // 🟢 核心修復：如果是在滑動中途才撞到邊界，必須「重新校準」起始點
+            // 這樣 deltaY 才會乖乖從 0 開始算，絕對不會再發生瞬間暴衝或卡死！
+            if (!isDragging) {
+                isDragging = true;
+                startTouchY = touchY; 
+                deltaY = 0;           
+            }
+
             currentPullY = Math.sign(deltaY) * Math.pow(Math.abs(deltaY), config.tension) * config.pullFactor;
+            
             if (!rafId) rafId = requestAnimationFrame(updateUI);
             if (e.cancelable) e.preventDefault(); 
         }
