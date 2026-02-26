@@ -173,10 +173,10 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 .card-stack {
     flex: 1; width: 100%; overflow-y: auto; display: flex; flex-direction: column; align-items: center; 
     /* 改為 flex-start 解決頂部穿幫裁切問題 */
-    justify-content: flex-end; 
+    justify-content: flex-start; 
     /* 縮減 padding 消除多餘滾動空間 */
     padding-top: 100px; 
-    padding-bottom: calc(var(--bottom-anchor) + (min(var(--card-width), 420px) / 1.586) * 0.72);
+    padding-bottom: calc(85px + env(safe-area-inset-bottom));
     -webkit-overflow-scrolling: touch; transition: transform 0.8s var(--premium-ease), filter 0.8s ease;
     will-change: transform, filter, opacity; transform: translate3d(0, 0, 0); 
 }
