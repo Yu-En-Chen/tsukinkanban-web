@@ -85,7 +85,7 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
         rafId = null;
     };
 
-    const resetBounce = () => {
+const resetBounce = () => {
         if (!isDragging) return;
         const CLOSE_GESTURE_THRESHOLD = 60; 
         const activeId = getActiveCardId();
@@ -95,6 +95,9 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
             return;
         }
         isDragging = false;
+        
+        // 🟢 手指鬆開時：解除拖曳狀態，重新加入回彈動畫
+        mainStack.classList.remove('dragging');
         mainStack.classList.add('bounce-back');
         currentPullY = 0;
         
@@ -104,16 +107,22 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
         setTimeout(() => { mainStack.classList.remove('bounce-back'); }, 500);
     };
 
-    // 綁定手勢與滾動事件
-mainStack.addEventListener('touchmove', (e) => {
+    // 🟢 補回被誤刪的 touchstart，並在手指按下的瞬間「強制關閉」動畫
+    mainStack.addEventListener('touchstart', (e) => {
+        startTouchY = e.touches[0].pageY;
+        mainStack.classList.remove('bounce-back');
+        mainStack.classList.add('dragging');
+    }, { passive: true });
+
+    mainStack.addEventListener('touchmove', (e) => {
         const touchY = e.touches[0].pageY;
         let deltaY = touchY - startTouchY; 
 
         if (!isDragging) updateGlareTarget();
 
-        // 🟢 核心改變：因為排版已鎖死，任何滑動皆「無條件」觸發物理阻尼
         if (!isDragging) {
             isDragging = true;
+            mainStack.classList.add('dragging'); // 確保拖曳狀態開啟
             startTouchY = touchY; 
             deltaY = 0;           
         }
@@ -130,22 +139,24 @@ mainStack.addEventListener('touchmove', (e) => {
 
     mainStack.addEventListener('touchend', resetBounce);
 
+    // 🟢 滑鼠滾輪也統一無條件觸發並套用 dragging
     mainStack.addEventListener('wheel', (e) => {
-        const isAtTop = mainStack.scrollTop <= 0;
-        const isAtBottom = mainStack.scrollTop + mainStack.clientHeight >= mainStack.scrollHeight - 1;
-        const isLocked = mainStack.classList.contains('has-active');
-
         updateGlareTarget();
 
-        if (isLocked || (isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
+        if (!isDragging) {
             isDragging = true;
-            wheelDeltaSum -= e.deltaY;
-            currentPullY = Math.sign(wheelDeltaSum) * Math.pow(Math.abs(wheelDeltaSum), mouseSettings.tension) * mouseSettings.pullFactor;
-            if (!rafId) rafId = requestAnimationFrame(updateUI);
-            clearTimeout(wheelTimer);
-            wheelTimer = setTimeout(() => { wheelDeltaSum = 0; resetBounce(); }, 150);
-            if (e.cancelable) e.preventDefault();
+            mainStack.classList.remove('bounce-back');
+            mainStack.classList.add('dragging');
         }
+        
+        wheelDeltaSum -= e.deltaY;
+        currentPullY = Math.sign(wheelDeltaSum) * Math.pow(Math.abs(wheelDeltaSum), mouseSettings.tension) * mouseSettings.pullFactor;
+        
+        if (!rafId) rafId = requestAnimationFrame(updateUI);
+        
+        clearTimeout(wheelTimer);
+        wheelTimer = setTimeout(() => { wheelDeltaSum = 0; resetBounce(); }, 150);
+        if (e.cancelable) e.preventDefault();
     }, { passive: false });
 
     // 回傳供外部控制的介面
