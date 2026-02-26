@@ -100,6 +100,6 @@
 @media (display-mode: standalone) {
     :root {
         /* 在全螢幕 App 模式下，消除多餘間距，完美貼合底部的 Home 橫條 */
-        --bottom-anchor: env(safe-area-inset-bottom);
+        --bottom-anchor: 12px;
     }
 }
