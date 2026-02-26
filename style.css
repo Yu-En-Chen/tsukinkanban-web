@@ -171,22 +171,31 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
    卡片堆疊與物理邏輯
    ========================================================================== */
 .card-stack {
-    flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; 
+    /* 🟢 1. 殺手鐧：脫離一般排版流，使用絕對定位直接對齊螢幕最底部 */
+    position: absolute;
+    bottom: var(--bottom-anchor); /* 完美套用你設定的 12px 貼地距離 */
+    left: 0;
+    width: 100%;
     
-    /* 🟢 1. 鎖死位置：改為 flex-end，讓牌組「從下往上」長，牢牢釘在底部 */
+    /* 🟢 2. 內部卡片排列：維持由下往上推疊 */
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
     justify-content: flex-end; 
     
-    /* 🟢 2. 直接貼底：因為沒有獨立底卡了，最後一張牌直接坐在我們設定的保護罩上方 */
-    padding-bottom: var(--bottom-anchor);
+    /* 🟢 3. 清除所有干擾：把 Padding 歸零，徹底消滅幽靈空間 */
+    padding: 0;
+    margin: 0;
     
-    padding-top: 100px; 
-    
-    /* 🟢 3. 徹底關閉原生滾動，交由物理引擎全權接管手勢 */
+    /* 🟢 4. 鎖死滾動：為接下來的 JS 手勢全接管做準備 */
     overflow: visible; 
     touch-action: none; 
     
+    /* 動畫與物理層設定 */
     transition: transform 0.8s var(--premium-ease), filter 0.8s ease;
-    will-change: transform, filter, opacity; transform: translate3d(0, 0, 0); 
+    will-change: transform, filter, opacity; 
+    transform: translate3d(0, 0, 0); 
+    z-index: 10;
 }
 
 .card-stack.bounce-back { transition: transform 0.5s var(--ios-snap) !important; }
