@@ -171,13 +171,21 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
    卡片堆疊與物理邏輯
    ========================================================================== */
 .card-stack {
-    flex: 1; width: 100%; overflow-y: auto; display: flex; flex-direction: column; align-items: center; 
-    /* 改為 flex-start 解決頂部穿幫裁切問題 */
-    justify-content: flex-start; 
-    /* 縮減 padding 消除多餘滾動空間 */
+    flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; 
+    
+    /* 🟢 1. 鎖死位置：改為 flex-end，讓牌組「從下往上」長，牢牢釘在底部 */
+    justify-content: flex-end; 
+    
+    /* 🟢 2. 直接貼底：因為沒有獨立底卡了，最後一張牌直接坐在我們設定的保護罩上方 */
+    padding-bottom: var(--bottom-anchor);
+    
     padding-top: 100px; 
-    padding-bottom: calc(85px + env(safe-area-inset-bottom));
-    -webkit-overflow-scrolling: touch; transition: transform 0.8s var(--premium-ease), filter 0.8s ease;
+    
+    /* 🟢 3. 徹底關閉原生滾動，交由物理引擎全權接管手勢 */
+    overflow: visible; 
+    touch-action: none; 
+    
+    transition: transform 0.8s var(--premium-ease), filter 0.8s ease;
     will-change: transform, filter, opacity; transform: translate3d(0, 0, 0); 
 }
 
@@ -220,27 +228,6 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 .card.lifted-state { transform: translate3d(0, -100px, 0); opacity: 0 !important; pointer-events: none; transition: none !important; }
 .card.returning { animation: snapIn 0.6s var(--impact-bounce) forwards; opacity: 1 !important; pointer-events: auto; transition: none !important; }
 .card-stack.has-active { transform: scale(0.92); filter: blur(10px); pointer-events: none; }
-
-/* ==========================================================================
-   獨立置底卡片 (Fixed Bottom Card) 
-   ========================================================================== */
-.fixed-bottom-card {
-    position: absolute; bottom: var(--bottom-anchor); left: 50%; transform: translateX(-50%);
-    width: var(--card-width); max-width: 420px; aspect-ratio: var(--card-ratio);
-    background: var(--fixed-bg, #D3D3D3) !important; background-color: var(--fixed-bg, #D3D3D3) !important;
-    border: 3px solid var(--fixed-border, rgba(255, 255, 255, 0.15)); border-radius: var(--card-radius); z-index: 1500; 
-    -webkit-backdrop-filter: blur(25px) saturate(180%); backdrop-filter: blur(25px) saturate(180%);
-    box-shadow: var(--ray-shadow-fixed); isolation: isolate; display: flex; flex-direction: column; overflow: hidden;
-    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), width 0.5s cubic-bezier(0.22, 1, 0.36, 1), height 0.5s cubic-bezier(0.22, 1, 0.36, 1), bottom 0.5s cubic-bezier(0.22, 1, 0.36, 1), border-radius 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.5s ease;
-    color: var(--card-text-color) !important; text-shadow: var(--text-shadow-subtle);
-}
-
-.fixed-bottom-card.active { aspect-ratio: auto; max-height: 80vh; bottom: 20px; z-index: 2100; transform: translateX(-50%) translate3d(0, 0, 0); }
-.card-stack.has-active ~ .fixed-bottom-card { filter: blur(10px); transform: translateX(-50%) scale(0.92); opacity: 0.8; pointer-events: none; }
-body.searching .fixed-bottom-card { filter: blur(var(--bg-content-blur)); transform: translateX(-50%) scale(0.97) translate3d(0, 5px, 0); opacity: 0.7; pointer-events: none; }
-.fixed-bottom-card.hidden-placeholder { opacity: 0 !important; pointer-events: none; }
-.fixed-bottom-card.lifted-state { transform: translateX(-50%) translate3d(0, -100px, 0); opacity: 0 !important; pointer-events: none; transition: none !important; }
-.fixed-bottom-card.returning { animation: snapInFixed 0.6s var(--impact-bounce) forwards; opacity: 1 !important; pointer-events: auto; transition: none !important; }
 
 /* ==========================================================================
    內容佈局、膠囊標籤與文字格
