@@ -14,7 +14,7 @@
     --card-width: 94%;
     --card-radius: 32px; 
     --card-ratio: 1.586 / 1; 
-    --bottom-anchor: calc(10px + env(safe-area-inset-bottom));
+    --bottom-anchor: calc(0px + env(safe-area-inset-bottom));
 
     /* --- 顏色變數：預設為深色模式 --- */
     --bg-color: #000000;       
