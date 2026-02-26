@@ -198,6 +198,12 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     z-index: 10;
 }
 
+/* 🟢 5. 修復：加入拖曳狀態，強制關閉任何動畫延遲，避免連續滑動時引擎錯亂 */
+.card-stack.dragging, 
+.card-stack.dragging .card { 
+    transition: none !important; 
+}
+
 .card-stack.bounce-back { transition: transform 0.5s var(--ios-snap) !important; }
 .card-stack.bounce-back .card { transition: margin 0.5s var(--ios-snap) !important; }
 .card-stack::-webkit-scrollbar { display: none; }
