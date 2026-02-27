@@ -69,22 +69,35 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
 
         updateGlareTarget();
 
+        // 判斷手勢方向：大於 0 是往下拉，小於 0 是往上推
         if (currentPullY > 0) {
-            // 🟢 數學修復：移除原本 -25 導致的瞬間跳動，改為純粹平滑展開
-            displayY = currentPullY * 0.03; 
-            let rawSpread = currentPullY * 0.45; //線性拉力
-            let maxLimit = 45; // 絕對極限值
-            // 煞停公式
-            spreadValue = (rawSpread * maxLimit) / (rawSpread + maxLimit);
+            
+            // 1. 🟢 整體下墜位移 (Display Y)
+            // 原本是 0.2 會掉太快。改為 0.05，讓牌組底部像有重量一樣穩住，偏向「向上展開」
+            displayY = currentPullY * 0.05; 
+            
+            // 2. 🟢 核心魔法：漸進式阻尼公式 (Asymptotic Damping)
+            // 公式原理：(拉力 * 極限) / (拉力 + 極限)
+            let rawSpread = currentPullY * 0.4; // 靈敏度：數字越大越容易拉開 (原本是 0.6)
+            let maxLimit = 42; // 極限值：卡片間距最多只能撐開到大約 42px，永遠不會撞到頂部搜尋列
+
+            // 套用公式：這樣一拉就會平滑散開，且越拉越緊，徹底消滅 -25 帶來的瞬間斷層！
+            spreadValue = (rawSpread * maxLimit) / (rawSpread + maxLimit); 
+            
         } else if (currentPullY < 0) {
-            spreadValue = currentPullY * 0.35; 
+            
+            // 🔼 上滑時的壓縮行為 (維持原本的設計即可)
+            spreadValue = currentPullY * 0.45; 
             const limitY = -(mainStack.offsetTop + 30);
             if (currentPullY < limitY) displayY = limitY;
             else displayY = currentPullY;
         }
 
+        // 將計算結果應用到實際的 DOM 元素上
         mainStack.style.transform = `translate3d(0, ${displayY}px, 0)`;
         mainStack.style.setProperty('--stack-spread', `${spreadValue}px`);
+        
+        // 釋放鎖，允許下一幀渲染
         rafId = null;
     };
 
