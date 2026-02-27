@@ -1,4 +1,16 @@
 // data.js - 獨立的資料模組
+// data.js - 獨立的資料模組
+
+export const bottomCardConfig = {
+    hex: '#D3D3D3',       
+    hue: 50,             
+    title: '運行情報',     
+    status: 'Info',       
+    description: '運行状況に関する詳細な情報は、各カードをタップして確認してください。', 
+    borderColorOpacity: 0.15, 
+    tagBgOpacity: 0.25        
+};
+
 export const railwayData = [
     { id: 'tokyo', name: '東京都', kana: 'toukyouto toukyouto', status: '正常運転', hue: 140, desc: '現在、全線で概ね正常通り運行しています。', detail: ['標誌: 銀杏綠', '主要站: 東京、新宿'] },
     { id: 'kanagawa', name: '神奈川県', kana: 'kanagawa kanagawa', status: '正常運転', hue: 200, desc: '港灣部を含め、順調に運行されています。', detail: ['標誌: 海洋藍', '主要站: 橫濱、川崎'] },
