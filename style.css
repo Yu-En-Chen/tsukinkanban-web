@@ -302,6 +302,11 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     -webkit-mask-image: linear-gradient(var(--glare-angle, 135deg), rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 25%, rgba(0,0,0,0.2) 55%, transparent 75%);
     mask-image: linear-gradient(var(--glare-angle, 135deg), rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 25%, rgba(0,0,0,0.2) 55%, transparent 75%);
     background-size: 150px 150px; border-radius: inherit; background-clip: padding-box;
+    
+    -webkit-mask-clip: padding-box;
+    -webkit-mask-origin: padding-box;
+    mask-clip: padding-box;
+    mask-origin: padding-box;
 }
 
 .card-stack.bounce-back .card::after, .card-stack.bounce-back ~ .fixed-bottom-card::after { transition: --glare-angle 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
