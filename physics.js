@@ -7,18 +7,17 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
     let rafId = null;
     let wheelDeltaSum = 0;
     let wheelTimer;
+    let bounceTimer = null; // 🟢 新增：用於防止連續滑動時的計時器衝突
 
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     const touchSettings = { pullFactor: 2.2, tension: 0.7, spreadRatio: 0.18 };
     const mouseSettings = { pullFactor: 0.3, tension: 0.7, spreadRatio: 0.15 };
     const config = isTouchDevice ? touchSettings : mouseSettings;
 
-    // 光影物理緩衝系統
     let currentGlareAngle = 135; 
     let targetGlareAngle = 135;  
     let isGlareAnimating = false; 
 
-    // 提供給外部呼叫的方法：強制更新光影角度 (例如 Overlay 滑動時)
     function updateGlare(angle) {
         targetGlareAngle = angle;
         startGlareLoop();
@@ -65,16 +64,17 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
     startGlareLoop();
 
     const updateUI = () => {
-        let displayY = currentPullY;
+        let displayY = 0;
         let spreadValue = 0;
 
         updateGlareTarget();
 
         if (currentPullY > 0) {
-            displayY = currentPullY * 0.2; 
-            spreadValue = (currentPullY * 0.6) - 25;
-        } else {
-            spreadValue = currentPullY * 0.45; 
+            // 🟢 數學修復：移除原本 -25 導致的瞬間跳動，改為純粹平滑展開
+            displayY = currentPullY * 0.25; 
+            spreadValue = currentPullY * 0.2; 
+        } else if (currentPullY < 0) {
+            spreadValue = currentPullY * 0.35; 
             const limitY = -(mainStack.offsetTop + 30);
             if (currentPullY < limitY) displayY = limitY;
             else displayY = currentPullY;
@@ -85,7 +85,7 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
         rafId = null;
     };
 
-const resetBounce = () => {
+    const resetBounce = () => {
         if (!isDragging) return;
         const CLOSE_GESTURE_THRESHOLD = 60; 
         const activeId = getActiveCardId();
@@ -96,7 +96,9 @@ const resetBounce = () => {
         }
         isDragging = false;
         
-        // 🟢 手指鬆開時：解除拖曳狀態，重新加入回彈動畫
+        // 強制重繪：確保瀏覽器徹底清除 dragging 狀態後再加入回彈動畫
+        void mainStack.offsetHeight; 
+
         mainStack.classList.remove('dragging');
         mainStack.classList.add('bounce-back');
         currentPullY = 0;
@@ -104,28 +106,32 @@ const resetBounce = () => {
         updateGlareTarget();
         
         if (!rafId) rafId = requestAnimationFrame(updateUI);
-        setTimeout(() => { mainStack.classList.remove('bounce-back'); }, 500);
+        
+        // 🟢 計時器防呆：清除上一次的計時，防止動畫被提前錯殺
+        if (bounceTimer) clearTimeout(bounceTimer);
+        bounceTimer = setTimeout(() => { mainStack.classList.remove('bounce-back'); }, 500);
     };
 
-    // 🟢 補回被誤刪的 touchstart，並在手指按下的瞬間「強制關閉」動畫
     mainStack.addEventListener('touchstart', (e) => {
         startTouchY = e.touches[0].pageY;
+        if (bounceTimer) clearTimeout(bounceTimer);
         mainStack.classList.remove('bounce-back');
         mainStack.classList.add('dragging');
     }, { passive: true });
 
     mainStack.addEventListener('touchmove', (e) => {
         const touchY = e.touches[0].pageY;
-        let deltaY = touchY - startTouchY; 
-
-        if (!isDragging) updateGlareTarget();
-
+        
         if (!isDragging) {
             isDragging = true;
-            mainStack.classList.add('dragging'); // 確保拖曳狀態開啟
+            if (bounceTimer) clearTimeout(bounceTimer);
+            mainStack.classList.remove('bounce-back');
+            mainStack.classList.add('dragging'); 
             startTouchY = touchY; 
-            deltaY = 0;           
         }
+
+        const deltaY = touchY - startTouchY; 
+        updateGlareTarget();
 
         currentPullY = Math.sign(deltaY) * Math.pow(Math.abs(deltaY), config.tension) * config.pullFactor;
         
@@ -138,13 +144,16 @@ const resetBounce = () => {
     }, { passive: true });
 
     mainStack.addEventListener('touchend', resetBounce);
+    
+    // 🟢 終極防護：攔截 iOS 系統手勢中斷 (例如觸碰到 Home 橫條)
+    mainStack.addEventListener('touchcancel', resetBounce);
 
-    // 🟢 滑鼠滾輪也統一無條件觸發並套用 dragging
     mainStack.addEventListener('wheel', (e) => {
         updateGlareTarget();
 
         if (!isDragging) {
             isDragging = true;
+            if (bounceTimer) clearTimeout(bounceTimer);
             mainStack.classList.remove('bounce-back');
             mainStack.classList.add('dragging');
         }
@@ -159,8 +168,5 @@ const resetBounce = () => {
         if (e.cancelable) e.preventDefault();
     }, { passive: false });
 
-    // 回傳供外部控制的介面
-    return {
-        updateGlare
-    };
+    return { updateGlare };
 }
