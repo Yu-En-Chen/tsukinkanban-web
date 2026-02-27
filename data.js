@@ -5,5 +5,5 @@ export const railwayData = [
     { id: 'saitama', name: '埼玉県', kana: 'saitama saitama', status: '正常運転', hue: 15, desc: '內陸各線、大きな混雜は見られません。', detail: ['標誌: 勾玉紅', '主要站: 大宮、浦和'] },
     { id: 'chiba', name: '千葉県', kana: 'chiba chiba', status: '一部遅延', hue: 50, desc: '強風の影響により、一部路線で速度を落として運轉しています。', detail: ['代表色: 菜花黃', '主要站: 千葉、柏'] },
     { id: 'toei-oedo', name: '都營 大江戸線', kana: 'おおえどせん oedo', status: '正常運転', hue: 325, desc: '大江戸線は全線で正常通り運轉しています。', detail: ['次發: 2分', '代表色: 洋紅'] },
-    { id: 'toei-oedo', name: '運行情報', status: '正常運転', hue: 325, desc: '全線で正常通り運轉しています。', detail: ['deta', 'deta'] },
+    { id: 'bottomCardConfig', name: '運行情報', status: '正常運転', hue: 000, desc: '全線で正常通り運轉しています。', detail: ['deta', 'deta'] },
 ];
