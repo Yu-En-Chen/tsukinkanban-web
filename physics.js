@@ -72,7 +72,10 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
         if (currentPullY > 0) {
             // 🟢 數學修復：移除原本 -25 導致的瞬間跳動，改為純粹平滑展開
             displayY = currentPullY * 0.03; 
-            spreadValue = Math.min(currentPullY * 0.4, 40);
+            let rawSpread = currentPullY * 0.4; //線性拉力
+            let maxLimit = 45; // 絕對極限值
+            // 煞停公式
+            spreadValue = (rawSpread * maxLimit) / (rawSpread + maxLimit);
         } else if (currentPullY < 0) {
             spreadValue = currentPullY * 0.35; 
             const limitY = -(mainStack.offsetTop + 30);
