@@ -309,9 +309,6 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     /* 🟢 終極 Safari 圓角修復：像物理模具一樣，強迫切除正方形邊緣！ */
     -webkit-clip-path: inset(0 round var(--card-radius));
     clip-path: inset(0 round var(--card-radius));
-    /* 🟢 確保這層光影有自己獨立的 GPU 畫布，不污染底下的陰影 */
-    -webkit-transform: translate3d(0, 0, 0);
-    transform: translate3d(0, 0, 0);
 }
 
 .card-stack.bounce-back .card::after, .card-stack.bounce-back ~ .fixed-bottom-card::after { transition: --glare-angle 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
