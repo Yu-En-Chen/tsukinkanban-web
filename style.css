@@ -222,7 +222,11 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     border: 1px solid var(--border-color); 
     box-shadow: var(--ray-shadow-resting);
     isolation: isolate; 
-    transform: translateZ(0); 
+    transform: translate3d(0, 0, 0); 
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    outline: 1px solid transparent;
+    background-clip: padding-box;
     overflow: hidden; 
     will-change: transform, opacity; 
     z-index: 1; 
