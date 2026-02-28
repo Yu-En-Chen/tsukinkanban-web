@@ -51,10 +51,8 @@ function renderCards(data) {
         card.id = `card-${line.id}`;
         card.style.background = getPremiumGradient(line.hue);
         
-        // 🟢 鋼琴動畫修正：將延遲改為「倒序」，讓動畫從底部往上彈
         if (isInitialLoad) {
             card.classList.add('opening-pull');
-            // 延遲時間計算：(總長度 - 當前索引) * 間隔時間
             card.style.animationDelay = `${(data.length - index) * 0.08}s`;
         }
         
@@ -80,9 +78,19 @@ function renderCards(data) {
             isInitialLoad = false;
             document.querySelectorAll('.card').forEach(c => c.classList.remove('opening-pull'));
             const fixedCard = document.getElementById('fixed-info-card');
-            if(fixedCard) fixedCard.classList.remove('opening-pull-fixed');
+            if (fixedCard) fixedCard.classList.remove('opening-pull-fixed');
+            
+            // 🟢 新增：給予牌組一個短暫的「剛甦醒」緩衝期
+            mainStack.classList.add('just-awoke');
+            
+            // 1.2 秒後，神不知鬼不覺地拔掉，恢復原本 0.4s 的靈敏手感
+            setTimeout(() => {
+                mainStack.classList.remove('just-awoke');
+            }, 1200); 
+
         }, 1500); // 延長判定時間確保動畫播完
     }
+}
 }
 
 function handleCardClick(id) {
