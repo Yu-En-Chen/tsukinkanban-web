@@ -238,7 +238,12 @@ function handleBottomCardClick() {
 
 function handleOverlayClick(e) {
     if (isAnimating) return; 
-    if (e.target === detailOverlay) closeAllCards(false);
+    
+    // 🟢 核心修復：使用 closest() 往上找父元素
+    // 意思是：「只要你點擊的地方，不包含實體卡片 (.detail-card-inner)，就一律關閉！」
+    if (!e.target.closest('.detail-card-inner')) {
+        closeAllCards(false);
+    }
 }
 
 function closeAllCards(isPopState = false) {
