@@ -73,24 +73,23 @@ function renderCards(data) {
         mainStack.appendChild(clone);
     });
 
-    if (isInitialLoad) {
+if (isInitialLoad) {
         setTimeout(() => { 
             isInitialLoad = false;
             document.querySelectorAll('.card').forEach(c => c.classList.remove('opening-pull'));
             const fixedCard = document.getElementById('fixed-info-card');
             if (fixedCard) fixedCard.classList.remove('opening-pull-fixed');
             
+            // 依然給予剛甦醒的緩衝標記
             mainStack.classList.add('just-awoke');
             
-            // 🟢 核心修復：延遲 50ms 才發放 Hover 權限。
-            // 讓瀏覽器有時間把卡片從「動畫控制」還原到「真實基準點」，徹底消滅跳動 Bug。
-            setTimeout(() => {
-                mainStack.classList.add('allow-hover');
-            }, 50);
-
+            // 1.5 秒後移除甦醒標記
             setTimeout(() => {
                 mainStack.classList.remove('just-awoke');
             }, 1500); 
+
+            // 🟢 刪除了原本在這裡「自動發放 allow-hover」的程式碼
+            // 把發放權限的任務，徹底交給接下來的「真實滑鼠移動」事件
 
         }, 1500); 
     } else {
@@ -493,6 +492,16 @@ initBottomCard();
 initDismissIcon(); 
 
 document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
+
+// 🟢 終極防護：防禦「幽靈懸浮 (Phantom Hover)」Bug
+// 網頁載入後，直到使用者「真正移動滑鼠」，才解鎖卡片的 Hover 權限
+window.addEventListener('mousemove', function unlockHover() {
+    if (!mainStack.classList.contains('allow-hover')) {
+        mainStack.classList.add('allow-hover');
+    }
+    // 權限發放後就銷毀這個監聽器，不浪費效能
+    window.removeEventListener('mousemove', unlockHover);
+}, { once: true });
 
 window.handleBottomCardClick = handleBottomCardClick;
 window.handleOverlayClick = handleOverlayClick;
