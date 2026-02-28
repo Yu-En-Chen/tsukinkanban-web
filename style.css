@@ -197,7 +197,7 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     transform: translate3d(0, 0, 0); 
     z-index: 10;
     /* 3D動畫設定 */
-    perspective: 1200px; 
+    perspective: 1000px; 
     transform-style: preserve-3d;
 }
 
