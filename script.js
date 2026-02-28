@@ -490,15 +490,3 @@ initDismissIcon();
 
 document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
 
-// 🟢 終極防護：防禦「幽靈懸浮 (Phantom Hover)」Bug
-// 網頁載入後，直到使用者「真正移動滑鼠」，才解鎖卡片的 Hover 權限
-window.addEventListener('mousemove', function unlockHover() {
-    if (!mainStack.classList.contains('allow-hover')) {
-        mainStack.classList.add('allow-hover');
-    }
-    // 權限發放後就銷毀這個監聽器，不浪費效能
-    window.removeEventListener('mousemove', unlockHover);
-}, { once: true });
-
-window.handleBottomCardClick = handleBottomCardClick;
-window.handleOverlayClick = handleOverlayClick;
