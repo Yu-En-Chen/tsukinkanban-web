@@ -259,14 +259,17 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
         transition: opacity 0.4s ease !important;
     }
 
-    /* 2. 🟢 甦醒狀態：網頁剛重整完、動畫剛結束時的「專屬慢速」曲線 */
-    /* 用 1.2s 的極慢速柔和曲線 (ease-out 特性)，取代原本的 0.4s 快速彈起 */
+/* 2. 🟢 甦醒狀態：網頁剛重整完、動畫剛結束時的「專屬慢速起步」曲線 */
     .card-stack.just-awoke:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover {
-        transition: transform 2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        /* 改變魔法的關鍵：cubic-bezier(0.4, 0, 0.1, 1) 
+           前兩個數字 (0.4, 0) 代表「極度緩慢的起步」，它會像深呼吸一樣慢慢浮起，徹底消滅生硬的彈跳感！
+        */
+        transition: transform 1.5s cubic-bezier(0.4, 0, 0.1, 1) !important;
     }
 
     .card-stack.just-awoke:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover::after {
-        transition: opacity 2s ease !important;
+        /* 讓光影也跟著這種「深呼吸」的節奏慢慢亮起 */
+        transition: opacity 1.5s cubic-bezier(0.4, 0, 0.1, 1) !important;
     }
 }
 /* ==========================================================================
