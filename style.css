@@ -222,7 +222,9 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     border: 1px solid var(--border-color); 
     box-shadow: var(--ray-shadow-resting);
     isolation: isolate; 
-    transform: translateZ(0); 
+    transform: translate3d(0, 0, 0);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     overflow: hidden; 
     will-change: transform, opacity; 
     z-index: 1; 
@@ -289,6 +291,10 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 .detail-card-inner {
     width: var(--card-width); max-width: 420px; aspect-ratio: var(--card-ratio); border-radius: var(--card-radius); border: 1px solid var(--border-color); box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
     isolation: isolate; transform: translate3d(0, 100vh, 0); transition: transform 0.55s var(--spring-release); will-change: transform; overflow: hidden; color: var(--card-text-color); text-shadow: var(--text-shadow-subtle);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
 }
 .detail-overlay.active .detail-card-inner { transform: translate3d(0, 0, 0); }
 
