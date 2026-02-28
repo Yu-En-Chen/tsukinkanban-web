@@ -63,41 +63,44 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
 
     startGlareLoop();
 
-    const updateUI = () => {
+const updateUI = () => {
         let displayY = 0;
         let spreadValue = 0;
+        let tiltAngle = 0; // 🟢 新增：儲存 3D 傾斜角度
 
         updateGlareTarget();
 
-        // 判斷手勢方向：大於 0 是往下拉，小於 0 是往上推
         if (currentPullY > 0) {
-            
-            // 1. 🟢 整體下墜位移 (Display Y)
-            // 原本是 0.2 會掉太快。改為 0.05，讓牌組底部像有重量一樣穩住，偏向「向上展開」
+            // 🔽 1. 下拉位移與展開 (維持你滿意的彈力手感)
             displayY = currentPullY * 0.05; 
-            
-            // 2. 🟢 核心魔法：漸進式阻尼公式 (Asymptotic Damping)
-            // 公式原理：(拉力 * 極限) / (拉力 + 極限)
-            let rawSpread = currentPullY * 0.4; // 靈敏度：數字越大越容易拉開 (原本是 0.6)
-            let maxLimit = 42; // 極限值：卡片間距最多只能撐開到大約 42px，永遠不會撞到頂部搜尋列
-
-            // 套用公式：這樣一拉就會平滑散開，且越拉越緊，徹底消滅 -25 帶來的瞬間斷層！
+            let rawSpread = currentPullY * 0.4; 
+            let maxLimit = 42; 
             spreadValue = (rawSpread * maxLimit) / (rawSpread + maxLimit); 
             
-        } else if (currentPullY < 0) {
+            // 🟢 2. 微 3D 傾斜阻尼公式
+            // 公式與展開相同，讓旋轉角度也是「越拉越緊，最後平滑煞停」
+            let rawTilt = currentPullY * 0.03; 
+            let maxTilt = 3; // 絕對極限值：最大只允許傾斜 3 度
             
-            // 🔼 上滑時的壓縮行為 (維持原本的設計即可)
-            spreadValue = currentPullY * 0.45; 
-            const limitY = -(mainStack.offsetTop + 30);
-            if (currentPullY < limitY) displayY = limitY;
-            else displayY = currentPullY;
+            // 加上負號，代表往下拖曳時，卡片的「上方」會往後倒，產生像是百葉窗或被手指壓扁的透視感
+            tiltAngle = -((rawTilt * maxTilt) / (rawTilt + maxTilt)); 
+            
+        } else if (currentPullY < 0) {
+            // 🔼 上滑壓縮 (維持之前的完美阻尼)
+            let absPull = Math.abs(currentPullY);
+            let rawCompress = absPull * 0.45;
+            let maxCompress = 35; 
+            spreadValue = -((rawCompress * maxCompress) / (rawCompress + maxCompress));
+
+            let maxMove = mainStack.offsetTop + 60; 
+            displayY = -((absPull * maxMove) / (absPull + maxMove));
         }
 
-        // 將計算結果應用到實際的 DOM 元素上
+        // 將所有的物理計算結果寫入 DOM
         mainStack.style.transform = `translate3d(0, ${displayY}px, 0)`;
         mainStack.style.setProperty('--stack-spread', `${spreadValue}px`);
+        mainStack.style.setProperty('--tilt-angle', `${tiltAngle}deg`); // 🟢 寫入角度變數
         
-        // 釋放鎖，允許下一幀渲染
         rafId = null;
     };
 
