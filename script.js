@@ -288,7 +288,13 @@ function closeAllCards(isPopState = false) {
 
     activeCardId = null;
     const inner = detailContainer.querySelector('.detail-card-inner');
-    if (inner) inner.style.transform = ''; 
+    if (inner) {
+        // 🟢 救命關鍵：把滑動時鎖住的 transition 拔掉，恢復原本 CSS 寫好的彈簧動畫！
+        // 這樣卡片就不會瞬間瞬移，而是從你放手的地方滑順飛走
+        inner.style.transition = ''; 
+        
+        inner.style.transform = ''; 
+    }
     
     setTimeout(() => {
         if (!activeCardId) detailContainer.innerHTML = '';
