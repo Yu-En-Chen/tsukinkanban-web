@@ -73,20 +73,27 @@ function renderCards(data) {
         mainStack.appendChild(clone);
     });
 
-if (isInitialLoad) {
-        // 🟢 1. 網頁一載入，立刻掛上「甦醒柔和護身符」
+    if (isInitialLoad) {
         mainStack.classList.add('just-awoke');
 
         setTimeout(() => { 
             isInitialLoad = false;
-            // 🟢 2. 在 1.5 秒時，卡片精準落地，拔除飛入動畫
             document.querySelectorAll('.card').forEach(c => c.classList.remove('opening-pull'));
             const fixedCard = document.getElementById('fixed-info-card');
             if (fixedCard) fixedCard.classList.remove('opening-pull-fixed');
+            
+            // 等 1.5 秒鋼琴動畫「徹底播完」後，才開始監聽滑鼠移動！
+            // 這樣在動畫期間不管滑鼠怎麼動，allow-hover 都絕對處於「上鎖」狀態。
+            window.addEventListener('mousemove', function unlockHover() {
+                if (!mainStack.classList.contains('allow-hover')) {
+                    mainStack.classList.add('allow-hover');
+                }
+                window.removeEventListener('mousemove', unlockHover);
+            }, { once: true });
+
         }, 1500); 
 
-        // 🟢 3. 核心修復：將護身符的壽命延長到 2 秒！
-        // 這樣卡片落地後的 0.5 秒內，不管使用者怎麼動滑鼠，絕對都是用 1.5 秒的最柔和曲線升起！
+        // 依然保留 2 秒的甦醒護身符，確保解鎖後的第一次升起是柔和的
         setTimeout(() => {
             mainStack.classList.remove('just-awoke');
         }, 2000); 
