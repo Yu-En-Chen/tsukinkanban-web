@@ -254,7 +254,7 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
         .card-stack:not(.dragging) .card:not(.active):hover::after {
         /* 原本 opacity 是 0.23，懸浮時微調到 0.35 */
         /* 這樣只會讓表面星鑽顆粒與漸層更明顯，文字與底色完全不受污染！ */
-        opacity: 0.55; 
+        opacity: 0.6; 
     }
 }
 
