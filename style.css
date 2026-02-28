@@ -245,27 +245,32 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 .card.lifted-state { transform: translate3d(0, -100px, 0); opacity: 0 !important; pointer-events: none; transition: none !important; }
 .card.returning { animation: snapIn 0.6s var(--impact-bounce) forwards; opacity: 1 !important; pointer-events: auto; transition: none !important; }
 .card-stack.has-active { transform: scale(0.92); filter: blur(10px); pointer-events: none; }
-/* 🟢 桌面端專屬：極致優雅的懸浮微交互 (雙軌防禦終極版) */
+/* 🟢 桌面端專屬：極致優雅的懸浮微交互 (防跳躍終極版) */
 @media (hover: hover) and (pointer: fine) {
     
-    /* 1. 一般狀態：0.4s 靈敏果凍阻尼 */
-    .card-stack.allow-hover:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover {
-        transform: translate3d(0, -8px, 0);
+    /* 1. 把 transition 綁定在「基礎狀態」上，而不是 hover 上 */
+    /* 這樣瀏覽器就會預先準備好動畫引擎，絕對不會瞬間跳起 */
+    .card-stack.allow-hover:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull) {
         transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
     }
-    .card-stack.allow-hover:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover::after {
-        opacity: 0.4; 
+    .card-stack.allow-hover:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull)::after {
         transition: opacity 0.4s ease !important;
     }
 
-    /* 2. 🟢 甦醒狀態：1.5s 液態緩入緩出 (專門對付剛載入時的生硬彈起) */
-    .card-stack.allow-hover.just-awoke:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover {
-        transform: translate3d(0, -8px, 0);
+    /* 2. 甦醒狀態 (just-awoke) 的超柔和基礎引擎 (1.5s) */
+    .card-stack.allow-hover.just-awoke:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull) {
         transition: transform 1.5s cubic-bezier(0.4, 0, 0.1, 1) !important;
     }
-    .card-stack.allow-hover.just-awoke:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover::after {
-        opacity: 0.4; 
+    .card-stack.allow-hover.just-awoke:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull)::after {
         transition: opacity 1.5s cubic-bezier(0.4, 0, 0.1, 1) !important;
+    }
+
+    /* 3. hover 時只負責下達「位移指令」，動畫由上面的基礎引擎接手 */
+    .card-stack.allow-hover:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover {
+        transform: translate3d(0, -8px, 0);
+    }
+    .card-stack.allow-hover:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover::after {
+        opacity: 0.4; 
     }
 }
 /* ==========================================================================
