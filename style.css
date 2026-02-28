@@ -196,9 +196,6 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     will-change: transform, filter, opacity; 
     transform: translate3d(0, 0, 0); 
     z-index: 10;
-    /* 3D動畫設定 */
-    perspective: 1000px; 
-    transform-style: preserve-3d;
 }
 
 /* 🟢 5. 修復：加入拖曳狀態，強制關閉任何動畫延遲，避免連續滑動時引擎錯亂 */
@@ -229,8 +226,7 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     overflow: hidden; 
     will-change: transform, opacity; 
     z-index: 1; 
-    transform: translate3d(0, 0, 0) rotateX(var(--tilt-angle, 0deg));
-    /*transition: transform var(--dynamic-speed, 0.65s) var(--active-bounce), opacity 0.3s ease, box-shadow 0.6s var(--premium-ease);*/
+    transition: transform var(--dynamic-speed, 0.65s) var(--active-bounce), opacity 0.3s ease, box-shadow 0.6s var(--premium-ease);
     cursor: pointer; 
     color: var(--card-text-color); 
     text-shadow: var(--text-shadow-subtle);
