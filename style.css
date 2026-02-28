@@ -243,6 +243,20 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 .card.lifted-state { transform: translate3d(0, -100px, 0); opacity: 0 !important; pointer-events: none; transition: none !important; }
 .card.returning { animation: snapIn 0.6s var(--impact-bounce) forwards; opacity: 1 !important; pointer-events: auto; transition: none !important; }
 .card-stack.has-active { transform: scale(0.92); filter: blur(10px); pointer-events: none; }
+/* 🟢 桌面端專屬：極簡滑鼠懸浮微交互 (Hover Micro-interactions) */
+@media (hover: hover) and (pointer: fine) {
+    
+    .card-stack:not(.dragging) .card:not(.active):hover {
+        /* 只做單純的 Y 軸上浮 10px，不放大 */
+        transform: translate3d(0, -10px, 0);
+        
+        /* 陰影加深加寬，表現出卡片離開桌面的距離感 */
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+        
+        /* 微微提亮卡片表面，模擬接近光源 */
+        filter: brightness(1.05);
+    }
+}
 
 /* ==========================================================================
    內容佈局、膠囊標籤與文字格
