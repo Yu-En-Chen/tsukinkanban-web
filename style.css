@@ -245,20 +245,26 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 .card.lifted-state { transform: translate3d(0, -100px, 0); opacity: 0 !important; pointer-events: none; transition: none !important; }
 .card.returning { animation: snapIn 0.6s var(--impact-bounce) forwards; opacity: 1 !important; pointer-events: auto; transition: none !important; }
 .card-stack.has-active { transform: scale(0.92); filter: blur(10px); pointer-events: none; }
-/* 🟢 桌面端專屬：極致優雅的懸浮微交互 (防打架終極版) */
+/* 🟢 桌面端專屬：極致優雅的懸浮微交互 (防打架終極版 + 載入柔和版) */
 @media (hover: hover) and (pointer: fine) {
     
     /* 絕對防呆機制：
-       1. :not(.has-active) -> 只要有卡片被點開，全場禁止懸浮
-       2. :not(.returning) -> 正在飛回原位的卡片，禁止懸浮
-       3. :not(.piano-ripple) -> 正在產生鋼琴漣漪退場的卡片，禁止懸浮 
+       1. 🟢 新增 :not(.opening-pull) -> 網頁剛重整，卡片飛入動畫期間，徹底封鎖滑鼠干擾
+       2. 保持原有的 :not(.has-active), :not(.returning), :not(.piano-ripple) 
     */
-    .card-stack:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):hover {
-        transform: translate3d(0, -10px, 0);
+    .card-stack:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover {
+        transform: translate3d(0, -8px, 0);
+        
+        /* 🟢 專屬柔和曲線：
+           強制覆蓋原本厚重的 0.65s 拖曳彈簧，改用 0.4s 的輕盈果凍阻尼。
+           這樣滑鼠移入時會非常絲滑地浮起，移出時則會順著原生物理慣性優雅降落。
+        */
+        transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
     }
 
-    .card-stack:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):hover::after {
-        opacity: 0.65; 
+    .card-stack:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover::after {
+        opacity: 0.4; 
+        transition: opacity 0.4s ease !important;
     }
 }
 
