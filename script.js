@@ -502,3 +502,6 @@ initDismissIcon();
 
 document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
 
+// 將模組內的函數暴露給全域
+window.handleBottomCardClick = handleBottomCardClick;
+window.handleOverlayClick = handleOverlayClick;
