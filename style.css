@@ -342,13 +342,3 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 }
 
 .card-content, .card-header, .line-name, .status-tag { position: relative; z-index: 2; }
-
-/* 🟢 終極 GPU 文字鎖定：避免 Safari 在動態變數更新結束時的抗鋸齒閃爍 */
-.card .line-name, 
-.card .status-tag, 
-.card .description, 
-.card .info-tags-container {
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-    -webkit-font-smoothing: antialiased;
-}
