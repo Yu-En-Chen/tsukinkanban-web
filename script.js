@@ -74,26 +74,23 @@ function renderCards(data) {
     });
 
 if (isInitialLoad) {
+        // 🟢 1. 網頁一載入，立刻掛上「甦醒柔和護身符」
+        mainStack.classList.add('just-awoke');
+
         setTimeout(() => { 
             isInitialLoad = false;
+            // 🟢 2. 在 1.5 秒時，卡片精準落地，拔除飛入動畫
             document.querySelectorAll('.card').forEach(c => c.classList.remove('opening-pull'));
             const fixedCard = document.getElementById('fixed-info-card');
             if (fixedCard) fixedCard.classList.remove('opening-pull-fixed');
-            
-            // 依然給予剛甦醒的緩衝標記
-            mainStack.classList.add('just-awoke');
-            
-            // 1.5 秒後移除甦醒標記
-            setTimeout(() => {
-                mainStack.classList.remove('just-awoke');
-            }, 1500); 
-
-            // 🟢 刪除了原本在這裡「自動發放 allow-hover」的程式碼
-            // 把發放權限的任務，徹底交給接下來的「真實滑鼠移動」事件
-
         }, 1500); 
+
+        // 🟢 3. 核心修復：將護身符的壽命延長到 2 秒！
+        // 這樣卡片落地後的 0.5 秒內，不管使用者怎麼動滑鼠，絕對都是用 1.5 秒的最柔和曲線升起！
+        setTimeout(() => {
+            mainStack.classList.remove('just-awoke');
+        }, 2000); 
     } else {
-        // 非初次載入 (如搜尋時)，直接允許 Hover
         mainStack.classList.add('allow-hover');
     }
 }
