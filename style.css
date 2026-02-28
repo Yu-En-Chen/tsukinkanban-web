@@ -262,11 +262,11 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     /* 2. 🟢 甦醒狀態：網頁剛重整完、動畫剛結束時的「專屬慢速」曲線 */
     /* 用 1.2s 的極慢速柔和曲線 (ease-out 特性)，取代原本的 0.4s 快速彈起 */
     .card-stack.just-awoke:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover {
-        transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        transition: transform 2s cubic-bezier(0.16, 1, 0.3, 1) !important;
     }
 
     .card-stack.just-awoke:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover::after {
-        transition: opacity 1.2s ease !important;
+        transition: opacity 2s ease !important;
     }
 }
 /* ==========================================================================
