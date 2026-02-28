@@ -80,7 +80,7 @@ const updateUI = () => {
             // 🟢 2. 微 3D 傾斜阻尼公式
             // 公式與展開相同，讓旋轉角度也是「越拉越緊，最後平滑煞停」
             let rawTilt = currentPullY * 0.03; 
-            let maxTilt = 3; // 絕對極限值：最大只允許傾斜 3 度
+            let maxTilt = 8; // 絕對極限值：最大只允許傾斜 3 度
             
             // 加上負號，代表往下拖曳時，卡片的「上方」會往後倒，產生像是百葉窗或被手指壓扁的透視感
             tiltAngle = -((rawTilt * maxTilt) / (rawTilt + maxTilt)); 
