@@ -245,29 +245,26 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 .card.lifted-state { transform: translate3d(0, -100px, 0); opacity: 0 !important; pointer-events: none; transition: none !important; }
 .card.returning { animation: snapIn 0.6s var(--impact-bounce) forwards; opacity: 1 !important; pointer-events: auto; transition: none !important; }
 .card-stack.has-active { transform: scale(0.92); filter: blur(10px); pointer-events: none; }
-/* 🟢 桌面端專屬：極致優雅的懸浮微交互 (防打架終極版 + 載入柔和版) */
+/* 🟢 桌面端專屬：極致優雅的懸浮微交互 (雙軌防禦終極版) */
 @media (hover: hover) and (pointer: fine) {
     
-    /* 1. 一般狀態：必須具備 .allow-hover 才能觸發 (0.4s 靈敏果凍阻尼) */
-    /* 👉 這裡補上了 .allow-hover */
+    /* 1. 一般狀態：0.4s 靈敏果凍阻尼 */
     .card-stack.allow-hover:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover {
         transform: translate3d(0, -8px, 0);
         transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
     }
-
     .card-stack.allow-hover:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover::after {
         opacity: 0.4; 
         transition: opacity 0.4s ease !important;
     }
 
-    /* 2. 🟢 甦醒狀態：網頁剛重整完、動畫剛結束時的「專屬慢速起步」曲線 */
-    /* 👉 這裡也補上了 .allow-hover */
+    /* 2. 🟢 甦醒狀態：1.5s 液態緩入緩出 (專門對付剛載入時的生硬彈起) */
     .card-stack.allow-hover.just-awoke:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover {
-        /* 改變魔法的關鍵：液態緩入緩出，徹底消滅生硬的彈跳感！ */
+        transform: translate3d(0, -8px, 0);
         transition: transform 1.5s cubic-bezier(0.4, 0, 0.1, 1) !important;
     }
-
     .card-stack.allow-hover.just-awoke:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover::after {
+        opacity: 0.4; 
         transition: opacity 1.5s cubic-bezier(0.4, 0, 0.1, 1) !important;
     }
 }
