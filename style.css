@@ -243,18 +243,20 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 .card.lifted-state { transform: translate3d(0, -100px, 0); opacity: 0 !important; pointer-events: none; transition: none !important; }
 .card.returning { animation: snapIn 0.6s var(--impact-bounce) forwards; opacity: 1 !important; pointer-events: auto; transition: none !important; }
 .card-stack.has-active { transform: scale(0.92); filter: blur(10px); pointer-events: none; }
-/* 🟢 桌面端專屬：極簡滑鼠懸浮微交互 (Hover Micro-interactions) */
+/* 🟢 桌面端專屬：極致優雅的懸浮微交互 (防打架終極版) */
 @media (hover: hover) and (pointer: fine) {
     
-    .card-stack:not(.dragging) .card:not(.active):hover {
-        /* 只做單純的 Y 軸上浮 10px，不放大 */
+    /* 絕對防呆機制：
+       1. :not(.has-active) -> 只要有卡片被點開，全場禁止懸浮
+       2. :not(.returning) -> 正在飛回原位的卡片，禁止懸浮
+       3. :not(.piano-ripple) -> 正在產生鋼琴漣漪退場的卡片，禁止懸浮 
+    */
+    .card-stack:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):hover {
         transform: translate3d(0, -10px, 0);
     }
 
-        .card-stack:not(.dragging) .card:not(.active):hover::after {
-        /* 原本 opacity 是 0.23，懸浮時微調到 0.35 */
-        /* 這樣只會讓表面星鑽顆粒與漸層更明顯，文字與底色完全不受污染！ */
-        opacity: 0.6; 
+    .card-stack:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):hover::after {
+        opacity: 0.65; 
     }
 }
 
