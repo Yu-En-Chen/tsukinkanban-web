@@ -248,27 +248,26 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 /* 🟢 桌面端專屬：極致優雅的懸浮微交互 (防打架終極版 + 載入柔和版) */
 @media (hover: hover) and (pointer: fine) {
     
-    /* 1. 一般狀態：0.4s 的輕盈果凍阻尼 (靈敏手感) */
-    .card-stack:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover {
+    /* 1. 一般狀態：必須具備 .allow-hover 才能觸發 (0.4s 靈敏果凍阻尼) */
+    /* 👉 這裡補上了 .allow-hover */
+    .card-stack.allow-hover:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover {
         transform: translate3d(0, -8px, 0);
         transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
     }
 
-    .card-stack:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover::after {
+    .card-stack.allow-hover:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover::after {
         opacity: 0.4; 
         transition: opacity 0.4s ease !important;
     }
 
-/* 2. 🟢 甦醒狀態：網頁剛重整完、動畫剛結束時的「專屬慢速起步」曲線 */
-    .card-stack.just-awoke:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover {
-        /* 改變魔法的關鍵：cubic-bezier(0.4, 0, 0.1, 1) 
-           前兩個數字 (0.4, 0) 代表「極度緩慢的起步」，它會像深呼吸一樣慢慢浮起，徹底消滅生硬的彈跳感！
-        */
+    /* 2. 🟢 甦醒狀態：網頁剛重整完、動畫剛結束時的「專屬慢速起步」曲線 */
+    /* 👉 這裡也補上了 .allow-hover */
+    .card-stack.allow-hover.just-awoke:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover {
+        /* 改變魔法的關鍵：液態緩入緩出，徹底消滅生硬的彈跳感！ */
         transition: transform 1.5s cubic-bezier(0.4, 0, 0.1, 1) !important;
     }
 
-    .card-stack.just-awoke:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover::after {
-        /* 讓光影也跟著這種「深呼吸」的節奏慢慢亮起 */
+    .card-stack.allow-hover.just-awoke:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover::after {
         transition: opacity 1.5s cubic-bezier(0.4, 0, 0.1, 1) !important;
     }
 }
