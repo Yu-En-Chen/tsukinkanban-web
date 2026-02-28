@@ -80,18 +80,24 @@ function renderCards(data) {
             const fixedCard = document.getElementById('fixed-info-card');
             if (fixedCard) fixedCard.classList.remove('opening-pull-fixed');
             
-            // 🟢 新增：給予牌組一個短暫的「剛甦醒」緩衝期
             mainStack.classList.add('just-awoke');
             
-            // 1.2 秒後，神不知鬼不覺地拔掉，恢復原本 0.4s 的靈敏手感
+            // 🟢 核心修復：延遲 50ms 才發放 Hover 權限。
+            // 讓瀏覽器有時間把卡片從「動畫控制」還原到「真實基準點」，徹底消滅跳動 Bug。
+            setTimeout(() => {
+                mainStack.classList.add('allow-hover');
+            }, 50);
+
             setTimeout(() => {
                 mainStack.classList.remove('just-awoke');
-            }, 1200); 
+            }, 1500); 
 
-        }, 1500); // 延長判定時間確保動畫播完
+        }, 1500); 
+    } else {
+        // 非初次載入 (如搜尋時)，直接允許 Hover
+        mainStack.classList.add('allow-hover');
     }
 }
-
 function handleCardClick(id) {
     if (isAnimating) return; 
 
