@@ -312,6 +312,9 @@ function initOverlayGestures() {
     };
     
     detailOverlay.ontouchmove = e => {
+        // 🟢 1. 防呆機制：如果已經在關閉動畫中，立刻攔截後續的滑動運算
+        if (!activeCardId || isAnimating) return;
+
         const rawMoveY = e.touches[0].pageY - overlayStartY;
         if (rawMoveY > 0) { 
             if (rawMoveY > 10 && e.cancelable) e.preventDefault(); 
@@ -319,11 +322,19 @@ function initOverlayGestures() {
             inner.style.transform = `translate3d(0, ${resistedY}px, 0)`;
             physicsEngine.updateGlare(135 + (resistedY * 0.15)); 
             if (dismissIcon) dismissIcon.style.opacity = Math.max(0, 1 - (rawMoveY / 150));
-            if (rawMoveY > 200) closeAllCards(false); 
+            
+            if (rawMoveY > 200) {
+                // 🟢 2. 核心修復：在觸發關閉前，把過渡動畫加回來！讓卡片滑順收回而不是瞬間斷層
+                inner.style.transition = 'transform 0.5s var(--apple-spring)';
+                closeAllCards(false); 
+            }
         }
     };
     
     detailOverlay.ontouchend = e => {
+        // 🟢 3. 防呆機制：若已經觸發關閉，不要再執行放開手指的回彈動畫
+        if (!activeCardId) return; 
+        
         inner.style.transition = 'transform 0.6s var(--active-bounce)';
         if (dismissIcon) dismissIcon.style.transition = 'opacity 0.3s ease';
         physicsEngine.updateGlare(135);
@@ -336,6 +347,8 @@ function initOverlayGestures() {
     let overlayWheelSum = 0;
     let overlayWheelTimer;
     detailOverlay.onwheel = e => {
+        if (!activeCardId || isAnimating) return; 
+
         e.preventDefault();
         overlayWheelSum -= e.deltaY;
         if (overlayWheelSum < 0) overlayWheelSum = 0;
@@ -350,6 +363,7 @@ function initOverlayGestures() {
         }
 
         if (overlayWheelSum > 200) {
+            inner.style.transition = 'transform 0.5s var(--apple-spring)';
             closeAllCards(false); 
             physicsEngine.updateGlare(135);
             overlayWheelSum = 0; 
