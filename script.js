@@ -91,7 +91,6 @@ function renderCards(data) {
         }, 1500); // 延長判定時間確保動畫播完
     }
 }
-}
 
 function handleCardClick(id) {
     if (isAnimating) return; 
