@@ -248,26 +248,19 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 /* 🟢 桌面與 iPad 觸控板專屬：極致優雅的懸浮微交互 */
 /* 💡 關鍵修復：使用 any-hover，這樣 iPad 的外接觸控板才能被正確識別！ */
 @media (any-hover: hover) {
+    /* 1. 基礎引擎：準備好 0.4s 的柔和位移過渡 */
     .card-stack.allow-hover:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull) {
         transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
     }
-    .card-stack.allow-hover:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull)::after {
-        transition: opacity 0.4s ease !important;
-    }
 
+    /* 2. 甦醒狀態 (just-awoke) 的超柔和基礎引擎 (1.5s) */
     .card-stack.allow-hover.just-awoke:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull) {
         transition: transform 1.5s cubic-bezier(0.4, 0, 0.1, 1) !important;
     }
-    .card-stack.allow-hover.just-awoke:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull)::after {
-        transition: opacity 1.5s cubic-bezier(0.4, 0, 0.1, 1) !important;
-    }
-
     .card-stack.allow-hover:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover {
         transform: translate3d(0, -8px, 0);
     }
-    .card-stack.allow-hover:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover::after {
-        opacity: 0.4; 
-    }
+    
 }
 
 /* 🟢 手機觸控專屬：長按浮起狀態 (Haptic Touch) */
@@ -276,9 +269,8 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     transform: translate3d(0, -8px, 0) !important;
     transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
 }
-.card.touch-lifted::after {
-    opacity: 0.4 !important;
-    transition: opacity 0.4s ease !important;
+/* 可選：加上稍微深一點的實體陰影，讓純物理上抬更有立體感 */
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2) !important;
 }
 /* ==========================================================================
    內容佈局、膠囊標籤與文字格
