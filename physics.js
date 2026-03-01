@@ -170,6 +170,19 @@ mainStack.addEventListener('touchmove', (e) => {
     mainStack.addEventListener('touchcancel', resetBounce);
 
     mainStack.addEventListener('wheel', (e) => {
+
+        // 🟢 3. 滾輪攔截守衛：如果目前被鎖定，就不斷延長鎖定時間，並直接退出！
+        if (mainStack.dataset.blockScroll === 'true') {
+            if (e.cancelable) e.preventDefault();
+            
+            // 只要滑鼠還在滾，就持續重置 250ms 的計時器
+            clearTimeout(window.scrollCooldownTimer);
+            window.scrollCooldownTimer = setTimeout(() => {
+                mainStack.dataset.blockScroll = 'false'; // 必須徹底停下手 0.25 秒才會解鎖
+            }, 250);
+            
+            return; // ⛔ 救命關鍵：直接退出！絕對不執行下方的縮放動畫
+        }
         updateGlareTarget();
 
         if (!isDragging) {
