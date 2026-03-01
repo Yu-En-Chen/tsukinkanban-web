@@ -64,15 +64,6 @@ mainStack.addEventListener('touchmove', (e) => {
         }
         return;
     }
-    // 🟢 全新觸控意圖：立刻解除滾動封鎖
-        mainStack.dataset.blockScroll = 'false';
-        if (window.scrollCooldownTimer) clearTimeout(window.scrollCooldownTimer);
-
-        startTouchY = e.touches[0].pageY;
-        if (bounceTimer) clearTimeout(bounceTimer);
-        mainStack.classList.remove('bounce-back');
-        mainStack.classList.add('dragging');
-    }, { passive: true });
 
     // 2. 如果已經進入掃描模式：
     // 🟢 核心魔法：因為已經 touchAction='none'，我們必須阻止預設滾動，並用雷射槍掃描手指下的元素
@@ -371,13 +362,6 @@ function closeAllCards(isPopState = false) {
     }
 
     isAnimating = true; 
-
-    // 🟢 阻斷連續滾動機制：關閉卡片的瞬間，立刻對物理引擎下達「封鎖滾動」的指令
-    mainStack.dataset.blockScroll = 'true';
-    clearTimeout(window.scrollCooldownTimer);
-    window.scrollCooldownTimer = setTimeout(() => {
-        mainStack.dataset.blockScroll = 'false';
-    }, 600); // 配合動畫時間 600ms，結束後若無滾動干擾則自動解鎖
 
     const dismissIcon = document.getElementById('dismiss-icon');
     if (dismissIcon) {
