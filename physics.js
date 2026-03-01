@@ -128,14 +128,19 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
         bounceTimer = setTimeout(() => { mainStack.classList.remove('bounce-back'); }, 500);
     };
 
-    mainStack.addEventListener('touchstart', (e) => {
-        startTouchY = e.touches[0].pageY;
-        if (bounceTimer) clearTimeout(bounceTimer);
-        mainStack.classList.remove('bounce-back');
-        mainStack.classList.add('dragging');
-    }, { passive: true });
+mainStack.addEventListener('touchmove', (e) => {
+        // 🟢 核心修復：檢查如果現在是長按掃描模式 (isScrubbing === 'true')
+        if (mainStack.dataset.isScrubbing === 'true') {
+            // 如果原本在長按前有產生微小的拉力，瞬間將拉力歸零，確保牌組「完全平躺」
+            if (currentPullY !== 0) {
+                currentPullY = 0;
+                updateGlareTarget();
+                if (!rafId) rafId = requestAnimationFrame(updateUI);
+            }
+            // 物理引擎直接罷工退出，不處理任何拉動！
+            return; 
+        }
 
-    mainStack.addEventListener('touchmove', (e) => {
         const touchY = e.touches[0].pageY;
         
         if (!isDragging) {
