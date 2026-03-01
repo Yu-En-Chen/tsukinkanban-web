@@ -274,7 +274,7 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
     
     /* 3. 稍微深一點的實體陰影，讓純物理上抬更有立體感 */
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25) !important;
 }
 
 /* 🟢 防止長按時觸發其他的系統預設高光或按壓狀態 */
