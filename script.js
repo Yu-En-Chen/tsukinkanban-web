@@ -363,6 +363,13 @@ function closeAllCards(isPopState = false) {
 
     isAnimating = true; 
 
+    // 🟢 1. 關閉瞬間上鎖：告訴物理引擎現在不准動！
+    mainStack.dataset.blockScroll = 'true';
+    clearTimeout(window.scrollCooldownTimer);
+    window.scrollCooldownTimer = setTimeout(() => {
+        mainStack.dataset.blockScroll = 'false';
+    }, 600); // 基礎動畫時間，時間到自動解鎖
+    
     const dismissIcon = document.getElementById('dismiss-icon');
     if (dismissIcon) {
         dismissIcon.style.opacity = '0';
