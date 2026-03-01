@@ -20,6 +20,102 @@ const mainStack = document.getElementById('main-stack');
 const detailOverlay = document.getElementById('detail-overlay');
 const detailContainer = document.getElementById('detail-card-container');
 
+// ============================================================================
+// 🟢 頂級 Native 體驗：長按進入「滑動掃描 (Scrubbing)」模式
+// ============================================================================
+let scanTimer = null;
+let isScrubbingMode = false;
+let currentScrubCard = null;
+let startTouchY = 0;
+
+mainStack.addEventListener('touchstart', (e) => {
+    if (isAnimating || mainStack.classList.contains('dragging') || activeCardId) return;
+    
+    // 如果點擊的不是卡片，就不理它
+    const targetCard = e.target.closest('.card');
+    if (!targetCard) return;
+
+    startTouchY = e.touches[0].pageY;
+    isScrubbingMode = false;
+    currentScrubCard = null;
+
+    // 啟動 400ms 判定計時器
+    scanTimer = setTimeout(() => {
+        isScrubbingMode = true; // 正式進入掃描模式！
+        currentScrubCard = targetCard;
+        currentScrubCard.classList.add('touch-lifted');
+        
+        // 鎖死卡片堆的物理引擎，避免滾動打架
+        mainStack.style.touchAction = 'none'; 
+        
+        if (window.navigator.vibrate) window.navigator.vibrate(15);
+    }, 400);
+}, { passive: true });
+
+mainStack.addEventListener('touchmove', (e) => {
+    // 1. 如果還沒進入掃描模式：
+    if (!isScrubbingMode) {
+        // 只要手指滑動超過 10px，就判定使用者只是想「滾動網頁」，立刻取消長按判定
+        if (Math.abs(e.touches[0].pageY - startTouchY) > 10) {
+            clearTimeout(scanTimer);
+            scanTimer = null;
+        }
+        return;
+    }
+
+    // 2. 如果已經進入掃描模式：
+    // 🟢 核心魔法：因為已經 touchAction='none'，我們必須阻止預設滾動，並用雷射槍掃描手指下的元素
+    if (e.cancelable) e.preventDefault(); 
+
+    const touch = e.touches[0];
+    // 使用雷射槍 (elementFromPoint) 找出手指目前座標底下的元素
+    const elemUnderFinger = document.elementFromPoint(touch.clientX, touch.clientY);
+    
+    if (elemUnderFinger) {
+        const hoveredCard = elemUnderFinger.closest('.card');
+        
+        // 如果手指滑到了新的卡片上
+        if (hoveredCard && hoveredCard !== currentScrubCard) {
+            // 把舊的放下
+            if (currentScrubCard) currentScrubCard.classList.remove('touch-lifted');
+            
+            // 把新的抬起
+            currentScrubCard = hoveredCard;
+            currentScrubCard.classList.add('touch-lifted');
+            if (window.navigator.vibrate) window.navigator.vibrate(5); // 換卡片時微震提示
+        } 
+        // 如果手指滑到了沒有卡片的地方 (例如最頂部或最底層)
+        else if (!hoveredCard && currentScrubCard) {
+            currentScrubCard.classList.remove('touch-lifted');
+            currentScrubCard = null;
+        }
+    }
+}, { passive: false }); // 注意這裡必須是 false，才能使用 preventDefault 鎖死滾動
+
+mainStack.addEventListener('touchend', endScrubbing);
+mainStack.addEventListener('touchcancel', endScrubbing);
+
+function endScrubbing() {
+    clearTimeout(scanTimer);
+    scanTimer = null;
+    
+    if (isScrubbingMode) {
+        isScrubbingMode = false;
+        // 解除物理引擎鎖定
+        mainStack.style.touchAction = ''; 
+        
+        // 讓卡片優雅降落
+        if (currentScrubCard) {
+            const cardToDrop = currentScrubCard;
+            setTimeout(() => {
+                cardToDrop.classList.remove('touch-lifted');
+            }, 50);
+            currentScrubCard = null;
+        }
+    }
+}
+// ============================================================================
+
 // 啟運動理引擎
 const physicsEngine = initPhysics(
     mainStack, 
@@ -63,61 +159,7 @@ function renderCards(data) {
         let startY = 0;
         let isLifted = false;
 
-        card.addEventListener('touchstart', (e) => {
-            if (isAnimating || mainStack.classList.contains('dragging')) return;
-            startY = e.touches[0].pageY;
-            isLifted = false;
-
-            // 啟動長按計時器 (400ms 是最符合 iOS 直覺的長按體感時間)
-            pressTimer = setTimeout(() => {
-                isLifted = true;
-                card.classList.add('touch-lifted');
-                // 觸發物理微震動，創造真實按壓感 (Android 支援，iOS 預留)
-                if (window.navigator.vibrate) window.navigator.vibrate(15);
-            }, 400); 
-        }, { passive: true });
-
-        card.addEventListener('touchmove', (e) => {
-            if (!pressTimer && !isLifted) return;
-            
-            const currentY = e.touches[0].pageY;
-            // 💡 防打架核心：手指滑動超過 10px (代表想滾動牌組)，立刻取消長按與浮起狀態！
-            if (Math.abs(currentY - startY) > 10) {
-                if (pressTimer) {
-                    clearTimeout(pressTimer);
-                    pressTimer = null;
-                }
-                if (isLifted) {
-                    card.classList.remove('touch-lifted');
-                    isLifted = false;
-                }
-            }
-        }, { passive: true });
-
-        card.addEventListener('touchend', () => {
-            if (pressTimer) {
-                clearTimeout(pressTimer);
-                pressTimer = null;
-            }
-            if (isLifted) {
-                // 放開手指時，稍微延遲 150ms 降落，讓視覺過渡更柔和
-                setTimeout(() => {
-                    card.classList.remove('touch-lifted');
-                    isLifted = false;
-                }, 150); 
-            }
-        });
         
-        card.addEventListener('touchcancel', () => {
-            if (pressTimer) {
-                clearTimeout(pressTimer);
-                pressTimer = null;
-            }
-            if (isLifted) {
-                card.classList.remove('touch-lifted');
-                isLifted = false;
-            }
-        });
         // --- 結束新增 ---
         
         clone.querySelector('.line-name').textContent = line.name;
