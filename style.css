@@ -266,8 +266,20 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 /* 🟢 手機觸控專屬：長按浮起狀態 (Haptic Touch) */
 /* 讓手指長按時，也能享受跟滑鼠一樣的 0.4s 柔和浮起手感 */
 .card.touch-lifted {
-    transform: translate3d(0, -8px, 0) !important;
+    /* 1. 物理位移與滑鼠 Hover 保持一致的 -8px，且強制指定 scale(1) 防止縮放打架 */
+    transform: translate3d(0, -8px, 0) scale(1) !important;
+    
+    /* 2. 套用最柔和的 Apple 果凍阻尼曲線 (跟滑鼠懸浮完全一樣) 
+       注意這裡加上了 transform 的過渡，確保升起和降落都是絲滑的 */
     transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
+    
+    /* 3. 稍微深一點的實體陰影，讓純物理上抬更有立體感 */
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* 🟢 防止長按時觸發其他的系統預設高光或按壓狀態 */
+.card.touch-lifted:active {
+    transform: translate3d(0, -8px, 0) scale(1) !important;
 }
 /* ==========================================================================
    內容佈局、膠囊標籤與文字格
