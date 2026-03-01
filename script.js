@@ -376,6 +376,8 @@ function closeAllCards(isPopState = false) {
 
     detailOverlay.classList.remove('active');
     mainStack.classList.remove('has-active'); 
+    // 🟢 1. 關閉的瞬間：沒收卡片堆的 Hover 權限，避免滑鼠穿透導致下方卡片誤彈起
+    mainStack.classList.remove('allow-hover');
     
     let originalCard;
     if (activeCardId === 'fixed-bottom') {
@@ -427,6 +429,13 @@ function closeAllCards(isPopState = false) {
     setTimeout(() => {
         if (!activeCardId) detailContainer.innerHTML = '';
         isAnimating = false; 
+        // 🟢 2. 動畫結束後：等待使用者的滑鼠產生「真實的新位移」，才把權限還給他們！
+        window.addEventListener('mousemove', function unlockHoverAfterClose() {
+            if (!mainStack.classList.contains('allow-hover')) {
+                mainStack.classList.add('allow-hover');
+            }
+            window.removeEventListener('mousemove', unlockHoverAfterClose);
+        }, { once: true });
     }, 600);
 }
 
