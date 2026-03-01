@@ -58,6 +58,68 @@ function renderCards(data) {
         
         card.onclick = () => handleCardClick(line.id);
         
+        // --- 🟢 新增：手機/iPad 觸控螢幕的 Haptic Touch 長按浮起邏輯 ---
+        let pressTimer = null;
+        let startY = 0;
+        let isLifted = false;
+
+        card.addEventListener('touchstart', (e) => {
+            if (isAnimating || mainStack.classList.contains('dragging')) return;
+            startY = e.touches[0].pageY;
+            isLifted = false;
+
+            // 啟動長按計時器 (400ms 是最符合 iOS 直覺的長按體感時間)
+            pressTimer = setTimeout(() => {
+                isLifted = true;
+                card.classList.add('touch-lifted');
+                // 觸發物理微震動，創造真實按壓感 (Android 支援，iOS 預留)
+                if (window.navigator.vibrate) window.navigator.vibrate(15);
+            }, 400); 
+        }, { passive: true });
+
+        card.addEventListener('touchmove', (e) => {
+            if (!pressTimer && !isLifted) return;
+            
+            const currentY = e.touches[0].pageY;
+            // 💡 防打架核心：手指滑動超過 10px (代表想滾動牌組)，立刻取消長按與浮起狀態！
+            if (Math.abs(currentY - startY) > 10) {
+                if (pressTimer) {
+                    clearTimeout(pressTimer);
+                    pressTimer = null;
+                }
+                if (isLifted) {
+                    card.classList.remove('touch-lifted');
+                    isLifted = false;
+                }
+            }
+        }, { passive: true });
+
+        card.addEventListener('touchend', () => {
+            if (pressTimer) {
+                clearTimeout(pressTimer);
+                pressTimer = null;
+            }
+            if (isLifted) {
+                // 放開手指時，稍微延遲 150ms 降落，讓視覺過渡更柔和
+                setTimeout(() => {
+                    card.classList.remove('touch-lifted');
+                    isLifted = false;
+                }, 150); 
+            }
+        });
+        
+        card.addEventListener('touchcancel', () => {
+            if (pressTimer) {
+                clearTimeout(pressTimer);
+                pressTimer = null;
+            }
+            if (isLifted) {
+                card.classList.remove('touch-lifted');
+                isLifted = false;
+            }
+        });
+        // --- 結束新增 ---
+        
         clone.querySelector('.line-name').textContent = line.name;
         clone.querySelector('.status-tag').textContent = line.status;
         clone.querySelector('.description').textContent = line.desc;
