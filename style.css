@@ -272,6 +272,10 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     /* 2. 套用最柔和的 Apple 果凍阻尼曲線 (跟滑鼠懸浮完全一樣) 
        注意這裡加上了 transform 的過渡，確保升起和降落都是絲滑的 */
     transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
+    
+    /* 3. 稍微深一點的實體陰影，讓純物理上抬更有立體感 */
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+}
 
 /* 🟢 防止長按時觸發其他的系統預設高光或按壓狀態 */
 .card.touch-lifted:active {
