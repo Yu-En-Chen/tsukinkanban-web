@@ -42,6 +42,8 @@ mainStack.addEventListener('touchstart', (e) => {
     // 啟動 400ms 判定計時器
     scanTimer = setTimeout(() => {
         isScrubbingMode = true; // 正式進入掃描模式！
+        // 🟢 跨檔案通訊：掛上牌子，告訴 physics.js 現在是掃描模式，請罷工！
+        mainStack.dataset.isScrubbing = 'true';
         currentScrubCard = targetCard;
         currentScrubCard.classList.add('touch-lifted');
         
@@ -101,10 +103,11 @@ function endScrubbing() {
     
     if (isScrubbingMode) {
         isScrubbingMode = false;
-        // 解除物理引擎鎖定
-        mainStack.style.touchAction = ''; 
         
-        // 讓卡片優雅降落
+        // 🟢 跨檔案通訊：拔除牌子，允許 physics.js 恢復運作
+        mainStack.dataset.isScrubbing = 'false'; 
+
+        mainStack.style.touchAction = ''; 
         if (currentScrubCard) {
             const cardToDrop = currentScrubCard;
             setTimeout(() => {
