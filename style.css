@@ -268,8 +268,6 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 .card.touch-lifted {
     transform: translate3d(0, -8px, 0) !important;
     transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
-/* 可選：加上稍微深一點的實體陰影，讓純物理上抬更有立體感 */
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2) !important;
 }
 /* ==========================================================================
    內容佈局、膠囊標籤與文字格
