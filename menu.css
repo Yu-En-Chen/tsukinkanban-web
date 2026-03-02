@@ -58,7 +58,6 @@
     justify-content: center;
     
     transform: translateZ(0);
-    will-change: transform, width, height;
 }
 
 /* 4. 偽元素背景 */
@@ -71,7 +70,6 @@
     transition: all 0.5s ease;
     z-index: -1;
     pointer-events: none;
-    will-change: transform, opacity;
     transform: translateZ(0); 
     backface-visibility: hidden;
 }
