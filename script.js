@@ -29,7 +29,7 @@ let currentScrubCard = null;
 let startTouchY = 0;
 
 mainStack.addEventListener('touchstart', (e) => {
-// 🟢 1. 觸控防禦鎖：只要還在拖拉，或是「回彈動畫（含滾輪慢速回彈）」還沒播完，嚴格禁止進入長按掃描！
+    // 🟢 1. 觸控防禦鎖：只要還在拖拉，或是「回彈動畫（含滾輪慢速回彈）」還沒播完，嚴格禁止進入長按掃描！
     if (isAnimating || 
         mainStack.classList.contains('dragging') || 
         mainStack.classList.contains('bounce-back') || 
@@ -37,6 +37,7 @@ mainStack.addEventListener('touchstart', (e) => {
         activeCardId) {
         return;
     }
+    
     // 如果點擊的不是卡片，就不理它
     const targetCard = e.target.closest('.card');
     if (!targetCard) return;
@@ -53,6 +54,9 @@ mainStack.addEventListener('touchstart', (e) => {
         currentScrubCard = targetCard;
         currentScrubCard.classList.add('touch-lifted');
         
+        // 🟢 救命關鍵：立刻沒收 Hover 權限！殺死 Android 瀏覽器的「殘影 Hover」
+        mainStack.classList.remove('allow-hover');
+        
         // 鎖死卡片堆的物理引擎，避免滾動打架
         mainStack.style.touchAction = 'none'; 
         
@@ -60,6 +64,47 @@ mainStack.addEventListener('touchstart', (e) => {
     }, 400);
 }, { passive: true });
 
+mainStack.addEventListener('touchmove', (e) => {
+    // 1. 如果還沒進入掃描模式：
+    if (!isScrubbingMode) {
+        // 只要手指滑動超過 10px，就判定使用者只是想「滾動網頁」，立刻取消長按判定
+        if (Math.abs(e.touches[0].pageY - startTouchY) > 10) {
+            clearTimeout(scanTimer);
+            scanTimer = null;
+        }
+        return;
+    }
+
+    // 2. 如果已經進入掃描模式：
+    // 🟢 核心魔法：因為已經 touchAction='none'，我們必須阻止預設滾動，並用雷射槍掃描手指下的元素
+    if (e.cancelable) e.preventDefault(); 
+
+    const touch = e.touches[0];
+    // 使用雷射槍 (elementFromPoint) 找出手指目前座標底下的元素
+    const elemUnderFinger = document.elementFromPoint(touch.clientX, touch.clientY);
+    
+    if (elemUnderFinger) {
+        const hoveredCard = elemUnderFinger.closest('.card');
+        
+        // 如果手指滑到了新的卡片上
+        if (hoveredCard && hoveredCard !== currentScrubCard) {
+            // 把舊的放下
+            if (currentScrubCard) currentScrubCard.classList.remove('touch-lifted');
+            
+            // 把新的抬起
+            currentScrubCard = hoveredCard;
+            currentScrubCard.classList.add('touch-lifted');
+            
+            // 🟢 救命關鍵：把震動調高到 15ms，Android 硬體馬達才會有反應！
+            if (window.navigator.vibrate) window.navigator.vibrate(15); 
+        } 
+        // 如果手指滑到了沒有卡片的地方 (例如最頂部或最底層)
+        else if (!hoveredCard && currentScrubCard) {
+            currentScrubCard.classList.remove('touch-lifted');
+            currentScrubCard = null;
+        }
+    }
+}, { passive: false }); // 注意這裡必須是 false，才能使用 preventDefault 鎖死滾動
 mainStack.addEventListener('touchmove', (e) => {
     // 1. 如果還沒進入掃描模式：
     if (!isScrubbingMode) {
