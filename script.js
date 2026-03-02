@@ -183,6 +183,9 @@ function renderCards(data) {
     if (isInitialLoad) {
         mainStack.classList.add('just-awoke');
 
+        // 👇 加上這一行，凍結開場的光影計算 👇
+        mainStack.dataset.freezeGlare = 'true';
+
         setTimeout(() => { 
             isInitialLoad = false;
             document.querySelectorAll('.card').forEach(c => c.classList.remove('opening-pull'));
@@ -195,6 +198,9 @@ function renderCards(data) {
                 if (!mainStack.classList.contains('allow-hover')) {
                     mainStack.classList.add('allow-hover');
                 }
+                // 👇 加上這一行，解除光影凍結，讓 Hover 可以正常運作 👇
+                mainStack.dataset.freezeGlare = 'false';
+                
                 window.removeEventListener('mousemove', unlockHover);
             }, { once: true });
 
@@ -441,6 +447,9 @@ function closeAllCards(isPopState = false) {
             if (!mainStack.classList.contains('allow-hover')) {
                 mainStack.classList.add('allow-hover');
             }
+            // 👇 加上這一行，重新解鎖光影 👇
+            mainStack.dataset.freezeGlare = 'false';
+            
             window.removeEventListener('mousemove', unlockHoverAfterClose);
         }, { once: true });
     }, 600);
