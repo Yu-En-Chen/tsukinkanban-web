@@ -139,21 +139,25 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
         bounceTimer = setTimeout(() => { 
             mainStack.classList.remove(bounceClass); 
             
-            // 🟢 升級版：防手震解鎖機制 (必須移動超過 5px 才解鎖)
+            // 🟢 升級版：全域防手震解鎖機制 (提高到 15px，且絕不累積)
+            if (window.hoverUnlocker) window.removeEventListener('mousemove', window.hoverUnlocker);
+            
             let startX = null, startY = null;
-            window.addEventListener('mousemove', function unlockHoverAfterScroll(e) {
+            window.hoverUnlocker = function(e) {
                 if (startX === null) {
                     startX = e.clientX;
                     startY = e.clientY;
                     return;
                 }
-                if (Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5) {
+                if (Math.abs(e.clientX - startX) > 15 || Math.abs(e.clientY - startY) > 15) {
                     if (!mainStack.classList.contains('allow-hover')) {
                         mainStack.classList.add('allow-hover');
                     }
-                    window.removeEventListener('mousemove', unlockHoverAfterScroll);
+                    window.removeEventListener('mousemove', window.hoverUnlocker);
+                    window.hoverUnlocker = null;
                 }
-            });
+            };
+            window.addEventListener('mousemove', window.hoverUnlocker);
 
         }, bounceDuration); 
     };
@@ -179,6 +183,10 @@ mainStack.addEventListener('touchmove', (e) => {
             mainStack.classList.add('dragging'); 
             // 🟢 滾輪開始滾動時：立刻沒收 Hover 權限，防止滑鼠游標干擾動畫
             mainStack.classList.remove('allow-hover');
+            if (window.hoverUnlocker) {
+                window.removeEventListener('mousemove', window.hoverUnlocker);
+                window.hoverUnlocker = null;
+            }
             startTouchY = touchY; 
         }
         wheelDeltaSum -= e.deltaY;
