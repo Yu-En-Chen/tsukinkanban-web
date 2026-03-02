@@ -172,6 +172,7 @@ mainStack.addEventListener('touchmove', (e) => {
             mainStack.classList.remove('allow-hover');
             startTouchY = touchY; 
         }
+        wheelDeltaSum -= e.deltaY;
 
         const deltaY = touchY - startTouchY; 
         updateGlareTarget();
