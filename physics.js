@@ -193,7 +193,7 @@ mainStack.addEventListener('touchmove', (e) => {
             clearTimeout(window.scrollCooldownTimer);
             window.scrollCooldownTimer = setTimeout(() => {
                 mainStack.dataset.blockScroll = 'false'; // 必須徹底停下手 0.25 秒才會解鎖
-            }, 250);
+            }, 300);
             
             return; // ⛔ 救命關鍵：直接退出！絕對不執行下方的縮放動畫
         }
