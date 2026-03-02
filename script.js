@@ -36,7 +36,7 @@ mainStack.addEventListener('touchstart', (e) => {
         mainStack.classList.contains('bounce-back-wheel') || 
         activeCardId) {
         return;
-    
+    }
     // 如果點擊的不是卡片，就不理它
     const targetCard = e.target.closest('.card');
     if (!targetCard) return;
