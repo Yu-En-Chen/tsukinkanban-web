@@ -191,6 +191,9 @@ function renderCards(data) {
             document.querySelectorAll('.card').forEach(c => c.classList.remove('opening-pull'));
             const fixedCard = document.getElementById('fixed-info-card');
             if (fixedCard) fixedCard.classList.remove('opening-pull-fixed');
+
+            // 👇 加上這一行，解除光影凍結，讓 Hover 可以正常運作 👇
+            mainStack.dataset.freezeGlare = 'false';
             
             // 等 1.5 秒鋼琴動畫「徹底播完」後，才開始監聽滑鼠移動！
             // 這樣在動畫期間不管滑鼠怎麼動，allow-hover 都絕對處於「上鎖」狀態。
@@ -198,8 +201,6 @@ function renderCards(data) {
                 if (!mainStack.classList.contains('allow-hover')) {
                     mainStack.classList.add('allow-hover');
                 }
-                // 👇 加上這一行，解除光影凍結，讓 Hover 可以正常運作 👇
-                mainStack.dataset.freezeGlare = 'false';
                 
                 window.removeEventListener('mousemove', unlockHover);
             }, { once: true });
@@ -442,13 +443,14 @@ function closeAllCards(isPopState = false) {
     setTimeout(() => {
         if (!activeCardId) detailContainer.innerHTML = '';
         isAnimating = false; 
+         // 👇 加上這一行，重新解鎖光影 👇
+        mainStack.dataset.freezeGlare = 'false';
+        
         // 🟢 2. 動畫結束後：等待使用者的滑鼠產生「真實的新位移」，才把權限還給他們！
         window.addEventListener('mousemove', function unlockHoverAfterClose() {
             if (!mainStack.classList.contains('allow-hover')) {
                 mainStack.classList.add('allow-hover');
             }
-            // 👇 加上這一行，重新解鎖光影 👇
-            mainStack.dataset.freezeGlare = 'false';
             
             window.removeEventListener('mousemove', unlockHoverAfterClose);
         }, { once: true });
