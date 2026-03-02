@@ -27,6 +27,8 @@ let scanTimer = null;
 let isScrubbingMode = false;
 let currentScrubCard = null;
 let startTouchY = 0;
+// 🟢 新增：震動冷卻鎖
+let lastVibrateTime = 0;
 
 mainStack.addEventListener('touchstart', (e) => {
     // 🟢 1. 觸控防禦鎖：只要還在拖拉，或是「回彈動畫（含滾輪慢速回彈）」還沒播完，嚴格禁止進入長按掃描！
@@ -136,6 +138,12 @@ mainStack.addEventListener('touchmove', (e) => {
             currentScrubCard = hoveredCard;
             currentScrubCard.classList.add('touch-lifted');
             if (window.navigator.vibrate) window.navigator.vibrate(5); // 換卡片時微震提示
+            // 🟢 破解安卓限制：將震動時間提高到 15ms，並加入 50ms 的冷卻時間！
+            const now = Date.now();
+            if (window.navigator.vibrate && (now - lastVibrateTime > 50)) {
+                window.navigator.vibrate(15); 
+                lastVibrateTime = now;
+            }
         } 
         // 如果手指滑到了沒有卡片的地方 (例如最頂部或最底層)
         else if (!hoveredCard && currentScrubCard) {
