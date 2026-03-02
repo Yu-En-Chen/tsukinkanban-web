@@ -106,7 +106,8 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
         rafId = null;
     };
 
-    const resetBounce = () => {
+// 🟢 加上 isWheel 參數，預設為 false (觸控)
+    const resetBounce = (isWheel = false) => {
         if (!isDragging) return;
         const CLOSE_GESTURE_THRESHOLD = 60; 
         const activeId = getActiveCardId();
@@ -117,25 +118,27 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
         }
         isDragging = false;
         
-        // 強制重繪：確保瀏覽器徹底清除 dragging 狀態後再加入回彈動畫
         void mainStack.offsetHeight; 
 
         mainStack.classList.remove('dragging');
-        mainStack.classList.add('bounce-back');
-        currentPullY = 0;
         
+        // 🟢 核心邏輯：根據來源決定套用哪種回彈 CSS Class
+        const bounceClass = isWheel ? 'bounce-back-wheel' : 'bounce-back';
+        mainStack.classList.add(bounceClass);
+        
+        currentPullY = 0;
         updateGlareTarget();
         
         if (!rafId) rafId = requestAnimationFrame(updateUI);
         
-        // 🟢 計時器防呆：清除上一次的計時，防止動畫被提前錯殺
         if (bounceTimer) clearTimeout(bounceTimer);
         
-        // 👇 就是這裡！剛剛少複製到了這行 bounceTimer = setTimeout... 👇
+        // 🟢 滾輪給予 850ms 的優雅降落時間，觸控維持原本俐落的 500ms
+        const bounceDuration = isWheel ? 850 : 500; 
+        
         bounceTimer = setTimeout(() => { 
-            mainStack.classList.remove('bounce-back'); 
+            mainStack.classList.remove(bounceClass); 
             
-            // 🟢 縮放動畫徹底結束後：等待滑鼠有「真實移動」才重新允許卡片抬起！
             window.addEventListener('mousemove', function unlockHoverAfterScroll() {
                 if (!mainStack.classList.contains('allow-hover')) {
                     mainStack.classList.add('allow-hover');
@@ -143,7 +146,7 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
                 window.removeEventListener('mousemove', unlockHoverAfterScroll);
             }, { once: true });
 
-        }, 500); // 500ms 是回彈動畫的時間
+        }, bounceDuration); 
     };
 mainStack.addEventListener('touchmove', (e) => {
         // 🟢 核心修復：檢查如果現在是長按掃描模式 (isScrubbing === 'true')
@@ -183,10 +186,10 @@ mainStack.addEventListener('touchmove', (e) => {
         if (!isDragging) updateGlareTarget();
     }, { passive: true });
 
-    mainStack.addEventListener('touchend', resetBounce);
+    mainStack.addEventListener('touchend', () => resetBounce(false));
     
     // 🟢 終極防護：攔截 iOS 系統手勢中斷 (例如觸碰到 Home 橫條)
-    mainStack.addEventListener('touchcancel', resetBounce);
+    mainStack.addEventListener('touchcancel', () => resetBounce(false));
 
     mainStack.addEventListener('wheel', (e) => {
 
@@ -217,7 +220,7 @@ mainStack.addEventListener('touchmove', (e) => {
         if (!rafId) rafId = requestAnimationFrame(updateUI);
         
         clearTimeout(wheelTimer);
-        wheelTimer = setTimeout(() => { wheelDeltaSum = 0; resetBounce(); }, 150);
+        wheelTimer = setTimeout(() => { wheelDeltaSum = 0; resetBounce(true); }, 150);
         if (e.cancelable) e.preventDefault();
     }, { passive: false });
 
