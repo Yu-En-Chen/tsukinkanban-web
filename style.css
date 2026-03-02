@@ -354,3 +354,23 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 }
 
 .card-content, .card-header, .line-name, .status-tag { position: relative; z-index: 2; }
+
+/* ========================================== */
+/* 👇 這裡是新貼上的「優雅慢速回彈」專屬設定 👇 */
+/* ========================================== */
+
+/* 1. 專屬於「滑鼠滾輪/觸控板」的極致優雅慢速回彈 (0.85s) */
+.card-stack.bounce-back-wheel {
+    transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* 2. 🟢 確保卡片的間距 (margin) 縮放也跟著變慢，維持完美同步 */
+.card-stack.bounce-back-wheel .card { 
+    transition: margin 0.85s cubic-bezier(0.16, 1, 0.3, 1) !important; 
+}
+
+/* 3. 確保光影動畫也跟著變慢，保持同步 */
+.card-stack.bounce-back-wheel .card::after, 
+.card-stack.bounce-back-wheel ~ .fixed-bottom-card::after { 
+    transition: --glare-angle 0.85s cubic-bezier(0.16, 1, 0.3, 1); 
+}
