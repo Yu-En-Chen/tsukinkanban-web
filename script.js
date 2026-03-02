@@ -29,7 +29,13 @@ let currentScrubCard = null;
 let startTouchY = 0;
 
 mainStack.addEventListener('touchstart', (e) => {
-    if (isAnimating || mainStack.classList.contains('dragging') || activeCardId) return;
+// 🟢 1. 觸控防禦鎖：只要還在拖拉，或是「回彈動畫（含滾輪慢速回彈）」還沒播完，嚴格禁止進入長按掃描！
+    if (isAnimating || 
+        mainStack.classList.contains('dragging') || 
+        mainStack.classList.contains('bounce-back') || 
+        mainStack.classList.contains('bounce-back-wheel') || 
+        activeCardId) {
+        return;
     
     // 如果點擊的不是卡片，就不理它
     const targetCard = e.target.closest('.card');
@@ -216,7 +222,13 @@ function renderCards(data) {
     }
 }
 function handleCardClick(id) {
-    if (isAnimating) return; 
+// 🟢 2. 點擊防禦鎖：防止在牌組還在「回彈飛行」的半空中時，誤觸打開卡片導致動畫錯亂
+    if (isAnimating || 
+        mainStack.classList.contains('dragging') || 
+        mainStack.classList.contains('bounce-back') || 
+        mainStack.classList.contains('bounce-back-wheel')) {
+        return; 
+    }
 
     const data = railwayData.find(l => l.id === id);
     if (!data) return;
