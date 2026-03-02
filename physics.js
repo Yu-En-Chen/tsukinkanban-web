@@ -186,14 +186,16 @@ mainStack.addEventListener('touchmove', (e) => {
             isDragging = true;
             if (bounceTimer) clearTimeout(bounceTimer);
             mainStack.classList.remove('bounce-back');
-            mainStack.classList.add('dragging'); 
-            // 🟢 滾輪開始滾動時：立刻沒收 Hover 權限，防止滑鼠游標干擾動畫
+            mainStack.classList.add('dragging');
+            
+            // 🟢 救命關鍵補回：滾輪開始滾動的瞬間，必須立刻沒收 Hover 權限！
             mainStack.classList.remove('allow-hover');
+            
+            // 同時斬斷可能殘留的舊解鎖器，防止幽靈累積
             if (window.hoverUnlocker) {
                 window.removeEventListener('mousemove', window.hoverUnlocker);
                 window.hoverUnlocker = null;
             }
-            startTouchY = touchY; 
         }
         wheelDeltaSum -= e.deltaY;
 
