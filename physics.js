@@ -136,20 +136,26 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
         // 🟢 滾輪給予 850ms 的優雅降落時間，觸控維持原本俐落的 500ms
         const bounceDuration = isWheel ? 850 : 500; 
         
-        bounceTimer = setTimeout(() => { 
+bounceTimer = setTimeout(() => { 
             mainStack.classList.remove(bounceClass); 
             
-            // 🟢 升級版：全域防手震解鎖機制 (提高到 15px，且絕不累積)
+            // 🟢 終極優雅：意圖邊界解鎖 (跨越邊界才喚醒)
             if (window.hoverUnlocker) window.removeEventListener('mousemove', window.hoverUnlocker);
             
-            let startX = null, startY = null;
+            let lockedElement = 'init'; // 初始狀態
+            
             window.hoverUnlocker = function(e) {
-                if (startX === null) {
-                    startX = e.clientX;
-                    startY = e.clientY;
+                // 抓取當前滑鼠底下的卡片 (如果在背景就是 null)
+                const currentElement = e.target.closest('.card'); 
+                
+                // 第一下微小抖動：記錄動畫結束時，滑鼠不小心停在哪張卡片上
+                if (lockedElement === 'init') {
+                    lockedElement = currentElement;
                     return;
                 }
-                if (Math.abs(e.clientX - startX) > 15 || Math.abs(e.clientY - startY) > 15) {
+
+                // 核心魔法：滑鼠必須「離開當初那張卡片」，才代表使用者有新的巡覽意圖！
+                if (currentElement !== lockedElement) {
                     if (!mainStack.classList.contains('allow-hover')) {
                         mainStack.classList.add('allow-hover');
                     }
@@ -159,7 +165,7 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
             };
             window.addEventListener('mousemove', window.hoverUnlocker);
 
-        }, bounceDuration); 
+        }, bounceDuration);
     };
 mainStack.addEventListener('touchmove', (e) => {
         // 🟢 核心修復：檢查如果現在是長按掃描模式 (isScrubbing === 'true')
