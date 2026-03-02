@@ -238,6 +238,15 @@ mainStack.addEventListener('touchmove', (e) => {
             if (bounceTimer) clearTimeout(bounceTimer);
             mainStack.classList.remove('bounce-back');
             mainStack.classList.add('dragging');
+            
+            // 🟢 救命關鍵：滾輪一動，立刻沒收 Hover 權限！讓原本抬起的卡片趴下！
+            mainStack.classList.remove('allow-hover');
+            
+            // 同時斬斷可能殘留的舊解鎖器，防止幽靈累積
+            if (window.hoverUnlocker) {
+                window.removeEventListener('mousemove', window.hoverUnlocker);
+                window.hoverUnlocker = null;
+            }
         }
         
         wheelDeltaSum -= e.deltaY;
