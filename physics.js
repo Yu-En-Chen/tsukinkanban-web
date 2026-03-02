@@ -125,7 +125,15 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
         
         // 🟢 計時器防呆：清除上一次的計時，防止動畫被提前錯殺
         if (bounceTimer) clearTimeout(bounceTimer);
-        bounceTimer = setTimeout(() => { mainStack.classList.remove('bounce-back'); }, 500);
+        // 🟢 縮放動畫徹底結束後：等待滑鼠有「真實移動」才重新允許卡片抬起！
+            window.addEventListener('mousemove', function unlockHoverAfterScroll() {
+                if (!mainStack.classList.contains('allow-hover')) {
+                    mainStack.classList.add('allow-hover');
+                }
+                window.removeEventListener('mousemove', unlockHoverAfterScroll);
+            }, { once: true });
+
+        }, 500); // 500ms 是回彈動畫的時間
     };
 
 mainStack.addEventListener('touchmove', (e) => {
@@ -148,6 +156,8 @@ mainStack.addEventListener('touchmove', (e) => {
             if (bounceTimer) clearTimeout(bounceTimer);
             mainStack.classList.remove('bounce-back');
             mainStack.classList.add('dragging'); 
+            // 🟢 滾輪開始滾動時：立刻沒收 Hover 權限，防止滑鼠游標干擾動畫
+            mainStack.classList.remove('allow-hover');
             startTouchY = touchY; 
         }
 
