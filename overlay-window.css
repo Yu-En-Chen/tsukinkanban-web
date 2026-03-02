@@ -41,7 +41,6 @@
     transition: opacity 0.3s ease, visibility 0s 0.3s, transform 0.3s ease;
     
     /* 效能優化 */
-    will-change: transform, opacity;
     transform-origin: center center;
 }
 
