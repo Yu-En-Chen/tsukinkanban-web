@@ -11,7 +11,7 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
 
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     const touchSettings = { pullFactor: 2.2, tension: 0.7, spreadRatio: 0.18 };
-    const mouseSettings = { pullFactor: 0.3, tension: 0.7, spreadRatio: 0.15 };
+    const mouseSettings = { pullFactor: 0.35, tension: 0.65, spreadRatio: 0.15 };
     const config = isTouchDevice ? touchSettings : mouseSettings;
 
     let currentGlareAngle = 135; 
@@ -255,7 +255,7 @@ mainStack.addEventListener('touchmove', (e) => {
         if (!rafId) rafId = requestAnimationFrame(updateUI);
         
         clearTimeout(wheelTimer);
-        wheelTimer = setTimeout(() => { wheelDeltaSum = 0; resetBounce(true); }, 150);
+        wheelTimer = setTimeout(() => { wheelDeltaSum = 0; resetBounce(true); }, 100);
         if (e.cancelable) e.preventDefault();
     }, { passive: false });
 
