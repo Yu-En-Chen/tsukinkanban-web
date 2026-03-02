@@ -170,13 +170,11 @@ bounceTimer = setTimeout(() => {
 mainStack.addEventListener('touchmove', (e) => {
         // 🟢 核心修復：檢查如果現在是長按掃描模式 (isScrubbing === 'true')
         if (mainStack.dataset.isScrubbing === 'true') {
-            // 如果原本在長按前有產生微小的拉力，瞬間將拉力歸零，確保牌組「完全平躺」
             if (currentPullY !== 0) {
                 currentPullY = 0;
                 updateGlareTarget();
                 if (!rafId) rafId = requestAnimationFrame(updateUI);
             }
-            // 物理引擎直接罷工退出，不處理任何拉動！
             return; 
         }
 
@@ -188,17 +186,19 @@ mainStack.addEventListener('touchmove', (e) => {
             mainStack.classList.remove('bounce-back');
             mainStack.classList.add('dragging');
             
-            // 🟢 救命關鍵補回：滾輪開始滾動的瞬間，必須立刻沒收 Hover 權限！
+            // 🟢 沒收 Hover 權限，防止滑鼠游標干擾動畫
             mainStack.classList.remove('allow-hover');
             
-            // 同時斬斷可能殘留的舊解鎖器，防止幽靈累積
             if (window.hoverUnlocker) {
                 window.removeEventListener('mousemove', window.hoverUnlocker);
                 window.hoverUnlocker = null;
             }
+            
+            // 🚨 救命關鍵補回：記錄手指最初碰到的座標！(你剛剛不小心把它刪掉了)
+            startTouchY = touchY; 
         }
-        wheelDeltaSum -= e.deltaY;
 
+        // 🚨 (已經幫你把你剛剛誤貼進來的 wheelDeltaSum 刪除了)
         const deltaY = touchY - startTouchY; 
         updateGlareTarget();
 
