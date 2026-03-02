@@ -458,14 +458,21 @@ function closeAllCards(isPopState = false) {
          // 👇 加上這一行，重新解鎖光影 👇
         mainStack.dataset.freezeGlare = 'false';
         
-        // 🟢 2. 動畫結束後：等待使用者的滑鼠產生「真實的新位移」，才把權限還給他們！
-        window.addEventListener('mousemove', function unlockHoverAfterClose() {
-            if (!mainStack.classList.contains('allow-hover')) {
-                mainStack.classList.add('allow-hover');
+        // 🟢 2. 動畫結束後：升級版防手震解鎖機制 (必須移動超過 5px)
+        let startX = null, startY = null;
+        window.addEventListener('mousemove', function unlockHoverAfterClose(e) {
+            if (startX === null) {
+                startX = e.clientX;
+                startY = e.clientY;
+                return;
             }
-            
-            window.removeEventListener('mousemove', unlockHoverAfterClose);
-        }, { once: true });
+            if (Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5) {
+                if (!mainStack.classList.contains('allow-hover')) {
+                    mainStack.classList.add('allow-hover');
+                }
+                window.removeEventListener('mousemove', unlockHoverAfterClose);
+            }
+        });
     }, 600);
 }
 
