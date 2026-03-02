@@ -368,7 +368,7 @@ function closeAllCards(isPopState = false) {
     clearTimeout(window.scrollCooldownTimer);
     window.scrollCooldownTimer = setTimeout(() => {
         mainStack.dataset.blockScroll = 'false';
-    }, 600); // 基礎動畫時間，時間到自動解鎖
+    }, 650); // 基礎動畫時間，時間到自動解鎖
     
     const dismissIcon = document.getElementById('dismiss-icon');
     if (dismissIcon) {
