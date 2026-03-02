@@ -192,8 +192,7 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     touch-action: none; 
     
     /* 動畫與物理層設定 */
-    transition: transform 0.8s var(--premium-ease), filter 0.8s ease;
-    will-change: transform, filter, opacity; 
+    transition: transform 0.8s var(--premium-ease), filter 0.8s ease; 
     transform: translate3d(0, 0, 0); 
     z-index: 10;
 }
@@ -226,7 +225,6 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow: hidden; 
-    will-change: transform, opacity; 
     z-index: 1; 
     transition: transform var(--dynamic-speed, 0.65s) var(--active-bounce), opacity 0.3s ease, box-shadow 0.6s var(--premium-ease);
     cursor: pointer; 
@@ -304,7 +302,7 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 
 .detail-card-inner {
     width: var(--card-width); max-width: 420px; aspect-ratio: var(--card-ratio); border-radius: var(--card-radius); border: 1px solid var(--border-color); box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
-    isolation: isolate; transform: translate3d(0, 100vh, 0); transition: transform 0.55s var(--spring-release); will-change: transform; overflow: hidden; color: var(--card-text-color); text-shadow: var(--text-shadow-subtle);
+    isolation: isolate; transform: translate3d(0, 100vh, 0); transition: transform 0.55s var(--spring-release); overflow: hidden; color: var(--card-text-color); text-shadow: var(--text-shadow-subtle);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-backface-visibility: hidden;
