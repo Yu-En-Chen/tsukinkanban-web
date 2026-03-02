@@ -125,7 +125,12 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
         
         // 🟢 計時器防呆：清除上一次的計時，防止動畫被提前錯殺
         if (bounceTimer) clearTimeout(bounceTimer);
-        // 🟢 縮放動畫徹底結束後：等待滑鼠有「真實移動」才重新允許卡片抬起！
+        
+        // 👇 就是這裡！剛剛少複製到了這行 bounceTimer = setTimeout... 👇
+        bounceTimer = setTimeout(() => { 
+            mainStack.classList.remove('bounce-back'); 
+            
+            // 🟢 縮放動畫徹底結束後：等待滑鼠有「真實移動」才重新允許卡片抬起！
             window.addEventListener('mousemove', function unlockHoverAfterScroll() {
                 if (!mainStack.classList.contains('allow-hover')) {
                     mainStack.classList.add('allow-hover');
@@ -135,7 +140,6 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
 
         }, 500); // 500ms 是回彈動畫的時間
     };
-
 mainStack.addEventListener('touchmove', (e) => {
         // 🟢 核心修復：檢查如果現在是長按掃描模式 (isScrubbing === 'true')
         if (mainStack.dataset.isScrubbing === 'true') {
