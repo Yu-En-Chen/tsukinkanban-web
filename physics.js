@@ -45,6 +45,11 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
     };
 
     const animateGlareLoop = () => {
+        // 🟢 效能優化鎖：如果目前處於「鎖定光影」狀態（如開場或關閉漣漪時），直接停機不計算
+        if (mainStack.dataset.freezeGlare === 'true') {
+            isGlareAnimating = false;
+            return;
+        }
         const smoothing = 0.08;
         const diff = targetGlareAngle - currentGlareAngle;
         
