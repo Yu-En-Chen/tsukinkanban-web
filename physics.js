@@ -139,12 +139,21 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
         bounceTimer = setTimeout(() => { 
             mainStack.classList.remove(bounceClass); 
             
-            window.addEventListener('mousemove', function unlockHoverAfterScroll() {
-                if (!mainStack.classList.contains('allow-hover')) {
-                    mainStack.classList.add('allow-hover');
+            // 🟢 升級版：防手震解鎖機制 (必須移動超過 5px 才解鎖)
+            let startX = null, startY = null;
+            window.addEventListener('mousemove', function unlockHoverAfterScroll(e) {
+                if (startX === null) {
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    return;
                 }
-                window.removeEventListener('mousemove', unlockHoverAfterScroll);
-            }, { once: true });
+                if (Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5) {
+                    if (!mainStack.classList.contains('allow-hover')) {
+                        mainStack.classList.add('allow-hover');
+                    }
+                    window.removeEventListener('mousemove', unlockHoverAfterScroll);
+                }
+            });
 
         }, bounceDuration); 
     };
