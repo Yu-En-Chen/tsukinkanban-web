@@ -45,8 +45,8 @@ function getDynamicTheme(hex, opacity = 1) {
     const isLight = luminance > 0.55; 
 
     // 🟢 動態漸層幅度分配 (加入極端純黑/純白處理)
-    let topShift = 10;
-    let bottomShift = 10;
+    let topShift = 17;
+    let bottomShift = 17;
 
     if (hsl.l > 95) {
         // 1. 極端純白/極淺色：亮部無法再亮，必須大幅加深暗部才能顯現漸層
