@@ -98,9 +98,11 @@ function getDynamicTheme(hex, opacity = 1) {
         textClip = 'text';
         textFill = 'transparent';
 
-        // 🟢 淺色卡片的光影：反光採用純淨的高亮白，微光層採用帶有底色的極淡白光
-        glareColor = `hsla(${hsl.h}, ${hsl.s}%, 100%, 0.6)`;
-        innerGlow = `inset 0 1px 1px hsla(${hsl.h}, ${hsl.s}%, 100%, 0.9)`;
+        // 🟢 修正淺色卡片的光影：
+        // 不再使用突兀的 0.9 死白！大幅降低透明度，並保留卡片原有的色相與飽和度基因。
+        // 反光 (Glare) 變得更輕透，邊緣微光層 (Inner Glow) 變成柔和的「同色系淡白光」。
+        glareColor = `hsla(${hsl.h}, ${hsl.s}%, 96%, 0.35)`;
+        innerGlow = `inset 0 1px 1px hsla(${hsl.h}, ${Math.max(30, hsl.s)}%, 100%, 0.45)`;
     } else {
         textColor = '#ffffff';
         textSecondary = 'rgba(255, 255, 255, 0.8)';
