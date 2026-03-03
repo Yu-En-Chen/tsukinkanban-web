@@ -355,7 +355,7 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     /* 🟢 放射狀光源魔法：固定在 top right (右上角)。
        ellipse 會自動適應卡片的長寬比，均勻地往左方與下方延伸。
        70% 是光線的射程，你可以微調這個數字 (例如 60% 變短，80% 變長)。 */
-    background: radial-gradient(ellipse at top right, var(--border-color) 0%, transparent 70%);
+    background: radial-gradient(ellipse at top left, var(--border-color) 0%, transparent 70%);
     
     /* 遮罩魔法：把內部挖空，只保留 padding 的 1px 線條 */
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
