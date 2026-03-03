@@ -66,7 +66,7 @@ function getDynamicTheme(hex, opacity = 1) {
         tagBg = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.15)`;
         
         // 🟢 陰影維持你已經調好的完美數值
-        textShadow = `0 1px 1px hsla(${hsl.h}, ${textS}%, ${textL - 10}%, 0.2)`;
+        textShadow = `0 1px 0px hsla(${hsl.h}, ${textS}%, ${textL - 10}%, 0.2)`;
         
         // 🟢 零耗能魔法：專為「詳細說明文字」生成漸層！(左上亮、右下暗)
         const textLTop = textL;
