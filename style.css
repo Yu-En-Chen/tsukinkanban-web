@@ -345,7 +345,7 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 .card::before, .fixed-bottom-card::before, .detail-card-inner::before {
     content: "";
     position: absolute;
-    inset: 0;
+    inset: -1px;
     border-radius: inherit;
     
     /* 1. 退回最安全的 1px 厚度，確保不會被瀏覽器幾何引擎吃掉 */
