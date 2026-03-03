@@ -46,8 +46,8 @@ function getDynamicTheme(hex, opacity = 1) {
     const isLight = luminance > 0.55; 
 
     // 極小幅度的微調漸層 (只偏移 6%，保留 100% Hex 色相與真實感)
-    const lTop = Math.min(100, hsl.l + 6);
-    const lBottom = Math.max(0, hsl.l - 6);
+    const lTop = Math.min(100, hsl.l + 10);
+    const lBottom = Math.max(0, hsl.l - 10);
 
     const gradient = opacity < 1 
         ? `linear-gradient(135deg, hsla(${hsl.h}, ${hsl.s}%, ${lTop}%, ${opacity}), hsla(${hsl.h}, ${hsl.s}%, ${lBottom}%, ${opacity}))`
