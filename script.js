@@ -51,7 +51,7 @@ function getDynamicTheme(hex, opacity = 1) {
     if (hsl.l > 95) {
         // 1. 極端純白/極淺色：亮部無法再亮，必須大幅加深暗部才能顯現漸層
         topShift = 0;
-        bottomShift = 22;
+        bottomShift = 35;
     } else if (hsl.l > 60) {
         // 2. 鮮豔亮色：減少亮部加成避免褪色，暗部微加深
         topShift = 4;
