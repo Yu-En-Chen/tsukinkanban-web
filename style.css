@@ -352,10 +352,12 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     border-radius: inherit;
     padding: 1.5px; /* 邊框厚度 */
     
-    /* 🟢 放射狀光源魔法：固定在 top right (右上角)。
-       ellipse 會自動適應卡片的長寬比，均勻地往左方與下方延伸。
-       70% 是光線的射程，你可以微調這個數字 (例如 60% 變短，80% 變長)。 */
-    background: radial-gradient(circle at top left, var(--border-color) 0%, transparent 250px);
+    /* 🟢 終極對角線切光法：
+       135deg 代表光線從左上角出發，呈 45 度角斜向右下照射。
+       200px 代表光線的極限距離。
+       這保證了：上邊框只會亮前半段、左邊框只會亮上半段，
+       絕對過不了中線，100% 不可能碰到右上圓角、右側邊線或下側邊線！ */
+    background: linear-gradient(135deg, var(--border-color) 0%, transparent 200px);
     
     /* 遮罩魔法：把內部挖空，只保留 padding 的 1px 線條 */
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
