@@ -72,7 +72,7 @@ function getDynamicTheme(hex, opacity = 1) {
         tagBg = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.15)`;
         
         // 3. 🟢 銳化大絕招：加上「同色系的文字陰影」，讓字體邊緣瞬間立體清晰！
-        textShadow = `0 1px 2px hsla(${hsl.h}, ${textS}%, ${textL - 10}%, 0.35)`;
+        textShadow = `0 1px 1px hsla(${hsl.h}, ${textS}%, ${textL - 10}%, 0.2)`;;
     } else {
         // 深色卡片維持原本的白色系設定
         textColor = '#ffffff';
