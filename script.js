@@ -79,7 +79,6 @@ function getDynamicTheme(hex, opacity = 1) {
     let textColor, textSecondary, borderColor, tagBg, textShadow;
     let textBgGradientSecondary, textBgGradientTag, textClip, textFill;
     let glareColor, innerGlow; 
-    let glareColor, innerGlow, dynamicRim; // 🟢 新增 dynamicRim 變數
 
     if (isLight) {
         const textS = hsl.s > 5 ? 100 : 0; 
@@ -108,10 +107,6 @@ function getDynamicTheme(hex, opacity = 1) {
         
         glareColor = `hsla(${hsl.h}, ${hsl.s}%, 96%, 0.35)`;
         innerGlow = `inset 0 1px 1px hsla(${hsl.h}, ${glowS}%, 100%, 0.45)`;
-        // 🟢 淺色卡片 3D 物理邊框：
-        // 追蹤 --glare-angle。向光面(0%)給予純白高光，背光面(100%)給予細微的深色陰影，中間完全透明平滑過渡！
-        dynamicRim = `linear-gradient(var(--glare-angle, 135deg), hsla(${hsl.h}, ${hsl.s}%, 100%, 0.9) 0%, hsla(${hsl.h}, ${hsl.s}%, 100%, 0) 30%, hsla(${hsl.h}, ${hsl.s}%, 0%, 0) 70%, hsla(${hsl.h}, ${hsl.s}%, 10%, 0.15) 100%)`;
-        
     }else {
         textColor = '#ffffff';
         textSecondary = 'rgba(255, 255, 255, 0.8)';
@@ -132,15 +127,12 @@ function getDynamicTheme(hex, opacity = 1) {
 
         glareColor = `hsla(${hsl.h}, ${glareS}%, 85%, 0.35)`;
         innerGlow = `inset 0 1px 1px hsla(${hsl.h}, ${glowS}%, 88%, 0.35)`;
-        // 🟢 深色卡片 3D 物理邊框：
-        // 向光面給予同色系的玻璃白光，背光面給予極深的實體陰影，完美刻畫右側與下方的深邃感。
-        dynamicRim = `linear-gradient(var(--glare-angle, 135deg), hsla(${hsl.h}, ${glareS}%, 85%, 0.6) 0%, hsla(${hsl.h}, ${hsl.s}%, 80%, 0) 30%, hsla(${hsl.h}, ${hsl.s}%, 0%, 0) 70%, hsla(${hsl.h}, ${hsl.s}%, 0%, 0.5) 100%)`;
     }
 
     return {
         gradient, textColor, textSecondary, borderColor, tagBg, textShadow,
         textBgGradientSecondary, textBgGradientTag, textClip, textFill,
-        glareColor, innerGlow, dynamicRim // 🟢 回傳新變數
+        glareColor, innerGlow // 🟢 回傳新變數
     };
 }
 
@@ -164,11 +156,9 @@ function applyThemeToCard(cardElement, hex, opacity = 1) {
     cardElement.style.setProperty('--text-bg-gradient-secondary', theme.textBgGradientSecondary, 'important');
     cardElement.style.setProperty('--text-clip', theme.textClip, 'important');
     cardElement.style.setProperty('--text-fill', theme.textFill, 'important');
-    // 🟢 注入光影與微光層變數
+// 🟢 注入光影與微光層變數
     cardElement.style.setProperty('--dynamic-glare', theme.glareColor, 'important');
     cardElement.style.setProperty('--dynamic-inner-glow', theme.innerGlow, 'important');
-    // 🟢 注入動態物理邊框
-    cardElement.style.setProperty('--dynamic-rim', theme.dynamicRim, 'important');
 }
 // ============================================================================
 
