@@ -352,12 +352,10 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     border-radius: inherit;
     padding: 1px; /* 邊框厚度 */
     
-    /* 🟢 核心漸層：225deg 代表起點在「右上角」。
-       50% 代表漸層走到卡片一半時就會完全變透明。
-       你可以調整 50% 這個數字：越大，邊框延伸越長；越小，邊框越短。*/
+    /* 🟢 225deg 從右上角出發。50% 漸淡至 0，你可以微調這個 50% 來決定邊框長度 */
     background: linear-gradient(225deg, var(--border-color) 0%, transparent 50%);
     
-    /* 🟢 遮罩魔法：把內部實體挖空，只保留 padding 的 1px 線條 */
+    /* 遮罩魔法：把內部挖空，只保留 padding 的 1px 線條 */
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
