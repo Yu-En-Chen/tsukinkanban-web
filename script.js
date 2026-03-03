@@ -45,24 +45,48 @@ function getDynamicTheme(hex, opacity = 1) {
     const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
     const isLight = luminance > 0.55; 
 
-    // 亮暗部的微調漸層 (數字越大越明顯)
+    // 極小幅度的微調漸層 (可依據你的喜好維持在 6~12 之間)
     const lTop = Math.min(100, hsl.l + 10);
-    const lBottom = Math.max(0, hsl.l - 13);
+    const lBottom = Math.max(0, hsl.l - 10);
 
     const gradient = opacity < 1 
         ? `linear-gradient(135deg, hsla(${hsl.h}, ${hsl.s}%, ${lTop}%, ${opacity}), hsla(${hsl.h}, ${hsl.s}%, ${lBottom}%, ${opacity}))`
         : `linear-gradient(135deg, hsl(${hsl.h}, ${hsl.s}%, ${lTop}%), hsl(${hsl.h}, ${hsl.s}%, ${lBottom}%))`;
 
+    let textColor, textSecondary, borderColor, tagBg;
+
+    if (isLight) {
+        // 🟢 淺色卡片的「動態深色字體」演算法
+        // 1. 保留卡片色相，但把飽和度限制在最高 40%，確保它看起來是「有質感的深灰」而不是「髒掉的彩色」
+        const textS = Math.min(hsl.s, 40);
+        
+        // 2. 動態比例計算亮度：背景越白 (luminance 接近 1)，字體亮度為 25% (深灰)；背景偏暗 (luminance 接近 0.55)，字體加深至 15% (極黑)
+        const textL = Math.round(15 + ((luminance - 0.55) / 0.45) * 10);
+        
+        // 應用帶有底色基因的動態深灰色
+        textColor = `hsl(${hsl.h}, ${textS}%, ${textL}%)`;
+        textSecondary = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.65)`;
+        
+        // 讓邊框與標籤底色也跟著使用帶有底色基因的深灰色
+        borderColor = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.15)`;
+        tagBg = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.08)`;
+    } else {
+        // 深色卡片維持原本的白色系設定
+        textColor = '#ffffff';
+        textSecondary = 'rgba(255, 255, 255, 0.8)';
+        borderColor = 'rgba(255, 255, 255, 0.12)';
+        tagBg = 'rgba(255, 255, 255, 0.15)';
+    }
+
     return {
         gradient,
-        textColor: isLight ? '#000000' : '#ffffff',
-        textSecondary: isLight ? 'rgba(0, 0, 0, 0.65)' : 'rgba(255, 255, 255, 0.8)',
-        borderColor: isLight ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.12)',
-        tagBg: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.15)',
+        textColor,
+        textSecondary,
+        borderColor,
+        tagBg,
         textShadow: isLight ? 'none' : '0 1px 2px rgba(0, 0, 0, 0.2)'
     };
 }
-
 // 🟢 封裝主題套用器：安全且獨立地渲染每一張卡片，絕不互相干擾
 function applyThemeToCard(cardElement, hex, opacity = 1) {
     const theme = getDynamicTheme(hex, opacity);
