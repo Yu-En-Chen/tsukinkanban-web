@@ -10,11 +10,77 @@ let isAnimating = false;
 let liftTimer = null; 
 let activeCardId = null; 
 
-function getPremiumGradient(hue) {
-    const colorTop = `hsl(${hue}, 65%, 40%)`;    
-    const colorBottom = `hsl(${hue}, 45%, 25%)`; 
-    return `linear-gradient(135deg, ${colorTop}, ${colorBottom})`;
+// ============================================================================
+// 🟢 色彩學與動態適應引擎 (Adaptive UI Engine)
+// ============================================================================
+
+function hexToRgb(hex) {
+    let c = hex.replace('#', '');
+    if(c.length === 3) c = c.split('').map(x => x+x).join('');
+    return { r: parseInt(c.substring(0,2), 16), g: parseInt(c.substring(2,4), 16), b: parseInt(c.substring(4,6), 16) };
 }
+
+function rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h = 0, s = 0, l = (max + min) / 2;
+    if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+    }
+    return { h: h * 360, s: s * 100, l: l * 100 };
+}
+
+function getDynamicTheme(hex, opacity = 1) {
+    const rgb = hexToRgb(hex);
+    const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+
+    // 🟢 WCAG 亮度檢測：超過 0.55 判定為「淺色背景」，啟動反轉保護
+    const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
+    const isLight = luminance > 0.55; 
+
+    // 極小幅度的微調漸層 (只偏移 6%，保留 100% Hex 色相與真實感)
+    const lTop = Math.min(100, hsl.l + 6);
+    const lBottom = Math.max(0, hsl.l - 6);
+
+    const gradient = opacity < 1 
+        ? `linear-gradient(135deg, hsla(${hsl.h}, ${hsl.s}%, ${lTop}%, ${opacity}), hsla(${hsl.h}, ${hsl.s}%, ${lBottom}%, ${opacity}))`
+        : `linear-gradient(135deg, hsl(${hsl.h}, ${hsl.s}%, ${lTop}%), hsl(${hsl.h}, ${hsl.s}%, ${lBottom}%))`;
+
+    return {
+        gradient,
+        textColor: isLight ? '#000000' : '#ffffff',
+        textSecondary: isLight ? 'rgba(0, 0, 0, 0.65)' : 'rgba(255, 255, 255, 0.8)',
+        borderColor: isLight ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.12)',
+        tagBg: isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.15)',
+        textShadow: isLight ? 'none' : '0 1px 2px rgba(0, 0, 0, 0.2)'
+    };
+}
+
+// 🟢 封裝主題套用器：安全且獨立地渲染每一張卡片，絕不互相干擾
+function applyThemeToCard(cardElement, hex, opacity = 1) {
+    const theme = getDynamicTheme(hex, opacity);
+    
+    if (opacity < 1) {
+        cardElement.style.setProperty('--fixed-bg', theme.gradient);
+    } else {
+        cardElement.style.background = theme.gradient;
+    }
+
+    // 精準覆寫 CSS 變數，達成該卡片專屬的動態適應
+    cardElement.style.setProperty('--card-text-color', theme.textColor, 'important');
+    cardElement.style.setProperty('--text-secondary', theme.textSecondary, 'important');
+    cardElement.style.setProperty('--border-color', theme.borderColor, 'important');
+    cardElement.style.setProperty('--tag-bg', theme.tagBg, 'important');
+    cardElement.style.setProperty('--text-shadow-subtle', theme.textShadow, 'important');
+}
+// ============================================================================
 
 const mainStack = document.getElementById('main-stack');
 const detailOverlay = document.getElementById('detail-overlay');
@@ -207,7 +273,7 @@ function renderCards(data) {
         const card = clone.querySelector('.card');
         
         card.id = `card-${line.id}`;
-        card.style.background = getPremiumGradient(line.hue);
+        card.style.background = applyThemeToCard(card, line.hex);
         
         if (isInitialLoad) {
             card.classList.add('opening-pull');
@@ -297,7 +363,7 @@ function handleCardClick(id) {
     const clone = template.content.cloneNode(true);
     const inner = clone.querySelector('.detail-card-inner');
     
-    inner.style.background = getPremiumGradient(data.hue);
+    inner.style.background = applyThemeToCard(inner, data.hex);
     clone.querySelector('.line-name').textContent = data.name;
     clone.querySelector('.status-tag').textContent = data.status;
     clone.querySelector('.description').textContent = data.desc;
