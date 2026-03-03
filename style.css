@@ -285,7 +285,11 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 .status-tag { 
     padding: 6px 14px; border: 1px solid var(--border-color); background: var(--tag-bg); border-radius: 100px; font-size: 0.8rem; font-weight: 600; 
     -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); 
-    display: inline-block; width: fit-content; min-width: 4.5em; text-align: center; white-space: nowrap; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); color: var(--card-text-color); text-shadow: var(--text-shadow-subtle);
+    display: inline-block; width: fit-content; min-width: 4.5em; text-align: center; white-space: nowrap; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
+    
+    /* 🟢 直接拔除 JS 變數連動，強制鎖死為純白色與深色陰影 */
+    color: #ffffff !important; 
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
 }
 
 .description { 
