@@ -218,8 +218,8 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     margin-bottom: calc(-1 * (min(var(--card-width), 420px) / 1.586) + (min(var(--card-width), 420px) / 1.586) * 0.28 + var(--stack-spread, 0px)); 
     
     position: relative; 
-    /* 🟢 物理最細 0.5px 邊框，顏色吃 JS 判斷的變數。平時透明，黑白極端色時自動顯現 */
-    border: 0.5px solid var(--full-wrap-border, transparent);
+    /* 🟢 物理細邊框，顏色吃 JS 判斷的變數。平時透明，黑白極端色時自動顯現 */
+    border: 1px solid var(--full-wrap-border, transparent);
     box-shadow: var(--ray-shadow-resting);
     isolation: isolate; 
     transform: translate3d(0, 0, 0);
