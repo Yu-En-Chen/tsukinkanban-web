@@ -45,7 +45,7 @@ function getDynamicTheme(hex, opacity = 1) {
     const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
     const isLight = luminance > 0.55; 
 
-    // 極小幅度的微調漸層 (只偏移 6%，保留 100% Hex 色相與真實感)
+    // 亮暗部的微調漸層 (數字越大越明顯)
     const lTop = Math.min(100, hsl.l + 10);
     const lBottom = Math.max(0, hsl.l - 10);
 
