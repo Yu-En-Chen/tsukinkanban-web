@@ -103,7 +103,11 @@ function getDynamicTheme(hex, opacity = 1) {
         // 反光 (Glare) 變得更輕透，邊緣微光層 (Inner Glow) 變成柔和的「同色系淡白光」。
         glareColor = `hsla(${hsl.h}, ${hsl.s}%, 96%, 0.35)`;
         innerGlow = `inset 0 1px 1px hsla(${hsl.h}, ${Math.max(30, hsl.s)}%, 100%, 0.45)`;
-    } else {
+        const glowS = hsl.s < 5 ? 0 : Math.max(30, hsl.s);
+        
+        glareColor = `hsla(${hsl.h}, ${hsl.s}%, 96%, 0.35)`;
+        innerGlow = `inset 0 1px 1px hsla(${hsl.h}, ${glowS}%, 100%, 0.45)`;
+    }else {
         textColor = '#ffffff';
         textSecondary = 'rgba(255, 255, 255, 0.8)';
         borderColor = 'rgba(255, 255, 255, 0.12)';
@@ -118,8 +122,11 @@ function getDynamicTheme(hex, opacity = 1) {
         // 🟢 深色卡片的光影魔法：
         // 1. 同色系反光：不再是死白，而是帶有該卡片色相 (Hue) 的高亮度色彩 (L=85%)。
         // 2. 邊緣微光層 (珠光)：在卡片上邊緣打上一道極細的同色系高光，創造頂級玻璃厚度感！
-        glareColor = `hsla(${hsl.h}, ${Math.max(30, hsl.s)}%, 85%, 0.35)`;
-        innerGlow = `inset 0 1px 1px hsla(${hsl.h}, ${Math.max(50, hsl.s)}%, 88%, 0.35)`;
+        const glareS = hsl.s < 5 ? 0 : Math.max(30, hsl.s);
+        const glowS = hsl.s < 5 ? 0 : Math.max(50, hsl.s);
+
+        glareColor = `hsla(${hsl.h}, ${glareS}%, 85%, 0.35)`;
+        innerGlow = `inset 0 1px 1px hsla(${hsl.h}, ${glowS}%, 88%, 0.35)`;
     }
 
     return {
