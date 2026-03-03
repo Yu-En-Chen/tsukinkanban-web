@@ -288,7 +288,17 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     display: inline-block; width: fit-content; min-width: 4.5em; text-align: center; white-space: nowrap; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); color: var(--card-text-color); text-shadow: var(--text-shadow-subtle);
 }
 
-.description { line-height: 1.6; margin-top: 0; color: var(--card-text-color); opacity: 0.8; }
+.description { 
+    line-height: 1.6; 
+    margin-top: 0; 
+    color: var(--text-secondary); /* 🟢 改為吃次要文字的顏色變數，不再需要強寫 opacity */
+    
+    /* 🟢 說明文字專屬漸層綁定 (左亮右暗，與卡片底色完美對齊) */
+    background-image: var(--text-bg-gradient-secondary, none);
+    -webkit-background-clip: var(--text-clip, border-box);
+    background-clip: var(--text-clip, border-box);
+    -webkit-text-fill-color: var(--text-fill, var(--text-secondary)); 
+}
 .info-row { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding: 15px 0; font-size: 1.05rem; }
 .info-tags-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .info-tag-item { background: var(--tag-bg); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 500; color: var(--card-text-color); text-shadow: var(--text-shadow-subtle); }
