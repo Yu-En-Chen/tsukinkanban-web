@@ -66,6 +66,8 @@ function getDynamicTheme(hex, opacity = 1) {
         bottomShift = 4;
     }
 
+    // ...(前面的 luminance 與 topShift/bottomShift 判斷維持原樣)...
+
     const lTop = Math.min(100, hsl.l + topShift);
     const lBottom = Math.max(0, hsl.l - bottomShift);
 
@@ -73,8 +75,10 @@ function getDynamicTheme(hex, opacity = 1) {
         ? `linear-gradient(135deg, hsla(${hsl.h}, ${hsl.s}%, ${lTop}%, ${opacity}), hsla(${hsl.h}, ${hsl.s}%, ${lBottom}%, ${opacity}))`
         : `linear-gradient(135deg, hsl(${hsl.h}, ${hsl.s}%, ${lTop}%), hsl(${hsl.h}, ${hsl.s}%, ${lBottom}%))`;
 
+    // 🟢 1. 宣告新增的光影變數：glareColor (反光色), innerGlow (微光層)
     let textColor, textSecondary, borderColor, tagBg, textShadow;
     let textBgGradientSecondary, textBgGradientTag, textClip, textFill;
+    let glareColor, innerGlow; 
 
     if (isLight) {
         const textS = hsl.s > 5 ? 100 : 0; 
@@ -93,6 +97,10 @@ function getDynamicTheme(hex, opacity = 1) {
         textBgGradientTag = 'none'; 
         textClip = 'text';
         textFill = 'transparent';
+
+        // 🟢 淺色卡片的光影：反光採用純淨的高亮白，微光層採用帶有底色的極淡白光
+        glareColor = `hsla(${hsl.h}, ${hsl.s}%, 100%, 0.6)`;
+        innerGlow = `inset 0 1px 1px hsla(${hsl.h}, ${hsl.s}%, 100%, 0.9)`;
     } else {
         textColor = '#ffffff';
         textSecondary = 'rgba(255, 255, 255, 0.8)';
@@ -104,11 +112,18 @@ function getDynamicTheme(hex, opacity = 1) {
         textBgGradientTag = 'none';
         textClip = 'border-box';
         textFill = 'currentcolor';
+
+        // 🟢 深色卡片的光影魔法：
+        // 1. 同色系反光：不再是死白，而是帶有該卡片色相 (Hue) 的高亮度色彩 (L=85%)。
+        // 2. 邊緣微光層 (珠光)：在卡片上邊緣打上一道極細的同色系高光，創造頂級玻璃厚度感！
+        glareColor = `hsla(${hsl.h}, ${Math.max(30, hsl.s)}%, 85%, 0.35)`;
+        innerGlow = `inset 0 1px 1px hsla(${hsl.h}, ${Math.max(50, hsl.s)}%, 88%, 0.35)`;
     }
 
     return {
         gradient, textColor, textSecondary, borderColor, tagBg, textShadow,
-        textBgGradientSecondary, textBgGradientTag, textClip, textFill
+        textBgGradientSecondary, textBgGradientTag, textClip, textFill,
+        glareColor, innerGlow // 🟢 回傳新變數
     };
 }
 
@@ -132,6 +147,9 @@ function applyThemeToCard(cardElement, hex, opacity = 1) {
     cardElement.style.setProperty('--text-bg-gradient-secondary', theme.textBgGradientSecondary, 'important');
     cardElement.style.setProperty('--text-clip', theme.textClip, 'important');
     cardElement.style.setProperty('--text-fill', theme.textFill, 'important');
+// 🟢 注入光影與微光層變數
+    cardElement.style.setProperty('--dynamic-glare', theme.glareColor, 'important');
+    cardElement.style.setProperty('--dynamic-inner-glow', theme.innerGlow, 'important');
 }
 // ============================================================================
 
