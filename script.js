@@ -60,16 +60,17 @@ function getDynamicTheme(hex, opacity = 1) {
         // 1. 完全繼承卡片原始的色相 (H) 與飽和度 (S)，不壓制色彩基因。
         // 2. 將亮度 (L) 強制降到 16%，創造出「比卡片深非常多」的同色系極暗色。
         const textS = hsl.s > 5 ? 100 : 0; 
-        const textL = 42; 
+        const textL = 35; 
 
        // 應用無黑色的高飽和字體色
         textColor = `hsl(${hsl.h}, ${textS}%, ${textL}%)`;
         // 次要文字再稍微亮一點點，維持清透感
-        textSecondary = `hsla(${hsl.h}, ${textS}%, ${textL + 8}%, 0.9)`; 
+        textSecondary = `hsl(${hsl.h}, ${textS}%, ${textL + 5}%)`; 
         
         // 讓邊框與標籤底色也使用這個純淨的彩色
         borderColor = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.35)`;
         tagBg = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.15)`;
+        textShadow = `0 1px 2px hsla(${hsl.h}, ${textS}%, ${textL - 10}%, 0.35)`;
     } else {
         // 深色卡片維持原本的白色系設定
         textColor = '#ffffff';
