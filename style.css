@@ -218,7 +218,7 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     margin-bottom: calc(-1 * (min(var(--card-width), 420px) / 1.586) + (min(var(--card-width), 420px) / 1.586) * 0.28 + var(--stack-spread, 0px)); 
     
     position: relative; 
-    border: 1px solid var(--border-color); 
+    
     /* 原本是 box-shadow: var(--ray-shadow-resting); */
     /* 🟢 現在同時掛上原本的物理陰影，加上我們動態算出來的微光層！ */
     box-shadow: var(--ray-shadow-resting), var(--dynamic-inner-glow, inset 0 1px 1px rgba(255,255,255,0.15));
@@ -371,6 +371,29 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 }
 
 .card-content, .card-header, .line-name, .status-tag { position: relative; z-index: 2; }
+
+/* ==========================================================================
+   蘋果級 3D 物理邊框 (Dynamic Rim)
+   利用 mask-composite 完美貼合圓角，並追蹤 --glare-angle 動態旋轉光影
+   ========================================================================== */
+.card::before, .fixed-bottom-card::before, .detail-card-inner::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px; /* 這裡控制邊緣的實體厚度，1px 最精緻 */
+    
+    /* 注入 JS 算好的動態光影漸層 */
+    background: var(--dynamic-rim, transparent);
+    
+    /* 🟢 核心剪裁魔法：把卡片內部挖空，只保留 padding 的那 1px 邊緣 */
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    
+    z-index: 10;
+    pointer-events: none;
+}
 
 /* ========================================== */
 /* 👇 這裡是新貼上的「優雅慢速回彈」專屬設定 👇 */
