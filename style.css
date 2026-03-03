@@ -353,7 +353,7 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     
     /* 🟢 修正 2：在漸層起點 (0%) 塞入純白色提亮！
        如果你想更亮，可以把 0.6 改成 0.8 或 1。 */
-    background: linear-gradient(135deg, rgba(255,255,255,0.6) 0%, var(--border-color) 20%, transparent 180px) border-box;
+    background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, var(--border-color) 20%, transparent 180px) border-box;
     
     /* 🟢 修正 3：業界標準的 100% 全瀏覽器相容遮罩語法 */
     -webkit-mask: 
