@@ -219,9 +219,7 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     
     position: relative; 
     /* border: 1px solid var(--border-color); */
-    /* 原本是 box-shadow: var(--ray-shadow-resting); */
-    /* 🟢 現在同時掛上原本的物理陰影，加上我們動態算出來的微光層！ */
-    box-shadow: var(--ray-shadow-resting), var(--dynamic-inner-glow, inset 0 1px 1px rgba(255,255,255,0.15));
+    box-shadow: var(--ray-shadow-resting);
     isolation: isolate; 
     transform: translate3d(0, 0, 0);
     -webkit-font-smoothing: antialiased;
@@ -318,8 +316,7 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 
 .detail-card-inner {
     width: var(--card-width); max-width: 420px; aspect-ratio: var(--card-ratio); border-radius: var(--card-radius);
-    /* 🟢 換成這行：結合高級懸浮光追陰影 + 動態同色系邊緣微光！ */
-    box-shadow: var(--ray-shadow-active), var(--dynamic-inner-glow, inset 0 1px 1px rgba(255, 255, 255, 0.15));
+    box-shadow: var(--ray-shadow-active);
     isolation: isolate; transform: translate3d(0, 100vh, 0); transition: transform 0.55s var(--spring-release); overflow: hidden; color: var(--card-text-color); text-shadow: var(--text-shadow-subtle);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
