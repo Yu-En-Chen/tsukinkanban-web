@@ -348,7 +348,7 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    padding: 2px; /* 邊框厚度 */
+    padding: 1px; /* 邊框厚度 */
     
     /* 🟢 終極對角線切光法：
        135deg 代表光線從左上角出發，呈 45 度角斜向右下照射。
