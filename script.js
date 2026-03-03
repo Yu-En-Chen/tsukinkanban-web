@@ -45,8 +45,25 @@ function getDynamicTheme(hex, opacity = 1) {
     const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
     const isLight = luminance > 0.55; 
 
-    const lTop = Math.min(100, hsl.l + 10);
-    const lBottom = Math.max(0, hsl.l - 10);
+// 🟢 動態漸層幅度分配 (解決高飽和亮色褪色問題)
+    let topShift = 10;
+    let bottomShift = 10;
+
+    if (hsl.l > 60) {
+        // 1. 如果輸入的是鮮豔亮色 (如 #FF5151)：
+        // 減少左上角的亮部加成，避免「加太多白顏料」導致褪色感。
+        // 改為加深右下角的暗部，用陰影來拉出卡片的立體感！
+        topShift = 4;
+        bottomShift = 14;
+    } else if (hsl.l < 40) {
+        // 2. 如果輸入的是深色 (如深藍色)：
+        // 增加亮部加成，逼出深色的玻璃光澤；同時減少暗部扣除，避免黑成一團。
+        topShift = 14;
+        bottomShift = 4;
+    }
+
+    const lTop = Math.min(100, hsl.l + topShift);
+    const lBottom = Math.max(0, hsl.l - bottomShift);
 
     const gradient = opacity < 1 
         ? `linear-gradient(135deg, hsla(${hsl.h}, ${hsl.s}%, ${lTop}%, ${opacity}), hsla(${hsl.h}, ${hsl.s}%, ${lBottom}%, ${opacity}))`
