@@ -47,7 +47,7 @@ function getDynamicTheme(hex, opacity = 1) {
 
     // 亮暗部的微調漸層 (數字越大越明顯)
     const lTop = Math.min(100, hsl.l + 10);
-    const lBottom = Math.max(0, hsl.l - 10);
+    const lBottom = Math.max(0, hsl.l - 13);
 
     const gradient = opacity < 1 
         ? `linear-gradient(135deg, hsla(${hsl.h}, ${hsl.s}%, ${lTop}%, ${opacity}), hsla(${hsl.h}, ${hsl.s}%, ${lBottom}%, ${opacity}))`
