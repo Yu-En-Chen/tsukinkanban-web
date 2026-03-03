@@ -41,11 +41,10 @@ function getDynamicTheme(hex, opacity = 1) {
     const rgb = hexToRgb(hex);
     const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
 
-    // 🟢 WCAG 亮度檢測：超過 0.55 判定為「淺色背景」，啟動反轉保護
+    // 🟢 WCAG 亮度檢測
     const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
     const isLight = luminance > 0.55; 
 
-    // 極小幅度的微調漸層 (保留你調整好的數值)
     const lTop = Math.min(100, hsl.l + 10);
     const lBottom = Math.max(0, hsl.l - 10);
 
@@ -54,33 +53,40 @@ function getDynamicTheme(hex, opacity = 1) {
         : `linear-gradient(135deg, hsl(${hsl.h}, ${hsl.s}%, ${lTop}%), hsl(${hsl.h}, ${hsl.s}%, ${lBottom}%))`;
 
     let textColor, textSecondary, borderColor, tagBg, textShadow;
+    let textBgGradientSecondary, textClip, textFill; // 🟢 新增詳細文字專用的漸層變數
 
     if (isLight) {
-        // 🟢 飽和度暴力拉滿 100% 保持純色
         const textS = hsl.s > 5 ? 100 : 0; 
-        
-        // 1. 稍微調降亮度 (從 42 降到 35)：增加與淺色背景的對比度，字體更銳利！
         const textL = 35; 
 
-        // 應用實心高彩字體
         textColor = `hsl(${hsl.h}, ${textS}%, ${textL}%)`;
-        
-        // 2. 拔掉次要文字的透明度：直接使用 hsl，並把亮度拉近一點 (+5)
         textSecondary = `hsl(${hsl.h}, ${textS}%, ${textL + 5}%)`; 
         
         borderColor = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.35)`;
         tagBg = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.15)`;
         
-        // 3. 🟢 銳化大絕招：加上「同色系的文字陰影」，讓字體邊緣瞬間立體清晰！
-        textShadow = `0 1px 1px hsla(${hsl.h}, ${textS}%, ${textL - 10}%, 0.2)`;;
+        // 🟢 陰影維持你已經調好的完美數值
+        textShadow = `0 1px 1px hsla(${hsl.h}, ${textS}%, ${textL - 10}%, 0.2)`;
+        
+        // 🟢 零耗能魔法：專為「詳細說明文字」生成漸層！(左上亮、右下暗)
+        const textLTop = textL;
+        const textLBottom = Math.max(0, textL - 12); 
+        textBgGradientSecondary = `linear-gradient(135deg, hsl(${hsl.h}, ${textS}%, ${textLTop + 5}%), hsl(${hsl.h}, ${textS}%, ${textLBottom + 5}%))`;
+        
+        // 開啟 CSS 剪裁引擎
+        textClip = 'text';
+        textFill = 'transparent';
     } else {
-        // 深色卡片維持原本的白色系設定
         textColor = '#ffffff';
         textSecondary = 'rgba(255, 255, 255, 0.8)';
         borderColor = 'rgba(255, 255, 255, 0.12)';
         tagBg = 'rgba(255, 255, 255, 0.15)';
-        // 深色卡片的原本陰影
         textShadow = '0 1px 2px rgba(0, 0, 0, 0.2)';
+        
+        // 深色卡片關閉文字漸層引擎
+        textBgGradientSecondary = 'none';
+        textClip = 'border-box';
+        textFill = 'currentcolor';
     }
 
     return {
@@ -89,9 +95,13 @@ function getDynamicTheme(hex, opacity = 1) {
         textSecondary,
         borderColor,
         tagBg,
-        textShadow // 統一回傳套用
+        textShadow,
+        textBgGradientSecondary, // 統一回傳套用
+        textClip,
+        textFill
     };
 }
+
 // 🟢 封裝主題套用器：安全且獨立地渲染每一張卡片，絕不互相干擾
 function applyThemeToCard(cardElement, hex, opacity = 1) {
     const theme = getDynamicTheme(hex, opacity);
@@ -102,12 +112,16 @@ function applyThemeToCard(cardElement, hex, opacity = 1) {
         cardElement.style.background = theme.gradient;
     }
 
-    // 精準覆寫 CSS 變數，達成該卡片專屬的動態適應
     cardElement.style.setProperty('--card-text-color', theme.textColor, 'important');
     cardElement.style.setProperty('--text-secondary', theme.textSecondary, 'important');
     cardElement.style.setProperty('--border-color', theme.borderColor, 'important');
     cardElement.style.setProperty('--tag-bg', theme.tagBg, 'important');
     cardElement.style.setProperty('--text-shadow-subtle', theme.textShadow, 'important');
+    
+    // 🟢 注入詳細文字專用的漸層引擎變數
+    cardElement.style.setProperty('--text-bg-gradient-secondary', theme.textBgGradientSecondary, 'important');
+    cardElement.style.setProperty('--text-clip', theme.textClip, 'important');
+    cardElement.style.setProperty('--text-fill', theme.textFill, 'important');
 }
 // ============================================================================
 
