@@ -37,7 +37,7 @@ function rgbToHsl(r, g, b) {
     return { h: h * 360, s: s * 100, l: l * 100 };
 }
 
-function getDynamicTheme(hex, opacity = 1) {
+ffunction getDynamicTheme(hex, opacity = 1) {
     const rgb = hexToRgb(hex);
     const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
 
@@ -49,24 +49,22 @@ function getDynamicTheme(hex, opacity = 1) {
     let bottomShift = 17;
 
     if (hsl.l > 95) {
-        // 1. 極端純白/極淺色：亮部無法再亮，必須大幅加深暗部才能顯現漸層
+        // 極端純白/極淺色
         topShift = 0;
         bottomShift = 35;
     } else if (hsl.l > 60) {
-        // 2. 鮮豔亮色：減少亮部加成避免褪色，暗部微加深
+        // 鮮豔亮色
         topShift = 4;
         bottomShift = 14;
     } else if (hsl.l < 5) {
-        // 3. 極端純黑/極暗色：暗部無法再暗，必須大幅提亮亮部才能顯現反光
+        // 極端純黑/極暗色
         topShift = 26;
         bottomShift = 0;
     } else if (hsl.l < 40) {
-        // 4. 一般深色：增加亮部逼出光澤，減少暗部避免死黑
+        // 一般深色
         topShift = 14;
         bottomShift = 4;
     }
-
-    // ...(前面的 luminance 與 topShift/bottomShift 判斷維持原樣)...
 
     const lTop = Math.min(100, hsl.l + topShift);
     const lBottom = Math.max(0, hsl.l - bottomShift);
@@ -75,11 +73,10 @@ function getDynamicTheme(hex, opacity = 1) {
         ? `linear-gradient(135deg, hsla(${hsl.h}, ${hsl.s}%, ${lTop}%, ${opacity}), hsla(${hsl.h}, ${hsl.s}%, ${lBottom}%, ${opacity}))`
         : `linear-gradient(135deg, hsl(${hsl.h}, ${hsl.s}%, ${lTop}%), hsl(${hsl.h}, ${hsl.s}%, ${lBottom}%))`;
 
-    // 🟢 1. 宣告新增的光影變數：glareColor (反光色), innerGlow (微光層)
+    // 🟢 確保這裡只有宣告一次！
     let textColor, textSecondary, borderColor, tagBg, textShadow;
     let textBgGradientSecondary, textBgGradientTag, textClip, textFill;
-    let glareColor, innerGlow; 
-    let glareColor, innerGlow, dynamicRim; // 🟢 新增 dynamicRim 變數
+    let glareColor, innerGlow, dynamicRim; 
 
     if (isLight) {
         const textS = hsl.s > 5 ? 100 : 0; 
@@ -99,20 +96,15 @@ function getDynamicTheme(hex, opacity = 1) {
         textClip = 'text';
         textFill = 'transparent';
 
-        // 🟢 修正淺色卡片的光影：
-        // 不再使用突兀的 0.9 死白！大幅降低透明度，並保留卡片原有的色相與飽和度基因。
-        // 反光 (Glare) 變得更輕透，邊緣微光層 (Inner Glow) 變成柔和的「同色系淡白光」。
-        glareColor = `hsla(${hsl.h}, ${hsl.s}%, 96%, 0.35)`;
-        innerGlow = `inset 0 1px 1px hsla(${hsl.h}, ${Math.max(30, hsl.s)}%, 100%, 0.45)`;
+        // 淺色卡片光影與無彩色保護
         const glowS = hsl.s < 5 ? 0 : Math.max(30, hsl.s);
-        
         glareColor = `hsla(${hsl.h}, ${hsl.s}%, 96%, 0.35)`;
         innerGlow = `inset 0 1px 1px hsla(${hsl.h}, ${glowS}%, 100%, 0.45)`;
-        // 🟢 淺色卡片 3D 物理邊框：
-        // 追蹤 --glare-angle。向光面(0%)給予純白高光，背光面(100%)給予細微的深色陰影，中間完全透明平滑過渡！
+        
+        // 淺色卡片 3D 物理邊框
         dynamicRim = `linear-gradient(var(--glare-angle, 135deg), hsla(${hsl.h}, ${hsl.s}%, 100%, 0.9) 0%, hsla(${hsl.h}, ${hsl.s}%, 100%, 0) 30%, hsla(${hsl.h}, ${hsl.s}%, 0%, 0) 70%, hsla(${hsl.h}, ${hsl.s}%, 10%, 0.15) 100%)`;
         
-    }else {
+    } else {
         textColor = '#ffffff';
         textSecondary = 'rgba(255, 255, 255, 0.8)';
         borderColor = 'rgba(255, 255, 255, 0.12)';
@@ -124,23 +116,21 @@ function getDynamicTheme(hex, opacity = 1) {
         textClip = 'border-box';
         textFill = 'currentcolor';
 
-        // 🟢 深色卡片的光影魔法：
-        // 1. 同色系反光：不再是死白，而是帶有該卡片色相 (Hue) 的高亮度色彩 (L=85%)。
-        // 2. 邊緣微光層 (珠光)：在卡片上邊緣打上一道極細的同色系高光，創造頂級玻璃厚度感！
+        // 深色卡片光影與無彩色保護
         const glareS = hsl.s < 5 ? 0 : Math.max(30, hsl.s);
         const glowS = hsl.s < 5 ? 0 : Math.max(50, hsl.s);
 
         glareColor = `hsla(${hsl.h}, ${glareS}%, 85%, 0.35)`;
         innerGlow = `inset 0 1px 1px hsla(${hsl.h}, ${glowS}%, 88%, 0.35)`;
-        // 🟢 深色卡片 3D 物理邊框：
-        // 向光面給予同色系的玻璃白光，背光面給予極深的實體陰影，完美刻畫右側與下方的深邃感。
+        
+        // 深色卡片 3D 物理邊框
         dynamicRim = `linear-gradient(var(--glare-angle, 135deg), hsla(${hsl.h}, ${glareS}%, 85%, 0.6) 0%, hsla(${hsl.h}, ${hsl.s}%, 80%, 0) 30%, hsla(${hsl.h}, ${hsl.s}%, 0%, 0) 70%, hsla(${hsl.h}, ${hsl.s}%, 0%, 0.5) 100%)`;
     }
 
     return {
         gradient, textColor, textSecondary, borderColor, tagBg, textShadow,
         textBgGradientSecondary, textBgGradientTag, textClip, textFill,
-        glareColor, innerGlow, dynamicRim // 🟢 回傳新變數
+        glareColor, innerGlow, dynamicRim 
     };
 }
 
