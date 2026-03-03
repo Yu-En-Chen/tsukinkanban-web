@@ -347,28 +347,23 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     position: absolute;
     inset: 0;
     border-radius: inherit;
-   /* 🟢 修正 1：放棄 padding，改用 border 來定義厚度。
-       這會喚醒瀏覽器最精準的邊框圓角算繪引擎，消滅右下角小數點誤差！ */
-    border: 1px solid transparent; 
     
-    background-image: linear-gradient(135deg, rgba(255,255,255,0.6) 0%, var(--border-color) 20%, transparent 180px);
-    background-color: var(--full-wrap-border, transparent);
+    /* 1. 退回最安全的 1px 厚度，確保不會被瀏覽器幾何引擎吃掉 */
+    padding: 1px; 
     
-    /* 🟢 修正 2：強制漸層填滿包含邊框在內的整個區域 */
-    background-origin: border-box;
-    background-clip: border-box;
+    /* 2. 爆亮的高光漸層 (維持不變) */
+    background: linear-gradient(135deg, rgba(255,255,255,0.6) 0%, var(--border-color) 20%, transparent 180px);
     
-    /* 🟢 修正 3：遮罩改為內圈切 padding，外圈切 border */
+    /* 3. 【終極解法】禁止使用縮寫！將遮罩屬性徹底拆開，強制所有瀏覽器乖乖聽話 */
+    /* WebKit 核心 (Safari, 舊版 Chrome, 手機瀏覽器) */
     -webkit-mask-image: linear-gradient(white, white), linear-gradient(white, white);
-    -webkit-mask-clip: padding-box, border-box;
+    -webkit-mask-clip: content-box, padding-box;
     -webkit-mask-composite: xor;
     
+    /* 標準語法 (新版 Chrome, Firefox) */
     mask-image: linear-gradient(white, white), linear-gradient(white, white);
-    mask-clip: padding-box, border-box;
+    mask-clip: content-box, padding-box;
     mask-composite: exclude;
-    
-    /* 🟢 修正 4：強制開啟 GPU 硬體加速，讓手機強制對齊物理像素 */
-    transform: translateZ(0);
     
     z-index: 10;
     pointer-events: none;
