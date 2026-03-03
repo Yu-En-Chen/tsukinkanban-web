@@ -350,7 +350,7 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    padding: 1px; /* 邊框厚度 */
+    padding: 1.5px; /* 邊框厚度 */
     
     /* 🟢 放射狀光源魔法：固定在 top right (右上角)。
        ellipse 會自動適應卡片的長寬比，均勻地往左方與下方延伸。
