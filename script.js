@@ -59,16 +59,17 @@ function getDynamicTheme(hex, opacity = 1) {
         // 🟢 同色系深色魔法 (Tinted Typography)：
         // 1. 完全繼承卡片原始的色相 (H) 與飽和度 (S)，不壓制色彩基因。
         // 2. 將亮度 (L) 強制降到 16%，創造出「比卡片深非常多」的同色系極暗色。
-        const textS = Math.min(100, hsl.s + 40); 
-        const textL = 28; 
+        const textS = hsl.s > 5 ? 100 : 0; 
+        const textL = 42; 
 
-        // 應用帶有底色基因的極深色
+       // 應用無黑色的高飽和字體色
         textColor = `hsl(${hsl.h}, ${textS}%, ${textL}%)`;
-        textSecondary = `hsla(${hsl.h}, ${textS}%, ${textL + 15}%, 0.85)`; // 次要文字稍微亮一點點
+        // 次要文字再稍微亮一點點，維持清透感
+        textSecondary = `hsla(${hsl.h}, ${textS}%, ${textL + 8}%, 0.9)`; 
         
-        // 讓邊框與標籤底色也跟著使用同色系的加深版
-        borderColor = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.25)`;
-        tagBg = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.12)`;
+        // 讓邊框與標籤底色也使用這個純淨的彩色
+        borderColor = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.35)`;
+        tagBg = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.15)`;
     } else {
         // 深色卡片維持原本的白色系設定
         textColor = '#ffffff';
