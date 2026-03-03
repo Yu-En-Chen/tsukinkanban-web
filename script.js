@@ -47,11 +47,15 @@ function getDynamicTheme(hex, opacity = 1) {
     // 🟢 動態漸層幅度分配 (加入極端純黑/純白處理)
     let topShift = 17;
     let bottomShift = 17;
+    // 🟢 新增：預設全透明，平時不干擾卡片
+    let fullWrapBorder = 'transparent';
 
     if (hsl.l > 95) {
         // 1. 極端純白/極淺色：亮部無法再亮，必須大幅加深暗部才能顯現漸層
         topShift = 0;
         bottomShift = 35;
+        // ⚪ 極端純白：啟動極細的淡灰色全包覆邊框，防止融入白底
+        fullWrapBorder = 'rgba(0, 0, 0, 0.08)';
     } else if (hsl.l > 60) {
         // 2. 鮮豔亮色：減少亮部加成避免褪色，暗部微加深
         topShift = 4;
@@ -60,6 +64,8 @@ function getDynamicTheme(hex, opacity = 1) {
         // 3. 極端純黑/極暗色：暗部無法再暗，必須大幅提亮亮部才能顯現反光
         topShift = 26;
         bottomShift = 0;
+        // ⚫ 極端純黑：啟動極細的微弱白光全包覆邊框，防止融入黑底
+        fullWrapBorder = 'rgba(255, 255, 255, 0.12)';
     } else if (hsl.l < 40) {
         // 4. 一般深色：增加亮部逼出光澤，減少暗部避免死黑
         topShift = 14;
@@ -132,7 +138,8 @@ function getDynamicTheme(hex, opacity = 1) {
     return {
         gradient, textColor, textSecondary, borderColor, tagBg, textShadow,
         textBgGradientSecondary, textBgGradientTag, textClip, textFill,
-        glareColor, innerGlow // 🟢 回傳新變數
+        glareColor, innerGlow, dynamicRim, 
+        fullWrapBorder // 🟢 回傳新變數
     };
 }
 
@@ -156,9 +163,13 @@ function applyThemeToCard(cardElement, hex, opacity = 1) {
     cardElement.style.setProperty('--text-bg-gradient-secondary', theme.textBgGradientSecondary, 'important');
     cardElement.style.setProperty('--text-clip', theme.textClip, 'important');
     cardElement.style.setProperty('--text-fill', theme.textFill, 'important');
-// 🟢 注入光影與微光層變數
+    // 🟢 注入光影與微光層變數
     cardElement.style.setProperty('--dynamic-glare', theme.glareColor, 'important');
     cardElement.style.setProperty('--dynamic-inner-glow', theme.innerGlow, 'important');
+    cardElement.style.setProperty('--dynamic-rim', theme.dynamicRim, 'important');
+    
+    // 🟢 注入全包覆防護邊框
+    cardElement.style.setProperty('--full-wrap-border', theme.fullWrapBorder, 'important');
 }
 // ============================================================================
 
