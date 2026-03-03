@@ -55,46 +55,38 @@ function getDynamicTheme(hex, opacity = 1) {
 
     let textColor, textSecondary, borderColor, tagBg;
 
-    // 🟢 這裡補上了 textShadow 的宣告
-    let textColor, textSecondary, borderColor, tagBg, textShadow;
-
     if (isLight) {
-        // 🟢 飽和度暴力拉滿 100% 保持純色
+        // 🟢 同色系深色魔法 (Tinted Typography)：
+        // 1. 完全繼承卡片原始的色相 (H) 與飽和度 (S)，不壓制色彩基因。
+        // 2. 將亮度 (L) 強制降到 16%，創造出「比卡片深非常多」的同色系極暗色。
         const textS = hsl.s > 5 ? 100 : 0; 
-        
-        // 1. 稍微調降亮度 (從 42 降到 35)：增加與淺色背景的對比度，字體更銳利！
-        const textL = 35; 
+        const textL = 42; 
 
-        // 應用實心高彩字體
+       // 應用無黑色的高飽和字體色
         textColor = `hsl(${hsl.h}, ${textS}%, ${textL}%)`;
+        // 次要文字再稍微亮一點點，維持清透感
+        textSecondary = `hsla(${hsl.h}, ${textS}%, ${textL + 8}%, 0.9)`; 
         
-        // 2. 拔掉次要文字的透明度：直接使用 hsl，並把亮度拉近一點 (+5)
-        textSecondary = `hsl(${hsl.h}, ${textS}%, ${textL + 5}%)`; 
-        
+        // 讓邊框與標籤底色也使用這個純淨的彩色
         borderColor = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.35)`;
         tagBg = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.15)`;
-        
-        // 3. 🟢 銳化大絕招：加上「同色系的文字陰影」，讓字體邊緣瞬間立體清晰！
-        textShadow = `0 1px 2px hsla(${hsl.h}, ${textS}%, ${textL - 10}%, 0.35)`;
     } else {
         // 深色卡片維持原本的白色系設定
         textColor = '#ffffff';
         textSecondary = 'rgba(255, 255, 255, 0.8)';
         borderColor = 'rgba(255, 255, 255, 0.12)';
         tagBg = 'rgba(255, 255, 255, 0.15)';
-        // 深色卡片的原本陰影
-        textShadow = '0 1px 2px rgba(0, 0, 0, 0.2)';
     }
 
-    // 🟢 統一且乾淨地回傳
     return {
         gradient,
         textColor,
         textSecondary,
         borderColor,
         tagBg,
-        textShadow
+        textShadow: isLight ? 'none' : '0 1px 2px rgba(0, 0, 0, 0.2)'
     };
+}
 // 🟢 封裝主題套用器：安全且獨立地渲染每一張卡片，絕不互相干擾
 function applyThemeToCard(cardElement, hex, opacity = 1) {
     const theme = getDynamicTheme(hex, opacity);
