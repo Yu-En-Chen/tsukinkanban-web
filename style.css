@@ -318,8 +318,6 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 .detail-card-inner {
     width: var(--card-width); max-width: 420px; aspect-ratio: var(--card-ratio); border-radius: var(--card-radius);
     box-shadow: var(--ray-shadow-active);
-    /* 🟢 物理最細 0.5px 邊框，顏色吃 JS 判斷的變數。平時透明，黑白極端色時自動顯現 */
-    border: 0.5px solid var(--full-wrap-border, transparent);
     isolation: isolate; transform: translate3d(0, 100vh, 0); transition: transform 0.55s var(--spring-release); overflow: hidden; color: var(--card-text-color); text-shadow: var(--text-shadow-subtle);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -357,7 +355,7 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
        200px 代表光線的極限距離。
        這保證了：上邊框只會亮前半段、左邊框只會亮上半段，
        絕對過不了中線，100% 不可能碰到右上圓角、右側邊線或下側邊線！ */
-    background: linear-gradient(135deg, var(--border-color) 0%, transparent 200px);
+    background: linear-gradient(135deg, rgba(255,255,255,0.5) 0%, var(--border-color) 20%, transparent 180px);
     
     /* 遮罩魔法：把內部挖空，只保留 padding 的 1px 線條 */
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
