@@ -340,32 +340,34 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
    質感紋理系統 (Texture System)
    ========================================================================== */
 /* ==========================================================================
-   靜態高光邊框 (Static Rim)
-   只保留上側與右側，於右上角圓弧連線，並向左、向下平滑漸淡至透明
+   靜態高光邊框 (Static Rim) - 全平台防彈版
    ========================================================================== */
 .card::before, .fixed-bottom-card::before, .detail-card-inner::before {
     content: "";
     position: absolute;
     inset: 0;
     border-radius: inherit;
- /* 🟢 修正 1：改用 border 定義實體厚度，避開次像素遮罩計算 Bug */
-    border: 1px solid transparent; /* 如果覺得 1px 太粗，可以嘗試改 0.5px */
     
-    /* 🟢 修正 2：在漸層起點 (0%) 塞入純白色提亮！
-       如果你想更亮，可以把 0.6 改成 0.8 或 1。 */
-    background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, var(--border-color) 20%, transparent 180px) border-box;
+    /* 1. 退回最安全的 1px 厚度，確保不會被瀏覽器幾何引擎吃掉 */
+    padding: 1px; 
     
-    /* 🟢 修正 3：業界標準的 100% 全瀏覽器相容遮罩語法 */
-    -webkit-mask: 
-        linear-gradient(#fff 0 0) padding-box, 
-        linear-gradient(#fff 0 0);
-    -webkit-mask-composite: destination-out; /* Chrome, iOS Safari 專用 */
-    mask-composite: exclude;                 /* Firefox 專用 */
+    /* 2. 爆亮的高光漸層 (維持不變) */
+    background: linear-gradient(135deg, rgba(255,255,255,0.6) 0%, var(--border-color) 20%, transparent 180px);
+    
+    /* 3. 【終極解法】禁止使用縮寫！將遮罩屬性徹底拆開，強制所有瀏覽器乖乖聽話 */
+    /* WebKit 核心 (Safari, 舊版 Chrome, 手機瀏覽器) */
+    -webkit-mask-image: linear-gradient(white, white), linear-gradient(white, white);
+    -webkit-mask-clip: content-box, padding-box;
+    -webkit-mask-composite: xor;
+    
+    /* 標準語法 (新版 Chrome, Firefox) */
+    mask-image: linear-gradient(white, white), linear-gradient(white, white);
+    mask-clip: content-box, padding-box;
+    mask-composite: exclude;
     
     z-index: 10;
     pointer-events: none;
 }
-
 .card::after, .fixed-bottom-card::after, .detail-card-inner::after {
     content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; transition: --glare-angle 0.15s;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E");
