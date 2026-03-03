@@ -53,7 +53,7 @@ function getDynamicTheme(hex, opacity = 1) {
         ? `linear-gradient(135deg, hsla(${hsl.h}, ${hsl.s}%, ${lTop}%, ${opacity}), hsla(${hsl.h}, ${hsl.s}%, ${lBottom}%, ${opacity}))`
         : `linear-gradient(135deg, hsl(${hsl.h}, ${hsl.s}%, ${lTop}%), hsl(${hsl.h}, ${hsl.s}%, ${lBottom}%))`;
 
-    llet textColor, textSecondary, borderColor, tagBg, textShadow;
+    let textColor, textSecondary, borderColor, tagBg, textShadow;
 
     if (isLight) {
         // 🟢 飽和度暴力拉滿 100% 保持純色
@@ -91,6 +91,7 @@ function getDynamicTheme(hex, opacity = 1) {
         tagBg,
         textShadow // 統一回傳套用
     };
+}
 // 🟢 封裝主題套用器：安全且獨立地渲染每一張卡片，絕不互相干擾
 function applyThemeToCard(cardElement, hex, opacity = 1) {
     const theme = getDynamicTheme(hex, opacity);
