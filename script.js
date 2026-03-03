@@ -41,7 +41,6 @@ function getDynamicTheme(hex, opacity = 1) {
     const rgb = hexToRgb(hex);
     const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
 
-    // 🟢 WCAG 亮度檢測
     const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
     const isLight = luminance > 0.55; 
 
@@ -53,7 +52,7 @@ function getDynamicTheme(hex, opacity = 1) {
         : `linear-gradient(135deg, hsl(${hsl.h}, ${hsl.s}%, ${lTop}%), hsl(${hsl.h}, ${hsl.s}%, ${lBottom}%))`;
 
     let textColor, textSecondary, borderColor, tagBg, textShadow;
-    let textBgGradientSecondary, textClip, textFill; // 🟢 新增詳細文字專用的漸層變數
+    let textBgGradientTag, textClipTag, textFillTag; // 🟢 新增膠囊專用變數
 
     if (isLight) {
         const textS = hsl.s > 5 ? 100 : 0; 
@@ -64,45 +63,31 @@ function getDynamicTheme(hex, opacity = 1) {
         
         borderColor = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.35)`;
         tagBg = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.15)`;
-        
-        // 🟢 陰影維持你已經調好的完美數值
-        textShadow = `0 1px 0px hsla(${hsl.h}, ${textS}%, ${textL - 10}%, 0.2)`;
-        
-        // 🟢 零耗能魔法：專為「詳細說明文字」生成漸層！(左上亮、右下暗)
-        const textLTop = textL;
-        const textLBottom = Math.max(0, textL - 12); 
-        textBgGradientSecondary = `linear-gradient(135deg, hsl(${hsl.h}, ${textS}%, ${textLTop + 5}%), hsl(${hsl.h}, ${textS}%, ${textLBottom + 5}%))`;
-        
-        // 開啟 CSS 剪裁引擎
-        textClip = 'text';
-        textFill = 'transparent';
+        textShadow = `0 1px 1px hsla(${hsl.h}, ${textS}%, ${textL - 10}%, 0.2)`;
+
+        // 🟢 膠囊專屬魔法：讓字體「亮起來」！
+        // 我們把亮度大幅提高 25%，讓它從極度鮮豔明亮的顏色，平滑過渡回深色
+        textBgGradientTag = `linear-gradient(135deg, hsl(${hsl.h}, ${textS}%, ${textL + 25}%), hsl(${hsl.h}, ${textS}%, ${textL}%))`;
+        textClipTag = 'text';
+        textFillTag = 'transparent';
     } else {
         textColor = '#ffffff';
         textSecondary = 'rgba(255, 255, 255, 0.8)';
         borderColor = 'rgba(255, 255, 255, 0.12)';
         tagBg = 'rgba(255, 255, 255, 0.15)';
         textShadow = '0 1px 2px rgba(0, 0, 0, 0.2)';
-        
-        // 深色卡片關閉文字漸層引擎
-        textBgGradientSecondary = 'none';
-        textClip = 'border-box';
-        textFill = 'currentcolor';
+
+        textBgGradientTag = 'none';
+        textClipTag = 'border-box';
+        textFillTag = 'currentcolor';
     }
 
     return {
-        gradient,
-        textColor,
-        textSecondary,
-        borderColor,
-        tagBg,
-        textShadow,
-        textBgGradientSecondary, // 統一回傳套用
-        textClip,
-        textFill
+        gradient, textColor, textSecondary, borderColor, tagBg, textShadow,
+        textBgGradientTag, textClipTag, textFillTag // 回傳膠囊漸層
     };
 }
 
-// 🟢 封裝主題套用器：安全且獨立地渲染每一張卡片，絕不互相干擾
 function applyThemeToCard(cardElement, hex, opacity = 1) {
     const theme = getDynamicTheme(hex, opacity);
     
@@ -118,10 +103,10 @@ function applyThemeToCard(cardElement, hex, opacity = 1) {
     cardElement.style.setProperty('--tag-bg', theme.tagBg, 'important');
     cardElement.style.setProperty('--text-shadow-subtle', theme.textShadow, 'important');
     
-    // 🟢 注入詳細文字專用的漸層引擎變數
-    cardElement.style.setProperty('--text-bg-gradient-secondary', theme.textBgGradientSecondary, 'important');
-    cardElement.style.setProperty('--text-clip', theme.textClip, 'important');
-    cardElement.style.setProperty('--text-fill', theme.textFill, 'important');
+    // 🟢 注入膠囊專用變數 (其餘文字不受影響)
+    cardElement.style.setProperty('--text-bg-gradient-tag', theme.textBgGradientTag, 'important');
+    cardElement.style.setProperty('--text-clip-tag', theme.textClipTag, 'important');
+    cardElement.style.setProperty('--text-fill-tag', theme.textFillTag, 'important');
 }
 // ============================================================================
 
