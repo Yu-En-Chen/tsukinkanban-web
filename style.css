@@ -317,7 +317,9 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 #detail-card-container { width: 100%; display: flex; justify-content: center; margin-top: calc(env(safe-area-inset-top) + 160px); }
 
 .detail-card-inner {
-    width: var(--card-width); max-width: 420px; aspect-ratio: var(--card-ratio); border-radius: var(--card-radius); border: 1px solid var(--border-color); box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
+    width: var(--card-width); max-width: 420px; aspect-ratio: var(--card-ratio); border-radius: var(--card-radius); border: 1px solid var(--border-color);
+    /* 🟢 換成這行：結合高級懸浮光追陰影 + 動態同色系邊緣微光！ */
+    box-shadow: var(--ray-shadow-active), var(--dynamic-inner-glow, inset 0 1px 1px rgba(255, 255, 255, 0.15));
     isolation: isolate; transform: translate3d(0, 100vh, 0); transition: transform 0.55s var(--spring-release); overflow: hidden; color: var(--card-text-color); text-shadow: var(--text-shadow-subtle);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
