@@ -41,23 +41,27 @@ function getDynamicTheme(hex, opacity = 1) {
     const rgb = hexToRgb(hex);
     const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
 
-    // 🟢 WCAG 亮度檢測
     const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
     const isLight = luminance > 0.55; 
 
-// 🟢 動態漸層幅度分配 (解決高飽和亮色褪色問題)
+    // 🟢 動態漸層幅度分配 (加入極端純黑/純白處理)
     let topShift = 10;
     let bottomShift = 10;
 
-    if (hsl.l > 60) {
-        // 1. 如果輸入的是鮮豔亮色 (如 #FF5151)：
-        // 減少左上角的亮部加成，避免「加太多白顏料」導致褪色感。
-        // 改為加深右下角的暗部，用陰影來拉出卡片的立體感！
+    if (hsl.l > 95) {
+        // 1. 極端純白/極淺色：亮部無法再亮，必須大幅加深暗部才能顯現漸層
+        topShift = 0;
+        bottomShift = 22;
+    } else if (hsl.l > 60) {
+        // 2. 鮮豔亮色：減少亮部加成避免褪色，暗部微加深
         topShift = 4;
         bottomShift = 14;
+    } else if (hsl.l < 5) {
+        // 3. 極端純黑/極暗色：暗部無法再暗，必須大幅提亮亮部才能顯現反光
+        topShift = 22;
+        bottomShift = 0;
     } else if (hsl.l < 40) {
-        // 2. 如果輸入的是深色 (如深藍色)：
-        // 增加亮部加成，逼出深色的玻璃光澤；同時減少暗部扣除，避免黑成一團。
+        // 4. 一般深色：增加亮部逼出光澤，減少暗部避免死黑
         topShift = 14;
         bottomShift = 4;
     }
@@ -70,7 +74,7 @@ function getDynamicTheme(hex, opacity = 1) {
         : `linear-gradient(135deg, hsl(${hsl.h}, ${hsl.s}%, ${lTop}%), hsl(${hsl.h}, ${hsl.s}%, ${lBottom}%))`;
 
     let textColor, textSecondary, borderColor, tagBg, textShadow;
-    let textBgGradientSecondary, textClip, textFill; // 🟢 新增詳細文字專用的漸層變數
+    let textBgGradientSecondary, textBgGradientTag, textClip, textFill;
 
     if (isLight) {
         const textS = hsl.s > 5 ? 100 : 0; 
@@ -78,19 +82,15 @@ function getDynamicTheme(hex, opacity = 1) {
 
         textColor = `hsl(${hsl.h}, ${textS}%, ${textL}%)`;
         textSecondary = `hsl(${hsl.h}, ${textS}%, ${textL + 5}%)`; 
-        
         borderColor = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.35)`;
         tagBg = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.15)`;
-        
-        // 🟢 陰影維持你已經調好的完美數值
-        textShadow = `0 1px 0px hsla(${hsl.h}, ${textS}%, ${textL - 10}%, 0.2)`;
-        
-        // 🟢 零耗能魔法：專為「詳細說明文字」生成漸層！(左上亮、右下暗)
+        textShadow = `0 1px 1px hsla(${hsl.h}, ${textS}%, ${textL - 10}%, 0.2)`;
+
         const textLTop = textL;
         const textLBottom = Math.max(0, textL - 12); 
         textBgGradientSecondary = `linear-gradient(135deg, hsl(${hsl.h}, ${textS}%, ${textLTop + 5}%), hsl(${hsl.h}, ${textS}%, ${textLBottom + 5}%))`;
         
-        // 開啟 CSS 剪裁引擎
+        textBgGradientTag = 'none'; 
         textClip = 'text';
         textFill = 'transparent';
     } else {
@@ -100,22 +100,15 @@ function getDynamicTheme(hex, opacity = 1) {
         tagBg = 'rgba(255, 255, 255, 0.15)';
         textShadow = '0 1px 2px rgba(0, 0, 0, 0.2)';
         
-        // 深色卡片關閉文字漸層引擎
         textBgGradientSecondary = 'none';
+        textBgGradientTag = 'none';
         textClip = 'border-box';
         textFill = 'currentcolor';
     }
 
     return {
-        gradient,
-        textColor,
-        textSecondary,
-        borderColor,
-        tagBg,
-        textShadow,
-        textBgGradientSecondary, // 統一回傳套用
-        textClip,
-        textFill
+        gradient, textColor, textSecondary, borderColor, tagBg, textShadow,
+        textBgGradientSecondary, textBgGradientTag, textClip, textFill
     };
 }
 
