@@ -58,7 +58,7 @@ function getDynamicTheme(hex, opacity = 1) {
         bottomShift = 14;
     } else if (hsl.l < 5) {
         // 3. 極端純黑/極暗色：暗部無法再暗，必須大幅提亮亮部才能顯現反光
-        topShift = 22;
+        topShift = 26;
         bottomShift = 0;
     } else if (hsl.l < 40) {
         // 4. 一般深色：增加亮部逼出光澤，減少暗部避免死黑
