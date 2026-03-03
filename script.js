@@ -59,8 +59,8 @@ function getDynamicTheme(hex, opacity = 1) {
         // 🟢 同色系深色魔法 (Tinted Typography)：
         // 1. 完全繼承卡片原始的色相 (H) 與飽和度 (S)，不壓制色彩基因。
         // 2. 將亮度 (L) 強制降到 16%，創造出「比卡片深非常多」的同色系極暗色。
-        const textS = hsl.s; 
-        const textL = 16; 
+        const textS = Math.min(100, hsl.s + 40); 
+        const textL = 28; 
 
         // 應用帶有底色基因的極深色
         textColor = `hsl(${hsl.h}, ${textS}%, ${textL}%)`;
