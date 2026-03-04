@@ -188,6 +188,7 @@ body.searching .search-mask {
     display: flex; align-items: center; justify-content: center; padding: 12px; overflow: hidden; 
     cursor: pointer; opacity: 0; position: relative; z-index: 5700;
     transition: width 0.4s var(--active-bounce), opacity 0.3s ease, transform 0.4s var(--active-bounce); transform: scale(0.5); flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 .cancel-circle-btn svg { 
     width: 17px !important; height: 17px !important; min-width: 17px; min-height: 17px; 
