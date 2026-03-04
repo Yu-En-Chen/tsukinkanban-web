@@ -121,49 +121,11 @@
     place-items: center !important;
 }
 
-/* 展開後的背景特效層 */
-.left-circle-btn.is-expanded::before {
-    background: transparent;
-    transition: opacity 0.4s ease; 
-    box-shadow: inset 0 0 80px 20px rgba(var(--menu-shadow-dark), 0.15);
-    border: none !important;
-
-    backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(25px);
-
-    -webkit-mask-image: 
-        linear-gradient(to right, 
-            transparent 0px, 
-            rgba(0,0,0,0.4) 15px, 
-            black 45px, 
-            black calc(100% - 45px), 
-            rgba(0,0,0,0.4) calc(100% - 15px), 
-            transparent 100%
-        ),
-        linear-gradient(to bottom, 
-            transparent 0px, 
-            rgba(0,0,0,0.4) 15px, 
-            black 45px, 
-            black calc(100% - 45px), 
-            rgba(0,0,0,0.4) calc(100% - 15px), 
-            transparent 100%
-        );
-
-    -webkit-mask-composite: source-in;
-    mask-composite: intersect;
-
-    transform: translate3d(0, 0, 0);
-    perspective: 1000px;
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-}
-
-@media (prefers-color-scheme: light) {
 /* =========================================
-   極致光學擬真：厚度實體玻璃 (無模糊折射版)
+   🟢 展開狀態下的背景特效 (漸層模糊玻璃保鮮盒)
    ========================================= */
 
-/* 1. 【透鏡外牆】：10px 實體厚度 (關閉模糊！極高對比、最外圈高光) */
+/* 1. 【透鏡外牆】：10px 實體厚度 (高對比、無模糊、最外圈高光) */
 .left-circle-btn.is-expanded::after {
     content: "";
     position: absolute;
@@ -172,74 +134,63 @@
     pointer-events: none;
     z-index: -1;
     
-    /* 🔴 聽你的！徹底關閉這 10px 內的 blur。
-       改用極高對比(contrast)與飽和(saturate)，讓底下的卡片顏色以銳利、刺眼的姿態透上來，
-       完美模擬厚玻璃邊緣不帶霧面的透亮折射感！ */
+    /* 保持極高對比，模擬厚玻璃折射 */
     backdrop-filter: saturate(3) contrast(1.5) brightness(1.2);
     -webkit-backdrop-filter: saturate(3) contrast(1.5) brightness(1.2);
     
-    /* 玻璃邊緣本身的微弱物理反光 */
     background: rgba(255, 255, 255, 0.05);
-    
-    /* 🟢 只有最外緣的一條乾淨高光，徹底消滅多層邊框感！ */
     border: 1px solid rgba(255, 255, 255, 0.2);
     
-    /* 精準挖空中心，只留下這 10px 的折射框 */
+    /* 精準挖空中心 10px */
     padding: 10px; 
     -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: destination-out;
     mask-composite: exclude;
 }
 
-/* 2. 【內部空腔】：中心霧面空間 (朦朧、內圈高光、沉積陰影) */
+/* 2. 【內部空腔】：中心完全透視、邊緣漸層模糊 */
 .left-circle-btn.is-expanded::before {
     content: "";
     position: absolute;
-    
-    /* 精準退縮 10px，與外牆完美密合 */
     inset: 10px; 
-    border-radius: calc(var(--card-radius, 24px) - 10px); 
+    border-radius: calc(32px - 10px); /* 確保與外觀圓角 32px 同心 */
     pointer-events: none;
     z-index: -2;
     
-    /* 中心區域的朦朧霧化效果 */
-    background: rgba(0, 0, 0, 0.25);
+    /* 設定邊緣的最大模糊度 */
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
+    background: rgba(0, 0, 0, 0.25);
     
-    /* 🟢 內部結構光影 (乾淨不打架)：
-       1. inset 陰影：模擬 10px 厚度造成的內部沉積暗角
-       2. 0 0 0 1px：精準打在 10px 交界處的內部轉角高光 */
+    /* 🟢 核心魔法：徑向漸層遮罩！
+       從中心點到 40% 的區域完全透明 (無霧化，直接透底)，
+       然後向 100% 邊緣平滑漸變成黑色 (滿霧化)。 */
+    -webkit-mask-image: radial-gradient(circle at center, transparent 40%, rgba(0,0,0,1) 100%);
+    mask-image: radial-gradient(circle at center, transparent 40%, rgba(0,0,0,1) 100%);
+    
+    /* 內部厚度沉積陰影與交界高光 */
     box-shadow: 
         inset 0 10px 30px rgba(0, 0, 0, 0.5),
         0 0 0 1px rgba(255, 255, 255, 0.15);
-
-    /* 確保乾淨無遮罩 */
+        
     border: none !important;
-    -webkit-mask: none !important;
 }
 
-/* 3. 淺色模式的光學自動轉換 (修復多層疊影問題) */
+/* 3. 淺色模式的光學自動轉換 */
 @media (prefers-color-scheme: light) {
     .left-circle-btn.is-expanded::after {
-        /* 淺色下壓低亮度避免過度曝光 */
         backdrop-filter: saturate(2) contrast(1.2) brightness(1.05);
         -webkit-backdrop-filter: saturate(2) contrast(1.2) brightness(1.05);
         background: rgba(255, 255, 255, 0.15);
-        /* 強化淺色模式下的外高光 */
         border: 1px solid rgba(255, 255, 255, 0.6); 
     }
     .left-circle-btn.is-expanded::before {
-        /* 淺色下的霧面微透白光 */
         background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
         box-shadow: 
-            inset 0 10px 20px rgba(0, 0, 0, 0.05), /* 淺色陰影較淡 */
-            0 0 0 1px rgba(255, 255, 255, 0.4);   /* 強化內高光 */
+            inset 0 10px 20px rgba(0, 0, 0, 0.05),
+            0 0 0 1px rgba(255, 255, 255, 0.4);   
     }
 }
-
 /* =========================================
    🟢 圖標互動 (Animation)
    ========================================= */
