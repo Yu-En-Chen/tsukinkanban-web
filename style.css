@@ -411,7 +411,8 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 
 /* 當左側按鈕處於 is-expanded 狀態時，自動將背後的卡片組推入深處！ */
 body:has(.left-circle-btn.is-expanded) .card-stack,
-body:has(.universal-window.is-active) .card-stack {
+body:has(.universal-window.is-active) .card-stack,
+body:has(.detail-overlay.active) .card-stack {
     /* 往深處縮小，稍微往下沉，製造被上方玻璃重壓的物理感 */
     transform: scale(0.90) translateY(15px);
     
