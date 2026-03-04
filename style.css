@@ -117,7 +117,7 @@ body.searching .search-mask {
 .left-circle-btn {
     width: 44px; height: 44px; background: var(--search-bg); border-radius: 50%; border: 1px solid var(--search-border); 
     -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); color: var(--icon-color); 
-    position: absolute; left: -10px; transform: translate3d(0, 0, 0); z-index: 5;
+    position: absolute; left: -10px; z-index: 5;
     display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; 
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     transition: transform 0.5s var(--apple-spring), opacity 0.35s ease;
@@ -131,7 +131,6 @@ body.searching .search-mask {
 .search-trigger {
     width: 44px; height: 44px; background: var(--search-bg); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); 
     border-radius: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; margin-right: 60px; 
-    transform: translate3d(0, 0, 0);
     transition: all 0.5s var(--active-bounce), transform 0.5s var(--apple-spring), opacity 0.4s linear; 
     border: 1px solid var(--search-border); position: relative; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); z-index: 2; 
 }
