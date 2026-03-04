@@ -37,25 +37,22 @@ html, body {
 }
 
 /* =========================================
-   🟢 終極版：搜尋遮罩 (100% 複製漢堡選單架構)
+   🟢 終極版：全螢幕搜尋遮罩 (Apple 厚實微粒玻璃)
    ========================================= */
 
-/* 1. 外層容器：只負責懸浮幾何尺寸與淡入淡出動畫，絕對不放任何濾鏡 */
+/* 1. 外層容器：只負責滿版佈局與透明度淡入，絕對不放任何濾鏡！ */
 .search-mask {
-    position: fixed; 
+    position: fixed !important; 
+    top: 0 !important; 
+    left: 0 !important; 
+    right: 0 !important; 
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    border-radius: 0 !important; /* 滿版不用圓角 */
+    margin: 0 !important;
     
-    /* 精準複製漢堡選單的四周留白與圓角 */
-    top: calc(env(safe-area-inset-top) + 24px) !important;
-    width: calc(var(--card-width) - 24px) !important;
-    max-width: 396px !important;
-    left: 0 !important;
-    right: 0 !important;
-    margin: 0 auto !important;
-    bottom: auto !important;
-    height: calc(100svh - (env(safe-area-inset-top) + 24px) - var(--bottom-anchor) - 24px) !important;
-    border-radius: 40px !important;
-    
-    /* 🔴 強制清空舊有的材質，避免衝突 */
+    /* 🔴 徹底清除舊有材質，避免衝突 */
     background: transparent !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
@@ -65,44 +62,41 @@ html, body {
     opacity: 0; 
     visibility: hidden; 
     z-index: 5500; 
-    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s;
+    
+    /* 🟢 解決延遲問題：移除舊的 delay，改用極致滑順的單純 opacity 動畫 */
+    transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s !important;
 }
 
+/* 展開時只需改變透明度 */
 body.searching .search-mask {
     opacity: 1; 
     visibility: visible;
 }
 
-/* 2. 🟢 核心材質層：獨立的 ::before (100% 複製漢堡的材質參數) */
+/* 2. 🟢 核心材質層：獨立的 ::before (100% 複製漢堡選單的微粒與光影) */
 .search-mask::before {
     content: "";
     position: absolute;
     inset: 0;
-    border-radius: inherit;
     pointer-events: none;
     z-index: -1;
+    border-radius: 0 !important; /* 滿版無圓角 */
     
-    /* 深色模式底色與微粒雜訊 */
+    /* 蘋果超高模糊底色與微粒雜訊 */
     background: rgba(30, 30, 30, 0.4) !important; 
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E") !important;
     
-    /* 超高模糊底色 */
     backdrop-filter: blur(40px) saturate(2) brightness(1.1) !important;
     -webkit-backdrop-filter: blur(40px) saturate(2) brightness(1.1) !important;
     
-    /* 內部體積光影 */
+    /* 內部厚度光影：因為貼齊螢幕，這會讓整個手機螢幕邊緣看起來像一塊有厚度的玻璃！ */
     box-shadow: 
         inset 0 0 0 1px rgba(255, 255, 255, 0.15),
         inset 0 0 0 10px rgba(255, 255, 255, 0.04),
-        inset 0 20px 50px rgba(0, 0, 0, 0.4),
-        0 30px 80px rgba(0, 0, 0, 0.6) !important;
-        
-    border: none !important;
-    -webkit-mask: none !important;
-    mask: none !important;
+        inset 0 20px 50px rgba(0, 0, 0, 0.4) !important;
 }
 
-/* 3. 淺色模式的光學自動轉換 (100% 複製) */
+/* 3. 淺色模式的光學自動轉換 */
 @media (prefers-color-scheme: light) {
     .search-mask::before {
         background: rgba(255, 255, 255, 0.35) !important; 
@@ -115,12 +109,11 @@ body.searching .search-mask {
             inset 0 0 0 1px rgba(255, 255, 255, 0.8),
             inset 0 0 0 10px rgba(255, 255, 255, 0.3),
             inset 0 0 30px rgba(255, 255, 255, 0.5),
-            inset 0 10px 30px rgba(0, 0, 0, 0.03),
-            0 30px 60px rgba(0, 0, 0, 0.15) !important;
+            inset 0 10px 30px rgba(0, 0, 0, 0.03) !important;
     }
 }
 
-body.menu-active .search-mask { transition-delay: 0.15s; }
+/*body.menu-active .search-mask { transition-delay: 0.15s; }*/
 
 #app-stage { width: 100%; max-width: 500px; height: 100%; margin: 0 auto; position: relative; display: flex; flex-direction: column; }
 
