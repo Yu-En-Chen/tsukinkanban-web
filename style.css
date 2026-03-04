@@ -431,7 +431,13 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 
 /* 🟢 只在支援精細滑鼠的設備上啟用 (徹底排除手機與平板，保護效能) */
 @media (pointer: fine) {
-    *, *::before, *::after { 
+    /* 抹除全站「所有」元素的預設游標，並針對 Chrome Shadow DOM 進行穿透打擊！ */
+    *, *::before, *::after,
+    input, textarea,
+    input::-webkit-search-cancel-button,
+    input::-webkit-search-decoration,
+    input::-webkit-search-results-button,
+    input::-webkit-search-results-decoration { 
         cursor: none !important; 
     }
 
