@@ -879,3 +879,55 @@ document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
 // 將模組內的函數暴露給全域
 window.handleBottomCardClick = handleBottomCardClick;
 window.handleOverlayClick = handleOverlayClick;
+
+/* ==========================================================================
+   動態游標物理引擎 (Cursor Physics)
+   ========================================================================== */
+function initCustomCursor() {
+    // 檢查是否為支援滑鼠的設備，如果是手機觸控則直接停止執行，完全零負擔
+    if (!matchMedia('(pointer: fine)').matches) return;
+
+    // 動態建立游標元素
+    const cursor = document.createElement('div');
+    cursor.classList.add('custom-cursor');
+    document.body.appendChild(cursor);
+
+    // 物理座標變數
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    let cursorX = mouseX;
+    let cursorY = mouseY;
+
+    // 監聽真實滑鼠移動
+    window.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+    });
+
+    // 監聽點擊事件 (加入微縮放回饋)
+    window.addEventListener('mousedown', () => cursor.classList.add('clicking'));
+    window.addEventListener('mouseup', () => cursor.classList.remove('clicking'));
+
+    // 隱藏游標邏輯 (當滑鼠離開網頁視窗時)
+    document.addEventListener('mouseleave', () => cursor.style.opacity = '0');
+    document.addEventListener('mouseenter', () => cursor.style.opacity = '1');
+
+    // 60fps 渲染迴圈
+    function render() {
+        // 🟢 線性插值 (Lerp)：讓游標滑順地追趕真實滑鼠。
+        // 0.2 是阻尼係數，越小越有延遲跟隨感，0.2 是一般公認手感最棒的數值。
+        cursorX += (mouseX - cursorX) * 0.2;
+        cursorY += (mouseY - cursorY) * 0.2;
+
+        // 利用 translate3d 強制硬體加速，絕對不會卡頓
+        cursor.style.transform = `translate3d(calc(${cursorX}px - 50%), calc(${cursorY}px - 50%), 0)`;
+        
+        requestAnimationFrame(render);
+    }
+    
+    // 啟動迴圈
+    requestAnimationFrame(render);
+}
+
+// 確保網頁載入完成後啟動游標
+document.addEventListener('DOMContentLoaded', initCustomCursor);
