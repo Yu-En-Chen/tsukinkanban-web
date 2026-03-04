@@ -424,3 +424,46 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 .card-stack.bounce-back-wheel ~ .fixed-bottom-card::after { 
     transition: --glare-angle 0.85s cubic-bezier(0.16, 1, 0.3, 1); 
 }
+
+/* ==========================================================================
+   高級反差色動態游標 (Custom Difference Cursor)
+   ========================================================================== */
+
+/* 🟢 只在支援精細滑鼠的設備上啟用 (徹底排除手機與平板，保護效能) */
+@media (pointer: fine) {
+    /* 隱藏原生游標 */
+    body, a, button, .card, .menu-toggle, .color-swatch { 
+        cursor: none !important; 
+    }
+    
+    /* 保留輸入框的原生文字游標 (I-beam)，讓使用者知道可以打字 */
+    input[type="text"], input[type="search"] {
+        cursor: text !important;
+    }
+
+    /* 自訂游標本體 */
+    .custom-cursor {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: #ffffff; /* 搭配 difference，白點會自動轉換成底圖的反轉色 */
+        pointer-events: none; /* 絕對不能擋住滑鼠點擊 */
+        z-index: 99999;
+        mix-blend-mode: difference; /* 核心魔法：色彩反轉疊加 */
+        
+        /* 提示瀏覽器將游標推入 GPU 運算層，保證極致滑順 */
+        will-change: transform; 
+        
+        /* 點擊時的縮放動畫 */
+        transition: width 0.15s ease-out, height 0.15s ease-out;
+    }
+
+    /* 當滑鼠點下時的微縮放回饋 */
+    .custom-cursor.clicking {
+        width: 10px;
+        height: 10px;
+    }
+}
