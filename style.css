@@ -434,11 +434,6 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     *, *::before, *::after { 
         cursor: none !important; 
     }
-    
-    /* 🟢 2. 唯獨把「打字游標」還給輸入框，否則不能打字 */
-    input, textarea {
-        cursor: text !important;
-    }
 
     /* 自訂游標本體 */
     .custom-cursor {
