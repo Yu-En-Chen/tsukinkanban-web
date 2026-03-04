@@ -405,6 +405,26 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 
 .card-content, .card-header, .line-name, .status-tag { position: relative; z-index: 2; }
 
+/* =========================================
+   🟢 終極 Z 軸景深魔法 (True Depth of Field)
+   ========================================= */
+
+/* 當左側按鈕處於 is-expanded 狀態時，自動將背後的卡片組推入深處！ */
+body:has(.left-circle-btn.is-expanded) .card-stack {
+    /* 往深處縮小 5%，稍微往下沉，製造被上方玻璃重壓的物理感 */
+    transform: scale(0.95) translateY(10px);
+    
+    /* 配合變暗與微距失焦模糊 (Bokeh) */
+    filter: blur(6px) brightness(0.6);
+    
+    /* 與玻璃面板同頻率的物理彈簧動畫 */
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 確保平時卡片有平滑的恢復動畫 */
+.card-stack {
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
 /* ========================================== */
 /* 👇 這裡是新貼上的「優雅慢速回彈」專屬設定 👇 */
 /* ========================================== */
