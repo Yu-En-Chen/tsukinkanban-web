@@ -411,6 +411,8 @@ body.searching .search-mask {
     
     z-index: 10;
     pointer-events: none;
+    -webkit-clip-path: inset(0 round var(--card-radius));
+    clip-path: inset(0 round var(--card-radius));
 }
 .card::after, .fixed-bottom-card::after, .detail-card-inner::after {
     content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; transition: --glare-angle 0.15s;
@@ -423,6 +425,8 @@ body.searching .search-mask {
     -webkit-mask-image: linear-gradient(var(--glare-angle, 135deg), rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 25%, rgba(0,0,0,0.2) 55%, transparent 75%);
     mask-image: linear-gradient(var(--glare-angle, 135deg), rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 25%, rgba(0,0,0,0.2) 55%, transparent 75%);
     background-size: 150px 150px; border-radius: inherit; background-clip: padding-box;
+    -webkit-clip-path: inset(0 round var(--card-radius));
+    clip-path: inset(0 round var(--card-radius));
 }
 
 .card-stack.bounce-back .card::after, .card-stack.bounce-back ~ .fixed-bottom-card::after { transition: --glare-angle 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
