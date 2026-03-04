@@ -33,10 +33,9 @@ html, body {
 }
 
 /* =========================================
-   🟢 終極版：全螢幕搜尋遮罩 (純淨穿透玻璃版)
+   🟢 終極版：全螢幕搜尋遮罩 (優雅 20px 無噪點純淨版)
    ========================================= */
 
-/* 1. 外層容器：只負責滿版佈局與透明度淡入 */
 .search-mask {
     position: fixed !important; 
     top: 0 !important; 
@@ -48,10 +47,14 @@ html, body {
     border-radius: 0 !important; 
     margin: 0 !important;
     
-    /* 🔴 關鍵修復：徹底刪除 transform，讓模糊濾鏡能夠穿透圖層抓到底下的卡片！ */
-    background: transparent !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
+    /* 1. 與漢堡按鈕一模一樣的優雅模糊度 (20px) */
+    -webkit-backdrop-filter: blur(20px) !important;
+    backdrop-filter: blur(20px) !important;
+    
+    /* 2. 微弱的底色，用來稍微壓暗背後卡片，讓搜尋框跳出來 */
+    background: rgba(0, 0, 0, 0.2) !important; 
+    
+    /* 確保沒有多餘的光影與干擾 */
     box-shadow: none !important;
     border: none !important;
         
@@ -59,6 +62,7 @@ html, body {
     visibility: hidden !important; 
     z-index: 5500 !important; 
     
+    /* 0.3秒極致滑順的淡入，絕不延遲 */
     transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s 0.3s !important;
 }
 
@@ -68,43 +72,19 @@ body.searching .search-mask {
     transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s 0s !important;
 }
 
-/* 2. 🟢 模糊層：因為外層沒有隔離了，這裡的模糊終於能發揮作用！ */
-.search-mask::before {
-    content: "";
-    position: absolute !important;
-    inset: 0 !important;
-    pointer-events: none !important;
-    z-index: -2 !important; 
-    
-    background: rgba(30, 30, 30, 0.4) !important; 
-    backdrop-filter: blur(40px) saturate(2) brightness(1.1) !important;
-    -webkit-backdrop-filter: blur(40px) saturate(2) brightness(1.1) !important;
-}
-
-/* 3. 🟢 雜訊層：獨立鋪設微粒，並鎖定 150px 維持極致精細感 */
+/* 🔴 徹底封殺之前殘留的 ::before 和 ::after 噪點層 */
+.search-mask::before,
 .search-mask::after {
-    content: "";
-    position: absolute !important;
-    inset: 0 !important;
-    pointer-events: none !important;
-    z-index: -1 !important; 
-    
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E") !important;
-    background-size: 150px 150px !important;
-    background-repeat: repeat !important;
+    display: none !important;
 }
 
-/* 4. 淺色模式的自動轉換 */
+/* 3. 淺色模式自動轉換 */
 @media (prefers-color-scheme: light) {
-    .search-mask::before {
-        background: rgba(255, 255, 255, 0.35) !important; 
-        backdrop-filter: blur(40px) saturate(2.5) brightness(1.05) !important;
-        -webkit-backdrop-filter: blur(40px) saturate(2.5) brightness(1.05) !important;
-    }
-    .search-mask::after {
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E") !important;
-        background-size: 150px 150px !important;
-        background-repeat: repeat !important;
+    .search-mask {
+        /* 淺色模式下一樣是 20px 模糊，底色改為微弱的白色 */
+        background: rgba(255, 255, 255, 0.2) !important; 
+        -webkit-backdrop-filter: blur(20px) !important;
+        backdrop-filter: blur(20px) !important;
     }
 }
 /*body.menu-active .search-mask { transition-delay: 0.15s; }*/
