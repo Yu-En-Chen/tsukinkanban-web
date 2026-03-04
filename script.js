@@ -415,9 +415,12 @@ function renderCards(data) {
 
         setTimeout(() => { 
             isInitialLoad = false;
-            document.querySelectorAll('.card').forEach(c => c.classList.remove('opening-pull'));
+            document.querySelectorAll('.card').forEach(c => {
+                c.classList.remove('opening-pull');
+                c.style.animationDelay = ''; // 🟢 修復 1：開場動畫結束後，徹底清除殘留的延遲時間
+            });
             const fixedCard = document.getElementById('fixed-info-card');
-            if (fixedCard) fixedCard.classList.remove('opening-pull-fixed');
+            if (fixedCard) fixedCard.classList.remove('opening-pull-fixed');fixedCard.style.animationDelay = '';
 
             // 👇 加上這一行，解除光影凍結，讓 Hover 可以正常運作 👇
             mainStack.dataset.freezeGlare = 'false';
@@ -637,6 +640,7 @@ function closeAllCards(isPopState = false) {
         originalCard.classList.remove('hidden-placeholder');
         originalCard.classList.remove('lifted-state');
         originalCard.style.transform = ''; 
+        originalCard.style.animationDelay = '';
         originalCard.classList.add('returning');
         
         if (activeCardId !== 'fixed-bottom') {
