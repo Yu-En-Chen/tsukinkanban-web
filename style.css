@@ -97,6 +97,9 @@ body.searching .search-mask {
     z-index: -1 !important; /* 蓋在模糊層上方 */
     
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E") !important;
+    /* 🔴 核心修復：鎖定像素大小並無限平鋪，保證全螢幕噪點極度細緻！ */
+    background-size: 150px 150px !important;
+    background-repeat: repeat !important;
 }
 
 /* 4. 淺色模式的雙層轉換 */
@@ -108,6 +111,9 @@ body.searching .search-mask {
     }
     .search-mask::after {
         background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E") !important;
+        /* 🔴 核心修復：鎖定像素大小並無限平鋪，保證全螢幕噪點極度細緻！ */
+        background-size: 150px 150px !important;
+        background-repeat: repeat !important;
     }
 }
 /*body.menu-active .search-mask { transition-delay: 0.15s; }*/
