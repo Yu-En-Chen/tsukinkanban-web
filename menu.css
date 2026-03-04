@@ -159,54 +159,32 @@
 }
 
 @media (prefers-color-scheme: light) {
-    /* =========================================
-   展開後的 3D 雙層玻璃保鮮盒 (Skeuomorphic Glass)
+/* =========================================
+   極致光學擬真：厚度實體玻璃保鮮盒 (Skeuomorphic Thick Glass)
    ========================================= */
 
-/* 1. 中心玻璃質感 (中心朦朧微透 + 3D內緣銜接) */
-.left-circle-btn.is-expanded::before {
-    /* 預設深色模式底色 */
-    background: rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(8px) brightness(0.85);
-    -webkit-backdrop-filter: blur(8px) brightness(0.85);
-    
-    /* 玻璃盒厚度光影系統 */
-    box-shadow: 
-        0 30px 60px rgba(0,0,0,0.8),                 /* 桌面巨大投影 */
-        0 0 0 1px rgba(255,255,255,0.1),             /* 邊緣銳利反光 */
-        inset 0 0 0 10px rgba(0,0,0,0.3),            /* 10px厚度微暗層 */
-        inset 0 0 0 11px rgba(255,255,255,0.15),     /* 內壁銳利反光光線 */
-        inset 0 0 30px 11px rgba(255,255,255,0.08);  /* 蘋果風霧面拉伸過渡 */
-
-    /* 🔴 徹底清空原本死板的漸層遮罩 */
-    -webkit-mask-image: none !important;
-    mask-image: none !important;
-    border: none !important;
-
-    transform: translate3d(0, 0, 0);
-    perspective: 1000px;
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-    z-index: -2; /* 墊在最底層 */
-}
-
-/* 2. 🟢 新增：玻璃盒 10px 實體厚度的邊緣高折射外框 */
+/* 1. 【透鏡牆】：10px 實體厚度的玻璃壁 (高折射、變形、外部邊緣高光) */
 .left-circle-btn.is-expanded::after {
     content: "";
     position: absolute;
     inset: 0;
     border-radius: inherit;
     pointer-events: none;
-    z-index: -1; /* 蓋在 before 上面，但依然在圖示下方 */
+    z-index: -1;
     
-    /* 極高強度的邊緣光線折射 (高模糊 + 拉伸底下顏色) */
-    backdrop-filter: blur(30px) saturate(1.5) brightness(0.9);
-    -webkit-backdrop-filter: blur(30px) saturate(1.5) brightness(0.9);
+    /* 🔴 核心魔法 (Refraction)：
+       單純的 blur 只會霧化。我們將極高的 blur 搭配高 contrast(對比) 與 saturate(飽和)，
+       這在數學上會強制把底下模糊的圖案「擠壓成條狀色塊」，完美模擬厚實壓克力/玻璃邊緣的透鏡扭曲效應！ */
+    backdrop-filter: blur(35px) saturate(2.5) contrast(1.4) brightness(0.9);
+    -webkit-backdrop-filter: blur(35px) saturate(2.5) contrast(1.4) brightness(0.9);
     
-    /* 玻璃實體的邊緣反光漸層 */
-    background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.02) 40%, rgba(0,0,0,0.4) 100%);
+    /* 玻璃實體邊緣的環境色向 (頂部偏亮，底部吸光偏暗) */
+    background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.02) 30%, rgba(0,0,0,0) 70%, rgba(0,0,0,0.4) 100%);
     
-    /* 物理魔法：精準挖空中心，只留下 10px 的折射框 */
+    /* 🟢 外側倒角高光 (Outer Specular Highlight) */
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+    
+    /* 精準挖出 10px 玻璃厚度的遮罩 */
     padding: 10px; 
     -webkit-mask-image: linear-gradient(white, white), linear-gradient(white, white);
     -webkit-mask-clip: content-box, padding-box;
@@ -216,23 +194,64 @@
     mask-composite: exclude;
 }
 
+/* 2. 【內部空腔】：玻璃盒內部 (朦朧透亮、內部邊緣高光、厚度陰影) */
+.left-circle-btn.is-expanded::before {
+    content: "";
+    position: absolute;
+    
+    /* 🟢 完美幾何對齊：往內退縮正好 10px，與上方的玻璃壁完美密合無縫接軌！ */
+    inset: 10px; 
+    
+    /* 🟢 動態同心圓角：內部圓角必須比外側小 10px，否則玻璃在四角看起來會變厚(物理失真) */
+    border-radius: calc(var(--card-radius, 24px) - 10px); 
+    
+    pointer-events: none;
+    z-index: -2;
+    
+    /* 內部空間較為輕薄的霧化效果 */
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(12px) brightness(0.95);
+    -webkit-backdrop-filter: blur(12px) brightness(0.95);
+    
+    /* 複雜的 3D 光影系統 */
+    box-shadow: 
+        /* 1. 內側倒角高光 (Inner Specular Highlight)：
+           因為這個空腔往內縮了 10px，它的「外邊框」剛好落在 10px 的交界處。
+           這條純白銳利的 1px 射線，會精準打在內緣的轉角處！ */
+        0 0 0 1px rgba(255, 255, 255, 0.5),
+        
+        /* 2. 容器整體環境投影：
+           利用 10px 的擴張值 (spread)，將陰影穿透推到 10px 玻璃壁之外，製造巨大的懸浮厚重感 */
+        0 30px 80px 10px rgba(0, 0, 0, 0.7),
+        
+        /* 3. 內部厚度陰影 (Ambient Occlusion)：
+           模擬 10px 厚壁阻擋了頂部光線，在盒內四周底部產生的深色暗角 */
+        inset 0 20px 40px rgba(0, 0, 0, 0.5),
+        inset 0 0 15px rgba(0, 0, 0, 0.3);
+
+    /* 清除原本的遮罩干擾 */
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+    border: none !important;
+}
+
 /* 3. 淺色模式的光學自動轉換 */
 @media (prefers-color-scheme: light) {
-    .left-circle-btn.is-expanded::before {
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(8px) brightness(1.05);
-        -webkit-backdrop-filter: blur(8px) brightness(1.05);
-        box-shadow: 
-            0 30px 60px rgba(0,0,0,0.3),
-            0 0 0 1px rgba(255,255,255,0.15),
-            inset 0 0 0 10px rgba(0,0,0,0.02),
-            inset 0 0 0 11px rgba(255,255,255,0.3),
-            inset 0 0 30px 11px rgba(255,255,255,0.2);
-    }
     .left-circle-btn.is-expanded::after {
-        backdrop-filter: blur(30px) saturate(1.8) brightness(1.1);
-        -webkit-backdrop-filter: blur(30px) saturate(1.8) brightness(1.1);
-        background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.05) 40%, rgba(0,0,0,0.1) 100%);
+        backdrop-filter: blur(35px) saturate(2) contrast(1.2) brightness(1.05);
+        -webkit-backdrop-filter: blur(35px) saturate(2) contrast(1.2) brightness(1.05);
+        background: linear-gradient(135deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.1) 30%, rgba(0,0,0,0) 70%, rgba(0,0,0,0.1) 100%);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8);
+    }
+    .left-circle-btn.is-expanded::before {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(12px) brightness(1.05);
+        -webkit-backdrop-filter: blur(12px) brightness(1.05);
+        box-shadow: 
+            0 0 0 1px rgba(255, 255, 255, 0.8),
+            0 30px 60px 10px rgba(0, 0, 0, 0.2),
+            inset 0 15px 30px rgba(0, 0, 0, 0.1),
+            inset 0 0 10px rgba(0, 0, 0, 0.05);
     }
 }
 
