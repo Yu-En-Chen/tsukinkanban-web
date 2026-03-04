@@ -449,8 +449,7 @@ body:has(.universal-window.is-active) .search-trigger {
 
 /* 2. 膠囊按鈕：當漢堡選單、通用彈窗、或【詳情卡片】開啟時，往後沉並淡出 */
 body:has(.left-circle-btn.is-expanded) .action-capsule,
-body:has(.universal-window.is-active) .action-capsule,
-body:has(.detail-overlay.active) .action-capsule {
+body:has(.universal-window.is-active) .action-capsule {
     transform: translateY(-50%) scale(0.90) translateY(15px) !important;
     opacity: 0 !important; 
     pointer-events: none !important;
@@ -458,8 +457,7 @@ body:has(.detail-overlay.active) .action-capsule {
 }
 
 /* 3. 漢堡按鈕：當通用彈窗或【詳情卡片】開啟時，往後沉並淡出 */
-body:has(.universal-window.is-active) .left-circle-btn,
-body:has(.detail-overlay.active) .left-circle-btn {
+body:has(.universal-window.is-active) .left-circle-btn {
     transform: scale(0.90) translateY(15px) !important;
     opacity: 0 !important; 
     pointer-events: none !important;
