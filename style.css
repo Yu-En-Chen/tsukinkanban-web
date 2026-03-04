@@ -411,8 +411,7 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 
 /* 當左側按鈕處於 is-expanded 狀態時，自動將背後的卡片組推入深處！ */
 body:has(.left-circle-btn.is-expanded) .card-stack,
-body:has(.universal-window.is-active) .card-stack,
-body:has(.detail-overlay.active) .card-stack {
+body:has(.universal-window.is-active) .card-stack {
     /* 往深處縮小，稍微往下沉，製造被上方玻璃重壓的物理感 */
     transform: scale(0.90) translateY(15px);
     
@@ -438,6 +437,23 @@ body:has(.universal-window.is-active) .action-capsule {
     opacity: 0 !important; /* 🟢 核心改變：完全隱藏 */
     pointer-events: none !important;
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease !important;
+}
+
+/* 當漢堡選單或通用彈窗開啟時，如果「詳情卡片」也正處於打開狀態，詳情卡片本體也要跟著退後！ */
+body:has(.left-circle-btn.is-expanded) .detail-overlay.active .detail-card-inner,
+body:has(.universal-window.is-active) .detail-overlay.active .detail-card-inner {
+    /* 數值與卡片堆疊保持絕對一致，確保它們在同一平面下沉 */
+    transform: scale(0.90) translateY(15px) !important;
+    pointer-events: none !important; /* 退到背景時禁止點擊，防止誤觸 */
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* 同時，把詳情卡片頂部的「叉叉關閉按鈕 (dismiss-icon)」也一起淡出隱藏，保持畫面極致乾淨 */
+body:has(.left-circle-btn.is-expanded) .dismiss-icon,
+body:has(.universal-window.is-active) .dismiss-icon {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: opacity 0.3s ease !important;
 }
 
 /* 確保平時卡片有平滑的恢復動畫 */
