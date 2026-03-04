@@ -436,7 +436,8 @@ body.searching .search-mask {
    🟢 終極 Z 軸景深魔法 (True Depth of Field)
    ========================================= */
 
-/* 1. 【第 1 層深度】當左側按鈕、通用彈窗、或【詳情卡片】開啟時，自動將背後的卡片組推入深處！ */
+/* 1. 【第 1 層深度】加入 body.menu-active 雙重保險，徹底解決 :has 失憶 Bug！ */
+body.menu-active .card-stack,
 body:has(.left-circle-btn.is-expanded) .card-stack,
 body:has(.universal-window.is-active) .card-stack,
 body:has(.detail-overlay.active) .card-stack,
@@ -445,17 +446,21 @@ body.searching .card-stack {
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* 2. 【第 2 層深度】當「詳情卡片」與「漢堡/通用選單」同時開啟時，卡片組退入更深處！ */
+/* 2. 【第 2 層深度】修正瞬間變清晰的 Flicker Bug，保留 10px 模糊！ */
+body:has(.detail-overlay.active).menu-active .card-stack,
 body:has(.detail-overlay.active):has(.left-circle-btn.is-expanded) .card-stack,
 body:has(.detail-overlay.active):has(.universal-window.is-active) .card-stack,
 body:has(.detail-overlay.active).searching .card-stack {
     /* 空間數學疊加：scale(0.9 * 0.9 = 0.81), translateY(15 + 15 = 30px) */
     transform: scale(0.81) translateY(30px) !important;
-    filter: brightness(0.5) !important; /* 你原本設定了 0.1 有點太黑，我改成 0.5，你可以自己微調 */
+    
+    /* 🟢 核心修復 2：疊加狀態必須繼承原本的 blur(10px)，避免 filter 屬性覆蓋導致瞬間變清晰 */
+    filter: blur(10px) brightness(0.5) !important; 
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* 3. 【詳情卡片本體景深】如果打開了漢堡選單，原本浮在前面的詳情卡片也要跟著退後！ */
+body.menu-active .detail-overlay.active .detail-card-inner,
 body:has(.left-circle-btn.is-expanded) .detail-overlay.active .detail-card-inner,
 body:has(.universal-window.is-active) .detail-overlay.active .detail-card-inner,
 body.searching .detail-overlay.active .detail-card-inner {
@@ -469,6 +474,7 @@ body.searching .detail-overlay.active .detail-card-inner {
    ========================================= */
 
 /* 1. 搜尋按鈕：當漢堡選單、通用彈窗、或【詳情卡片】開啟時，往後沉並淡出 */
+body.menu-active .search-trigger,
 body:has(.left-circle-btn.is-expanded) .search-trigger,
 body:has(.universal-window.is-active) .search-trigger {
     transform: scale(0.90) translateY(15px) !important;
@@ -478,6 +484,7 @@ body:has(.universal-window.is-active) .search-trigger {
 }
 
 /* 2. 膠囊按鈕：當漢堡選單、通用彈窗、或【詳情卡片】開啟時，往後沉並淡出 */
+body.menu-active .action-capsule,
 body:has(.left-circle-btn.is-expanded) .action-capsule,
 body:has(.universal-window.is-active) .action-capsule {
     transform: translateY(-50%) scale(0.90) translateY(15px) !important;
@@ -486,7 +493,7 @@ body:has(.universal-window.is-active) .action-capsule {
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease !important;
 }
 
-/* 3. 漢堡按鈕：當通用彈窗或【詳情卡片】開啟時，往後沉並淡出 */
+/* 3. 漢堡按鈕：當通用彈窗開啟時，往後沉並淡出 */
 body:has(.universal-window.is-active) .left-circle-btn {
     transform: scale(0.90) translateY(15px) !important;
     opacity: 0 !important; 
@@ -495,6 +502,7 @@ body:has(.universal-window.is-active) .left-circle-btn {
 }
 
 /* 4. 詳情卡片的打叉按鈕：當漢堡選單或通用彈窗開啟時，一起淡出 */
+body.menu-active .dismiss-icon,
 body:has(.left-circle-btn.is-expanded) .dismiss-icon,
 body:has(.universal-window.is-active) .dismiss-icon,
 body.searching .dismiss-icon {
