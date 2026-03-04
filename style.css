@@ -410,7 +410,8 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
    ========================================= */
 
 /* 當左側按鈕處於 is-expanded 狀態時，自動將背後的卡片組推入深處！ */
-body:has(.left-circle-btn.is-expanded) .card-stack {
+body:has(.left-circle-btn.is-expanded) .card-stack,
+body:has(.universal-window.is-active) .card-stack {
     /* 往深處縮小，稍微往下沉，製造被上方玻璃重壓的物理感 */
     transform: scale(0.90) translateY(15px);
     
@@ -419,6 +420,23 @@ body:has(.left-circle-btn.is-expanded) .card-stack {
     
     /* 與玻璃面板同頻率的物理彈簧動畫 */
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* 1. 對「搜尋按鈕」套用景深 (當漢堡選單、膠囊選單、或通用彈窗開啟時) */
+body:has(.left-circle-btn.is-expanded) .search-trigger,
+body:has(.universal-window.is-active) .search-trigger {
+    transform: scale(0.90) translateY(15px) !important;
+    pointer-events: none !important; /* 退到背景時禁止點擊，保護 UX */
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* 2. 對「膠囊按鈕」套用景深 (當漢堡選單、或通用彈窗開啟時) */
+body:has(.left-circle-btn.is-expanded) .action-capsule,
+body:has(.universal-window.is-active) .action-capsule {
+    /* 膠囊按鈕原本靠 translateY(-50%) 來保持垂直置中，我們必須保留它，再疊加景深的縮放與下沉！ */
+    transform: translateY(-50%) scale(0.90) translateY(15px) !important;
+    transform-origin: center !important; /* 強制從中心縮小，與卡片方向一致 */
+    pointer-events: none !important;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* 確保平時卡片有平滑的恢復動畫 */
