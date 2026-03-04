@@ -439,12 +439,16 @@ body:has(.universal-window.is-active) .action-capsule {
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease !important;
 }
 
-/* 當漢堡選單或通用彈窗開啟時，如果「詳情卡片」也正處於打開狀態，詳情卡片本體也要跟著退後！ */
-body:has(.left-circle-btn.is-expanded) .detail-overlay.active .detail-card-inner,
-body:has(.universal-window.is-active) .detail-overlay.active .detail-card-inner {
-    /* 數值與卡片堆疊保持絕對一致，確保它們在同一平面下沉 */
-    transform: scale(0.90) translateY(15px) !important;
-    pointer-events: none !important; /* 退到背景時禁止點擊，防止誤觸 */
+/* 當「詳情卡片」已經打開，此時「又」疊加打開了「漢堡選單」或「通用彈窗」時：
+   最底層的卡牌組必須退到更深處的【第 2 層空間】！ */
+body:has(.detail-overlay.active):has(.left-circle-btn.is-expanded) .card-stack,
+body:has(.detail-overlay.active):has(.universal-window.is-active) .card-stack {
+    /* 空間數學疊加：scale(0.9 * 0.9 = 0.81), translateY(15 + 15 = 30px) */
+    transform: scale(0.81) translateY(30px) !important;
+    
+    /* 為了突顯它已經退到極深處，可以讓它稍微變得更暗一點 (可依你喜好增減) */
+    filter: brightness(0.1) !important;
+    
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
