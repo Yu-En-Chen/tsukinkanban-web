@@ -431,13 +431,12 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
 
 /* 🟢 只在支援精細滑鼠的設備上啟用 (徹底排除手機與平板，保護效能) */
 @media (pointer: fine) {
-    /* 隱藏原生游標 */
-    body, a, button, .card, .menu-toggle, .color-swatch { 
+    *, *::before, *::after { 
         cursor: none !important; 
     }
     
-    /* 保留輸入框的原生文字游標 (I-beam)，讓使用者知道可以打字 */
-    input[type="text"], input[type="search"] {
+    /* 🟢 2. 唯獨把「打字游標」還給輸入框，否則不能打字 */
+    input, textarea {
         cursor: text !important;
     }
 
