@@ -432,13 +432,12 @@ body.searching .search-mask {
 .card-stack.bounce-back .card::after, .card-stack.bounce-back ~ .fixed-bottom-card::after { transition: --glare-angle 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
 
 @media (prefers-color-scheme: dark) {
-    /* 1. 徹底移除 .card 的 filter: saturate... 避免 WebKit GPU 圓角裁切崩潰 */
+    .card, .fixed-bottom-card, .detail-card-inner { filter: saturate(1.3) brightness(1.15); }
+    body.searching .fixed-bottom-card { filter: blur(var(--bg-content-blur)) saturate(1.3) brightness(1.15); }
+    .card-stack.has-active ~ .fixed-bottom-card { filter: blur(10px) saturate(1.3) brightness(1.15); }
     
-    /* 2. 底層卡片的模糊效果保留，但移除會影響渲染的 saturate 與 brightness */
-    body.searching .fixed-bottom-card { filter: blur(var(--bg-content-blur)); }
-    .card-stack.has-active ~ .fixed-bottom-card { filter: blur(10px); }
+    /* 🟢 已經把 .card::before 的 0.06 opacity 限制整行刪除了！讓高光解放出來！ */
     
-    /* 3. 光影混合模式維持原樣 */
     .card::after, .fixed-bottom-card::after, .detail-card-inner::after { mix-blend-mode: hard-light !important; opacity: 0.09 !important; }
 }
 
