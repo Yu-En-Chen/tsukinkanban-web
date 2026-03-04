@@ -916,8 +916,8 @@ function initCustomCursor() {
     function render() {
         // 🟢 線性插值 (Lerp)：讓游標滑順地追趕真實滑鼠。
         // 0.2 是阻尼係數，越小越有延遲跟隨感，0.2 是一般公認手感最棒的數值。
-        cursorX += (mouseX - cursorX) * 0.5;
-        cursorY += (mouseY - cursorY) * 0.5;
+        cursorX += (mouseX - cursorX) * 0.1;
+        cursorY += (mouseY - cursorY) * 0.1;
 
         // 利用 translate3d 強制硬體加速，絕對不會卡頓
         cursor.style.transform = `translate3d(calc(${cursorX}px - 50%), calc(${cursorY}px - 50%), 0)`;
