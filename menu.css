@@ -159,8 +159,80 @@
 }
 
 @media (prefers-color-scheme: light) {
+    /* =========================================
+   展開後的 3D 雙層玻璃保鮮盒 (Skeuomorphic Glass)
+   ========================================= */
+
+/* 1. 中心玻璃質感 (中心朦朧微透 + 3D內緣銜接) */
+.left-circle-btn.is-expanded::before {
+    /* 預設深色模式底色 */
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(8px) brightness(0.85);
+    -webkit-backdrop-filter: blur(8px) brightness(0.85);
+    
+    /* 玻璃盒厚度光影系統 */
+    box-shadow: 
+        0 30px 60px rgba(0,0,0,0.8),                 /* 桌面巨大投影 */
+        0 0 0 1px rgba(255,255,255,0.1),             /* 邊緣銳利反光 */
+        inset 0 0 0 10px rgba(0,0,0,0.3),            /* 10px厚度微暗層 */
+        inset 0 0 0 11px rgba(255,255,255,0.15),     /* 內壁銳利反光光線 */
+        inset 0 0 30px 11px rgba(255,255,255,0.08);  /* 蘋果風霧面拉伸過渡 */
+
+    /* 🔴 徹底清空原本死板的漸層遮罩 */
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+    border: none !important;
+
+    transform: translate3d(0, 0, 0);
+    perspective: 1000px;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    z-index: -2; /* 墊在最底層 */
+}
+
+/* 2. 🟢 新增：玻璃盒 10px 實體厚度的邊緣高折射外框 */
+.left-circle-btn.is-expanded::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: -1; /* 蓋在 before 上面，但依然在圖示下方 */
+    
+    /* 極高強度的邊緣光線折射 (高模糊 + 拉伸底下顏色) */
+    backdrop-filter: blur(30px) saturate(1.5) brightness(0.9);
+    -webkit-backdrop-filter: blur(30px) saturate(1.5) brightness(0.9);
+    
+    /* 玻璃實體的邊緣反光漸層 */
+    background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.02) 40%, rgba(0,0,0,0.4) 100%);
+    
+    /* 物理魔法：精準挖空中心，只留下 10px 的折射框 */
+    padding: 10px; 
+    -webkit-mask-image: linear-gradient(white, white), linear-gradient(white, white);
+    -webkit-mask-clip: content-box, padding-box;
+    -webkit-mask-composite: xor;
+    mask-image: linear-gradient(white, white), linear-gradient(white, white);
+    mask-clip: content-box, padding-box;
+    mask-composite: exclude;
+}
+
+/* 3. 淺色模式的光學自動轉換 */
+@media (prefers-color-scheme: light) {
     .left-circle-btn.is-expanded::before {
-        box-shadow: inset 0 0 80px 20px rgba(var(--menu-shadow-light), 0.12);
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(8px) brightness(1.05);
+        -webkit-backdrop-filter: blur(8px) brightness(1.05);
+        box-shadow: 
+            0 30px 60px rgba(0,0,0,0.3),
+            0 0 0 1px rgba(255,255,255,0.15),
+            inset 0 0 0 10px rgba(0,0,0,0.02),
+            inset 0 0 0 11px rgba(255,255,255,0.3),
+            inset 0 0 30px 11px rgba(255,255,255,0.2);
+    }
+    .left-circle-btn.is-expanded::after {
+        backdrop-filter: blur(30px) saturate(1.8) brightness(1.1);
+        -webkit-backdrop-filter: blur(30px) saturate(1.8) brightness(1.1);
+        background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.05) 40%, rgba(0,0,0,0.1) 100%);
     }
 }
 
