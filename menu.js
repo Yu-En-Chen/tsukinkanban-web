@@ -20,6 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 切換展開/收縮 Class
         const isExpanded = menuBtn.classList.toggle('is-expanded');
+        
+        // 🟢 核心修復 1：加入 body 狀態，強制 WebKit 引擎重新計算渲染，解決重新載入後景深失效的問題
+        document.body.classList.toggle('menu-active', isExpanded);
 
         // Log 狀態方便確認是否成功觸發
         if (isExpanded) {
@@ -33,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && menuBtn.classList.contains('is-expanded')) {
             menuBtn.classList.remove('is-expanded');
+            document.body.classList.remove('menu-active'); // 同步移除
             console.log('Menu: Closed by ESC');
         }
     });
