@@ -715,8 +715,7 @@ function initOverlayGestures() {
         inner.style.transition = 'none'; 
         if (dismissIcon) dismissIcon.style.transition = 'none';
         
-        extraElements.forEach(el => el.style.transition = 'none');
-        physicsEngine.updateGlare(135); 
+        extraElements.forEach(el => el.style.transition = 'none'); 
     };
     
     detailOverlay.ontouchmove = e => {
@@ -725,7 +724,6 @@ function initOverlayGestures() {
             if (rawMoveY > 10 && e.cancelable) e.preventDefault(); 
             const resistedY = rawMoveY * 0.5;
             inner.style.transform = `translate3d(0, ${resistedY}px, 0)`;
-            physicsEngine.updateGlare(135 + (resistedY * 0.15)); 
             
             if (dismissIcon) dismissIcon.style.opacity = Math.max(0, 1 - (rawMoveY / 150));
             
@@ -746,13 +744,6 @@ function initOverlayGestures() {
         
         extraElements.forEach(el => el.style.transition = 'opacity 0.3s ease');
         
-        physicsEngine.updateGlare(135);
-        if (activeCardId) {
-            inner.style.transform = 'translate3d(0, 0, 0)';
-            if (dismissIcon) dismissIcon.style.opacity = '1';
-            
-            extraElements.forEach(el => el.style.opacity = '1');
-        }
     };
 
     let overlayWheelSum = 0;
@@ -764,7 +755,6 @@ function initOverlayGestures() {
         const resistedY = overlayWheelSum * 0.2;
         inner.style.transition = 'none';
         inner.style.transform = `translate3d(0, ${resistedY}px, 0)`;
-        physicsEngine.updateGlare(135 + (resistedY * 0.15));
         
         extraElements.forEach(el => el.style.transition = 'none');
         
@@ -782,7 +772,6 @@ function initOverlayGestures() {
 
         if (overlayWheelSum > 200) {
             closeAllCards(false); 
-            physicsEngine.updateGlare(135);
             overlayWheelSum = 0; 
             return;
         }
@@ -792,7 +781,6 @@ function initOverlayGestures() {
             if (activeCardId && overlayWheelSum <= 200) {
                 inner.style.transition = 'transform 0.6s var(--active-bounce)';
                 inner.style.transform = 'translate3d(0, 0, 0)';
-                physicsEngine.updateGlare(135);
                 
                 extraElements.forEach(el => {
                     el.style.transition = 'opacity 0.3s ease';
