@@ -18,6 +18,9 @@
     user-select: none;         
     touch-action: pan-x pan-y; 
 }
+*:focus, *:focus-visible {
+    outline: none !important;
+}
 
 html, body {
     width: 100%; 
@@ -270,7 +273,11 @@ body.searching .search-mask {
 .card.hidden-placeholder { opacity: 0 !important; pointer-events: none; }
 .card.lifted-state { transform: translate3d(0, -100px, 0); opacity: 0 !important; pointer-events: none; transition: none !important; }
 .card.returning { animation: snapIn 0.6s var(--impact-bounce) forwards; opacity: 1 !important; pointer-events: auto; transition: none !important; }
-.card-stack.has-active { transform: scale(0.92); filter: blur(10px); pointer-events: none; }
+.card-stack.has-active { 
+    transform: scale(0.92); 
+    filter: blur(10px) brightness(1); 
+    pointer-events: none; 
+}
 /* 🟢 桌面與 iPad 觸控板專屬：極致優雅的懸浮微交互 */
 /* 💡 關鍵修復：使用 any-hover，這樣 iPad 的外接觸控板才能被正確識別！ */
 @media (any-hover: hover) {
