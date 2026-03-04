@@ -420,7 +420,7 @@ function renderCards(data) {
                 c.style.animationDelay = ''; // 🟢 修復 1：開場動畫結束後，徹底清除殘留的延遲時間
             });
             const fixedCard = document.getElementById('fixed-info-card');
-            if (fixedCard) fixedCard.classList.remove('opening-pull-fixed');fixedCard.style.animationDelay = '';
+            if (fixedCard) fixedCard.classList.remove('opening-pull-fixed');
 
             // 👇 加上這一行，解除光影凍結，讓 Hover 可以正常運作 👇
             mainStack.dataset.freezeGlare = 'false';
