@@ -219,7 +219,7 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     
     position: relative; 
     /* 🟢 物理細邊框，顏色吃 JS 判斷的變數。平時透明，黑白極端色時自動顯現 */
-    border: 1px solid var(--full-wrap-border, transparent);
+    /* border: 1px solid var(--full-wrap-border, transparent); */
     box-shadow: var(--ray-shadow-resting);
     isolation: isolate; 
     transform: translate3d(0, 0, 0);
@@ -351,8 +351,12 @@ body.menu-active .search-mask { transition-delay: 0.15s; }
     /* 1. 退回最安全的 1px 厚度，確保不會被瀏覽器幾何引擎吃掉 */
     padding: 1px; 
     
-    /* 2. 爆亮的高光漸層 (維持不變) */
-    background: linear-gradient(135deg, rgba(255,255,255,0.6) 0%, var(--border-color) 20%, transparent 180px);
+/* 🟢 視覺欺騙魔法：雙層背景 */
+    background: 
+        /* 1. 上層：保留你原本最滿意的左上角爆亮高光 */
+        linear-gradient(135deg, rgba(255,255,255,0.6) 0%, var(--border-color) 20%, transparent 180px),
+        /* 2. 底層：全包覆防護邊框。從頂部往下，到 80% 的地方開始變淡，95% 徹底透明，完美閃避底部的圓角破圖區！ */
+        linear-gradient(to bottom, var(--full-wrap-border, transparent) 0%, var(--full-wrap-border, transparent) 80%, transparent 95%);
     
     /* 3. 【終極解法】禁止使用縮寫！將遮罩屬性徹底拆開，強制所有瀏覽器乖乖聽話 */
     /* WebKit 核心 (Safari, 舊版 Chrome, 手機瀏覽器) */
