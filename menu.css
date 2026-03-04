@@ -56,8 +56,6 @@
     display: flex !important;
     align-items: center;
     justify-content: center;
-    
-    transform: translateZ(0);
 }
 
 /* 4. 偽元素背景 */
@@ -70,8 +68,6 @@
     transition: all 0.5s ease;
     z-index: -1;
     pointer-events: none;
-    transform: translateZ(0); 
-    backface-visibility: hidden;
 }
 
 /* =========================================
