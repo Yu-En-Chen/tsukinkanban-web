@@ -421,22 +421,22 @@ body:has(.universal-window.is-active) .card-stack {
     /* 與玻璃面板同頻率的物理彈簧動畫 */
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
-/* 1. 對「搜尋按鈕」套用景深 (當漢堡選單、膠囊選單、或通用彈窗開啟時) */
+/* 1. 搜尋按鈕：當漢堡選單或通用彈窗開啟時，往後沉並「完全淡出」 */
 body:has(.left-circle-btn.is-expanded) .search-trigger,
 body:has(.universal-window.is-active) .search-trigger {
     transform: scale(0.90) translateY(15px) !important;
-    pointer-events: none !important; /* 退到背景時禁止點擊，保護 UX */
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    opacity: 0 !important; /* 🟢 核心改變：完全隱藏 */
+    pointer-events: none !important;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease !important; /* 透明度消失稍微快一點點，看起來更自然 */
 }
 
-/* 2. 對「膠囊按鈕」套用景深 (當漢堡選單、或通用彈窗開啟時) */
+/* 2. 膠囊按鈕：當漢堡選單或通用彈窗開啟時，往後沉並「完全淡出」 */
 body:has(.left-circle-btn.is-expanded) .action-capsule,
 body:has(.universal-window.is-active) .action-capsule {
-    /* 膠囊按鈕原本靠 translateY(-50%) 來保持垂直置中，我們必須保留它，再疊加景深的縮放與下沉！ */
     transform: translateY(-50%) scale(0.90) translateY(15px) !important;
-    transform-origin: center !important; /* 強制從中心縮小，與卡片方向一致 */
+    opacity: 0 !important; /* 🟢 核心改變：完全隱藏 */
     pointer-events: none !important;
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease !important;
 }
 
 /* 確保平時卡片有平滑的恢復動畫 */
