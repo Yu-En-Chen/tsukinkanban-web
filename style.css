@@ -453,8 +453,8 @@ body:has(.left-circle-btn.is-expanded) .card-stack,
 body:has(.universal-window.is-active) .card-stack,
 body:has(.detail-overlay.active) .card-stack,
 body.searching .card-stack {
-    transform: scale(0.90) translateY(15px);
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: scale(0.90) translateY(15px) !important;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* 2. 【第 2 層深度】修正瞬間變清晰的 Flicker Bug，保留 10px 模糊！ */
