@@ -37,13 +37,14 @@ html, body {
 }
 
 /* =========================================
-   🟢 1. 搜尋遮罩 (懸浮實體厚霧面玻璃版 - 100% 複製漢堡選單)
+   🟢 終極版：搜尋遮罩 (100% 複製漢堡選單架構)
    ========================================= */
 
+/* 1. 外層容器：只負責懸浮幾何尺寸與淡入淡出動畫，絕對不放任何濾鏡 */
 .search-mask {
     position: fixed; 
     
-    /* 🟢 懸浮幾何：精準複製漢堡選單的四周留白與圓角 */
+    /* 精準複製漢堡選單的四周留白與圓角 */
     top: calc(env(safe-area-inset-top) + 24px) !important;
     width: calc(var(--card-width) - 24px) !important;
     max-width: 396px !important;
@@ -54,42 +55,61 @@ html, body {
     height: calc(100svh - (env(safe-area-inset-top) + 24px) - var(--bottom-anchor) - 24px) !important;
     border-radius: 40px !important;
     
-    /* 🔴 材質核心：將濾鏡與底色寫在基礎層，確保過渡動畫極致滑順 */
+    /* 🔴 強制清空舊有的材質，避免衝突 */
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+    border: none !important;
+        
+    opacity: 0; 
+    visibility: hidden; 
+    z-index: 5500; 
+    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s;
+}
+
+body.searching .search-mask {
+    opacity: 1; 
+    visibility: visible;
+}
+
+/* 2. 🟢 核心材質層：獨立的 ::before (100% 複製漢堡的材質參數) */
+.search-mask::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: -1;
+    
+    /* 深色模式底色與微粒雜訊 */
     background: rgba(30, 30, 30, 0.4) !important; 
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E") !important;
     
-    -webkit-backdrop-filter: blur(40px) saturate(2) brightness(1.1) !important;
+    /* 超高模糊底色 */
     backdrop-filter: blur(40px) saturate(2) brightness(1.1) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(2) brightness(1.1) !important;
     
-    /* 玻璃板邊緣的厚度高光與懸浮巨大陰影 */
+    /* 內部體積光影 */
     box-shadow: 
         inset 0 0 0 1px rgba(255, 255, 255, 0.15),
         inset 0 0 0 10px rgba(255, 255, 255, 0.04),
         inset 0 20px 50px rgba(0, 0, 0, 0.4),
         0 30px 80px rgba(0, 0, 0, 0.6) !important;
         
-    opacity: 0; 
-    visibility: hidden; 
-    z-index: 5500; 
-    
-    /* 單純透過透明度來動畫 (這就是你要求的：不要有變形伸展的動畫) */
-    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s;
+    border: none !important;
+    -webkit-mask: none !important;
+    mask: none !important;
 }
 
-/* 展開時只需改變透明度 */
-body.searching .search-mask {
-    opacity: 1; 
-    visibility: visible;
-}
-
-/* 淺色模式的光學自動轉換 (100% 複製) */
+/* 3. 淺色模式的光學自動轉換 (100% 複製) */
 @media (prefers-color-scheme: light) {
-    .search-mask {
+    .search-mask::before {
         background: rgba(255, 255, 255, 0.35) !important; 
         background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E") !important;
         
-        -webkit-backdrop-filter: blur(40px) saturate(2.5) brightness(1.05) !important;
         backdrop-filter: blur(40px) saturate(2.5) brightness(1.05) !important;
+        -webkit-backdrop-filter: blur(40px) saturate(2.5) brightness(1.05) !important;
         
         box-shadow: 
             inset 0 0 0 1px rgba(255, 255, 255, 0.8),
