@@ -415,7 +415,7 @@ body:has(.left-circle-btn.is-expanded) .card-stack {
     transform: scale(0.95) translateY(10px);
     
     /* 配合變暗與微距失焦模糊 (Bokeh) */
-    filter: blur(6px) brightness(0.1);
+    /*filter: blur(6px);*/
     
     /* 與玻璃面板同頻率的物理彈簧動畫 */
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
