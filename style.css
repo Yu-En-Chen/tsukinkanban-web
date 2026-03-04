@@ -440,8 +440,7 @@ body:has(.universal-window.is-active) .detail-overlay.active .detail-card-inner 
 
 /* 1. 搜尋按鈕：當漢堡選單、通用彈窗、或【詳情卡片】開啟時，往後沉並淡出 */
 body:has(.left-circle-btn.is-expanded) .search-trigger,
-body:has(.universal-window.is-active) .search-trigger,
-body:has(.detail-overlay.active) .search-trigger {
+body:has(.universal-window.is-active) .search-trigger {
     transform: scale(0.90) translateY(15px) !important;
     opacity: 0 !important; 
     pointer-events: none !important;
