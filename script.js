@@ -71,6 +71,18 @@ function getDynamicTheme(hex, opacity = 1) {
         topShift = 14;
         bottomShift = 4;
     }
+    // 🟢 智慧高光引擎：根據卡片視覺亮度 (luminance) 動態決定高光的白光強度
+    let rimGlareAlpha = 0.6;
+    if (luminance > 0.6) {
+        rimGlareAlpha = 1.0;  // 淺色/亮色系 (如黃色 #D9B300)：需要全白不透明才壓得過底色
+    } else if (luminance > 0.3) {
+        rimGlareAlpha = 0.85; // 中等亮度 (如綠色 #009100, 橘紅 #BB3D00)：大幅增強白光
+    } else if (luminance > 0.1) {
+        rimGlareAlpha = 0.65; // 偏暗色 (如深藍, 深綠 #007979)：適中白光
+    } else {
+        rimGlareAlpha = 0.45; // 純黑極暗色：對比度極高，稍微收斂維持金屬質感
+    }
+    let rimGlareStart = `rgba(255, 255, 255, ${rimGlareAlpha})`;
 
     // ...(前面的 luminance 與 topShift/bottomShift 判斷維持原樣)...
 
@@ -138,7 +150,7 @@ function getDynamicTheme(hex, opacity = 1) {
     return {
         gradient, textColor, textSecondary, borderColor, tagBg, textShadow,
         textBgGradientSecondary, textBgGradientTag, textClip, textFill,
-        glareColor, innerGlow, fullWrapBorder // 🟢 回傳新變數
+        glareColor, innerGlow, fullWrapBorder, rimGlareStart // 🟢 回傳新變數
     };
 }
 
@@ -167,6 +179,7 @@ function applyThemeToCard(cardElement, hex, opacity = 1) {
     cardElement.style.setProperty('--dynamic-inner-glow', theme.innerGlow, 'important');
     
     // 🟢 注入全包覆防護邊框
+    cardElement.style.setProperty('--rim-glare-start', theme.rimGlareStart, 'important');
     cardElement.style.setProperty('--full-wrap-border', theme.fullWrapBorder, 'important');
 }
 // ============================================================================
