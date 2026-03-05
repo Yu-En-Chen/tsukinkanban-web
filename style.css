@@ -610,6 +610,45 @@ body.searching .dismiss-icon {
     opacity: 1 !important;
     transition: opacity 0.2s linear 0.1s !important;
 }
+
+/* 7. [關閉] 第一半段：空白卡片退場翻轉 (0度 -> -90度) */
+.detail-card-inner.flip-out-reverse {
+    transform: scale(1.05) rotateY(-90deg) !important;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.5) !important;
+    /* 完全複製 flip-out 的加速曲線 */
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), box-shadow 0.3s ease-in !important;
+    pointer-events: none;
+}
+.detail-card-inner.flip-out-reverse > * {
+    opacity: 0 !important;
+    /* 完全複製 flip-out 的文字淡出 */
+    transition: opacity 0.15s linear !important;
+}
+
+/* 8. [關閉] 第二半段：原卡片強制 90 度起跑點 (補足被吞掉的畫格) */
+.detail-card-inner.flip-back-start {
+    transform: scale(1.05) rotateY(90deg) !important;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.5) !important;
+    transition: none !important;
+}
+.detail-card-inner.flip-back-start > * {
+    opacity: 0 !important;
+    transition: none !important;
+}
+
+/* 9. [關閉] 第二半段：原卡片翻回來 (90度 -> 0度) */
+.detail-card-inner.flip-back-active {
+    transform: scale(1) rotateY(0deg) !important;
+    box-shadow: var(--ray-shadow-active) !important;
+    /* 完全複製 flip-in-active 的減速曲線 */
+    transition: transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1), box-shadow 0.3s ease-out !important;
+}
+.detail-card-inner.flip-back-active > .card-header,
+.detail-card-inner.flip-back-active > .card-content {
+    opacity: 1 !important;
+    /* 完全複製翻入時的文字延遲淡入 */
+    transition: opacity 0.2s linear 0.1s !important;
+}
 /* ==========================================================================
    🟢 Android Blink 引擎專屬防閃爍修復 (動態降級法)
    ========================================================================== */
