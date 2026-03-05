@@ -123,8 +123,6 @@ body.searching .search-mask {
     transition: transform 0.5s var(--apple-spring), opacity 0.35s ease;
 }
 
-.left-circle-btn svg { width: 20px !important; height: 20px !important; opacity: 0.7; display: block; transition: opacity 0.3s ease, transform 0.3s ease; }
-
 .search-container.active .left-circle-btn,
 .search-container.menu-open .left-circle-btn { transform: translate3d(-50px, 0, 0) scale(0.8); opacity: 0; pointer-events: none; }
 
@@ -143,7 +141,6 @@ body.searching .search-mask {
 }
 
 .search-icon { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; color: var(--icon-color); flex-shrink: 0; transition: transform 0.4s var(--active-bounce); }
-.search-icon svg { width: 100%; height: 100%; display: block; opacity: 0.7; }
 
 .input-wrapper { position: absolute; left: 44px; width: 0; height: 100%; display: flex; align-items: center; opacity: 0; transition: width 0.5s var(--active-bounce), opacity 0.3s ease; }
 #search-input { width: 100%; height: 100%; background: transparent; border: none; padding: 0 10px; color: var(--text-main); font-size: 16px; outline: none; -webkit-user-select: text; user-select: text; }
@@ -159,7 +156,6 @@ body.searching .search-mask {
 .capsule-grid-layout { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; justify-items: center; width: 100%; height: 100%; transition: opacity 0.2s ease; }
 
 .capsule-btn-item { width: 100%; height: 100%; background: transparent; border: none; display: flex; align-items: center; justify-content: center; color: var(--icon-color); cursor: pointer; padding: 0; transition: transform 0.4s var(--apple-spring), opacity 0.3s ease; }
-.capsule-btn-item svg { width: 20px; height: 20px; opacity: 0.8; }
 .capsule-divider { width: 1px; height: 16px; background: var(--border-color); opacity: 0.5; margin: 0; }
 
 .action-capsule.animating-shrink { animation: capsuleSquish 0.2s ease-out forwards; }
@@ -190,10 +186,7 @@ body.searching .search-mask {
     transition: width 0.4s var(--active-bounce), opacity 0.3s ease, transform 0.4s var(--active-bounce); transform: scale(0.5); flex-shrink: 0;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
-.cancel-circle-btn svg { 
-    width: 17px !important; height: 17px !important; min-width: 17px; min-height: 17px; 
-    display: block; flex-shrink: 0; opacity: 0.8; 
-}
+
 .search-container.active .input-wrapper { width: calc(100% - 44px); opacity: 1; }
 .search-container.active .cancel-circle-btn { width: 44px; opacity: 1; transform: scale(1); }
 
@@ -649,54 +642,43 @@ body.searching .dismiss-icon {
 }
 
 /* ==========================================================================
-   🟢 全站 SVG 骨架圖示「萬用統一引擎」(升級版)
+   🟢 全站 SVG 骨架圖示「萬用統一引擎」(完美除錯版)
    ========================================================================== */
 
-/* 1. 【全局接管】將 Header 與全站所有的關閉按鈕，強制轉為 1.8px 骨架模式 */
+/* 1. 【全局接管】強制轉為 1.8px 骨架模式，並統一透明度 */
 .header button svg,
 .header .search-trigger svg,
+.search-icon svg,
 .left-circle-btn svg,
 .cancel-circle-btn svg,
 .capsule-btn-item svg,
 .universal-close-btn svg,
 #dismiss-icon svg {
-    fill: none !important;          /* 強制清空實體填色 */
-    stroke: currentColor !important;/* 繼承文字或設定的顏色 */
+    fill: none !important;
+    stroke: currentColor !important;
     stroke-linecap: round !important;
     stroke-linejoin: round !important;
-    pointer-events: none !important;/* 拔除觸控干擾 */
+    pointer-events: none !important;
+
+    width: 22px !important;
+    height: 22px !important;
+    stroke-width: 1.8px !important;
     
-    width: 28px !important;         /* 預設統一大小 */
-    height: 28px !important;
-    stroke-width: 2px !important; /* 預設統一粗細 */
+    /* 🌟 全站統一透明度！(刻意不加 !important，保留給動畫過渡的空間) */
+    opacity: 0.8; 
 }
 
-/* 2. 🟢 【獨立額外控制】膠囊內的 ⋯ (Ellipsis) 大小與粗細 */
-.header svg.icon-ellipsis {
-    width: 26px !important; 
-    height: 26px !important;
-    stroke-width: 1px !important; /* 👈 在這裡單獨把 ⋯ 加粗 (數值可自由調整) */
-}
+/* 2. 🟢 【獨立控制】膠囊內的 ⋯ (Ellipsis) */
+.header svg.icon-ellipsis { width: 20px !important; height: 20px !important; stroke-width: 2.5px !important; }
 
-/* 3. 【獨立控制】膠囊內的 ＋ (Plus) 大小 */
-.header svg.icon-plus {
-    width: 26px !important;
-    height: 26px !important;
-}
+/* 3. 🟢 【獨立控制】膠囊內的 ＋ (Plus) */
+.header svg.icon-plus { width: 20px !important; height: 20px !important; }
 
-/* 4. 【獨立控制】搜尋取消按鈕 (X) 稍微縮小，配合外層圓框 */
-.cancel-circle-btn svg {
-    width: 28px !important; 
-    height: 28px !important;
-}
+/* 4. 🟢 【獨立控制】搜尋取消按鈕 (X) */
+.cancel-circle-btn svg { width: 18px !important; height: 18px !important; }
 
-/* 5. 【獨立控制】彈窗與卡片下拉的關閉按鈕 (X) 可以稍微大一點 */
-.universal-close-btn svg,
-#dismiss-icon svg {
-    width: 28px !important; 
-    height: 28px !important;
-}
-
+/* 5. 🟢 【獨立控制】彈窗與卡片下拉的關閉按鈕 (X) */
+.universal-close-btn svg, #dismiss-icon svg { width: 24px !important; height: 24px !important; }
 /* ==========================================================================
    🟢 Android Blink 引擎專屬防閃爍修復 (動態降級法)
    ========================================================================== */
