@@ -547,6 +547,29 @@ body.searching .dismiss-icon {
 }
 
 /* ==========================================================================
+   🟢 Android 專屬防破圖修復 (保護文字與光影，iOS 完全豁免)
+   ========================================================================== */
+
+/* 1. 保護卡片本體：解決「文字」與「底色」在滑動時的撕裂閃爍 */
+html.is-android .card-stack.dragging .card,
+html.is-android .card-stack.bounce-back .card,
+html.is-android .card-stack.bounce-back-wheel .card {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    will-change: transform;
+}
+
+/* 2. 保護光影層：解決「雜訊噪點」與「高光邊緣」的頻閃 */
+html.is-android .card-stack.dragging .card::after,
+html.is-android .card-stack.bounce-back .card::after,
+html.is-android .card-stack.bounce-back-wheel .card::after {
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    will-change: transform;
+}
+
+/* ==========================================================================
    高級反差色動態游標 (Custom Difference Cursor)
    ========================================================================== */
 
