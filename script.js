@@ -878,63 +878,92 @@ window.handleBottomCardClick = handleBottomCardClick;
 window.handleOverlayClick = handleOverlayClick;
 
 // ============================================================================
-// 🟢 萬用空白彈窗引擎
+// 🟢 3D 翻轉萬用空白彈窗引擎 (Seamless Flip Engine)
 // ============================================================================
 
 window.openBlankOverlay = function(hexColor = '#2C2C2E') {
-    // 防呆：如果已經存在就不要重複建立
     if (document.getElementById('dynamic-blank-overlay')) return;
 
-    // 1. 完全拷貝遮罩層 (享有相同的背景虛化)
-    const overlay = document.createElement('div');
-    overlay.id = 'dynamic-blank-overlay';
-    overlay.className = 'detail-overlay';
+    // 取得原本打開的詳情卡片與容器
+    const originalInner = document.querySelector('#detail-card-container .detail-card-inner');
+    const originalContainer = document.getElementById('detail-card-container');
+    if (!originalInner || !originalContainer) return;
 
-    // 2. 完全拷貝容器排版 (100% 對齊原版卡片的物理 Y 軸位置)
-    const container = document.createElement('div');
-    container.style.cssText = 'width: 100%; display: flex; justify-content: center; margin-top: calc(env(safe-area-inset-top) + 160px);';
+    // 1. 為原容器掛上 3D 視角，並觸發原卡片翻轉 (0 -> 90度)
+    originalContainer.classList.add('perspective-container');
+    originalInner.classList.remove('flip-back-in');
+    originalInner.classList.add('flip-out');
 
-    // 3. 完全拷貝實體卡片 (直接繼承 GPU 鎖定與彈簧動畫)
-    const card = document.createElement('div');
-    card.className = 'detail-card-inner';
-    
-    // 🌟 核心關鍵：將這張空白卡片送進你寫的色彩引擎！
-    // 這樣它才會長出跟原版一模一樣的 玻璃反光、邊緣高光、底層噪點
-    applyThemeToCard(card, hexColor);
+    // 2. ⚡ 核心換手：在剛好翻到 90 度 (視覺上變成一條線) 的瞬間 (300ms)
+    setTimeout(() => {
+        // 建立背面的空白彈窗
+        const overlay = document.createElement('div');
+        overlay.id = 'dynamic-blank-overlay';
+        overlay.className = 'detail-overlay active'; // 直接給 active，因為它要原地翻出來
 
-    // 組裝節點
-    container.appendChild(card);
-    overlay.appendChild(container);
-    document.body.appendChild(overlay);
+        const container = document.createElement('div');
+        container.className = 'perspective-container'; // 一樣給予 3D 視角
+        container.style.cssText = 'width: 100%; display: flex; justify-content: center; margin-top: calc(env(safe-area-inset-top) + 160px);';
 
-    // 綁定點擊外部關閉事件
-    overlay.addEventListener('click', (e) => {
-        if (!e.target.closest('.detail-card-inner')) {
-            window.closeBlankOverlay();
-        }
-    });
+        const card = document.createElement('div');
+        // 先掛上 flip-in-start，讓這張新卡片停留在 -90 度的接力起跑點
+        card.className = 'detail-card-inner flip-in-start';
+        
+        // 🌟 讓空白卡片長出 100% 一樣的光影防護層！
+        applyThemeToCard(card, hexColor);
 
-    // 觸發與原版 100% 相同的「由下往上」飛入動畫，同時觸發背景景深
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            overlay.classList.add('active');
-            document.getElementById('main-stack').classList.add('has-active'); 
+        // 未來可以在這裡塞入卡片背面的 DOM 內容
+        // card.innerHTML = `<div style="padding: 20px;">背面內容</div>`; 
+
+        container.appendChild(card);
+        overlay.appendChild(container);
+        document.body.appendChild(overlay);
+
+        // 綁定點擊外部翻轉回來的事件
+        overlay.addEventListener('click', (e) => {
+            if (!e.target.closest('.detail-card-inner')) {
+                window.closeBlankOverlay();
+            }
         });
-    });
+
+        // 觸發新卡片接力轉正 (-90 -> 0度)
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                card.classList.remove('flip-in-start');
+                card.classList.add('flip-in-active');
+            });
+        });
+    }, 300); // 必須與 CSS 的 0.3s 旋轉時間完全對齊
 };
 
 window.closeBlankOverlay = function() {
     const overlay = document.getElementById('dynamic-blank-overlay');
-    if (!overlay) return;
+    const blankCard = overlay ? overlay.querySelector('.detail-card-inner') : null;
+    const originalInner = document.querySelector('#detail-card-container .detail-card-inner');
 
-    // 拔除狀態，觸發卡片往下掉的動畫，以及背景景深恢復
-    overlay.classList.remove('active');
-    document.getElementById('main-stack').classList.remove('has-active');
+    if (!overlay || !blankCard || !originalInner) return;
 
-    // 等待原版的 0.55s 彈簧動畫徹底播完後，將這張卡片從 DOM 樹徹底抹除
+    // 1. 空白卡片開始倒帶翻轉回去 (0 -> -90度)
+    blankCard.classList.remove('flip-in-active');
+    blankCard.classList.add('flip-in-start');
+
+    // 2. ⚡ 核心換手：在剛好翻回 -90 度的瞬間 (300ms)
     setTimeout(() => {
+        // 銷毀背面的空白卡片
         if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-    }, 600);
+
+        // 原卡片接力翻轉回來 (90 -> 0度)
+        originalInner.classList.remove('flip-out');
+        originalInner.classList.add('flip-back-in');
+
+        // 等翻轉完成後，清理 3D 視角類別，恢復原本的狀態
+        setTimeout(() => {
+            originalInner.classList.remove('flip-back-in');
+            const originalContainer = document.getElementById('detail-card-container');
+            if (originalContainer) originalContainer.classList.remove('perspective-container');
+        }, 300);
+
+    }, 300);
 };
 /* ==========================================================================
    動態游標引擎 (絕對跟手 0 延遲版)
