@@ -427,6 +427,7 @@ body.searching .search-mask {
     background-size: 150px 150px; border-radius: inherit; background-clip: padding-box;
     -webkit-clip-path: inset(0 round var(--card-radius));
     clip-path: inset(0 round var(--card-radius));
+}
     /* 動態 GPU 紋理鎖定：僅在滑動與回彈期間開啟，結束後自動解除以釋放 iOS 記憶體 */
 .card-stack.dragging .card::after,
 .card-stack.bounce-back .card::after,
@@ -434,7 +435,7 @@ body.searching .search-mask {
     transform: translateZ(0);
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
-    will-change: transform; }
+    will-change: transform;
 }
 
 .card-stack.bounce-back .card::after, .card-stack.bounce-back ~ .fixed-bottom-card::after { transition: --glare-angle 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
