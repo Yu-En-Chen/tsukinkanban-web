@@ -547,21 +547,20 @@ body.searching .dismiss-icon {
 }
 
 /* ==========================================================================
-   🟢 Android Blink 引擎專屬防破圖與防閃爍修復 (精準打擊版)
+   🟢 Android Blink 引擎專屬防閃爍修復 (凍結光影法)
    ========================================================================== */
 
-/* 1. 解決光影頻閃：禁止 CSS 動畫與 JS 爭奪控制權，滑動時強制 0 延遲跟手 */
-html.is-android-blink .card-stack.dragging .card::after {
-    transition: none !important;
+/* 核心原理：Android 崩潰是因為每秒 60 次重繪高強度濾鏡遮罩。
+   我們利用 CSS 權重，在拖曳期間強制「凍結」光影角度，停止重繪，徹底消滅文字與光影的閃爍！ */
+
+html.is-android-blink .card-stack.dragging .card,
+html.is-android-blink .card-stack.bounce-back .card,
+html.is-android-blink .card-stack.bounce-back-wheel .card {
+    --glare-angle: 135deg !important; /* 強制將角度鎖死在完美的高光位置 */
 }
 
-/* 2. 解決切塊破圖與文字閃爍：僅將光影層推入 GPU，絕對不牽連卡片本體 (保護文字) */
-html.is-android-blink .card-stack.dragging .card::after,
-html.is-android-blink .card-stack.bounce-back .card::after,
-html.is-android-blink .card-stack.bounce-back-wheel .card::after {
-    transform: translateZ(0);
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
+html.is-android-blink .card-stack.dragging .card::after {
+    transition: none !important; /* 關閉拖曳時的延遲，避免打架 */
 }
 
 /* ==========================================================================
