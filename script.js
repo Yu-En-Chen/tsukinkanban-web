@@ -13,8 +13,6 @@ let isInitialLoad = true;
 let isAnimating = false;
 let liftTimer = null; 
 let activeCardId = null; 
-let isInitialLoad = true;
-let isAnimating = false;
 
 // ============================================================================
 // 🟢 色彩學與動態適應引擎 (Adaptive UI Engine)
