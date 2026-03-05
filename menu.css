@@ -7,13 +7,19 @@
 }
 
 /* 2. Grid 重疊系統 */
+
+/* ==========================================================================
+   🟢 修復左上角漢堡選單動畫 (支援 Lucide 骨架圖示)
+   ========================================================================== */
+
 .menu-icon-wrapper {
-    display: grid !important;
-    place-items: center !important;
-    width: 100%;
-    height: 100%;
-    pointer-events: none; 
-    transition: width 0.4s ease, height 0.4s ease;
+    position: relative;
+    width: 22px;  /* 配合新 SVG 放寬到 22px */
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.4s var(--apple-spring);
 }
 
 .menu-icon-wrapper svg {
@@ -27,49 +33,34 @@
     transition: all 0.4s ease;
 }
 
-/* 漢堡圖標 */
-.left-circle-btn .icon-hamburger {
-    width: 20px !important;
-    height: 20px !important;
-    opacity: 0.7; 
-    visibility: visible;
-    transform: scale(1);
+.left-circle-btn.is-expanded .menu-icon-wrapper {
+    transform: rotate(90deg); /* 保留外層容器的 iOS 翻轉手感 */
 }
 
-/* 取消圖標 */
-.left-circle-btn .icon-close {
-    width: 20px !important;
-    height: 20px !important;
-    color: var(--icon-color);
-    opacity: 0; 
-    visibility: hidden;
-    transform: scale(0.5) rotate(0deg) !important;
-    transition: opacity 0.3s ease, transform 0.4s ease, visibility 0s 0.3s;
-}
-
-/* 3. 按鈕本體 */
-.left-circle-btn {
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 6001 !important;
-    overflow: visible !important;
-    cursor: pointer;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-}
-
-/* 4. 偽元素背景 */
-.left-circle-btn::before {
-    content: '';
+.icon-hamburger, .icon-close {
     position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    border-radius: inherit;
-    background: transparent;
-    transition: all 0.5s ease;
-    z-index: -1;
-    pointer-events: none;
+    top: 0; 
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transition: opacity 0.3s ease, transform 0.4s var(--apple-spring);
 }
 
+.icon-close {
+    /* 預先反向旋轉，抵銷 wrapper 展開時的 90 度，確保 X 永遠是正的！ */
+    transform: scale(0.5) rotate(-90deg); 
+}
+
+.left-circle-btn.is-expanded .icon-hamburger {
+    opacity: 0 !important;
+    transform: scale(0.5); /* 拔除舊版 -45deg 的詭異扭曲 */
+}
+
+.left-circle-btn.is-expanded .icon-close {
+    opacity: 0.8 !important; /* 對齊全站統一透明度 */
+    visibility: visible !important;
+    transform: scale(1) rotate(-90deg); /* 完美轉正展開 */
+}
 /* =========================================
    🟢 展開狀態 (Active State)
    ========================================= */
@@ -109,12 +100,7 @@
 
 /* 圖標鎖定 */
 .left-circle-btn.is-expanded .menu-icon-wrapper {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 44px !important;
-    height: 44px !important;
-    place-items: center !important;
+    transform: rotate(90deg); /* 保留外層容器的 iOS 翻轉手感 */
 }
 
 /* =========================================
