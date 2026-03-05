@@ -99,7 +99,10 @@
    ========================================================================== */
 @media (display-mode: standalone) {
     :root {
-        /* 在全螢幕 App 模式下，消除多餘間距，完美貼合底部的 Home 橫條 */
-        --bottom-anchor: 12px;
+        /* 讓卡片的最下緣「完美騎在 Home 條的頭上」 */
+        --bottom-anchor: env(safe-area-inset-bottom);
+        
+        /* 💡 提示：如果你覺得完全貼齊視覺上太緊繃，可以加 4px~8px 的微距，例如：
+           --bottom-anchor: calc(6px + env(safe-area-inset-bottom)); */
     }
 }
