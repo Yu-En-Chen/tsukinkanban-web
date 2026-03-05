@@ -877,6 +877,65 @@ document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
 window.handleBottomCardClick = handleBottomCardClick;
 window.handleOverlayClick = handleOverlayClick;
 
+// ============================================================================
+// 🟢 萬用空白彈窗引擎
+// ============================================================================
+
+window.openBlankOverlay = function(hexColor = '#2C2C2E') {
+    // 防呆：如果已經存在就不要重複建立
+    if (document.getElementById('dynamic-blank-overlay')) return;
+
+    // 1. 完全拷貝遮罩層 (享有相同的背景虛化)
+    const overlay = document.createElement('div');
+    overlay.id = 'dynamic-blank-overlay';
+    overlay.className = 'detail-overlay';
+
+    // 2. 完全拷貝容器排版 (100% 對齊原版卡片的物理 Y 軸位置)
+    const container = document.createElement('div');
+    container.style.cssText = 'width: 100%; display: flex; justify-content: center; margin-top: calc(env(safe-area-inset-top) + 160px);';
+
+    // 3. 完全拷貝實體卡片 (直接繼承 GPU 鎖定與彈簧動畫)
+    const card = document.createElement('div');
+    card.className = 'detail-card-inner';
+    
+    // 🌟 核心關鍵：將這張空白卡片送進你寫的色彩引擎！
+    // 這樣它才會長出跟原版一模一樣的 玻璃反光、邊緣高光、底層噪點
+    applyThemeToCard(card, hexColor);
+
+    // 組裝節點
+    container.appendChild(card);
+    overlay.appendChild(container);
+    document.body.appendChild(overlay);
+
+    // 綁定點擊外部關閉事件
+    overlay.addEventListener('click', (e) => {
+        if (!e.target.closest('.detail-card-inner')) {
+            window.closeBlankOverlay();
+        }
+    });
+
+    // 觸發與原版 100% 相同的「由下往上」飛入動畫，同時觸發背景景深
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            overlay.classList.add('active');
+            document.getElementById('main-stack').classList.add('has-active'); 
+        });
+    });
+};
+
+window.closeBlankOverlay = function() {
+    const overlay = document.getElementById('dynamic-blank-overlay');
+    if (!overlay) return;
+
+    // 拔除狀態，觸發卡片往下掉的動畫，以及背景景深恢復
+    overlay.classList.remove('active');
+    document.getElementById('main-stack').classList.remove('has-active');
+
+    // 等待原版的 0.55s 彈簧動畫徹底播完後，將這張卡片從 DOM 樹徹底抹除
+    setTimeout(() => {
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    }, 600);
+};
 /* ==========================================================================
    動態游標引擎 (絕對跟手 0 延遲版)
    ========================================================================== */
