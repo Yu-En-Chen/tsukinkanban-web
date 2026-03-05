@@ -728,7 +728,6 @@ body.searching .dismiss-icon {
     width: 20px !important; 
     height: 20px !important;
     stroke-width: 1.5px !important; /* 單獨稍微加粗，讓點點更飽滿清晰 */
-    opacity: 0.7 !important;      /* 👈 在這裡獨立控制透明度 (數值可自行修改) */
 }
 /* 🟢 針對 ⋯ 圖示：強制將裡面的圓形填滿實心色，解決中空問題 */
 .capsule-btn-item:not(.main-btn) svg circle {
@@ -741,16 +740,16 @@ body.searching .dismiss-icon {
 .capsule-btn-item.main-btn svg {
     width: 25px !important; 
     height: 25px !important;
-    stroke-width: 1.2px !important;
+    stroke-width: 1px !important;
 }
 
 /* 微調 C：搜尋狀態下的取消按鈕 (X)
    實際位置：搜尋列展開後的右方圓形按鈕內
 */
 .cancel-circle-btn svg {
-    width: 25px !important; /* 配合較小的圓形背景外框稍微縮小 */
-    height: 25px !important;
-    stroke-width: 1.2px !important;
+    width: 24px !important; /* 配合較小的圓形背景外框稍微縮小 */
+    height: 24px !important;
+    stroke-width: 1px !important;
     opacity: 0.7 !important;      /* 👈 在這裡獨立控制透明度 (數值可自行修改) */
 }
 
