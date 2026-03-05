@@ -878,62 +878,109 @@ window.handleBottomCardClick = handleBottomCardClick;
 window.handleOverlayClick = handleOverlayClick;
 
 // ============================================================================
-// 🟢 3D 翻轉萬用空白彈窗引擎 (Seamless Flip Engine)
+// 🟢 3D 翻轉萬用空白彈窗引擎 (Seamless Flip Engine + 手勢下滑關閉)
 // ============================================================================
 
 window.openBlankOverlay = function(hexColor = '#2C2C2E') {
     if (document.getElementById('dynamic-blank-overlay')) return;
 
-    // 取得原本打開的詳情卡片與容器
     const originalInner = document.querySelector('#detail-card-container .detail-card-inner');
     const originalContainer = document.getElementById('detail-card-container');
     if (!originalInner || !originalContainer) return;
 
-    // 1. 為原容器掛上 3D 視角，並觸發原卡片翻轉 (0 -> 90度)
     originalContainer.classList.add('perspective-container');
     originalInner.classList.remove('flip-back-in');
     originalInner.classList.add('flip-out');
 
-    // 2. ⚡ 核心換手：在剛好翻到 90 度 (視覺上變成一條線) 的瞬間 (300ms)
     setTimeout(() => {
-        // 建立背面的空白彈窗
         const overlay = document.createElement('div');
         overlay.id = 'dynamic-blank-overlay';
-        overlay.className = 'detail-overlay active'; // 直接給 active，因為它要原地翻出來
+        overlay.className = 'detail-overlay active'; 
 
         const container = document.createElement('div');
-        container.className = 'perspective-container'; // 一樣給予 3D 視角
+        container.className = 'perspective-container'; 
         container.style.cssText = 'width: 100%; display: flex; justify-content: center; margin-top: calc(env(safe-area-inset-top) + 160px);';
 
         const card = document.createElement('div');
-        // 先掛上 flip-in-start，讓這張新卡片停留在 -90 度的接力起跑點
         card.className = 'detail-card-inner flip-in-start';
         
-        // 🌟 讓空白卡片長出 100% 一樣的光影防護層！
         applyThemeToCard(card, hexColor);
-
-        // 未來可以在這裡塞入卡片背面的 DOM 內容
-        // card.innerHTML = `<div style="padding: 20px;">背面內容</div>`; 
 
         container.appendChild(card);
         overlay.appendChild(container);
         document.body.appendChild(overlay);
 
-        // 綁定點擊外部翻轉回來的事件
+        // 👆 【互動 1】：點擊外部半透明黑底 -> 翻轉回去原本的詳情卡片
         overlay.addEventListener('click', (e) => {
             if (!e.target.closest('.detail-card-inner')) {
                 window.closeBlankOverlay();
             }
         });
 
-        // 觸發新卡片接力轉正 (-90 -> 0度)
+        // 👇 【互動 2】：綁定專屬的下滑手勢與內容淡化邏輯 👇
+        let blankStartY = 0;
+        let isBlankClosing = false;
+
+        overlay.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1 || isBlankClosing) return;
+            blankStartY = e.touches[0].pageY;
+            
+            // 拔除 3D CSS (!important) 鎖定，把控制權交給手勢
+            card.classList.remove('flip-in-active');
+            card.style.transition = 'none';
+            
+            // 如果你未來在空白卡片塞了 SVG 或文字，一樣支援同步淡化防破圖
+            const extraElements = card.querySelectorAll('.description, .info-tags-container, .status-tag, svg');
+            extraElements.forEach(el => el.style.transition = 'none');
+        }, { passive: true });
+
+        overlay.addEventListener('touchmove', (e) => {
+            if (isBlankClosing) return;
+            const rawMoveY = e.touches[0].pageY - blankStartY;
+            
+            if (rawMoveY > 0) {
+                if (rawMoveY > 10 && e.cancelable) e.preventDefault();
+                const resistedY = rawMoveY * 0.5; // 阻力係數
+                card.style.transform = `translate3d(0, ${resistedY}px, 0)`;
+
+                // 100px~200px 線性淡化邏輯
+                let contentOpacity = 1;
+                if (rawMoveY > 100) {
+                    contentOpacity = Math.max(0, 1 - ((rawMoveY - 100) / 100));
+                }
+                const extraElements = card.querySelectorAll('.description, .info-tags-container, .status-tag, svg');
+                extraElements.forEach(el => el.style.opacity = contentOpacity);
+
+                // ⚡ 超過 200px 臨界點，觸發「直接全部關閉」
+                if (rawMoveY > 200) {
+                    isBlankClosing = true;
+                    window.closeSystemFromBlank();
+                }
+            }
+        }, { passive: false });
+
+        overlay.addEventListener('touchend', (e) => {
+            if (isBlankClosing) return;
+            
+            // 如果放手時沒有超過 200px，完美彈簧回彈歸位
+            card.style.transition = 'transform 0.6s var(--active-bounce)';
+            card.style.transform = 'translate3d(0, 0, 0)';
+            
+            const extraElements = card.querySelectorAll('.description, .info-tags-container, .status-tag, svg');
+            extraElements.forEach(el => {
+                el.style.transition = 'opacity 0.3s ease';
+                el.style.opacity = '1';
+            });
+        });
+
+        // 觸發新卡片接力轉正
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 card.classList.remove('flip-in-start');
                 card.classList.add('flip-in-active');
             });
         });
-    }, 300); // 必須與 CSS 的 0.3s 旋轉時間完全對齊
+    }, 300); 
 };
 
 window.closeBlankOverlay = function() {
@@ -977,6 +1024,33 @@ window.closeBlankOverlay = function() {
         }, 350);
 
     }, 300); // 嚴格遵守 300ms 動畫交接點
+};
+
+// ============================================================================
+// 🟢 空白彈窗：下滑直接關閉整個系統 (連動背景恢復)
+// ============================================================================
+window.closeSystemFromBlank = function() {
+    const overlay = document.getElementById('dynamic-blank-overlay');
+    const blankCard = overlay ? overlay.querySelector('.detail-card-inner') : null;
+    
+    if (!overlay || !blankCard) return;
+
+    // 1. 拔除 3D 屬性鎖定，清除手勢留下的位移，讓卡片準備接受 100vh 的下落指令
+    blankCard.classList.remove('flip-in-active', 'flip-in-start');
+    blankCard.style.transition = ''; 
+    blankCard.style.transform = ''; 
+    
+    // 2. 移除 active，觸發空白卡片以預設彈簧動畫往下掉 100vh
+    overlay.classList.remove('active');
+
+    // 3. 呼叫原本的 closeAllCards 來恢復背景的卡片堆疊
+    // (原本的詳情卡片因為帶有 .flip-out 鎖死在 90 度，所以會處於完全隱形的狀態，並在背景默默被系統清掉，不會有任何畫面干擾！)
+    closeAllCards(false);
+
+    // 4. 等待下落動畫播完，安全清除 DOM
+    setTimeout(() => {
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    }, 600);
 };
 /* ==========================================================================
    動態游標引擎 (絕對跟手 0 延遲版)
