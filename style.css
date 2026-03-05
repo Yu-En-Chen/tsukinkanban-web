@@ -527,7 +527,7 @@ body.searching .dismiss-icon {
     transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 /* ========================================== */
-/* 「慢速回彈」設定  */
+/* 👇 這裡是新貼上的「優雅慢速回彈」專屬設定 👇 */
 /* ========================================== */
 
 /* 1. 專屬於「滑鼠滾輪/觸控板」的極致優雅慢速回彈 (0.85s) */
@@ -684,33 +684,6 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
     will-change: transform;
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
-}
-
-/* ==========================================================================
-   🟢 觸控優化補丁 (Hitbox Expansion)
-   ========================================================================== */
-
-/* 1. 徹底拔除 SVG 的觸控干擾，讓點擊 100% 穿透到按鈕本體 */
-.capsule-btn-item svg,
-.left-circle-btn svg,
-.search-trigger svg {
-    pointer-events: none !important;
-}
-
-/* 2. 擴大漢堡按鈕與搜尋按鈕的實體觸控熱區 */
-.left-circle-btn,
-.search-trigger {
-    /* 增加隱形的 padding 來擴大觸控範圍，但不影響原本的視覺大小 */
-    background-clip: padding-box !important;
-    border: 10px solid transparent !important;
-    margin: -10px; /* 把位置推回去 */
-}
-
-/* 如果是膠囊按鈕內部，確保按鈕填滿所有可用空間 */
-.capsule-btn-item {
-    width: 100%; 
-    height: 100%; 
-    min-width: 44px; /* 蘋果人機介面指南建議的最低觸控尺寸 */
 }
 
 /* ==========================================================================
