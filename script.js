@@ -949,9 +949,6 @@ window.closeBlankOverlay = function() {
     blankCard.classList.remove('flip-in-active');
     blankCard.classList.add('flip-out-reverse');
 
-    // 🌟 體驗優化：背景的景深恢復不需要等，立刻開始往前浮現，創造更立體的空間感！
-    document.getElementById('main-stack').classList.remove('has-active');
-
     // 2. ⚡ 完美換手：鎖死在剛好翻轉到 90 度的瞬間 (300ms)
     setTimeout(() => {
         // 原卡片接力翻轉回來 (-90 -> 0度)
