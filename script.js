@@ -917,33 +917,35 @@ window.openBlankOverlay = function(hexColor = '#2C2C2E') {
             }
         });
 
-        // 👇 【互動 2】：綁定專屬的下滑手勢與內容淡化邏輯 👇
+// 👇 【互動 2】：綁定專屬的下滑手勢 (完美支援觸控與滑鼠) 👇
         let blankStartY = 0;
         let isBlankClosing = false;
+        let isDragging = false; // 新增：用來判斷滑鼠是否處於按下的拖曳狀態
 
-        overlay.addEventListener('touchstart', (e) => {
-            if (e.touches.length > 1 || isBlankClosing) return;
-            blankStartY = e.touches[0].pageY;
+        // 🟢 1. 統整：開始拖曳的邏輯
+        function handleDragStart(y) {
+            if (isBlankClosing) return;
+            isDragging = true;
+            blankStartY = y;
             
-            // 拔除 3D CSS (!important) 鎖定，把控制權交給手勢
             card.classList.remove('flip-in-active');
             card.style.transition = 'none';
-            
-            // 如果你未來在空白卡片塞了 SVG 或文字，一樣支援同步淡化防破圖
             const extraElements = card.querySelectorAll('.description, .info-tags-container, .status-tag, svg');
             extraElements.forEach(el => el.style.transition = 'none');
-        }, { passive: true });
+        }
 
-        overlay.addEventListener('touchmove', (e) => {
-            if (isBlankClosing) return;
-            const rawMoveY = e.touches[0].pageY - blankStartY;
+        // 🟢 2. 統整：拖曳中的邏輯
+        function handleDragMove(y, e) {
+            if (!isDragging || isBlankClosing) return;
+            const rawMoveY = y - blankStartY;
             
             if (rawMoveY > 0) {
-                if (rawMoveY > 10 && e.cancelable) e.preventDefault();
-                const resistedY = rawMoveY * 0.5; // 阻力係數
+                // 只有觸控事件需要 preventDefault 擋住螢幕滾動，滑鼠不用
+                if (rawMoveY > 10 && e.cancelable && e.type.includes('touch')) e.preventDefault();
+                
+                const resistedY = rawMoveY * 0.5;
                 card.style.transform = `translate3d(0, ${resistedY}px, 0)`;
 
-                // 100px~200px 線性淡化邏輯
                 let contentOpacity = 1;
                 if (rawMoveY > 100) {
                     contentOpacity = Math.max(0, 1 - ((rawMoveY - 100) / 100));
@@ -951,18 +953,20 @@ window.openBlankOverlay = function(hexColor = '#2C2C2E') {
                 const extraElements = card.querySelectorAll('.description, .info-tags-container, .status-tag, svg');
                 extraElements.forEach(el => el.style.opacity = contentOpacity);
 
-                // ⚡ 超過 200px 臨界點，觸發「直接全部關閉」
+                // ⚡ 臨界點觸發關閉
                 if (rawMoveY > 200) {
                     isBlankClosing = true;
+                    isDragging = false;
                     window.closeSystemFromBlank();
                 }
             }
-        }, { passive: false });
+        }
 
-        overlay.addEventListener('touchend', (e) => {
-            if (isBlankClosing) return;
+        // 🟢 3. 統整：放開/結束拖曳的邏輯
+        function handleDragEnd() {
+            if (!isDragging || isBlankClosing) return;
+            isDragging = false;
             
-            // 如果放手時沒有超過 200px，完美彈簧回彈歸位
             card.style.transition = 'transform 0.6s var(--active-bounce)';
             card.style.transform = 'translate3d(0, 0, 0)';
             
@@ -971,7 +975,25 @@ window.openBlankOverlay = function(hexColor = '#2C2C2E') {
                 el.style.transition = 'opacity 0.3s ease';
                 el.style.opacity = '1';
             });
+        }
+
+        // 📱 綁定手機觸控事件
+        overlay.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) return;
+            handleDragStart(e.touches[0].pageY);
+        }, { passive: true });
+        overlay.addEventListener('touchmove', (e) => handleDragMove(e.touches[0].pageY, e), { passive: false });
+        overlay.addEventListener('touchend', handleDragEnd);
+        overlay.addEventListener('touchcancel', handleDragEnd);
+
+        // 🖱️ 綁定電腦滑鼠事件
+        overlay.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return; // 確保只有按滑鼠左鍵才會觸發
+            handleDragStart(e.pageY);
         });
+        overlay.addEventListener('mousemove', (e) => handleDragMove(e.pageY, e));
+        overlay.addEventListener('mouseup', handleDragEnd);
+        overlay.addEventListener('mouseleave', handleDragEnd); // 避免滑鼠拖到視窗外卡住
 
         // 觸發新卡片接力轉正
         requestAnimationFrame(() => {
@@ -982,7 +1004,6 @@ window.openBlankOverlay = function(hexColor = '#2C2C2E') {
         });
     }, 300); 
 };
-
 window.closeBlankOverlay = function() {
     const overlay = document.getElementById('dynamic-blank-overlay');
     const blankCard = overlay ? overlay.querySelector('.detail-card-inner') : null;
