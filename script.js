@@ -937,7 +937,7 @@ window.openBlankOverlay = function(hexColor = '#2C2C2E') {
 };
 
 // ============================================================================
-// 🟢 空白彈窗關閉邏輯 (含 SVG 恢復)
+// 🟢 空白彈窗關閉邏輯 (含 SVG 恢復 & 100% 畫格同步鏡像)
 // ============================================================================
 
 window.closeBlankOverlay = function() {
@@ -955,11 +955,11 @@ window.closeBlankOverlay = function() {
 
     // 2. ⚡ 300ms 完美換手
     setTimeout(() => {
-        // 原卡片接力翻轉回來 (-90 -> 0度)
+        // 🌟 100% 複製開啟邏輯：先強制給原卡片 90 度的「起跑點」
         originalInner.classList.remove('flip-out');
-        originalInner.classList.add('flip-back-in');
+        originalInner.classList.add('flip-back-start');
 
-        // 🌟 原卡片翻回來時，讓 SVG 打叉圖示同步線性淡入恢復 (0.3s)
+        // SVG 打叉圖示同步線性淡入恢復 (0.3s)
         const dismissIcon = document.getElementById('dismiss-icon');
         if (dismissIcon) {
             dismissIcon.style.transition = 'opacity 0.3s linear';
@@ -970,12 +970,21 @@ window.closeBlankOverlay = function() {
         overlay.style.opacity = '0';
         overlay.style.transition = 'opacity 0.1s ease'; 
 
+        // 🌟 核心修復：確保原卡片的 90 度起跑點被瀏覽器畫出來後，再翻轉回 0 度
+        // 這會把被省略的物理拉扯感 100% 還原！
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                originalInner.classList.remove('flip-back-start');
+                originalInner.classList.add('flip-back-active');
+            });
+        });
+
         // 3. 等原卡片徹底翻轉完成並靜止後，再安全地移除 DOM 節點
         setTimeout(() => {
             if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
             
             // 清理 3D 視角與狀態類別
-            originalInner.classList.remove('flip-back-in');
+            originalInner.classList.remove('flip-back-active');
             const originalContainer = document.getElementById('detail-card-container');
             if (originalContainer) originalContainer.classList.remove('perspective-container');
             
