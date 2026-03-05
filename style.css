@@ -649,52 +649,86 @@ body.searching .dismiss-icon {
 }
 
 /* ==========================================================================
-   🟢 全站 SVG 骨架圖示「萬用統一引擎」(升級版)
+   🟢 全站 SVG 骨架圖示：終極控制中心 (!important 強制覆蓋版)
    ========================================================================== */
 
-/* 1. 【全局接管】將 Header 與全站所有的關閉按鈕，強制轉為 1.8px 骨架模式 */
-.header button svg,
-.header .search-trigger svg,
-.left-circle-btn svg,
+/* 1. 【全局基礎設定：強制轉為骨架型與尺寸】
+   作用範圍：包含上面找出的 3 個 X 關閉按鈕，以及搜尋放大鏡、膠囊按鈕。
+*/
+.left-circle-btn svg,       /* 左上角選單按鈕 (包含漢堡/鈴鐺 與 關閉X) */
+.search-icon svg,           /* 頂部搜尋列 (放大鏡) */
+.cancel-circle-btn svg,     /* 搜尋列展開時的右側 (取消X) */
+.capsule-btn-item svg,      /* 右上角膠囊按鈕 (包含加號與 ⋯ ) */
+#dismiss-icon svg           /* 詳情卡片展開時的右上角 (下拉關閉X) */
+{
+    fill: none !important;               /* 清除實體填色，確保為純線條 */
+    stroke: currentColor !important;     /* 線條顏色繼承父元素 */
+    stroke-linecap: round !important;    /* 線條端點圓角 */
+    stroke-linejoin: round !important;   /* 線條交界圓角 */
+    pointer-events: none !important;     /* 拔除觸控干擾，讓點擊穿透到按鈕本體 */
+    
+    width: 22px !important;              /* 預設統一寬度 */
+    height: 22px !important;             /* 預設統一高度 */
+    stroke-width: 1.8px !important;      /* 預設統一粗細 (1.8px 呈現最佳 iOS 質感) */
+}
+
+/* 2. 【透明度強制統一】
+   針對靜態不變的圖示，強制鎖定在 0.8 透明度。
+*/
+.search-icon svg,
 .cancel-circle-btn svg,
 .capsule-btn-item svg,
-.universal-close-btn svg,
 #dismiss-icon svg {
-    fill: none !important;          /* 強制清空實體填色 */
-    stroke: currentColor !important;/* 繼承文字或設定的顏色 */
-    stroke-linecap: round !important;
-    stroke-linejoin: round !important;
-    pointer-events: none !important;/* 拔除觸控干擾 */
-    
-    width: 28px !important;         /* 預設統一大小 */
-    height: 28px !important;
-    stroke-width: 2px !important; /* 預設統一粗細 */
+    opacity: 0.8 !important;
 }
 
-/* 2. 🟢 【獨立額外控制】膠囊內的 ⋯ (Ellipsis) 大小與粗細 */
-.header svg.icon-ellipsis {
-    width: 26px !important; 
-    height: 26px !important;
-    stroke-width: 1px !important; /* 👈 在這裡單獨把 ⋯ 加粗 (數值可自由調整) */
+/* 3. 【例外動畫控制：左上角漢堡選單】
+   因為左上角的按鈕有「展開」與「關閉」的切換動畫，如果全部鎖定 0.8 會導致兩個圖示重疊。
+   所以我們針對狀態，用 !important 決定誰該顯示、誰該隱藏。
+*/
+/* 狀態一：未展開時 (顯示漢堡/鈴鐺，隱藏 X) */
+.left-circle-btn:not(.is-expanded) .icon-hamburger { opacity: 0.8 !important; }
+.left-circle-btn:not(.is-expanded) .icon-close { opacity: 0 !important; }
+
+/* 狀態二：展開時 (隱藏漢堡/鈴鐺，顯示 X) */
+.left-circle-btn.is-expanded .icon-hamburger { opacity: 0 !important; }
+.left-circle-btn.is-expanded .icon-close { opacity: 0.8 !important; }
+
+/* ==========================================================================
+   🟢 獨立微調區 (針對個別按鈕的視覺體積平衡)
+   ========================================================================== */
+
+/* 微調 A：膠囊內的「 ⋯ 」(更多選單)
+   實際位置：右上角膠囊右側
+*/
+.capsule-btn-item:not(.main-btn) svg {
+    width: 20px !important; 
+    height: 20px !important;
+    stroke-width: 2.2px !important; /* 單獨稍微加粗，讓點點更飽滿清晰 */
 }
 
-/* 3. 【獨立控制】膠囊內的 ＋ (Plus) 大小 */
-.header svg.icon-plus {
-    width: 26px !important;
-    height: 26px !important;
+/* 微調 B：膠囊內的「 ＋ 」(新增)
+   實際位置：右上角膠囊左側
+*/
+.capsule-btn-item.main-btn svg {
+    width: 20px !important; 
+    height: 20px !important;
 }
 
-/* 4. 【獨立控制】搜尋取消按鈕 (X) 稍微縮小，配合外層圓框 */
+/* 微調 C：搜尋狀態下的取消按鈕 (X)
+   實際位置：搜尋列展開後的右方圓形按鈕內
+*/
 .cancel-circle-btn svg {
-    width: 28px !important; 
-    height: 28px !important;
+    width: 18px !important; /* 配合較小的圓形背景外框稍微縮小 */
+    height: 18px !important;
 }
 
-/* 5. 【獨立控制】彈窗與卡片下拉的關閉按鈕 (X) 可以稍微大一點 */
-.universal-close-btn svg,
+/* 微調 D：卡片專屬的關閉按鈕 (X)
+   實際位置：詳情卡片點開後，置頂的下拉提示
+*/
 #dismiss-icon svg {
-    width: 28px !important; 
-    height: 28px !important;
+    width: 24px !important; /* 畫面上方的叉叉單獨放大，增加視覺引導 */
+    height: 24px !important;
 }
 
 /* ==========================================================================
