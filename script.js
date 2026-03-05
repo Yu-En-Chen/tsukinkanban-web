@@ -3,9 +3,10 @@
 import { bottomCardConfig, railwayData } from './data.js';
 import { initPhysics } from './physics.js'; 
 import { initHeader } from './header.js'; 
-// 👇 新增這段：Android 系統專屬偵測，為 html 標籤打上標記
-if (/Android/i.test(navigator.userAgent)) {
-    document.documentElement.classList.add('is-android');
+//Blink 引擎系統專屬偵測，為 html 標籤打上標記
+const ua = navigator.userAgent;
+if (/Android/i.test(ua) && /Chrome/i.test(ua)) {
+    document.documentElement.classList.add('is-android-blink');
 }
 
 // 狀態旗標
