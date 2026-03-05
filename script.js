@@ -3,12 +3,18 @@
 import { bottomCardConfig, railwayData } from './data.js';
 import { initPhysics } from './physics.js'; 
 import { initHeader } from './header.js'; 
+// 👇 新增這段：Android 系統專屬偵測，為 html 標籤打上標記
+if (/Android/i.test(navigator.userAgent)) {
+    document.documentElement.classList.add('is-android');
+}
 
 // 狀態旗標
 let isInitialLoad = true;
 let isAnimating = false;
 let liftTimer = null; 
 let activeCardId = null; 
+let isInitialLoad = true;
+let isAnimating = false;
 
 // ============================================================================
 // 🟢 色彩學與動態適應引擎 (Adaptive UI Engine)
