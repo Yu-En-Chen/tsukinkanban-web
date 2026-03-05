@@ -704,31 +704,31 @@ body.searching .dismiss-icon {
 .capsule-btn-item:not(.main-btn) svg {
     width: 20px !important; 
     height: 20px !important;
-    stroke-width: 2.2px !important; /* 單獨稍微加粗，讓點點更飽滿清晰 */
+    stroke-width: 1px !important; /* 單獨稍微加粗，讓點點更飽滿清晰 */
 }
 
 /* 微調 B：膠囊內的「 ＋ 」(新增)
    實際位置：右上角膠囊左側
 */
 .capsule-btn-item.main-btn svg {
-    width: 20px !important; 
-    height: 20px !important;
+    width: 26px !important; 
+    height: 26px !important;
 }
 
 /* 微調 C：搜尋狀態下的取消按鈕 (X)
    實際位置：搜尋列展開後的右方圓形按鈕內
 */
 .cancel-circle-btn svg {
-    width: 18px !important; /* 配合較小的圓形背景外框稍微縮小 */
-    height: 18px !important;
+    width: 26px !important; /* 配合較小的圓形背景外框稍微縮小 */
+    height: 26px !important;
 }
 
 /* 微調 D：卡片專屬的關閉按鈕 (X)
    實際位置：詳情卡片點開後，置頂的下拉提示
 */
 #dismiss-icon svg {
-    width: 24px !important; /* 畫面上方的叉叉單獨放大，增加視覺引導 */
-    height: 24px !important;
+    width: 26px !important; /* 畫面上方的叉叉單獨放大，增加視覺引導 */
+    height: 26px !important;
 }
 
 /* ==========================================================================
