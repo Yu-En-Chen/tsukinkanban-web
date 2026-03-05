@@ -527,7 +527,7 @@ body.searching .dismiss-icon {
     transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 /* ========================================== */
-/* 👇 這裡是新貼上的「優雅慢速回彈」專屬設定 👇 */
+/* 「慢速回彈」 */
 /* ========================================== */
 
 /* 1. 專屬於「滑鼠滾輪/觸控板」的極致優雅慢速回彈 (0.85s) */
@@ -649,6 +649,38 @@ body.searching .dismiss-icon {
     /* 完全複製翻入時的文字延遲淡入 */
     transition: opacity 0.2s linear 0.1s !important;
 }
+
+/* ==========================================================================
+   🟢 全站 SVG 骨架圖示統一控制 (Size & Stroke Control)
+   ========================================================================== */
+
+/* 1. 統一所有骨架圖示的「粗細」與「防觸控干擾」 */
+.left-circle-btn svg,
+.search-icon svg,
+.cancel-circle-btn svg,
+.capsule-btn-item svg {
+    stroke-width: 2px !important; /* 統一粗細，維持全站風格一致 */
+    pointer-events: none !important; 
+}
+
+/* 2. 左側按鈕與搜尋列圖示大小 (標準 22px) */
+.left-circle-btn svg,
+.search-icon svg,
+.cancel-circle-btn svg {
+    width: 22px !important;
+    height: 22px !important;
+}
+
+/* 3. 🟢 右側膠囊圖示「獨立大小控制」 */
+.capsule-btn-item svg {
+    width: 20px !important;  /* 稍微縮小一點，讓膠囊看起來有呼吸空間 */
+    height: 20px !important;
+    
+    /* 💡 備註：如果你縮小後覺得線條看起來太擠，也可以在這裡加上 
+       stroke-width: 1.5px !important; 
+       來獨立微調膠囊內部的粗細！ */
+}
+
 /* ==========================================================================
    🟢 Android Blink 引擎專屬防閃爍修復 (動態降級法)
    ========================================================================== */
