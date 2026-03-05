@@ -547,20 +547,27 @@ body.searching .dismiss-icon {
 }
 
 /* ==========================================================================
-   🟢 Android Blink 引擎專屬防閃爍修復 (凍結光影法)
+   🟢 Android Blink 引擎專屬防閃爍修復 (純淨光影版)
    ========================================================================== */
 
-/* 核心原理：Android 崩潰是因為每秒 60 次重繪高強度濾鏡遮罩。
-   我們利用 CSS 權重，在拖曳期間強制「凍結」光影角度，停止重繪，徹底消滅文字與光影的閃爍！ */
+/* 核心原理：徹底拔除 Blink 引擎算不出來的 SVG 雜訊與高強度濾鏡，
+   改為純粹的漸層動態光影。不僅保證 60fps 不閃爍，依然保留高級的玻璃反光感。 */
 
-html.is-android-blink .card-stack.dragging .card,
-html.is-android-blink .card-stack.bounce-back .card,
-html.is-android-blink .card-stack.bounce-back-wheel .card {
-    --glare-angle: 135deg !important; /* 強制將角度鎖死在完美的高光位置 */
+html.is-android-blink .card::after,
+html.is-android-blink .fixed-bottom-card::after,
+html.is-android-blink .detail-card-inner::after {
+    background-image: none !important; /* 關閉讓 Blink 崩潰的 SVG 雜訊圖 */
+    filter: none !important; /* 關閉效能殺手：500% 對比與亮度濾鏡 */
+    
+    /* 稍微提升透明度 (從原本的 0.23 拉高到 0.65) 來補償失去濾鏡後的亮度 */
+    opacity: 0.65 !important; 
+    
+    /* mix-blend-mode: overlay 與 mask-image 依然會正常運作，卡片還是會有動態反光！ */
 }
 
+/* 關閉拖曳時的延遲，讓 Blink 的純淨光影在滑動時能絕對跟手 */
 html.is-android-blink .card-stack.dragging .card::after {
-    transition: none !important; /* 關閉拖曳時的延遲，避免打架 */
+    transition: none !important;
 }
 
 /* ==========================================================================
