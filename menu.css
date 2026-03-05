@@ -46,8 +46,7 @@
 
 /* 取消圖標 (選單展開後的顯示狀態) */
 .left-circle-btn.is-expanded .icon-close {
-    visibility: visible !important;
-    /* 彈出時恢復原始大小，刪除罪魁禍首 rotate(45deg)！ */
+    visibility: visible;
     transform: scale(1) !important; 
     transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0s 0s;
 }
@@ -134,9 +133,8 @@
 }
 
 .left-circle-btn.is-expanded .icon-close {
-    opacity: 0.7 !important; 
     visibility: visible !important;
-    transform: scale(1) rotate(45deg) !important;
+    transform: scale(1) !important;
     transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0s 0s;
 }
 
