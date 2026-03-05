@@ -655,7 +655,6 @@ body.searching .dismiss-icon {
 /* 1. 【全局基礎設定：強制轉為骨架型與尺寸】
    作用範圍：包含上面找出的 3 個 X 關閉按鈕，以及搜尋放大鏡、膠囊按鈕。
 */
-.left-circle-btn svg,       /* 左上角選單按鈕 (包含漢堡/鈴鐺 與 關閉X) */
 .search-icon svg,           /* 頂部搜尋列 (放大鏡) */
 .cancel-circle-btn svg,     /* 搜尋列展開時的右側 (取消X) */
 .capsule-btn-item svg,      /* 右上角膠囊按鈕 (包含加號與 ⋯ ) */
@@ -669,6 +668,19 @@ body.searching .dismiss-icon {
     
     width: 22px !important;              /* 預設統一寬度 */
     height: 22px !important;             /* 預設統一高度 */
+    stroke-width: 1.8px !important;      /* 預設統一粗細 (1.8px 呈現最佳 iOS 質感) */
+}
+
+.left-circle-btn svg       /* 左上角選單按鈕 (包含漢堡/鈴鐺 與 關閉X) */
+{
+    fill: none !important;               /* 清除實體填色，確保為純線條 */
+    stroke: currentColor !important;     /* 線條顏色繼承父元素 */
+    stroke-linecap: round !important;    /* 線條端點圓角 */
+    stroke-linejoin: round !important;   /* 線條交界圓角 */
+    pointer-events: none !important;     /* 拔除觸控干擾，讓點擊穿透到按鈕本體 */
+    
+    width: 21px !important;              /* 預設統一寬度 */
+    height: 21px !important;             /* 預設統一高度 */
     stroke-width: 1.8px !important;      /* 預設統一粗細 (1.8px 呈現最佳 iOS 質感) */
 }
 
