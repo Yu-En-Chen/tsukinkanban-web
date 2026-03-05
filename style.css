@@ -671,8 +671,8 @@ body.searching .dismiss-icon {
 
 /* 3. 🟢 右側膠囊圖示「獨立大小控制」 */
 .capsule-btn-item svg {
-    width: 24px !important;  /* 稍微縮小一點，讓膠囊看起來有呼吸空間 */
-    height: 24px !important;
+    width: 26px !important;  /* 稍微縮小一點，讓膠囊看起來有呼吸空間 */
+    height: 26px !important;
     
     /* 💡 備註：如果你縮小後覺得線條看起來太擠，也可以在這裡加上 
        stroke-width: 1.5px !important; 
