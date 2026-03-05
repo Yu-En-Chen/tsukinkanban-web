@@ -660,7 +660,7 @@ body.searching .dismiss-icon {
     pointer-events: none !important; 
 }
 .capsule-btn-item svg {
-    stroke-width: 1px !important; /* 統一粗細，維持全站風格一致 */
+    stroke-width: 1.5px !important; /* 統一粗細，維持全站風格一致 */
     pointer-events: none !important; 
 }
 
