@@ -547,40 +547,67 @@ body.searching .dismiss-icon {
 }
 
 /* ==========================================================================
-   🟢 Android Blink 引擎專屬防閃爍修復 (動態降級法)
+   🟢 Android Blink 引擎專屬防閃爍修復 (動態降級 + 景深優化版)
    ========================================================================== */
 
-/* 1. 靜止狀態：維持純淨光影設定 (關閉會讓 Blink 崩潰的 SVG 雜訊與高強度濾鏡) */
+/* ---------------------------------------------------
+   1. 光影過渡優化：靜止狀態 (加入柔和淡入淡出)
+   --------------------------------------------------- */
 html.is-android-blink .card::after,
 html.is-android-blink .fixed-bottom-card::after,
 html.is-android-blink .detail-card-inner::after {
     background-image: none !important; 
     filter: none !important; 
     opacity: 0.65 !important; 
+    
+    /* 🟢 加入過渡動畫，讓放手時的複雜光影能「柔和浮現」而不是瞬間閃出 */
+    transition: opacity 0.4s ease, background 0.4s ease !important;
 }
 
-/* 2. ⚡ 互動瞬間 (拖曳/縮放/回彈)：暫時拔除 GPU 殺手，徹底消滅切塊閃爍 */
+/* ---------------------------------------------------
+   2. 互動瞬間優化：不再是死白方塊，改用「靜態漸層光」
+   --------------------------------------------------- */
 html.is-android-blink .card-stack.dragging .card::after,
 html.is-android-blink .card-stack.bounce-back .card::after,
 html.is-android-blink .card-stack.bounce-back-wheel .card::after {
-    /* 核心：徹底關閉混合模式與遮罩，停止 GPU 的圖層交集運算 */
     mix-blend-mode: normal !important;
     -webkit-mask-image: none !important;
     mask-image: none !important;
     
-    /* 替換成極度輕量的純色微光，維持卡片層次感但保證 0 運算負擔 */
-    background-color: rgba(255, 255, 255, 0.08) !important; 
+    /* 🟢 改用由左上到右下的靜態柔和漸層，完美模擬玻璃反光，且 GPU 負擔為 0！ */
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 60%) !important; 
     opacity: 1 !important;
-    transition: none !important;
+    transition: none !important; /* 拖曳瞬間保持零延遲切換 */
 }
 
-/* 3. 保護卡片本體：在滑動時給予硬體加速提示，但不鎖死 Z 軸避免干擾 JS 的動態縮放 */
+/* 3. 保護卡片本體 */
 html.is-android-blink .card-stack.dragging .card,
 html.is-android-blink .card-stack.bounce-back .card,
 html.is-android-blink .card-stack.bounce-back-wheel .card {
     will-change: transform;
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
+}
+
+/* ==========================================================================
+   🔴 拯救 Blink 效能：拔除高耗能 Z 軸模糊 (Blur)
+   ========================================================================== */
+/* Blink 引擎算不動大面積的 blur()，我們保留 Z 軸退後的 scale() 與壓暗的 brightness()，
+   只要把 blur 拔掉，空間感依然存在，但卡頓會徹底消失！ */
+
+html.is-android-blink body:has(.detail-overlay.active) .card-stack,
+html.is-android-blink body:has(.left-circle-btn.is-expanded) .card-stack,
+html.is-android-blink body:has(.universal-window.is-active) .card-stack,
+html.is-android-blink body.searching .card-stack,
+html.is-android-blink body.menu-active .card-stack {
+    /* 🟢 強制覆蓋原本帶有 blur 的 filter，只留亮度壓暗 */
+    filter: brightness(0.5) !important; 
+}
+
+/* 底層固定卡片也一併拯救 */
+html.is-android-blink body.searching .fixed-bottom-card,
+html.is-android-blink .card-stack.has-active ~ .fixed-bottom-card {
+    filter: brightness(0.5) !important;
 }
 
 /* ==========================================================================
