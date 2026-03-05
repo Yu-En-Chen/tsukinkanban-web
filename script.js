@@ -878,63 +878,67 @@ window.handleBottomCardClick = handleBottomCardClick;
 window.handleOverlayClick = handleOverlayClick;
 
 // ============================================================================
-// 🟢 3D 翻轉萬用空白彈窗引擎 (Seamless Flip Engine)
+// 🟢 3D 翻轉萬用空白彈窗引擎 (維持 0.3s 原速 + 打叉 SVG 線性淡化)
 // ============================================================================
 
 window.openBlankOverlay = function(hexColor = '#2C2C2E') {
     if (document.getElementById('dynamic-blank-overlay')) return;
 
-    // 取得原本打開的詳情卡片與容器
     const originalInner = document.querySelector('#detail-card-container .detail-card-inner');
     const originalContainer = document.getElementById('detail-card-container');
     if (!originalInner || !originalContainer) return;
 
-    // 1. 為原容器掛上 3D 視角，並觸發原卡片翻轉 (0 -> 90度)
+    // 1. 原卡片翻轉出局 (0 -> 90度)
     originalContainer.classList.add('perspective-container');
     originalInner.classList.remove('flip-back-in');
     originalInner.classList.add('flip-out');
 
-    // 2. ⚡ 核心換手：在剛好翻到 90 度 (視覺上變成一條線) 的瞬間 (300ms)
+    // 🌟 讓上方的 SVG 打叉圖示，跟隨第一半段翻轉 (0.3s) 線性淡出到全透明
+    const dismissIcon = document.getElementById('dismiss-icon');
+    if (dismissIcon) {
+        dismissIcon.style.transition = 'opacity 0.3s linear';
+        dismissIcon.style.opacity = '0';
+    }
+
+    // 2. ⚡ 300ms 後完美換手
     setTimeout(() => {
-        // 建立背面的空白彈窗
         const overlay = document.createElement('div');
         overlay.id = 'dynamic-blank-overlay';
-        overlay.className = 'detail-overlay active'; // 直接給 active，因為它要原地翻出來
+        overlay.className = 'detail-overlay active'; 
 
         const container = document.createElement('div');
-        container.className = 'perspective-container'; // 一樣給予 3D 視角
+        container.className = 'perspective-container'; 
         container.style.cssText = 'width: 100%; display: flex; justify-content: center; margin-top: calc(env(safe-area-inset-top) + 160px);';
 
         const card = document.createElement('div');
-        // 先掛上 flip-in-start，讓這張新卡片停留在 -90 度的接力起跑點
         card.className = 'detail-card-inner flip-in-start';
         
-        // 🌟 讓空白卡片長出 100% 一樣的光影防護層！
         applyThemeToCard(card, hexColor);
-
-        // 未來可以在這裡塞入卡片背面的 DOM 內容
-        // card.innerHTML = `<div style="padding: 20px;">背面內容</div>`; 
 
         container.appendChild(card);
         overlay.appendChild(container);
         document.body.appendChild(overlay);
 
-        // 綁定點擊外部翻轉回來的事件
+        // 綁定點擊返回
         overlay.addEventListener('click', (e) => {
             if (!e.target.closest('.detail-card-inner')) {
                 window.closeBlankOverlay();
             }
         });
 
-        // 觸發新卡片接力轉正 (-90 -> 0度)
+        // 觸發新卡片接力轉正
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 card.classList.remove('flip-in-start');
                 card.classList.add('flip-in-active');
             });
         });
-    }, 300); // 必須與 CSS 的 0.3s 旋轉時間完全對齊
+    }, 300); 
 };
+
+// ============================================================================
+// 🟢 空白彈窗關閉邏輯 (含 SVG 恢復)
+// ============================================================================
 
 window.closeBlankOverlay = function() {
     const overlay = document.getElementById('dynamic-blank-overlay');
@@ -945,17 +949,24 @@ window.closeBlankOverlay = function() {
 
     overlay.style.pointerEvents = 'none';
 
-    // 1. 🟢 修正：使用剛剛新建的「專屬退場動畫」，不再使用瞬間瞬移的 Class
+    // 1. 空白卡片執行退場動畫
     blankCard.classList.remove('flip-in-active');
     blankCard.classList.add('flip-out-reverse');
 
-    // 2. ⚡ 完美換手：鎖死在剛好翻轉到 90 度的瞬間 (300ms)
+    // 2. ⚡ 300ms 完美換手
     setTimeout(() => {
         // 原卡片接力翻轉回來 (-90 -> 0度)
         originalInner.classList.remove('flip-out');
         originalInner.classList.add('flip-back-in');
 
-        // 🟢 讓翻轉完的空白卡片立刻隱藏，避免干擾視覺
+        // 🌟 原卡片翻回來時，讓 SVG 打叉圖示同步線性淡入恢復 (0.3s)
+        const dismissIcon = document.getElementById('dismiss-icon');
+        if (dismissIcon) {
+            dismissIcon.style.transition = 'opacity 0.3s linear';
+            dismissIcon.style.opacity = '1';
+        }
+
+        // 讓翻轉完的空白卡片立刻隱藏
         overlay.style.opacity = '0';
         overlay.style.transition = 'opacity 0.1s ease'; 
 
@@ -968,12 +979,9 @@ window.closeBlankOverlay = function() {
             const originalContainer = document.getElementById('detail-card-container');
             if (originalContainer) originalContainer.classList.remove('perspective-container');
             
-            // 恢復右上角打叉按鈕
-            const dismissIcon = document.getElementById('dismiss-icon');
-            if (dismissIcon) dismissIcon.style.opacity = '1';
-        }, 350);
+        }, 350); 
 
-    }, 300); // 嚴格遵守 300ms 動畫交接點
+    }, 300); // 嚴格遵守 300ms 原速交接點
 };
 /* ==========================================================================
    動態游標引擎 (絕對跟手 0 延遲版)
