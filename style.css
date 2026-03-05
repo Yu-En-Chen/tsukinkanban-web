@@ -547,27 +547,40 @@ body.searching .dismiss-icon {
 }
 
 /* ==========================================================================
-   🟢 Android Blink 引擎專屬防閃爍修復 (純淨光影版)
+   🟢 Android Blink 引擎專屬防閃爍修復 (動態降級法)
    ========================================================================== */
 
-/* 核心原理：徹底拔除 Blink 引擎算不出來的 SVG 雜訊與高強度濾鏡，
-   改為純粹的漸層動態光影。不僅保證 60fps 不閃爍，依然保留高級的玻璃反光感。 */
-
+/* 1. 靜止狀態：維持純淨光影設定 (關閉會讓 Blink 崩潰的 SVG 雜訊與高強度濾鏡) */
 html.is-android-blink .card::after,
 html.is-android-blink .fixed-bottom-card::after,
 html.is-android-blink .detail-card-inner::after {
-    background-image: none !important; /* 關閉讓 Blink 崩潰的 SVG 雜訊圖 */
-    filter: none !important; /* 關閉效能殺手：500% 對比與亮度濾鏡 */
-    
-    /* 稍微提升透明度 (從原本的 0.23 拉高到 0.65) 來補償失去濾鏡後的亮度 */
+    background-image: none !important; 
+    filter: none !important; 
     opacity: 0.65 !important; 
-    
-    /* mix-blend-mode: overlay 與 mask-image 依然會正常運作，卡片還是會有動態反光！ */
 }
 
-/* 關閉拖曳時的延遲，讓 Blink 的純淨光影在滑動時能絕對跟手 */
-html.is-android-blink .card-stack.dragging .card::after {
+/* 2. ⚡ 互動瞬間 (拖曳/縮放/回彈)：暫時拔除 GPU 殺手，徹底消滅切塊閃爍 */
+html.is-android-blink .card-stack.dragging .card::after,
+html.is-android-blink .card-stack.bounce-back .card::after,
+html.is-android-blink .card-stack.bounce-back-wheel .card::after {
+    /* 核心：徹底關閉混合模式與遮罩，停止 GPU 的圖層交集運算 */
+    mix-blend-mode: normal !important;
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+    
+    /* 替換成極度輕量的純色微光，維持卡片層次感但保證 0 運算負擔 */
+    background-color: rgba(255, 255, 255, 0.08) !important; 
+    opacity: 1 !important;
     transition: none !important;
+}
+
+/* 3. 保護卡片本體：在滑動時給予硬體加速提示，但不鎖死 Z 軸避免干擾 JS 的動態縮放 */
+html.is-android-blink .card-stack.dragging .card,
+html.is-android-blink .card-stack.bounce-back .card,
+html.is-android-blink .card-stack.bounce-back-wheel .card {
+    will-change: transform;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
 }
 
 /* ==========================================================================
