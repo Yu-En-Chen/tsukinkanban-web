@@ -943,27 +943,26 @@ window.closeBlankOverlay = function() {
 
     if (!overlay || !blankCard || !originalInner) return;
 
-    // 1. 讓空白卡片開始倒帶翻轉 (0 -> -90度)
-    // 這裡我們加上一個 pointer-events: none 防止連續點擊導致邏輯錯亂
     overlay.style.pointerEvents = 'none';
+
+    // 1. 🟢 修正：使用剛剛新建的「專屬退場動畫」，不再使用瞬間瞬移的 Class
     blankCard.classList.remove('flip-in-active');
-    blankCard.classList.add('flip-in-start');
+    blankCard.classList.add('flip-out-reverse');
 
-    // 2. ⚡ 核心優化：稍微加長換手等待時間 (從 300ms 增加到 310ms)
-    // 這 10 毫秒的緩衝能確保 CSS 渲染引擎已經完成第一階段動畫
+    // 🌟 體驗優化：背景的景深恢復不需要等，立刻開始往前浮現，創造更立體的空間感！
+    document.getElementById('main-stack').classList.remove('has-active');
+
+    // 2. ⚡ 完美換手：鎖死在剛好翻轉到 90 度的瞬間 (300ms)
     setTimeout(() => {
-        // 先把背景的 has-active 拿掉，讓背景開始恢復模糊與縮放
-        document.getElementById('main-stack').classList.remove('has-active');
-
-        // 原卡片接力翻轉回來 (90 -> 0度)
+        // 原卡片接力翻轉回來 (-90 -> 0度)
         originalInner.classList.remove('flip-out');
         originalInner.classList.add('flip-back-in');
 
-        // 3. 🌟 關鍵改動：不要立即刪除 overlay，先讓它透明度歸零
+        // 🟢 讓翻轉完的空白卡片立刻隱藏，避免干擾視覺
         overlay.style.opacity = '0';
-        overlay.style.transition = 'opacity 0.3s ease';
+        overlay.style.transition = 'opacity 0.1s ease'; 
 
-        // 4. 等翻轉徹底結束且視覺靜止後 (0.3s 翻轉 + 0.1s 餘韻)，再移除 DOM
+        // 3. 等原卡片徹底翻轉完成並靜止後，再安全地移除 DOM 節點
         setTimeout(() => {
             if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
             
@@ -972,12 +971,12 @@ window.closeBlankOverlay = function() {
             const originalContainer = document.getElementById('detail-card-container');
             if (originalContainer) originalContainer.classList.remove('perspective-container');
             
-            // 確保打叉圖示恢復正常顯示
+            // 恢復右上角打叉按鈕
             const dismissIcon = document.getElementById('dismiss-icon');
             if (dismissIcon) dismissIcon.style.opacity = '1';
-        }, 400);
+        }, 350);
 
-    }, 310); 
+    }, 300); // 嚴格遵守 300ms 動畫交接點
 };
 /* ==========================================================================
    動態游標引擎 (絕對跟手 0 延遲版)
