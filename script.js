@@ -943,27 +943,41 @@ window.closeBlankOverlay = function() {
 
     if (!overlay || !blankCard || !originalInner) return;
 
-    // 1. 空白卡片開始倒帶翻轉回去 (0 -> -90度)
+    // 1. 讓空白卡片開始倒帶翻轉 (0 -> -90度)
+    // 這裡我們加上一個 pointer-events: none 防止連續點擊導致邏輯錯亂
+    overlay.style.pointerEvents = 'none';
     blankCard.classList.remove('flip-in-active');
     blankCard.classList.add('flip-in-start');
 
-    // 2. ⚡ 核心換手：在剛好翻回 -90 度的瞬間 (300ms)
+    // 2. ⚡ 核心優化：稍微加長換手等待時間 (從 300ms 增加到 310ms)
+    // 這 10 毫秒的緩衝能確保 CSS 渲染引擎已經完成第一階段動畫
     setTimeout(() => {
-        // 銷毀背面的空白卡片
-        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        // 先把背景的 has-active 拿掉，讓背景開始恢復模糊與縮放
+        document.getElementById('main-stack').classList.remove('has-active');
 
         // 原卡片接力翻轉回來 (90 -> 0度)
         originalInner.classList.remove('flip-out');
         originalInner.classList.add('flip-back-in');
 
-        // 等翻轉完成後，清理 3D 視角類別，恢復原本的狀態
+        // 3. 🌟 關鍵改動：不要立即刪除 overlay，先讓它透明度歸零
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.3s ease';
+
+        // 4. 等翻轉徹底結束且視覺靜止後 (0.3s 翻轉 + 0.1s 餘韻)，再移除 DOM
         setTimeout(() => {
+            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            
+            // 清理 3D 視角與狀態類別
             originalInner.classList.remove('flip-back-in');
             const originalContainer = document.getElementById('detail-card-container');
             if (originalContainer) originalContainer.classList.remove('perspective-container');
-        }, 300);
+            
+            // 確保打叉圖示恢復正常顯示
+            const dismissIcon = document.getElementById('dismiss-icon');
+            if (dismissIcon) dismissIcon.style.opacity = '1';
+        }, 400);
 
-    }, 300);
+    }, 310); 
 };
 /* ==========================================================================
    動態游標引擎 (絕對跟手 0 延遲版)
