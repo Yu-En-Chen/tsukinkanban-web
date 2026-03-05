@@ -700,7 +700,6 @@ body.searching .dismiss-icon {
    針對靜態不變的圖示，強制鎖定在 0.8 透明度。
 */
 .search-icon svg,
-.cancel-circle-btn svg,
 .capsule-btn-item svg,
 #dismiss-icon svg {
     opacity: 0.8 !important;
@@ -729,6 +728,11 @@ body.searching .dismiss-icon {
     width: 20px !important; 
     height: 20px !important;
     stroke-width: 1.5px !important; /* 單獨稍微加粗，讓點點更飽滿清晰 */
+    opacity: 0.7 !important;      /* 👈 在這裡獨立控制透明度 (數值可自行修改) */
+}
+/* 🟢 針對 ⋯ 圖示：強制將裡面的圓形填滿實心色，解決中空問題 */
+.capsule-btn-item:not(.main-btn) svg circle {
+    fill: currentColor !important;
 }
 
 /* 微調 B：膠囊內的「 ＋ 」(新增)
@@ -747,6 +751,7 @@ body.searching .dismiss-icon {
     width: 25px !important; /* 配合較小的圓形背景外框稍微縮小 */
     height: 25px !important;
     stroke-width: 1.2px !important;
+    opacity: 0.7 !important;      /* 👈 在這裡獨立控制透明度 (數值可自行修改) */
 }
 
 /* 微調 D：卡片專屬的關閉按鈕 (X)
