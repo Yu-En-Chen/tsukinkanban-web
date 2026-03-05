@@ -677,10 +677,6 @@ body.searching .dismiss-icon {
     stroke-linecap: round !important;    /* 線條端點圓角 */
     stroke-linejoin: round !important;   /* 線條交界圓角 */
     pointer-events: none !important;     /* 拔除觸控干擾，讓點擊穿透到按鈕本體 */
-    
-    width: 22px !important;              /* 預設統一寬度 */
-    height: 22px !important;             /* 預設統一高度 */
-    stroke-width: 1.8px !important;      /* 預設統一粗細 (1.8px 呈現最佳 iOS 質感) */
 }
 
 .left-circle-btn svg       /* 左上角選單按鈕 (包含漢堡/鈴鐺 與 關閉X) */
@@ -740,7 +736,7 @@ body.searching .dismiss-icon {
 .capsule-btn-item.main-btn svg {
     width: 25px !important; 
     height: 25px !important;
-    stroke-width: 1.2px !important;
+    stroke-width: 1.5px !important;
 }
 
 /* 微調 C：搜尋狀態下的取消按鈕 (X)
@@ -749,7 +745,7 @@ body.searching .dismiss-icon {
 .cancel-circle-btn svg {
     width: 24px !important; /* 配合較小的圓形背景外框稍微縮小 */
     height: 24px !important;
-    stroke-width: 1.2px !important;
+    stroke-width: 1.5px !important;
     opacity: 0.9 !important;      /* 👈 在這裡獨立控制透明度 (數值可自行修改) */
 }
 
