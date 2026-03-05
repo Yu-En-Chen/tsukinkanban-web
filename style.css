@@ -416,12 +416,15 @@ body.searching .search-mask {
 }
 .card::after, .fixed-bottom-card::after, .detail-card-inner::after {
     content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; transition: --glare-angle 0.15s;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E");
     
-    /* 🟢 同色系反光魔法：注入動態算出的顏色 */
+    /* 🟢 1. 替換為內建高對比的 SVG 矩陣，徹底拔除會導致 Android 崩潰的 CSS filter */
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='5 0 0 0 -2 0 5 0 0 -2 0 0 5 0 -2 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+    
     background-color: var(--dynamic-glare, transparent);
 
-    opacity: 0.23; filter: contrast(500%) brightness(500%); mix-blend-mode: overlay;
+    /* 🔴 2. 這裡已經將 filter: contrast(500%) brightness(500%); 徹底刪除！ */
+    opacity: 0.23; mix-blend-mode: overlay;
+    
     -webkit-mask-image: linear-gradient(var(--glare-angle, 135deg), rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 25%, rgba(0,0,0,0.2) 55%, transparent 75%);
     mask-image: linear-gradient(var(--glare-angle, 135deg), rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 25%, rgba(0,0,0,0.2) 55%, transparent 75%);
     background-size: 150px 150px; border-radius: inherit; background-clip: padding-box;
@@ -547,21 +550,26 @@ body.searching .dismiss-icon {
 }
 
 /* ==========================================================================
-   🟢 Android Blink 引擎專屬防破圖與防閃爍修復 (精準打擊版)
+   🟢 Android Blink 引擎專屬防閃爍修復 (終極穩定版)
    ========================================================================== */
 
-/* 1. 解決光影頻閃：禁止 CSS 動畫與 JS 爭奪控制權，滑動時強制 0 延遲跟手 */
+/* 1. 關閉光影的 CSS 延遲：讓 JS 物理引擎在滑動時能「零誤差」跟手，解決抖動 */
 html.is-android-blink .card-stack.dragging .card::after {
     transition: none !important;
 }
 
-/* 2. 解決切塊破圖與文字閃爍：僅將光影層推入 GPU，絕對不牽連卡片本體 (保護文字) */
-html.is-android-blink .card-stack.dragging .card::after,
-html.is-android-blink .card-stack.bounce-back .card::after,
-html.is-android-blink .card-stack.bounce-back-wheel .card::after {
+/* 2. 實體圖層隔離：強制將卡片本體獨立於 GPU，避免光影遮罩重繪時波及到文字造成閃爍 */
+html.is-android-blink .card-stack.dragging .card,
+html.is-android-blink .card-stack.bounce-back .card,
+html.is-android-blink .card-stack.bounce-back-wheel .card {
     transform: translateZ(0);
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
+    will-change: transform;
+}
+
+/* 3. 保護文字層：為內容層加上獨立算圖權限，徹底消滅文字被閃爍吞噬的問題 */
+html.is-android-blink .card-stack.dragging .card-content,
+html.is-android-blink .card-stack.bounce-back .card-content {
+    will-change: transform, opacity;
 }
 
 /* ==========================================================================
