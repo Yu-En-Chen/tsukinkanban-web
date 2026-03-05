@@ -547,26 +547,22 @@ body.searching .dismiss-icon {
 }
 
 /* ==========================================================================
-   🟢 Android 專屬防破圖修復 (保護文字與光影，iOS 完全豁免)
+   🟢 Android 專屬防破圖與防閃爍修復 (精準打擊版)
    ========================================================================== */
 
-/* 1. 保護卡片本體：解決「文字」與「底色」在滑動時的撕裂閃爍 */
-html.is-android .card-stack.dragging .card,
-html.is-android .card-stack.bounce-back .card,
-html.is-android .card-stack.bounce-back-wheel .card {
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-    will-change: transform;
+/* 1. 解決光影頻閃：禁止 CSS 動畫與 JS 爭奪控制權，滑動時強制 0 延遲跟手 */
+html.is-android .card-stack.dragging .card::after {
+    transition: none !important;
 }
 
-/* 2. 保護光影層：解決「雜訊噪點」與「高光邊緣」的頻閃 */
+/* 2. 解決切塊破圖與文字閃爍：僅將光影層推入 GPU，絕對不牽連卡片本體 (保護文字) */
 html.is-android .card-stack.dragging .card::after,
 html.is-android .card-stack.bounce-back .card::after,
 html.is-android .card-stack.bounce-back-wheel .card::after {
     transform: translateZ(0);
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
-    will-change: transform;
+    /* 🔴 徹底拔除 will-change: transform，避免過度刺激 Android 引擎重繪 */
 }
 
 /* ==========================================================================
