@@ -655,9 +655,12 @@ body.searching .dismiss-icon {
 /* 1. 統一所有骨架圖示的「粗細」與「防觸控干擾」 */
 .left-circle-btn svg,
 .search-icon svg,
-.cancel-circle-btn svg,
-.capsule-btn-item svg {
+.cancel-circle-btn svg {
     stroke-width: 2px !important; /* 統一粗細，維持全站風格一致 */
+    pointer-events: none !important; 
+}
+.capsule-btn-item svg {
+    stroke-width: 1px !important; /* 統一粗細，維持全站風格一致 */
     pointer-events: none !important; 
 }
 
@@ -665,8 +668,8 @@ body.searching .dismiss-icon {
 .left-circle-btn svg,
 .search-icon svg,
 .cancel-circle-btn svg {
-    width: 26px !important;
-    height: 26px !important;
+    width: 28px !important;
+    height: 28px !important;
 }
 
 /* 3. 🟢 右側膠囊圖示「獨立大小控制」 */
