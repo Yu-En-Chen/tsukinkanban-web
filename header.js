@@ -97,7 +97,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
         }
     };
 
-    // 🟢 3. 雙重人格點擊邏輯
+    // 🟢 3. 雙重點擊邏輯
     window.handleCapsuleMainClick = function() {
         const capsule = document.getElementById('action-capsule');
         const mode = capsule ? (capsule.dataset.mode || 'native') : 'native';
@@ -106,10 +106,10 @@ export function initHeader(onSearchCallback, getActiveCardId) {
             if (capsule.classList.contains('detail-active')) {
                 if (typeof window.openBlankOverlay === 'function') window.openBlankOverlay();
             } else {
-                console.log('Plus Action Triggered');
+                // 🟢 將原本的 console.log 替換為呼叫搜尋框展開動畫
+                if (typeof window.toggleSearch === 'function') window.toggleSearch(true);
             }
         } else if (mode === 'blank') {
-            // 空白模式下點擊左側 (也就是點擊「返回」箭頭)
             if (typeof window.closeBlankOverlay === 'function') window.closeBlankOverlay();
         }
     };
@@ -127,9 +127,24 @@ export function initHeader(onSearchCallback, getActiveCardId) {
         }
     };
 
-    // 搜尋框事件監聽
-    window.toggleSearch = function(show) { /* (與原本邏輯一致，省略展示以節省版面) */ };
-    searchInput.addEventListener('compositionstart', () => { isComposing = true; });
-    searchInput.addEventListener('compositionend', (e) => { isComposing = false; onSearchCallback(e.target.value); });
-    searchInput.addEventListener('input', (e) => { if (!isComposing) onSearchCallback(e.target.value); });
-}
+// 🟢 完整還原的搜尋框動畫與事件邏輯
+window.toggleSearch = function(show) {
+    const dismissIcon = document.getElementById('dismiss-icon');
+    
+    if (show) {
+        searchContainer.classList.add('active');
+        document.body.classList.add('searching'); 
+        if (dismissIcon) dismissIcon.style.opacity = '0';
+        setTimeout(() => { searchInput.focus(); }, 300);
+    } else {
+        searchContainer.classList.remove('active');
+        document.body.classList.remove('searching'); 
+        searchInput.value = '';
+        searchInput.blur();
+        onSearchCallback(''); // 清空搜尋結果，還原卡片
+        // 如果原本是在詳情頁，恢復打叉按鈕
+        if (dismissIcon && getActiveCardId()) {
+            dismissIcon.style.opacity = '1';
+        }
+    }
+};
