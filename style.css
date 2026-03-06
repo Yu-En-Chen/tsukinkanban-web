@@ -663,6 +663,14 @@ body.searching .dismiss-icon {
     perspective: 1500px !important;
 }
 
+/* 🟢 動態硬體加速 Class (交由 JS 在翻轉瞬間賦予，結束後收回) */
+.hardware-accelerated {
+    will-change: transform, opacity, box-shadow !important;
+    -webkit-transform-style: preserve-3d !important;
+    transform-style: preserve-3d !important;
+}
+
+
 /* 2. 第一半段：原卡片翻出去 (0度 -> 90度) */
 .detail-card-inner.flip-out {
     /* 🟢 視覺魔法：翻轉時同步放大 5% (scale 1.05)，製造往臉上飛的錯覺，轉移厚度注意力 */
@@ -755,7 +763,7 @@ body.searching .dismiss-icon {
 .detail-card-inner.flip-back-active > .card-content {
     opacity: 1 !important;
     /* 完全複製翻入時的文字延遲淡入 */
-    transition: opacity 0.2s linear 0.1s !important;
+    transition: opacity 0.2s linear 0.25s !important;
 }
 
 /* ==========================================================================

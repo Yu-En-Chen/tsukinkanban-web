@@ -980,6 +980,8 @@ window.openBlankOverlay = function(hexColor) {
     originalContainer.classList.add('perspective-container');
     originalInner.classList.remove('flip-back-in');
     originalInner.classList.add('flip-out');
+    originalInner.classList.add('hardware-accelerated'); // 👈 硬體加速
+    card.classList.add('hardware-accelerated');          // 👈 硬體加速
 
     if (window.slideCapsuleMode) window.slideCapsuleMode(true);
 
@@ -993,6 +995,13 @@ window.openBlankOverlay = function(hexColor) {
     setTimeout(() => {
         card.classList.remove('flip-in-start');
         card.classList.add('flip-in-active');
+
+        // 🟢 動畫徹底跑完後，收回硬體加速釋放記憶體
+        setTimeout(() => {
+            originalInner.classList.remove('hardware-accelerated');
+            card.classList.remove('hardware-accelerated');
+        }, 450);
+
     }, 300); 
 };
 
@@ -1003,6 +1012,10 @@ window.closeBlankOverlay = function() {
 
     if (!overlay || !blankCard || !originalInner) return;
     overlay.style.pointerEvents = 'none';
+
+    // 🟢 翻轉回去前，重新賦予硬體加速
+    blankCard.classList.add('hardware-accelerated');
+    originalInner.classList.add('hardware-accelerated');
 
     // 🟢 1. 空白卡片反向翻轉消失 & 膠囊滑回
     blankCard.classList.remove('flip-in-active');
@@ -1096,8 +1109,11 @@ window.closeBlankOverlay = function() {
             originalInner.classList.remove('flip-back-active');
             const originalContainer = document.getElementById('detail-card-container');
             if (originalContainer) originalContainer.classList.remove('perspective-container');
+        
+            // 🟢 動畫徹底跑完後，收回原卡片的硬體加速 (👈 新增這行)
+            originalInner.classList.remove('hardware-accelerated');
             
-        }, 350); 
+        }, 450); // 🟢 記得把這裡的 350 改成 450，配合你調慢的文字浮現時間！
 
     }, 300); // 嚴格遵守 300ms 原速交接點
 };
