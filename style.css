@@ -801,6 +801,7 @@ body.searching .dismiss-icon {
     .left-circle-btn:not(.is-expanded):hover,
     .menu-close-btn:hover,
     .search-container:not(.active) .search-trigger:hover,  /* 🟢 修改這裡：搜尋框展開時不放大 */
+    .action-capsule:not(.menu-expanded):hover,
     .cancel-circle-btn:hover {
         scale: 1.05;
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important; /* 輕微加深陰影增強浮出感 */
