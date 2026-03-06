@@ -1004,6 +1004,72 @@ window.closeBlankOverlay = function() {
 
     }, 300); // 嚴格遵守 300ms 原速交接點
 };
+
+// ============================================================================
+// 🟢 頂部按鈕微互動 (Long Press 400ms 放大回彈)
+// ============================================================================
+function initHeaderButtonGestures() {
+    // 抓取所有 Header 的互動按鈕
+    const headerBtns = document.querySelectorAll('.left-circle-btn, .menu-close-btn, .search-trigger, .action-capsule, .cancel-circle-btn');
+    
+    headerBtns.forEach(btn => {
+        let pressTimer = null;
+        let isLifted = false;
+        let startX = 0, startY = 0;
+
+        btn.addEventListener('touchstart', (e) => {
+            // 防呆：如果按鈕已經是展開成大卡片的狀態，則不觸發長按放大
+            if (btn.classList.contains('is-expanded') || btn.classList.contains('menu-expanded')) return;
+
+            // 🟢 新增的防呆：如果它是搜尋按鈕，且搜尋列已經處於展開 (active) 狀態，則不觸發放大
+            if (btn.classList.contains('search-trigger') && document.getElementById('search-container').classList.contains('active')) return;
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            isLifted = false;
+
+            // 完美複製牌組的 400ms 長按判定
+            pressTimer = setTimeout(() => {
+                isLifted = true;
+                btn.classList.add('touch-lifted-btn');
+                // 觸發硬體微震動回饋 (如果手機支援)
+                if (window.navigator.vibrate) window.navigator.vibrate(10); 
+            }, 400); 
+        }, { passive: true });
+
+        btn.addEventListener('touchmove', (e) => {
+            if (!pressTimer && !isLifted) return;
+            
+            const moveX = e.touches[0].clientX;
+            const moveY = e.touches[0].clientY;
+            
+            // 如果手指滑動超過 10px，視為誤觸或滾動，立刻取消長按判定
+            if (Math.abs(moveX - startX) > 10 || Math.abs(moveY - startY) > 10) {
+                clearTimeout(pressTimer);
+                pressTimer = null;
+                if (isLifted) {
+                    btn.classList.remove('touch-lifted-btn');
+                    isLifted = false;
+                }
+            }
+        }, { passive: true });
+
+        // 放開手指時，收回放大效果並清理計時器
+        const endPress = () => {
+            clearTimeout(pressTimer);
+            pressTimer = null;
+            if (isLifted) {
+                btn.classList.remove('touch-lifted-btn');
+                isLifted = false;
+            }
+        };
+
+        btn.addEventListener('touchend', endPress);
+        btn.addEventListener('touchcancel', endPress);
+    });
+}
+
+// 啟動監聽
+document.addEventListener('DOMContentLoaded', initHeaderButtonGestures);
 /* ==========================================================================
    動態游標引擎 (絕對跟手 0 延遲版)
    ========================================================================== */

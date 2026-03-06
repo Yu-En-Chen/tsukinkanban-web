@@ -125,7 +125,7 @@ body.searching .search-mask {
     z-index: 5;
     display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; 
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    transition: transform 0.5s var(--apple-spring), opacity 0.35s ease;
+    transition: transform 0.5s var(--apple-spring), opacity 0.35s ease, scale 0.4s var(--apple-spring);
 }
 
 .left-circle-btn svg { width: 20px !important; height: 20px !important; opacity: 0.7; display: block; transition: opacity 0.3s ease, transform 0.3s ease; }
@@ -136,7 +136,7 @@ body.searching .search-mask {
 .search-trigger {
     width: 44px; height: 44px; background: var(--search-bg); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); 
     border-radius: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; margin-right: 60px; 
-    transition: all 0.5s var(--active-bounce), transform 0.5s var(--apple-spring), opacity 0.4s linear; 
+    transition: all 0.5s var(--active-bounce), transform 0.5s var(--apple-spring), opacity 0.4s linear, scale 0.4s var(--apple-spring); 
     border: 1px solid var(--search-border); position: relative; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); z-index: 2; 
 }
 
@@ -157,8 +157,8 @@ body.searching .search-mask {
     height: 44px; width: 90px; background: var(--search-bg); border: 1px solid var(--search-border); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
     border-radius: 22px; display: block; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); overflow: hidden; position: absolute; right: -10px; top: 50%;
     transform: translateY(-50%) translateX(0px); transform-origin: top right; z-index: 5600; 
-    transition: width 0.5s var(--apple-spring), height 0.5s var(--apple-spring), opacity 0.2s ease, transform 0.5s var(--apple-spring), border-radius 0.5s var(--apple-spring), margin 0.5s var(--apple-spring), top 0.5s var(--apple-spring);
     flex-shrink: 0; 
+    transition: width 0.5s var(--apple-spring), height 0.5s var(--apple-spring), opacity 0.2s ease, transform 0.5s var(--apple-spring), border-radius 0.5s var(--apple-spring), margin 0.5s var(--apple-spring), top 0.5s var(--apple-spring), scale 0.4s var(--apple-spring);  
 }
 
 .capsule-grid-layout { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; justify-items: center; width: 100%; height: 100%; transition: opacity 0.2s ease; }
@@ -192,7 +192,7 @@ body.searching .search-mask {
     width: 0; height: 44px; background: var(--search-bg); border-radius: 50%; border: 1px solid var(--border-color); color: var(--icon-color); 
     display: flex; align-items: center; justify-content: center; padding: 12px; overflow: hidden; 
     cursor: pointer; opacity: 0; position: relative; z-index: 5700;
-    transition: width 0.4s var(--active-bounce), opacity 0.3s ease, transform 0.4s var(--active-bounce); transform: scale(0.5); flex-shrink: 0;
+    transition: width 0.4s var(--active-bounce), opacity 0.3s ease, transform 0.4s var(--active-bounce), scale 0.4s var(--apple-spring);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 .cancel-circle-btn svg { 
@@ -789,6 +789,31 @@ body.searching .dismiss-icon {
     
     /* 把剛剛的 margin 刪除，讓高解析度手機螢幕回歸絕對物理置中 */
 }
+
+/* ==========================================================================
+   🟢 頂部導航列微互動 (Hover & Touch Scale)
+   ========================================================================== */
+   .left-circle-btn, .menu-close-btn, .search-trigger, .action-capsule, .cancel-circle-btn {
+    scale: 1; /* 獨立於 transform 之外的縮放引擎 */
+}
+
+/* 1. 桌面版滑鼠 Hover 狀態 */
+@media (any-hover: hover) {
+    /* 當展開成大視窗時不觸發放大 */
+    .left-circle-btn:not(.is-expanded):hover,
+    .menu-close-btn:hover,
+    .search-container:not(.active) .search-trigger:hover,  /* 🟢 修改這裡：搜尋框展開時不放大 */
+    .action-capsule:not(.menu-expanded):hover,
+    .cancel-circle-btn:hover {
+        scale: 1.05;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important; /* 輕微加深陰影增強浮出感 */
+    }
+}
+
+/* 2. 手機版長按浮起狀態 (由 JS 觸發) */
+.touch-lifted-btn {
+    scale: 1.05;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
 }
 
 /* ==========================================================================
