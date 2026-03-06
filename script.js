@@ -936,15 +936,13 @@ window.handleBottomCardClick = handleBottomCardClick;
 window.handleOverlayClick = handleOverlayClick;
 
 // ============================================================================
-// 🟢 3D 翻轉萬用空白彈窗引擎 (180度無縫空翻 + 線性抽換版)
+// 🟢 3D 翻轉萬用空白彈窗引擎 (極速預渲染 0 延遲版)
 // ============================================================================
 
-window.isFlipAnimating = false; // 動畫防呆鎖
-
 window.openBlankOverlay = function(hexColor) {
-    if (window.isFlipAnimating || document.getElementById('dynamic-blank-overlay')) return;
-    window.isFlipAnimating = true;
+    if (document.getElementById('dynamic-blank-overlay')) return;
 
+    // 自動繼承顏色
     if (!hexColor) {
         if (activeCardId) {
             const currentData = railwayData.find(l => l.id === activeCardId);
@@ -957,7 +955,7 @@ window.openBlankOverlay = function(hexColor) {
     const originalContainer = document.getElementById('detail-card-container');
     if (!originalInner || !originalContainer) return;
 
-    // 🟢 1. 空白卡片提前準備 (底層幽靈待命)
+    // 🟢 1. 第一時間「提前渲染」新卡片，並設定在 -90 度隱形待命
     const overlay = document.createElement('div');
     overlay.id = 'dynamic-blank-overlay';
     overlay.className = 'detail-overlay active'; 
@@ -967,7 +965,7 @@ window.openBlankOverlay = function(hexColor) {
     container.style.cssText = 'width: 100%; display: flex; justify-content: center; margin-top: calc(env(safe-area-inset-top) + 160px);';
 
     const card = document.createElement('div');
-    card.className = 'detail-card-inner blank-prepared hardware-accelerated'; 
+    card.className = 'detail-card-inner flip-in-start'; // 保持 -90 度
     applyThemeToCard(card, hexColor);
 
     container.appendChild(card);
@@ -978,86 +976,57 @@ window.openBlankOverlay = function(hexColor) {
         if (!e.target.closest('.detail-card-inner')) window.closeBlankOverlay();
     });
 
-    // 🟢 2. 詳情卡片啟動 180 度完整空翻
-    originalInner.classList.add('hardware-accelerated');
+    // 🟢 2. 立刻開始第一段動畫 (原卡片翻轉消失 & 膠囊滑動)
     originalContainer.classList.add('perspective-container');
-    
-    // 清除舊狀態，加上空翻 Class
-    originalInner.classList.remove('detail-full-active', 'detail-prepared', 'detail-fade-out-solid');
-    originalInner.classList.add('flip-full-out');
+    originalInner.classList.remove('flip-back-in');
+    originalInner.classList.add('flip-out');
+    originalInner.classList.add('hardware-accelerated'); // 👈 硬體加速
+    card.classList.add('hardware-accelerated');          // 👈 硬體加速
 
     if (window.slideCapsuleMode) window.slideCapsuleMode(true);
 
     const dismissIcon = document.getElementById('dismiss-icon');
     if (dismissIcon) {
-        dismissIcon.style.transition = 'opacity 0.2s linear';
+        dismissIcon.style.transition = 'opacity 0.3s linear';
         dismissIcon.style.opacity = '0';
     }
 
-    // 🟢 3. 嚴格等待 600ms 動畫落地後，瞬間啟動抽換
+    // 🟢 3. 完美 0 延遲交接：300ms 抵達 90 度時，因為 DOM 早就準備好了，直接翻出來！
     setTimeout(() => {
-        // 防呆：如果使用者在這 600ms 內強行關閉了視窗，就不執行後續
-        if (!document.getElementById('dynamic-blank-overlay')) {
-            window.isFlipAnimating = false;
-            return;
-        }
+        card.classList.remove('flip-in-start');
+        card.classList.add('flip-in-active');
 
-        // 空白卡片底色瞬間出現，內容開始 0.5 秒淡入
-        card.classList.remove('blank-prepared');
-        card.classList.add('blank-full-active');
-        
-        // 詳情卡片本體開始 0.5 秒線性淡出消失
-        originalInner.classList.remove('flip-full-out');
-        originalInner.classList.add('detail-fade-out-solid');
-        
-        // 4. 等待 500ms 抽換結束，收回硬體加速並解鎖
+        // 🟢 動畫徹底跑完後，收回硬體加速釋放記憶體
         setTimeout(() => {
-            card.classList.remove('hardware-accelerated');
             originalInner.classList.remove('hardware-accelerated');
-            window.isFlipAnimating = false; 
-        }, 500); 
+            card.classList.remove('hardware-accelerated');
+        }, 450);
 
-    }, 600); // 絕不偷跑的 600ms
+    }, 300); 
 };
 
 window.closeBlankOverlay = function() {
-    if (window.isFlipAnimating) return;
     const overlay = document.getElementById('dynamic-blank-overlay');
     const blankCard = overlay ? overlay.querySelector('.detail-card-inner') : null;
     const originalInner = document.querySelector('#detail-card-container .detail-card-inner');
 
     if (!overlay || !blankCard || !originalInner) return;
-    
-    window.isFlipAnimating = true;
     overlay.style.pointerEvents = 'none';
 
+    // 🟢 翻轉回去前，重新賦予硬體加速
     blankCard.classList.add('hardware-accelerated');
     originalInner.classList.add('hardware-accelerated');
 
-    // 🟢 1. 詳情卡片提前歸位 (底層幽靈待命)
-    originalInner.classList.remove('flip-full-out', 'detail-fade-out-solid', 'detail-full-active');
-    originalInner.classList.add('detail-prepared');
-
-    // 🟢 2. 空白卡片啟動反向 180 度完整空翻
-    blankCard.classList.remove('blank-full-active', 'blank-fade-out-solid');
-    blankCard.classList.add('flip-full-out-reverse');
+    // 🟢 1. 空白卡片反向翻轉消失 & 膠囊滑回
+    blankCard.classList.remove('flip-in-active');
+    blankCard.classList.add('flip-out-reverse');
 
     if (window.slideCapsuleMode) window.slideCapsuleMode(false);
 
-    // 🟢 3. 嚴格等待 600ms 動畫落地後，瞬間啟動抽換
+    // 🟢 2. 原卡片完美銜接
     setTimeout(() => {
-        if (!document.getElementById('dynamic-blank-overlay')) {
-            window.isFlipAnimating = false;
-            return;
-        }
-
-        // 詳情卡片底色瞬間出現，內容開始 0.5 秒淡入
-        originalInner.classList.remove('detail-prepared');
-        originalInner.classList.add('detail-full-active');
-
-        // 空白卡片本體開始 0.5 秒線性淡出消失
-        blankCard.classList.remove('flip-full-out-reverse');
-        blankCard.classList.add('blank-fade-out-solid');
+        originalInner.classList.remove('flip-out');
+        originalInner.classList.add('flip-back-start'); // 歸位到 90 度準備
 
         const dismissIcon = document.getElementById('dismiss-icon');
         if (dismissIcon) {
@@ -1065,16 +1034,88 @@ window.closeBlankOverlay = function() {
             dismissIcon.style.opacity = '1';
         }
 
-        // 4. 等待 500ms 抽換結束，清理戰場並解鎖
+        // 為了避免擋住視線，把舊的殼變透明
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.1s ease'; 
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                originalInner.classList.remove('flip-back-start');
+                originalInner.classList.add('flip-back-active');
+            });
+        });
+
+        // 🟢 3. 等原卡片翻完後，才優雅地清理 DOM 垃圾
         setTimeout(() => {
             if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-            originalInner.classList.remove('hardware-accelerated');
+            originalInner.classList.remove('flip-back-active');
             const originalContainer = document.getElementById('detail-card-container');
             if (originalContainer) originalContainer.classList.remove('perspective-container');
-            window.isFlipAnimating = false;
-        }, 500);
+        }, 350); 
+    }, 300); 
+};
 
-    }, 600); // 絕不偷跑的 600ms
+// ============================================================================
+// 🟢 空白彈窗關閉邏輯 (含 SVG 恢復 & 100% 畫格同步鏡像)
+// ============================================================================
+
+window.closeBlankOverlay = function() {
+    const overlay = document.getElementById('dynamic-blank-overlay');
+    const blankCard = overlay ? overlay.querySelector('.detail-card-inner') : null;
+    const originalInner = document.querySelector('#detail-card-container .detail-card-inner');
+
+    if (!overlay || !blankCard || !originalInner) return;
+
+    overlay.style.pointerEvents = 'none';
+
+    // 1. 空白卡片執行退場動畫
+    blankCard.classList.remove('flip-in-active');
+    blankCard.classList.add('flip-out-reverse');
+
+    // 🟢 同步觸發膠囊原路向左滑回
+    if (window.slideCapsuleMode) window.slideCapsuleMode(false);
+
+    // 2. ⚡ 300ms 完美換手
+    setTimeout(() => {
+        // 🌟 100% 複製開啟邏輯：先強制給原卡片 90 度的「起跑點」
+        originalInner.classList.remove('flip-out');
+        originalInner.classList.add('flip-back-start');
+
+        // SVG 打叉圖示同步線性淡入恢復 (0.3s)
+        const dismissIcon = document.getElementById('dismiss-icon');
+        if (dismissIcon) {
+            dismissIcon.style.transition = 'opacity 0.3s linear';
+            dismissIcon.style.opacity = '1';
+        }
+
+        // 讓翻轉完的空白卡片立刻隱藏
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.1s ease'; 
+
+        // 🌟 核心修復：確保原卡片的 90 度起跑點被瀏覽器畫出來後，再翻轉回 0 度
+        // 這會把被省略的物理拉扯感 100% 還原！
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                originalInner.classList.remove('flip-back-start');
+                originalInner.classList.add('flip-back-active');
+            });
+        });
+
+        // 3. 等原卡片徹底翻轉完成並靜止後，再安全地移除 DOM 節點
+        setTimeout(() => {
+            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            
+            // 清理 3D 視角與狀態類別
+            originalInner.classList.remove('flip-back-active');
+            const originalContainer = document.getElementById('detail-card-container');
+            if (originalContainer) originalContainer.classList.remove('perspective-container');
+        
+            // 🟢 動畫徹底跑完後，收回原卡片的硬體加速 (👈 新增這行)
+            originalInner.classList.remove('hardware-accelerated');
+            
+        }, 450); // 🟢 記得把這裡的 350 改成 450，配合你調慢的文字浮現時間！
+
+    }, 300); // 嚴格遵守 300ms 原速交接點
 };
 
 // ============================================================================
