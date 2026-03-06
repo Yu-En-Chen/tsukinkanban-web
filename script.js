@@ -960,6 +960,9 @@ window.openBlankOverlay = function(hexColor) {
     originalInner.classList.remove('flip-back-in');
     originalInner.classList.add('flip-out');
 
+    // 🟢 同步觸發膠囊向右滑出切換
+    if (window.slideCapsuleMode) window.slideCapsuleMode(true);
+
     const dismissIcon = document.getElementById('dismiss-icon');
     if (dismissIcon) {
         dismissIcon.style.transition = 'opacity 0.3s linear';
@@ -1013,6 +1016,9 @@ window.closeBlankOverlay = function() {
     // 1. 空白卡片執行退場動畫
     blankCard.classList.remove('flip-in-active');
     blankCard.classList.add('flip-out-reverse');
+
+    // 🟢 同步觸發膠囊原路向左滑回
+    if (window.slideCapsuleMode) window.slideCapsuleMode(false);
 
     // 2. ⚡ 300ms 完美換手
     setTimeout(() => {

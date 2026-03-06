@@ -238,6 +238,69 @@ body.searching .search-mask {
 .search-container.active .input-wrapper { width: calc(100% - 44px); opacity: 1; }
 .search-container.active .cancel-circle-btn { width: 44px; opacity: 1; transform: scale(1); }
 
+/* =========================================
+   🟢 膠囊 2D 滑動切換系統 (完美同步卡片 3D 翻轉)
+   ========================================= */
+/* 1. 向右滑出消失 (進入 Blank 模式)
+   膠囊寬 90px，向右平移 90px 剛好讓左側調色盤徹底越過右側中線並消失 */
+   .action-capsule.slide-out-right .capsule-btn-item svg.icon-hidden,
+   .action-capsule.slide-out-right .capsule-btn-item svg.icon-blank-mode {
+       transform: translate3d(90px, 0, 0) !important;
+       opacity: 0 !important;
+       transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), opacity 0.2s 0.1s linear !important;
+   }
+   
+   /* 2. 從左側準備滑入 (Blank 模式圖示就位) */
+   .action-capsule.slide-in-left-start .capsule-btn-item svg.icon-hidden,
+   .action-capsule.slide-in-left-start .capsule-btn-item svg.icon-blank-mode {
+       transform: translate3d(-90px, 0, 0) !important;
+       opacity: 0 !important;
+       transition: none !important;
+   }
+   
+   /* 3. 從左側滑入定位 */
+   .action-capsule.slide-in-active .capsule-btn-item svg.icon-hidden,
+   .action-capsule.slide-in-active .capsule-btn-item svg.icon-blank-mode {
+       transform: translate3d(0, 0, 0) !important;
+       opacity: 0.8 !important;
+       transition: transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1), opacity 0.3s ease-out !important;
+   }
+   
+   /* 4. 反向：向左滑出消失 (離開 Blank 模式，原路返回) */
+   .action-capsule.slide-out-left .capsule-btn-item svg.icon-hidden,
+   .action-capsule.slide-out-left .capsule-btn-item svg.icon-blank-mode {
+       transform: translate3d(-90px, 0, 0) !important;
+       opacity: 0 !important;
+       transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), opacity 0.2s 0.1s linear !important;
+   }
+   
+   /* 5. 反向：從右側準備滑入 (原生圖示就位) */
+   .action-capsule.slide-in-right-start .capsule-btn-item svg.icon-hidden,
+   .action-capsule.slide-in-right-start .capsule-btn-item svg.icon-blank-mode {
+       transform: translate3d(90px, 0, 0) !important;
+       opacity: 0 !important;
+       transition: none !important;
+   }
+   
+   /* =========================================
+      🟢 空白模式下專屬 SVG 設定 (獨立樣式不打架)
+      ========================================= */
+   .capsule-btn-item svg.icon-blank-mode {
+       position: relative !important; 
+       opacity: 0.8 !important;
+       transform: scale(1) !important;
+       pointer-events: auto !important;
+   }
+   
+   /* 微調 B-4：新增的「返回 (左箭頭)」圖示 */
+   .capsule-btn-item svg.lucide-chevron-left { 
+       width: 26px !important; height: 26px !important; stroke-width: 2.2px !important; transform: translateX(-1px) !important; 
+   }
+   /* 微調 B-5：新增的「雲端下載」圖示 */
+   .capsule-btn-item svg.lucide-cloud-download { 
+       width: 21px !important; height: 21px !important; stroke-width: 1.8px !important; 
+   }
+
 /* ==========================================================================
    卡片堆疊與物理邏輯
    ========================================================================== */
