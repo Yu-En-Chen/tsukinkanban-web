@@ -665,37 +665,38 @@ body.searching .dismiss-icon {
 }
 
 /* ==========================================================================
-   🟢 3D 翻轉引擎 (Seamless 180° Card Flip - 光影分離 & 無膨脹版)
+   🟢 3D 翻轉引擎 (Seamless 180° Card Flip - 完美陰影無縫交接版)
    ========================================================================== */
 
 /* 1. 提供 3D 空間透視深度 */
 .perspective-container {
     perspective: 1500px !important;
-    position: relative; /* 🟢 新增定位基準，讓分離陰影能絕對定位 */
+    position: relative; 
 }
 
-/* 🟢 光影分離層：下方景深陰影 (模擬卡片浮在空中的底影，絕對不轉動) */
+/* 🟢 光影分離層：下方景深陰影 (完美對齊原始陰影的擴散程度與顏色強度) */
 .perspective-container::after {
-    content: ''; position: absolute; bottom: -30px; left: 10%; width: 80%; height: 40px;
-    background: rgba(0, 0, 0, 0.35); border-radius: 50%; filter: blur(20px);
+    content: ''; position: absolute; bottom: -20px; left: 10%; width: 80%; height: 40px;
+    background: rgba(0, 0, 0, 0.2); border-radius: 50%; filter: blur(20px);
     opacity: 0; pointer-events: none; z-index: -1;
-    transition: opacity 0.3s ease-in;
+    /* 配合實體陰影的淡出，進行完美線性交接 */
+    transition: opacity 0.3s linear;
 }
 
-/* 🟢 光影分離層：上方景深陰影 (模擬翻轉時背後的光暈，絕對不轉動) */
+/* 🟢 光影分離層：上方景深陰影 (降低強度避免突兀) */
 .perspective-container::before {
-    content: ''; position: absolute; top: -30px; left: 10%; width: 80%; height: 50px;
-    background: radial-gradient(ellipse at center, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 70%);
+    content: ''; position: absolute; top: -20px; left: 10%; width: 80%; height: 40px;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 70%);
     border-radius: 50%; filter: blur(15px);
     opacity: 0; pointer-events: none; z-index: -1;
-    transition: opacity 0.3s ease-in;
+    transition: opacity 0.3s linear;
 }
 
 /* 🟢 當外層容器被 JS 標記為翻轉中時，分離陰影浮現 */
 .perspective-container.is-flipping::after,
 .perspective-container.is-flipping::before {
     opacity: 1;
-    transition: opacity 0.3s cubic-bezier(0.0, 0.0, 0.2, 1);
+    transition: opacity 0.3s linear;
 }
 
 /* 🟢 動態硬體加速 Class (交由 JS 在翻轉瞬間賦予，結束後收回) */
@@ -707,12 +708,12 @@ body.searching .dismiss-icon {
 
 /* 2. 第一半段：原卡片翻出去 (0度 -> 90度) */
 .detail-card-inner.flip-out {
-    /* 🔴 拔除放大感：全程鎖定 scale(1) */
     transform: scale(1) rotateY(90deg) !important;
     
-    /* 🔴 拔除跟著轉的陰影，改用外層透明過渡 */
-    box-shadow: 0 0 0 rgba(0,0,0,0) !important; 
-    transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), box-shadow 0.15s ease-in !important;
+    /* 🔴 終極修復：維持 20px 位移與 40px 模糊，只將顏色設為透明。這樣陰影會原地淡出，絕對不會突然抽走縮小！ */
+    box-shadow: 0 20px 40px rgba(0,0,0,0) !important; 
+    /* 🔴 改用 linear 讓淡出與替身陰影的淡入完美互補 */
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), box-shadow 0.3s linear !important;
     pointer-events: none;
 }
 
@@ -726,9 +727,8 @@ body.searching .dismiss-icon {
 /* 4. 返回動畫：原卡片翻回來 (90度 -> 0度) */
 .detail-card-inner.flip-back-in {
     transform: scale(1) rotateY(0deg) !important;
-    /* 🟢 恢復原本的靜態實體陰影 */
     box-shadow: var(--ray-shadow-active) !important;
-    transition: transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1), box-shadow 0.3s ease-out 0.1s !important;
+    transition: transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1), box-shadow 0.3s linear !important;
 }
 .detail-card-inner.flip-back-in > .card-header,
 .detail-card-inner.flip-back-in > .card-content {
@@ -738,10 +738,9 @@ body.searching .dismiss-icon {
 
 /* 5. 第二半段：新空白卡片初始狀態 (藏在 -90 度) */
 .detail-card-inner.flip-in-start {
-    /* 🔴 拔除放大感：鎖定 scale(1) */
     transform: scale(1) rotateY(-90deg) !important;
-    /* 🔴 拔除起跑點的陰影 */
-    box-shadow: 0 0 0 rgba(0,0,0,0) !important;
+    /* 維持幾何形狀，透明度歸零 */
+    box-shadow: 0 20px 40px rgba(0,0,0,0) !important;
     transition: none !important;
 }
 .detail-card-inner.flip-in-start > * {
@@ -753,7 +752,7 @@ body.searching .dismiss-icon {
 .detail-card-inner.flip-in-active {
     transform: scale(1) rotateY(0deg) !important;
     box-shadow: var(--ray-shadow-active) !important;
-    transition: transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1), box-shadow 0.3s ease-out 0.1s !important;
+    transition: transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1), box-shadow 0.3s linear !important;
 }
 .detail-card-inner.flip-in-active > * {
     opacity: 1 !important;
@@ -762,11 +761,10 @@ body.searching .dismiss-icon {
 
 /* 7. [關閉] 第一半段：空白卡片退場翻轉 (0度 -> -90度) */
 .detail-card-inner.flip-out-reverse {
-    /* 🔴 拔除放大感：鎖定 scale(1) */
     transform: scale(1) rotateY(-90deg) !important;
-    /* 🔴 拔除跟著轉的陰影 */
-    box-shadow: 0 0 0 rgba(0,0,0,0) !important;
-    transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), box-shadow 0.15s ease-in !important;
+    /* 退場原地淡出 */
+    box-shadow: 0 20px 40px rgba(0,0,0,0) !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), box-shadow 0.3s linear !important;
     pointer-events: none;
 }
 .detail-card-inner.flip-out-reverse > * {
@@ -776,9 +774,8 @@ body.searching .dismiss-icon {
 
 /* 8. [關閉] 第二半段：原卡片強制 90 度起跑點 */
 .detail-card-inner.flip-back-start {
-    /* 🔴 拔除放大感：鎖定 scale(1) */
     transform: scale(1) rotateY(90deg) !important;
-    box-shadow: 0 0 0 rgba(0,0,0,0) !important;
+    box-shadow: 0 20px 40px rgba(0,0,0,0) !important;
     transition: none !important;
 }
 .detail-card-inner.flip-back-start > * {
@@ -790,7 +787,7 @@ body.searching .dismiss-icon {
 .detail-card-inner.flip-back-active {
     transform: scale(1) rotateY(0deg) !important;
     box-shadow: var(--ray-shadow-active) !important;
-    transition: transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1), box-shadow 0.3s ease-out 0.1s !important;
+    transition: transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1), box-shadow 0.3s linear !important;
 }
 .detail-card-inner.flip-back-active > .card-header,
 .detail-card-inner.flip-back-active > .card-content {
