@@ -744,11 +744,21 @@ function initOverlayGestures() {
     };
     
     detailOverlay.ontouchend = e => {
+        // 1. 恢復卡片本體的彈簧動畫，並設定目的地為 0 (原點)
         inner.style.transition = 'transform 0.6s var(--active-bounce)';
-        if (dismissIcon) dismissIcon.style.transition = 'opacity 0.3s ease';
+        inner.style.transform = 'translate3d(0, 0, 0)'; 
         
-        extraElements.forEach(el => el.style.transition = 'opacity 0.3s ease');
+        // 2. 恢復打叉圖示的淡入動畫與不透明度
+        if (dismissIcon) {
+            dismissIcon.style.transition = 'opacity 0.3s ease';
+            dismissIcon.style.opacity = '1';
+        }
         
+        // 3. 恢復內部文字的淡入動畫與不透明度
+        extraElements.forEach(el => {
+            el.style.transition = 'opacity 0.3s ease';
+            el.style.opacity = '1';
+        });
     };
 
     let overlayWheelSum = 0;
