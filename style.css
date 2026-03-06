@@ -854,10 +854,14 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 }
 
 /* ==========================================================================
-   裝置方向控制 (Landscape Prompt)
+   裝置方向控制 (Landscape Prompt) - 階層式淡出高質感版
    ========================================================================== */
    #landscape-prompt {
-    display: none;
+    /* 1. 拔除 display: none，改用 opacity 控制，讓它能夠吃動畫 */
+    display: flex;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
     position: fixed;
     top: 0;
     left: 0;
@@ -871,6 +875,27 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
     justify-content: center;
     text-align: center;
     padding: 40px;
+
+    /* 🟢 轉回直向 (退場) 的動畫：
+       背景「等待 0.4 秒」後，才花 0.6 秒慢慢淡出，總時長剛好 1 秒 */
+    transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s, visibility 0s 1s;
+}
+
+/* 將圖示與標題打包設定 */
+.rotate-phone-icon,
+.landscape-title {
+    opacity: 0;
+    /* 🟢 轉回直向 (退場) 的動畫：
+       這兩個元素沒有等待時間，第一瞬間就花 0.4 秒迅速淡出 */
+    transition: opacity 0.5s ease 0s;
+}
+
+.landscape-desc {
+    font-size: 0.9rem;
+    opacity: 0;
+    /* 🟢 轉回直向 (退場) 的動畫：
+       說明文字一樣在第一瞬間就花 0.4 秒迅速淡出 */
+    transition: opacity 0.5s ease 0s;
 }
 
 .rotate-phone-icon {
@@ -884,24 +909,36 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
     margin-bottom: 8px;
 }
 
-.landscape-desc {
-    font-size: 0.9rem;
-    opacity: 0.7;
-}
-
 @keyframes rotatePhone {
     0% { transform: rotate(-90deg); }
     50% { transform: rotate(0deg); }
     100% { transform: rotate(-90deg); }
 }
 
-/* 偵測條件：觸控設備 + 橫向 + 高度低於 600px (針對手機，排除桌面螢幕與大型平板) */
+/* 偵測條件：觸控設備 + 橫向 + 高度低於 600px */
 @media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
     #landscape-prompt {
-        display: flex !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+        /* ⚡ 轉為橫向時：瞬間觸發背景遮罩，0 延遲擋住畫面 */
+        transition: opacity 0.1s ease 0s, visibility 0s 0s !important;
     }
+
+    .rotate-phone-icon,
+    .landscape-title {
+        opacity: 1 !important;
+        /* ⚡ 轉為橫向時：圖示與標題稍微延遲 0.1 秒浮現，增加層次感 */
+        transition: opacity 0.3s ease 0.1s !important;
+    }
+
+    .landscape-desc {
+        opacity: 0.7 !important; /* 恢復原本半透明的設計 */
+        transition: opacity 0.3s ease 0.1s !important;
+    }
+
     #app-stage, #detail-overlay, .search-mask {
-        display: none !important; /* 隱藏原本的內容，防止排版破壞與誤觸 */
+        display: none !important; 
     }
 }
 
