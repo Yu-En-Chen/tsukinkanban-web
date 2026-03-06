@@ -1,5 +1,10 @@
 // script.js - 主 UI 邏輯與狀態控制 (動畫與 History API 修正版)
 
+import { getAllUserPreferences } from './db.js';
+
+// 🟢 這是合併後、網頁實際要拿來渲染的最終資料來源
+window.appRailwayData = [];
+
 import { bottomCardConfig, railwayData } from './data.js';
 import { initPhysics } from './physics.js'; 
 import { initHeader } from './header.js'; 
