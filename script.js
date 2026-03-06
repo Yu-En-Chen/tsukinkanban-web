@@ -745,7 +745,7 @@ function initOverlayGestures() {
     
     detailOverlay.ontouchend = e => {
         // 1. 恢復卡片本體的彈簧動畫，並設定目的地為 0 (原點)
-        inner.style.transition = 'transform 0.6s var(--active-bounce)';
+        inner.style.transition = 'transform 0.55s var(--spring-release)';
         inner.style.transform = 'translate3d(0, 0, 0)'; 
         
         // 2. 恢復打叉圖示的淡入動畫與不透明度
