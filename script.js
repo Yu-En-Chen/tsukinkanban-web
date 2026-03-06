@@ -275,8 +275,8 @@ mainStack.addEventListener('touchmove', (e) => {
             currentScrubCard = hoveredCard;
             currentScrubCard.classList.add('touch-lifted');
             
-            // 🟢 救命關鍵：把震動調高到 15ms，Android 硬體馬達才會有反應！
-            if (window.navigator.vibrate) window.navigator.vibrate(15); 
+            // 🟢 救命關鍵：把震動調高到 20ms，Android 硬體馬達才會有反應！
+            if (window.navigator.vibrate) window.navigator.vibrate(20); 
         } 
         // 如果手指滑到了沒有卡片的地方 (例如最頂部或最底層)
         else if (!hoveredCard && currentScrubCard) {
@@ -315,11 +315,11 @@ mainStack.addEventListener('touchmove', (e) => {
             // 把新的抬起
             currentScrubCard = hoveredCard;
             currentScrubCard.classList.add('touch-lifted');
-            if (window.navigator.vibrate) window.navigator.vibrate(5); // 換卡片時微震提示
-            // 🟢 破解安卓限制：將震動時間提高到 15ms，並加入 50ms 的冷卻時間！
+            if (window.navigator.vibrate) window.navigator.vibrate(20); // 換卡片時微震提示
+            // 🟢 破解安卓限制：將震動時間提高到 20ms，並加入 50ms 的冷卻時間！
             const now = Date.now();
             if (window.navigator.vibrate && (now - lastVibrateTime > 50)) {
-                window.navigator.vibrate(15); 
+                window.navigator.vibrate(20); 
                 lastVibrateTime = now;
             }
         } 
