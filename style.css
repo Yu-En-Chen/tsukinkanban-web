@@ -117,7 +117,12 @@ body.searching .search-mask {
 .left-circle-btn {
     width: 44px; height: 44px; background: var(--search-bg); border-radius: 50%; border: 1px solid var(--search-border); 
     -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); color: var(--icon-color); 
-    position: absolute; left: -10px; z-index: 5;
+    position: absolute; 
+    
+    top: 3px; /* 🟢 核心修復 1：明確鎖死 Y 軸座標，防止手機瀏覽器亂算！ */
+    left: -10px; 
+    
+    z-index: 5;
     display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; 
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     transition: transform 0.5s var(--apple-spring), opacity 0.35s ease;
@@ -773,19 +778,17 @@ body.searching .dismiss-icon {
     stroke-width: 2px !important;
 }
 
-/* 微調 E：左上角漢堡選單的關閉按鈕 (X) 獨立控制
-   作用：單獨控制展開後的 X 圖示，不影響未展開時的鈴鐺/漢堡
-*/
+/* 微調 E：左上角漢堡選單的關閉按鈕 (X) 獨立控制 */
 .left-circle-btn svg.icon-close {
-    /* 這裡的數值會覆蓋掉上面的全局設定，你可以自由修改 */
-    width: 26px !important;         /* 獨立控制寬度 */
-    height: 26px !important;        /* 獨立控制高度 */
-    stroke-width: 1.8px !important; /* 獨立控制線條粗細 */
+    width: 26px !important;         
+    height: 26px !important;        
+    stroke-width: 1.8px !important; 
     
-    /* 🟢 如果你覺得視覺上需要微調位置，可以在這裡推移：
-    margin-top: 1px !important;  
-    margin-left: 1px !important; 
-    */
+    /* 🟢 核心修復 2：鎖死縮放中心點，防止手機端放大動畫時發生飄移 */
+    transform-origin: center center !important; 
+    
+    /* 把剛剛的 margin 刪除，讓高解析度手機螢幕回歸絕對物理置中 */
+}
 }
 
 /* ==========================================================================
