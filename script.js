@@ -391,6 +391,13 @@ function renderCards(data) {
             card.classList.add('opening-pull');
             card.style.animationDelay = `${(data.length - index) * 0.08}s`;
         }
+
+        // 🟢 核心修復：狀態繼承 (State Restoration)
+        // 檢查如果這張卡片正是現在打開的那張，強制讓它在重新渲染後依然保持隱形與升起待命的狀態
+        if (activeCardId === line.id) {
+            card.classList.add('hidden-placeholder', 'lifted-state');
+            card.style.transform = 'translate3d(0, -100px, 0)';
+        }
         
         card.onclick = () => handleCardClick(line.id);
         
