@@ -939,26 +939,33 @@ window.handleOverlayClick = handleOverlayClick;
 // 🟢 3D 翻轉萬用空白彈窗引擎 (維持 0.3s 原速 + 打叉 SVG 線性淡化)
 // ============================================================================
 
-window.openBlankOverlay = function(hexColor = '#2C2C2E') {
+window.openBlankOverlay = function(hexColor) {
     if (document.getElementById('dynamic-blank-overlay')) return;
+
+    // 若未指定顏色，自動繼承當前 activeCardId 的顏色
+    if (!hexColor) {
+        if (activeCardId) {
+            const currentData = railwayData.find(l => l.id === activeCardId);
+            if (currentData) hexColor = currentData.hex;
+        }
+        // 最終備用色
+        if (!hexColor) hexColor = '#2C2C2E'; 
+    }
 
     const originalInner = document.querySelector('#detail-card-container .detail-card-inner');
     const originalContainer = document.getElementById('detail-card-container');
     if (!originalInner || !originalContainer) return;
 
-    // 1. 原卡片翻轉出局 (0 -> 90度)
     originalContainer.classList.add('perspective-container');
     originalInner.classList.remove('flip-back-in');
     originalInner.classList.add('flip-out');
 
-    // 🌟 讓上方的 SVG 打叉圖示，跟隨第一半段翻轉 (0.3s) 線性淡出到全透明
     const dismissIcon = document.getElementById('dismiss-icon');
     if (dismissIcon) {
         dismissIcon.style.transition = 'opacity 0.3s linear';
         dismissIcon.style.opacity = '0';
     }
 
-    // 2. ⚡ 300ms 後完美換手
     setTimeout(() => {
         const overlay = document.createElement('div');
         overlay.id = 'dynamic-blank-overlay';
@@ -970,21 +977,17 @@ window.openBlankOverlay = function(hexColor = '#2C2C2E') {
 
         const card = document.createElement('div');
         card.className = 'detail-card-inner flip-in-start';
-        
+        // 帶入自動抓取的顏色
         applyThemeToCard(card, hexColor);
 
         container.appendChild(card);
         overlay.appendChild(container);
         document.body.appendChild(overlay);
 
-        // 綁定點擊返回
         overlay.addEventListener('click', (e) => {
-            if (!e.target.closest('.detail-card-inner')) {
-                window.closeBlankOverlay();
-            }
+            if (!e.target.closest('.detail-card-inner')) window.closeBlankOverlay();
         });
 
-        // 觸發新卡片接力轉正
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 card.classList.remove('flip-in-start');
