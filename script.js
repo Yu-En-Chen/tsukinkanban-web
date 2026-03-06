@@ -487,6 +487,10 @@ function handleCardClick(id) {
     });
 
     detailContainer.appendChild(clone);
+
+    // 🟢 同步聯動：一展開卡片，膠囊的圖示就跟著上滑切換
+    const capsule = document.getElementById('action-capsule');
+    if (capsule) capsule.classList.add('detail-active');
     
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -517,6 +521,7 @@ function handleCardClick(id) {
             originalCard.style.transform = 'translate3d(0, -100px, 0)'; 
             originalCard.classList.add('lifted-state'); 
         }
+        
     }, 600);
 }
 
@@ -617,6 +622,12 @@ function closeAllCards(isPopState = false) {
     window.scrollCooldownTimer = setTimeout(() => {
         mainStack.dataset.blockScroll = 'false';
     }, 650); // 基礎動畫時間，時間到自動解鎖
+    // 🟢 同步反向聯動：卡片一關閉，立刻移除狀態，讓圖示完美反向退場
+    const capsule = document.getElementById('action-capsule');
+    if (capsule) {
+        capsule.classList.remove('detail-active');
+        capsule.classList.remove('trigger-pop'); // 防呆，確保微互動被打斷時不會卡住
+    }
     
     const dismissIcon = document.getElementById('dismiss-icon');
     if (dismissIcon) {

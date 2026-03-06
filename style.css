@@ -170,18 +170,46 @@ body.searching .search-mask {
 .capsule-divider { width: 1px; height: 16px; background: var(--border-color); opacity: 0.5; margin: 0; }
 
 /* =========================================
-   🟢 膠囊按鈕重疊 SVG 控制系統 (為了未來切換做準備)
+   🟢 膠囊按鈕 SVG 聯動系統 (同步卡片滑動 + 微互動)
    ========================================= */
+   :root {
+    /* 💡 微互動數值微調區：你可以隨時來這裡修改彈跳的力道與時間 */
+    --icon-pop-scale: 1.2;    /* 內部 SVG 的放大倍率 (稍大一點會更有彈出感) */
+    --pop-duration: 0.3s;      /* 彈跳動畫總時間 */
+}
+
 /* 強制將按鈕內的 SVG 絕對定位，達成完美疊加 */
-.capsule-btn-item svg { position: absolute; transition: opacity 0.3s ease, transform 0.4s var(--apple-spring); }
+/* 🟢 過渡時間改為 0.55s var(--spring-release)，與你的卡片上彈時間「完美同步」！ */
+.capsule-btn-item svg { position: absolute; transition: opacity 0.4s ease, transform 0.55s var(--spring-release); }
 
-/* 預設狀態 (加上 !important 擊敗全局設定) */
-.capsule-btn-item svg.icon-default { opacity: 0.8 !important; transform: scale(1) !important; pointer-events: auto !important; }
-.capsule-btn-item svg.icon-hidden { opacity: 0 !important; transform: scale(0.5) !important; pointer-events: none !important; }
+/* 1. 預設狀態：舊圖示在中心，新圖示躲在下方 120% 的位置待命 */
+.capsule-btn-item svg.icon-default { opacity: 0.8 !important; transform: translateY(0) !important; pointer-events: auto !important; }
+.capsule-btn-item svg.icon-hidden { opacity: 0 !important; transform: translateY(120%) !important; pointer-events: none !important; }
 
-/* 💡 未來當你在按鈕加上 class="show-new-icon" 時，就會自動順滑切換圖示！ */
-.capsule-btn-item.show-new-icon svg.icon-default { opacity: 0 !important; transform: scale(0.5) !important; pointer-events: none !important; }
-.capsule-btn-item.show-new-icon svg.icon-hidden { opacity: 0.8 !important; transform: scale(1) !important; pointer-events: auto !important; }
+/* 2. 聯動狀態：卡片展開時，膠囊會獲得 .detail-active */
+/* 舊圖示往上 (-120%) 滑出消失，新圖示從底下完美歸位到 0 */
+.action-capsule.detail-active .capsule-btn-item svg.icon-default { opacity: 0 !important; transform: translateY(-120%) !important; pointer-events: none !important; }
+.action-capsule.detail-active .capsule-btn-item svg.icon-hidden { opacity: 0.8 !important; transform: translateY(0) !important; pointer-events: auto !important; }
+
+/* 3. 微互動彈跳動畫 Keyframes */
+@keyframes capsulePop {
+    0% { scale: 1; }
+    40% { scale: var(--capsule-pop-scale); }
+    100% { scale: 1; }
+}
+@keyframes iconPop {
+    0% { scale: 1; }
+    40% { scale: var(--icon-pop-scale); }
+    100% { scale: 1; }
+}
+
+/* 4. 觸發微互動的瞬間 */
+.action-capsule.trigger-pop {
+    animation: capsulePop var(--pop-duration) var(--apple-spring) forwards !important;
+}
+.action-capsule.trigger-pop .capsule-btn-item svg.icon-hidden {
+    animation: iconPop var(--pop-duration) var(--apple-spring) forwards !important;
+}
 
 .search-container.active .action-capsule { width: 0; opacity: 0; padding: 0; margin: 0; transform: translateY(-50%) translateX(40px) scale(0.8); pointer-events: none; }
 
@@ -773,8 +801,8 @@ body.searching .dismiss-icon {
    實際位置：右上角膠囊右側
 */
 .capsule-btn-item svg.lucide-external-link {
-    width: 20px !important;          /* 獨立控制外部連結的寬度 */
-    height: 20px !important;         /* 獨立控制外部連結的高度 */
+    width: 22px !important;          /* 獨立控制外部連結的寬度 */
+    height: 22px !important;         /* 獨立控制外部連結的高度 */
     stroke-width: 1.8px !important;  /* 獨立控制外部連結的線條粗細 */
 }
 
