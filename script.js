@@ -628,6 +628,13 @@ function closeAllCards(isPopState = false) {
         capsule.classList.remove('detail-active');
         capsule.classList.remove('trigger-pop'); // 防呆，確保微互動被打斷時不會卡住
     }
+    // 🟢 清除滑動手勢殘留的強制樣式，讓 CSS 動畫接管最終收尾
+    const allCapsuleIcons = document.querySelectorAll('#action-capsule .capsule-btn-item svg');
+    allCapsuleIcons.forEach(icon => {
+        icon.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
+        icon.style.removeProperty('transform');
+        icon.style.removeProperty('opacity');
+    });
     
     const dismissIcon = document.getElementById('dismiss-icon');
     if (dismissIcon) {
@@ -725,6 +732,9 @@ function initOverlayGestures() {
 
     const dismissIcon = document.getElementById('dismiss-icon');
     const extraElements = inner.querySelectorAll('.description, .info-tags-container, .status-tag');
+    // 🟢 抓取膠囊內的兩種 SVG
+    const defaultIcons = document.querySelectorAll('#action-capsule .icon-default');
+    const hiddenIcons = document.querySelectorAll('#action-capsule .icon-hidden');
 
     detailOverlay.ontouchstart = e => { 
         overlayStartY = e.touches[0].pageY; 
@@ -743,6 +753,19 @@ function initOverlayGestures() {
             
             if (dismissIcon) dismissIcon.style.opacity = Math.max(0, 1 - (rawMoveY / 150));
             
+            const progress = Math.min(rawMoveY / 200, 1);
+            
+            // 預設圖示 (加號/點點)：從頂部 (-120%) 降回中央 (0%)，透明度從 0 變 0.8
+            defaultIcons.forEach(icon => {
+                icon.style.setProperty('transform', `translateY(${-120 + (120 * progress)}%)`, 'important');
+                icon.style.setProperty('opacity', `${0.8 * progress}`, 'important');
+            });
+            // 新圖示 (調色盤/連結)：從中央 (0%) 沉回底部 (120%)，透明度從 0.8 變 0
+            hiddenIcons.forEach(icon => {
+                icon.style.setProperty('transform', `translateY(${120 * progress}%)`, 'important');
+                icon.style.setProperty('opacity', `${0.8 - (0.8 * progress)}`, 'important');
+            });
+
             // 🟢 100px~200px 線性淡化邏輯
             let textOpacity = 1;
             if (rawMoveY > 100) {
@@ -769,6 +792,18 @@ function initOverlayGestures() {
         extraElements.forEach(el => {
             el.style.transition = 'opacity 0.3s ease';
             el.style.opacity = '1';
+        });
+
+        // 🟢 圖示回彈
+        defaultIcons.forEach(icon => {
+            icon.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
+            icon.style.removeProperty('transform');
+            icon.style.removeProperty('opacity');
+        });
+        hiddenIcons.forEach(icon => {
+            icon.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
+            icon.style.removeProperty('transform');
+            icon.style.removeProperty('opacity');
         });
     };
 
