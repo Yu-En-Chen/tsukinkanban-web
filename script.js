@@ -1,13 +1,13 @@
 // script.js - 主 UI 邏輯與狀態控制 (動畫與 History API 修正版)
 
-import { getAllUserPreferences } from './db.js';
-
-// 🟢 這是合併後、網頁實際要拿來渲染的最終資料來源
-window.appRailwayData = [];
-
 import { bottomCardConfig, railwayData } from './data.js';
 import { initPhysics } from './physics.js'; 
 import { initHeader } from './header.js'; 
+import { getAllUserPreferences } from './db.js'; // 🟢 引入 IndexedDB 引擎
+
+// 🟢 宣告全域變數，作為整個 App 實際渲染、搜尋、點擊的唯一資料來源
+window.appRailwayData = [];
+
 //Blink 引擎系統專屬偵測，為 html 標籤打上標記
 const ua = navigator.userAgent;
 if (/Android/i.test(ua) && /Chrome/i.test(ua)) {
@@ -464,7 +464,8 @@ function handleCardClick(id) {
         return; 
     }
 
-    const data = railwayData.find(l => l.id === id);
+    // 🟢 改用 window.appRailwayData
+    const data = window.appRailwayData.find(l => l.id === id);
     if (!data) return;
     
     const originalCard = document.getElementById(`card-${id}`);
@@ -899,9 +900,10 @@ function initBottomCard() {
 function filterCards(keyword) {
     isInitialLoad = false;
     const lowKeyword = keyword.toLowerCase().trim();
-    const filtered = railwayData.filter(line => 
+    // 🟢 改用 window.appRailwayData
+    const filtered = window.appRailwayData.filter(line => 
         line.name.toLowerCase().includes(lowKeyword) || 
-        line.kana.toLowerCase().includes(lowKeyword)
+        (line.kana && line.kana.toLowerCase().includes(lowKeyword)) // 加了容錯避免 kana 沒填
     );
     renderCards(filtered);
 }
@@ -930,9 +932,32 @@ window.addEventListener('popstate', (e) => {
     }
 });
 
-renderCards(railwayData);
-initBottomCard();
-initDismissIcon(); 
+// 🟢 系統啟動引擎 (非同步合併資料)
+async function initApp() {
+    // 1. 背景默默抓取使用者的自訂補丁
+    const userPrefs = await getAllUserPreferences();
+
+    // 2. Base + Patch 疊加合併
+    window.appRailwayData = railwayData.map(route => {
+        const pref = userPrefs[route.id];
+        if (pref) {
+            return {
+                ...route,
+                name: pref.customName || route.name,
+                hex: pref.customHex || route.hex
+            };
+        }
+        return route; 
+    });
+
+    // 3. 用「合併後的資料」來生成畫面
+    renderCards(window.appRailwayData);
+    initBottomCard();
+    initDismissIcon(); 
+}
+
+// 因為 script type="module" 會延遲執行，這裡可以直接呼叫啟動
+initApp();
 
 document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
 
@@ -950,7 +975,8 @@ window.openBlankOverlay = function(hexColor) {
     // 自動繼承顏色
     if (!hexColor) {
         if (activeCardId) {
-            const currentData = railwayData.find(l => l.id === activeCardId);
+            // 🟢 改用 window.appRailwayData
+            const currentData = window.appRailwayData.find(l => l.id === activeCardId);
             if (currentData) hexColor = currentData.hex;
         }
         if (!hexColor) hexColor = '#2C2C2E'; 
