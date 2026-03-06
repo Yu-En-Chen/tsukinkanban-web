@@ -655,117 +655,123 @@ body.searching .dismiss-icon {
 }
 
 /* ==========================================================================
-   🟢 3D 翻轉引擎 (Seamless 180° Card Flip - 空間增強版)
+   🟢 3D 翻轉引擎 (180° Full Flip & 0.5s Linear Crossfade)
    ========================================================================== */
+   .perspective-container { perspective: 1500px !important; }
 
-/* 1. 提供 3D 空間透視深度 */
-.perspective-container {
-    perspective: 1500px !important;
-}
-
-/* 🟢 動態硬體加速 Class (交由 JS 在翻轉瞬間賦予，結束後收回) */
-.hardware-accelerated {
-    will-change: transform, opacity, box-shadow !important;
-    -webkit-transform-style: preserve-3d !important;
-    transform-style: preserve-3d !important;
-}
-
-
-/* 2. 第一半段：原卡片翻出去 (0度 -> 90度) */
-.detail-card-inner.flip-out {
-    /* 🟢 視覺魔法：翻轉時同步放大 5% (scale 1.05)，製造往臉上飛的錯覺，轉移厚度注意力 */
-    transform: scale(1.05) rotateY(90deg) !important;
-    
-    /* 🟢 陰影魔法：加深懸浮陰影，增強立體感 */
-    box-shadow: 0 40px 80px rgba(0,0,0,0.5) !important;
-    
-    transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), box-shadow 0.3s ease-in !important;
-    pointer-events: none;
-}
-
-/* 3. 第一半段防破圖：內容物提早線性淡出 */
-.detail-card-inner.flip-out > .card-header,
-.detail-card-inner.flip-out > .card-content {
-    opacity: 0 !important;
-    transition: opacity 0.15s linear !important;
-}
-
-/* 4. 返回動畫：原卡片翻回來 (90度 -> 0度) */
-.detail-card-inner.flip-back-in {
-    /* 🟢 翻回來時，縮放與陰影恢復原狀 */
-    transform: scale(1) rotateY(0deg) !important;
-    box-shadow: var(--ray-shadow-active) !important;
-    transition: transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1), box-shadow 0.3s ease-out !important;
-}
-.detail-card-inner.flip-back-in > .card-header,
-.detail-card-inner.flip-back-in > .card-content {
-    opacity: 1 !important;
-    transition: opacity 0.2s linear 0.1s !important;
-}
-
-/* 5. 第二半段：新空白卡片初始狀態 (藏在 -90 度) */
-.detail-card-inner.flip-in-start {
-    /* 🟢 新卡片的起跑點也要維持 1.05 放大與深陰影，保持物理狀態無縫接軌 */
-    transform: scale(1.05) rotateY(-90deg) !important;
-    box-shadow: 0 40px 80px rgba(0,0,0,0.5) !important;
-    transition: none !important;
-}
-.detail-card-inner.flip-in-start > * {
-    opacity: 0 !important;
-    transition: none !important;
-}
-
-/* 6. 第二半段：新空白卡片翻進來 (-90度 -> 0度) */
-.detail-card-inner.flip-in-active {
-    /* 🟢 完美降落：縮放歸位 */
-    transform: scale(1) rotateY(0deg) !important;
-    box-shadow: var(--ray-shadow-active) !important;
-    transition: transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1), box-shadow 0.3s ease-out !important;
-}
-.detail-card-inner.flip-in-active > * {
-    opacity: 1 !important;
-    transition: opacity 0.2s linear 0.1s !important;
-}
-
-/* 7. [關閉] 第一半段：空白卡片退場翻轉 (0度 -> -90度) */
-.detail-card-inner.flip-out-reverse {
-    transform: scale(1.05) rotateY(-90deg) !important;
-    box-shadow: 0 40px 80px rgba(0,0,0,0.5) !important;
-    /* 完全複製 flip-out 的加速曲線 */
-    transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), box-shadow 0.3s ease-in !important;
-    pointer-events: none;
-}
-.detail-card-inner.flip-out-reverse > * {
-    opacity: 0 !important;
-    /* 完全複製 flip-out 的文字淡出 */
-    transition: opacity 0.15s linear !important;
-}
-
-/* 8. [關閉] 第二半段：原卡片強制 90 度起跑點 (補足被吞掉的畫格) */
-.detail-card-inner.flip-back-start {
-    transform: scale(1.05) rotateY(90deg) !important;
-    box-shadow: 0 40px 80px rgba(0,0,0,0.5) !important;
-    transition: none !important;
-}
-.detail-card-inner.flip-back-start > * {
-    opacity: 0 !important;
-    transition: none !important;
-}
-
-/* 9. [關閉] 第二半段：原卡片翻回來 (90度 -> 0度) */
-.detail-card-inner.flip-back-active {
-    transform: scale(1) rotateY(0deg) !important;
-    box-shadow: var(--ray-shadow-active) !important;
-    /* 完全複製 flip-in-active 的減速曲線 */
-    transition: transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1), box-shadow 0.3s ease-out !important;
-}
-.detail-card-inner.flip-back-active > .card-header,
-.detail-card-inner.flip-back-active > .card-content {
-    opacity: 1 !important;
-    /* 完全複製翻入時的文字延遲淡入 */
-    transition: opacity 0.2s linear 0.25s !important;
-}
-
+   .hardware-accelerated {
+       will-change: transform, opacity, box-shadow !important;
+       -webkit-transform-style: preserve-3d !important;
+       transform-style: preserve-3d !important;
+   }
+   
+   /* 🟢 解決「翻一半消失」的核心：在空翻與淡出期間，強制顯示卡片背面 */
+   .detail-card-inner.flip-full-out,
+   .detail-card-inner.flip-full-out-reverse,
+   .detail-card-inner.detail-fade-out-solid,
+   .detail-card-inner.blank-fade-out-solid {
+       -webkit-backface-visibility: visible !important;
+       backface-visibility: visible !important;
+   }
+   
+   /* 🟢 用 Keyframes 控制完美的 180 度拋物線與陰影 */
+   @keyframes fullFlip180 {
+       0%   { transform: scale(1) rotateY(0deg); box-shadow: var(--ray-shadow-active); }
+       50%  { transform: scale(1.05) rotateY(90deg); box-shadow: 0 40px 80px rgba(0,0,0,0.5); }
+       100% { transform: scale(1) rotateY(180deg); box-shadow: var(--ray-shadow-active); }
+   }
+   @keyframes fullFlip180Reverse {
+       0%   { transform: scale(1) rotateY(0deg); box-shadow: var(--ray-shadow-active); }
+       50%  { transform: scale(1.05) rotateY(-90deg); box-shadow: 0 40px 80px rgba(0,0,0,0.5); }
+       100% { transform: scale(1) rotateY(-180deg); box-shadow: var(--ray-shadow-active); }
+   }
+   
+   /* --- 1. 詳情卡片 (A) 完整翻轉 180 度 --- */
+   .detail-card-inner.flip-full-out {
+       animation: fullFlip180 0.6s cubic-bezier(0.4, 0.0, 0.2, 1) forwards !important;
+       pointer-events: none;
+   }
+   .detail-card-inner.flip-full-out > * {
+       opacity: 0 !important;
+       transition: opacity 0.15s linear !important; /* 剛起飛 0.15 秒內，內容立刻消失 */
+   }
+   
+   /* --- 2. 詳情卡片 (A) 翻轉完畢後：本體嚴格線性淡出 (100 -> 0) --- */
+   .detail-card-inner.detail-fade-out-solid {
+       transform: scale(1) rotateY(180deg) !important; /* 死死鎖在 180 度背面 */
+       opacity: 0 !important;
+       transition: opacity 0.5s linear !important; /* 不偷跑，嚴格 0.5 秒線性 */
+   }
+   .detail-card-inner.detail-fade-out-solid > * {
+       opacity: 0 !important;
+   }
+   
+   /* --- 3. 空白卡片 (B) 提前準備 (全透明幽靈狀態待命) --- */
+   .detail-card-inner.blank-prepared {
+       transform: scale(1) rotateY(0deg) !important;
+       opacity: 0 !important;
+       transition: none !important;
+       animation: none !important;
+   }
+   .detail-card-inner.blank-prepared > * {
+       opacity: 0 !important;
+       transition: none !important;
+   }
+   
+   /* --- 4. 空白卡片 (B) 正式接手：底色瞬間出現，內容線性淡入 --- */
+   .detail-card-inner.blank-full-active {
+       transform: scale(1) rotateY(0deg) !important;
+       opacity: 1 !important;
+       transition: none !important;
+   }
+   .detail-card-inner.blank-full-active > * {
+       opacity: 1 !important;
+       transition: opacity 0.5s linear !important;
+   }
+   
+   /* --- 5. 空白卡片 (B) 關閉：反向完整翻轉 180 度 --- */
+   .detail-card-inner.flip-full-out-reverse {
+       animation: fullFlip180Reverse 0.6s cubic-bezier(0.4, 0.0, 0.2, 1) forwards !important;
+       pointer-events: none;
+   }
+   .detail-card-inner.flip-full-out-reverse > * {
+       opacity: 0 !important;
+       transition: opacity 0.15s linear !important;
+   }
+   
+   /* --- 6. 空白卡片 (B) 翻轉完畢後：本體嚴格線性淡出 --- */
+   .detail-card-inner.blank-fade-out-solid {
+       transform: scale(1) rotateY(-180deg) !important; 
+       opacity: 0 !important;
+       transition: opacity 0.5s linear !important;
+   }
+   .detail-card-inner.blank-fade-out-solid > * {
+       opacity: 0 !important;
+   }
+   
+   /* --- 7. 詳情卡片 (A) 提前準備 (歸零，全透明幽靈狀態待命) --- */
+   .detail-card-inner.detail-prepared {
+       transform: scale(1) rotateY(0deg) !important;
+       opacity: 0 !important;
+       transition: none !important;
+       animation: none !important;
+   }
+   .detail-card-inner.detail-prepared > * {
+       opacity: 0 !important;
+       transition: none !important;
+   }
+   
+   /* --- 8. 詳情卡片 (A) 正式接手：底色瞬間出現，內容線性淡入 --- */
+   .detail-card-inner.detail-full-active {
+       transform: scale(1) rotateY(0deg) !important;
+       opacity: 1 !important;
+       transition: none !important;
+   }
+   .detail-card-inner.detail-full-active > * {
+       opacity: 1 !important;
+       transition: opacity 0.5s linear !important;
+   }
+   
 /* ==========================================================================
    🟢 全站 SVG 骨架圖示：終極控制中心 (!important 強制覆蓋版)
    ========================================================================== */
