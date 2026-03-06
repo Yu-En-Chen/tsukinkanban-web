@@ -10,9 +10,32 @@
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
     <title>通勤看板</title>
     
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <script>
+        (function() {
+            // 1. 偵測是否為 Apple 裝置 (包含 Mac, iPhone, iPad, 以及偽裝成 Mac 的新版 iPad)
+            var isApple = /(Mac|iPhone|iPod|iPad)/i.test(navigator.userAgent) || /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform);
+            
+            // 2. 如果「不是」Apple 裝置，才去非同步索取 Google Fonts
+            if (!isApple) {
+                var preconnect1 = document.createElement('link');
+                preconnect1.rel = 'preconnect';
+                preconnect1.href = 'https://fonts.googleapis.com';
+                
+                var preconnect2 = document.createElement('link');
+                preconnect2.rel = 'preconnect';
+                preconnect2.href = 'https://fonts.gstatic.com';
+                preconnect2.crossOrigin = 'anonymous';
+                
+                var fontLink = document.createElement('link');
+                fontLink.rel = 'stylesheet';
+                fontLink.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&display=swap';
+                
+                document.head.appendChild(preconnect1);
+                document.head.appendChild(preconnect2);
+                document.head.appendChild(fontLink);
+            }
+        })();
+    </script>
     <link rel="stylesheet" href="variables.css">
     <link rel="stylesheet" href="animations.css">
     <link rel="stylesheet" href="style.css">
