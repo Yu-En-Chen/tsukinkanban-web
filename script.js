@@ -936,19 +936,18 @@ window.handleBottomCardClick = handleBottomCardClick;
 window.handleOverlayClick = handleOverlayClick;
 
 // ============================================================================
-// 🟢 3D 翻轉萬用空白彈窗引擎 (維持 0.3s 原速 + 打叉 SVG 線性淡化)
+// 🟢 3D 翻轉萬用空白彈窗引擎 (極速預渲染 0 延遲版)
 // ============================================================================
 
 window.openBlankOverlay = function(hexColor) {
     if (document.getElementById('dynamic-blank-overlay')) return;
 
-    // 若未指定顏色，自動繼承當前 activeCardId 的顏色
+    // 自動繼承顏色
     if (!hexColor) {
         if (activeCardId) {
             const currentData = railwayData.find(l => l.id === activeCardId);
             if (currentData) hexColor = currentData.hex;
         }
-        // 最終備用色
         if (!hexColor) hexColor = '#2C2C2E'; 
     }
 
@@ -956,11 +955,32 @@ window.openBlankOverlay = function(hexColor) {
     const originalContainer = document.getElementById('detail-card-container');
     if (!originalInner || !originalContainer) return;
 
+    // 🟢 1. 第一時間「提前渲染」新卡片，並設定在 -90 度隱形待命
+    const overlay = document.createElement('div');
+    overlay.id = 'dynamic-blank-overlay';
+    overlay.className = 'detail-overlay active'; 
+
+    const container = document.createElement('div');
+    container.className = 'perspective-container'; 
+    container.style.cssText = 'width: 100%; display: flex; justify-content: center; margin-top: calc(env(safe-area-inset-top) + 160px);';
+
+    const card = document.createElement('div');
+    card.className = 'detail-card-inner flip-in-start'; // 保持 -90 度
+    applyThemeToCard(card, hexColor);
+
+    container.appendChild(card);
+    overlay.appendChild(container);
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', (e) => {
+        if (!e.target.closest('.detail-card-inner')) window.closeBlankOverlay();
+    });
+
+    // 🟢 2. 立刻開始第一段動畫 (原卡片翻轉消失 & 膠囊滑動)
     originalContainer.classList.add('perspective-container');
     originalInner.classList.remove('flip-back-in');
     originalInner.classList.add('flip-out');
 
-    // 🟢 同步觸發膠囊向右滑出切換
     if (window.slideCapsuleMode) window.slideCapsuleMode(true);
 
     const dismissIcon = document.getElementById('dismiss-icon');
@@ -969,34 +989,56 @@ window.openBlankOverlay = function(hexColor) {
         dismissIcon.style.opacity = '0';
     }
 
+    // 🟢 3. 完美 0 延遲交接：300ms 抵達 90 度時，因為 DOM 早就準備好了，直接翻出來！
     setTimeout(() => {
-        const overlay = document.createElement('div');
-        overlay.id = 'dynamic-blank-overlay';
-        overlay.className = 'detail-overlay active'; 
+        card.classList.remove('flip-in-start');
+        card.classList.add('flip-in-active');
+    }, 300); 
+};
 
-        const container = document.createElement('div');
-        container.className = 'perspective-container'; 
-        container.style.cssText = 'width: 100%; display: flex; justify-content: center; margin-top: calc(env(safe-area-inset-top) + 160px);';
+window.closeBlankOverlay = function() {
+    const overlay = document.getElementById('dynamic-blank-overlay');
+    const blankCard = overlay ? overlay.querySelector('.detail-card-inner') : null;
+    const originalInner = document.querySelector('#detail-card-container .detail-card-inner');
 
-        const card = document.createElement('div');
-        card.className = 'detail-card-inner flip-in-start';
-        // 帶入自動抓取的顏色
-        applyThemeToCard(card, hexColor);
+    if (!overlay || !blankCard || !originalInner) return;
+    overlay.style.pointerEvents = 'none';
 
-        container.appendChild(card);
-        overlay.appendChild(container);
-        document.body.appendChild(overlay);
+    // 🟢 1. 空白卡片反向翻轉消失 & 膠囊滑回
+    blankCard.classList.remove('flip-in-active');
+    blankCard.classList.add('flip-out-reverse');
 
-        overlay.addEventListener('click', (e) => {
-            if (!e.target.closest('.detail-card-inner')) window.closeBlankOverlay();
-        });
+    if (window.slideCapsuleMode) window.slideCapsuleMode(false);
+
+    // 🟢 2. 原卡片完美銜接
+    setTimeout(() => {
+        originalInner.classList.remove('flip-out');
+        originalInner.classList.add('flip-back-start'); // 歸位到 90 度準備
+
+        const dismissIcon = document.getElementById('dismiss-icon');
+        if (dismissIcon) {
+            dismissIcon.style.transition = 'opacity 0.3s linear';
+            dismissIcon.style.opacity = '1';
+        }
+
+        // 為了避免擋住視線，把舊的殼變透明
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.1s ease'; 
 
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-                card.classList.remove('flip-in-start');
-                card.classList.add('flip-in-active');
+                originalInner.classList.remove('flip-back-start');
+                originalInner.classList.add('flip-back-active');
             });
         });
+
+        // 🟢 3. 等原卡片翻完後，才優雅地清理 DOM 垃圾
+        setTimeout(() => {
+            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            originalInner.classList.remove('flip-back-active');
+            const originalContainer = document.getElementById('detail-card-container');
+            if (originalContainer) originalContainer.classList.remove('perspective-container');
+        }, 350); 
     }, 300); 
 };
 

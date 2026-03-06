@@ -291,15 +291,6 @@ body.searching .search-mask {
        transform: scale(1) !important;
        pointer-events: auto !important;
    }
-   
-   /* 微調 B-4：新增的「返回 (左箭頭)」圖示 */
-   .capsule-btn-item svg.lucide-chevron-left { 
-       width: 26px !important; height: 26px !important; stroke-width: 2.2px !important; transform: translateX(-1px) !important; 
-   }
-   /* 微調 B-5：新增的「雲端下載」圖示 */
-   .capsule-btn-item svg.lucide-cloud-download { 
-       width: 21px !important; height: 21px !important; stroke-width: 1.8px !important; 
-   }
 
 /* ==========================================================================
    卡片堆疊與物理邏輯
@@ -877,6 +868,26 @@ body.searching .dismiss-icon {
     width: 22px !important;          /* 獨立控制外部連結的寬度 */
     height: 22px !important;         /* 獨立控制外部連結的高度 */
     stroke-width: 1.8px !important;  /* 獨立控制外部連結的線條粗細 */
+}
+
+/* 微調 B-4：空白模式的「返回 (左箭頭)」圖示
+   實際位置：空白模式展開時的膠囊左側
+*/
+.capsule-btn-item svg.lucide-chevron-left {
+    width: 28px !important;          /* 控制箭頭寬度 */
+    height: 28px !important;         /* 控制箭頭高度 */
+    stroke-width: 1.7px !important;  /* 箭頭線條可以稍微粗一點，更有安全感 */
+    transform: translateX(-1px) !important; /* 視覺重心微調：稍微往左靠一點點會更置中 */
+}
+
+/* 微調 B-5：空白模式的「雲端下載」圖示
+   實際位置：空白模式展開時的膠囊右側
+*/
+.capsule-btn-item svg.lucide-cloud-download {
+    width: 21px !important;          /* 控制下載圖示寬度 */
+    height: 21px !important;         /* 控制下載圖示高度 */
+    stroke-width: 1.8px !important;  /* 控制下載圖示的線條粗細 */
+    transform: translateY(0px) !important; /* 預留這個參數：未來如果覺得它偏高或偏低，可以改這裡 (例如 1px 或 -1px) */
 }
 
 /* 微調 C：搜尋狀態下的取消按鈕 (X)
