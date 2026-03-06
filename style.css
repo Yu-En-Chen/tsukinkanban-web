@@ -854,6 +854,58 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 }
 
 /* ==========================================================================
+   裝置方向控制 (Landscape Prompt)
+   ========================================================================== */
+   #landscape-prompt {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: var(--bg-color); /* 自動適應黑/白主題 */
+    color: var(--text-main);
+    z-index: 999999;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px;
+}
+
+.rotate-phone-icon {
+    margin-bottom: 20px;
+    animation: rotatePhone 2s infinite ease-in-out;
+}
+
+.landscape-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.landscape-desc {
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+
+@keyframes rotatePhone {
+    0% { transform: rotate(-90deg); }
+    50% { transform: rotate(0deg); }
+    100% { transform: rotate(-90deg); }
+}
+
+/* 偵測條件：觸控設備 + 橫向 + 高度低於 600px (針對手機，排除桌面螢幕與大型平板) */
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
+    #landscape-prompt {
+        display: flex !important;
+    }
+    #app-stage, #detail-overlay, .search-mask {
+        display: none !important; /* 隱藏原本的內容，防止排版破壞與誤觸 */
+    }
+}
+
+/* ==========================================================================
    高級反差色動態游標 (Custom Difference Cursor)
    ========================================================================== */
 

@@ -9,6 +9,7 @@
     <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
     <title>通勤看板</title>
+    <link rel="manifest" href="manifest.json">
     
     <script>
         (function() {
@@ -44,6 +45,15 @@
 </head>
 <body>
     <div id="search-mask" class="search-mask" onclick="toggleSearch(false)"></div>
+
+    <div id="landscape-prompt">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="rotate-phone-icon">
+            <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
+            <path d="M12 18h.01"/>
+        </svg>
+        <div class="landscape-title">縦向きでご利用ください</div>
+        <div class="landscape-desc">この画面は縦向き専用です。</div>
+    </div>
 
     <div id="app-stage">
         <header class="header">
