@@ -973,16 +973,14 @@ window.handleBottomCardClick = handleBottomCardClick;
 window.handleOverlayClick = handleOverlayClick;
 
 // ============================================================================
-// 🟢 3D 翻轉萬用空白彈窗引擎 (極速預渲染 0 延遲版)
+// 🟢 3D 翻轉萬用空白彈窗引擎 (極速預渲染 0 延遲版 - 加入光影分離)
 // ============================================================================
 
 window.openBlankOverlay = function(hexColor) {
     if (document.getElementById('dynamic-blank-overlay')) return;
 
-    // 自動繼承顏色
     if (!hexColor) {
         if (activeCardId) {
-            // 🟢 改用 window.appRailwayData
             const currentData = window.appRailwayData.find(l => l.id === activeCardId);
             if (currentData) hexColor = currentData.hex;
         }
@@ -993,17 +991,17 @@ window.openBlankOverlay = function(hexColor) {
     const originalContainer = document.getElementById('detail-card-container');
     if (!originalInner || !originalContainer) return;
 
-    // 🟢 1. 第一時間「提前渲染」新卡片，並設定在 -90 度隱形待命
     const overlay = document.createElement('div');
     overlay.id = 'dynamic-blank-overlay';
     overlay.className = 'detail-overlay active'; 
 
     const container = document.createElement('div');
-    container.className = 'perspective-container'; 
+    // 🟢 第一時間給予新容器 is-flipping 準備呼叫影子
+    container.className = 'perspective-container is-flipping'; 
     container.style.cssText = 'width: 100%; display: flex; justify-content: center; margin-top: calc(env(safe-area-inset-top) + 160px);';
 
     const card = document.createElement('div');
-    card.className = 'detail-card-inner flip-in-start'; // 保持 -90 度
+    card.className = 'detail-card-inner flip-in-start'; 
     applyThemeToCard(card, hexColor);
 
     container.appendChild(card);
@@ -1014,12 +1012,12 @@ window.openBlankOverlay = function(hexColor) {
         if (!e.target.closest('.detail-card-inner')) window.closeBlankOverlay();
     });
 
-    // 🟢 2. 立刻開始第一段動畫 (原卡片翻轉消失 & 膠囊滑動)
-    originalContainer.classList.add('perspective-container');
+    // 🟢 給予舊容器 is-flipping 呼叫影子
+    originalContainer.classList.add('perspective-container', 'is-flipping'); 
     originalInner.classList.remove('flip-back-in');
     originalInner.classList.add('flip-out');
-    originalInner.classList.add('hardware-accelerated'); // 👈 硬體加速
-    card.classList.add('hardware-accelerated');          // 👈 硬體加速
+    originalInner.classList.add('hardware-accelerated'); 
+    card.classList.add('hardware-accelerated');          
 
     if (window.slideCapsuleMode) window.slideCapsuleMode(true);
 
@@ -1029,16 +1027,81 @@ window.openBlankOverlay = function(hexColor) {
         dismissIcon.style.opacity = '0';
     }
 
-    // 🟢 3. 完美 0 延遲交接：300ms 抵達 90 度時，因為 DOM 早就準備好了，直接翻出來！
     setTimeout(() => {
         card.classList.remove('flip-in-start');
         card.classList.add('flip-in-active');
 
-        // 🟢 動畫徹底跑完後，收回硬體加速釋放記憶體
+        // 🟢 動畫徹底跑完後，收回硬體加速與影子
         setTimeout(() => {
             originalInner.classList.remove('hardware-accelerated');
             card.classList.remove('hardware-accelerated');
+            
+            // 🟢 動畫落地，收回分離光影
+            originalContainer.classList.remove('is-flipping');
+            container.classList.remove('is-flipping');
         }, 450);
+
+    }, 300); 
+};
+
+// ============================================================================
+// 🟢 空白彈窗關閉邏輯
+// ============================================================================
+
+window.closeBlankOverlay = function() {
+    const overlay = document.getElementById('dynamic-blank-overlay');
+    const blankCard = overlay ? overlay.querySelector('.detail-card-inner') : null;
+    const originalContainer = document.getElementById('detail-card-container');
+    const originalInner = originalContainer ? originalContainer.querySelector('.detail-card-inner') : null;
+    const blankContainer = overlay ? overlay.querySelector('.perspective-container') : null;
+
+    if (!overlay || !blankCard || !originalInner || !originalContainer) return;
+
+    overlay.style.pointerEvents = 'none';
+
+    // 🟢 翻轉回去前，重新賦予硬體加速與分離光影
+    blankCard.classList.add('hardware-accelerated');
+    originalInner.classList.add('hardware-accelerated');
+    originalContainer.classList.add('is-flipping');
+    if (blankContainer) blankContainer.classList.add('is-flipping');
+
+    blankCard.classList.remove('flip-in-active');
+    blankCard.classList.add('flip-out-reverse');
+
+    if (window.slideCapsuleMode) window.slideCapsuleMode(false);
+
+    setTimeout(() => {
+        originalInner.classList.remove('flip-out');
+        originalInner.classList.add('flip-back-start');
+
+        const dismissIcon = document.getElementById('dismiss-icon');
+        if (dismissIcon) {
+            dismissIcon.style.transition = 'opacity 0.3s linear';
+            dismissIcon.style.opacity = '1';
+        }
+
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.1s ease'; 
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                originalInner.classList.remove('flip-back-start');
+                originalInner.classList.add('flip-back-active');
+            });
+        });
+
+        // 🟢 動畫結束清理戰場
+        setTimeout(() => {
+            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            
+            originalInner.classList.remove('flip-back-active');
+            
+            // 🟢 移除容器的視角與光影
+            originalContainer.classList.remove('perspective-container', 'is-flipping');
+        
+            originalInner.classList.remove('hardware-accelerated');
+            
+        }, 450); 
 
     }, 300); 
 };
