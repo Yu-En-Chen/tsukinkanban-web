@@ -578,14 +578,24 @@ body:has(.detail-overlay.active).searching .card-stack {
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-/* 3. 【詳情卡片本體景深】如果打開了漢堡選單，原本浮在前面的詳情卡片也要跟著退後！ */
-body.menu-active .detail-overlay.active .detail-card-inner,
-body:has(.left-circle-btn.is-expanded) .detail-overlay.active .detail-card-inner,
-body:has(.universal-window.is-active) .detail-overlay.active .detail-card-inner,
-body.searching .detail-overlay.active .detail-card-inner {
+/* 3. 【詳情卡片本體景深】將景深縮放移交給「外層容器」，徹底解決 3D 翻轉被強制覆蓋的 Bug！ */
+body.menu-active #detail-card-container,
+body:has(.left-circle-btn.is-expanded) #detail-card-container,
+body:has(.universal-window.is-active) #detail-card-container,
+body.searching #detail-card-container,
+body.menu-active #dynamic-blank-overlay > .perspective-container,
+body:has(.left-circle-btn.is-expanded) #dynamic-blank-overlay > .perspective-container,
+body:has(.universal-window.is-active) #dynamic-blank-overlay > .perspective-container,
+body.searching #dynamic-blank-overlay > .perspective-container {
     transform: scale(0.90) translateY(15px) !important;
     pointer-events: none !important;
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* 確保容器本身平時有平滑的恢復動畫 */
+#detail-card-container, 
+#dynamic-blank-overlay > .perspective-container {
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* =========================================
