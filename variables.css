@@ -45,7 +45,10 @@
         inset 0 1px 1px rgba(255, 255, 255, 0.1);
 
     /* --- 字體與物理參數 --- */
-    --font-main: "SF Pro JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+    --font-main: "SF Pro JP", "SF Pro Display", "Hiragino Sans", "Hiragino Kaku Gothic ProN", 
+                 "Yu Gothic Medium", "Yu Gothic", "Meiryo", 
+                 "Noto Sans JP", -apple-system, BlinkMacSystemFont, 
+                 "Segoe UI", Roboto, sans-serif;
     --ios-snap: cubic-bezier(0.16, 1, 0.3, 1); 
     --active-bounce: cubic-bezier(0.23, 1, 0.32, 1); 
     --premium-ease: cubic-bezier(0.19, 1, 0.22, 1);
