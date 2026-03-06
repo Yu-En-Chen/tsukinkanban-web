@@ -175,13 +175,13 @@ body.searching .search-mask {
 /* 強制將按鈕內的 SVG 絕對定位，達成完美疊加 */
 .capsule-btn-item svg { position: absolute; transition: opacity 0.3s ease, transform 0.4s var(--apple-spring); }
 
-/* 預設狀態 */
-.capsule-btn-item svg.icon-default { opacity: 0.8; transform: scale(1); pointer-events: auto; }
-.capsule-btn-item svg.icon-hidden { opacity: 0; transform: scale(0.5); pointer-events: none; }
+/* 預設狀態 (加上 !important 擊敗全局設定) */
+.capsule-btn-item svg.icon-default { opacity: 0.8 !important; transform: scale(1) !important; pointer-events: auto !important; }
+.capsule-btn-item svg.icon-hidden { opacity: 0 !important; transform: scale(0.5) !important; pointer-events: none !important; }
 
 /* 💡 未來當你在按鈕加上 class="show-new-icon" 時，就會自動順滑切換圖示！ */
-.capsule-btn-item.show-new-icon svg.icon-default { opacity: 0; transform: scale(0.5); pointer-events: none; }
-.capsule-btn-item.show-new-icon svg.icon-hidden { opacity: 0.8; transform: scale(1); pointer-events: auto; }
+.capsule-btn-item.show-new-icon svg.icon-default { opacity: 0 !important; transform: scale(0.5) !important; pointer-events: none !important; }
+.capsule-btn-item.show-new-icon svg.icon-hidden { opacity: 0.8 !important; transform: scale(1) !important; pointer-events: auto !important; }
 
 .search-container.active .action-capsule { width: 0; opacity: 0; padding: 0; margin: 0; transform: translateY(-50%) translateX(40px) scale(0.8); pointer-events: none; }
 
@@ -755,6 +755,27 @@ body.searching .dismiss-icon {
     width: 25px !important; 
     height: 25px !important;
     stroke-width: 1.5px !important;
+}
+/* 微調 B-2：新增的「調色盤」圖示 (預設隱藏)
+   實際位置：右上角膠囊左側
+*/
+.capsule-btn-item svg.lucide-palette {
+    width: 22px !important;          /* 獨立控制調色盤的寬度 */
+    height: 22px !important;         /* 獨立控制調色盤的高度 */
+    stroke-width: 1.8px !important;  /* 獨立控制調色盤的線條粗細 */
+}
+/* 🟢 確保調色盤上面的顏料圓點保持實心色，不會被全局設定變透明 */
+.capsule-btn-item svg.lucide-palette circle {
+    fill: currentColor !important;
+}
+
+/* 微調 B-3：新增的「外部連結」圖示 (預設隱藏)
+   實際位置：右上角膠囊右側
+*/
+.capsule-btn-item svg.lucide-external-link {
+    width: 20px !important;          /* 獨立控制外部連結的寬度 */
+    height: 20px !important;         /* 獨立控制外部連結的高度 */
+    stroke-width: 1.8px !important;  /* 獨立控制外部連結的線條粗細 */
 }
 
 /* 微調 C：搜尋狀態下的取消按鈕 (X)
