@@ -363,9 +363,24 @@ body.searching .search-mask {
 /* ==========================================================================
    互動提示圖標 (Dismiss Icon)
    ========================================================================== */
-.dismiss-icon {
-    position: fixed; top: calc(env(safe-area-inset-top) + 100px); left: 50%; transform: translateX(-50%); width: 45px; height: 30px; z-index: 2600; fill: rgba(142, 142, 147, 0.6); 
-    opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 1s ease, visibility 0.3s ease;
+   .dismiss-icon {
+    position: fixed; 
+    top: calc(env(safe-area-inset-top) + 100px); 
+    left: 50%; 
+    transform: translateX(-50%); 
+    width: 45px; 
+    height: 30px; 
+    z-index: 2600; 
+    fill: rgba(142, 142, 147, 0.6); 
+    opacity: 0; 
+    visibility: hidden; 
+    pointer-events: none; 
+    transition: opacity 1s ease, visibility 0.3s ease;
+
+    /* 🟢 真正解決偏左的關鍵：強制讓裡面的 SVG 絕對置中於這個 45px 的容器內！ */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 @media (prefers-color-scheme: dark) { .dismiss-icon { fill: rgba(174, 174, 178, 0.6); } }
@@ -749,12 +764,28 @@ body.searching .dismiss-icon {
     opacity: 0.9 !important;      /* 👈 在這裡獨立控制透明度 (數值可自行修改) */
 }
 
-/* 微調 D：卡片專屬的關閉按鈕 (X)
+/* 微調 D：卡片專屬的關閉按鈕
    實際位置：詳情卡片點開後，置頂的下拉提示
 */
 #dismiss-icon svg {
-    width: 26px !important; /* 畫面上方的叉叉單獨放大，增加視覺引導 */
-    height: 26px !important;
+    width: 28px !important; /* 畫面放大，增加視覺引導 */
+    height: 28px !important;
+    stroke-width: 2px !important;
+}
+
+/* 微調 E：左上角漢堡選單的關閉按鈕 (X) 獨立控制
+   作用：單獨控制展開後的 X 圖示，不影響未展開時的鈴鐺/漢堡
+*/
+.left-circle-btn svg.icon-close {
+    /* 這裡的數值會覆蓋掉上面的全局設定，你可以自由修改 */
+    width: 26px !important;         /* 獨立控制寬度 */
+    height: 26px !important;        /* 獨立控制高度 */
+    stroke-width: 1.8px !important; /* 獨立控制線條粗細 */
+    
+    /* 🟢 如果你覺得視覺上需要微調位置，可以在這裡推移：
+    margin-top: 1px !important;  
+    margin-left: 1px !important; 
+    */
 }
 
 /* ==========================================================================

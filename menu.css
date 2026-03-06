@@ -111,11 +111,12 @@
     animation: shrinkAndExpand 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* 圖標鎖定 */
+/* 圖標鎖定 (展開時 100% 吻合原始漢堡按鈕的物理位置) */
 .left-circle-btn.is-expanded .menu-icon-wrapper {
     position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
+    /* 補償原按鈕在容器內的 3px 頂部間距與 -10px 向左突出 */
+    top: 3px !important;
+    left: -10px !important;
     width: 44px !important;
     height: 44px !important;
     place-items: center !important;
