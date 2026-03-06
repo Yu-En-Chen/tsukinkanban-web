@@ -973,7 +973,7 @@ window.handleBottomCardClick = handleBottomCardClick;
 window.handleOverlayClick = handleOverlayClick;
 
 // ============================================================================
-// 🟢 3D 翻轉萬用空白彈窗引擎 (右往左滑動關閉 + 寬容度微調版)
+// 🟢 3D 翻轉萬用空白彈窗引擎 (拔除淡化 + 動態計算 SVG 接手時間版)
 // ============================================================================
 
 window.openBlankOverlay = function(hexColor) {
@@ -1023,23 +1023,60 @@ window.openBlankOverlay = function(hexColor) {
     };
 
     // =========================================================
-    // 🟢 邊緣手勢引擎 (右 ➔ 左)
+    // 🟢 膠囊 SVG 精準接手演算法 (Dynamic Handoff)
+    // =========================================================
+    const triggerSVGHandOff = (progress) => {
+        const leftBtn = document.getElementById('capsule-main-btn');
+        const rightBtn = document.getElementById('capsule-secondary-btn');
+        if (!leftBtn || !rightBtn) return;
+
+        // 🟢 核心修正：依照手指已滑動的進度，動態扣除退場需要的時間！
+        // 假設總時間 300ms，如果你已經滑了 50% (progress = 0.5)，剩下的退場就只跑 150ms！
+        const remainingOutTime = Math.max(50, 300 * (1 - progress));
+
+        // 1. 讓舊的 SVG 用「剩下的時間」走完剩下的路
+        leftBtn.style.setProperty('transition', `transform ${remainingOutTime}ms cubic-bezier(0.0, 0.0, 0.2, 1)`, 'important');
+        leftBtn.style.setProperty('transform', `translateX(-30px)`, 'important');
+
+        rightBtn.style.setProperty('transition', `transform ${remainingOutTime}ms cubic-bezier(0.0, 0.0, 0.2, 1)`, 'important');
+        rightBtn.style.setProperty('transform', `translateX(-30px)`, 'important');
+
+        // 2. 當舊的 SVG 完全抵達 -30px 時，瞬間切換並讓新 SVG 進場
+        setTimeout(() => {
+            leftBtn.innerHTML = typeof CAPSULE_SVGS !== 'undefined' ? CAPSULE_SVGS.nativeLeft : '';
+            rightBtn.innerHTML = typeof CAPSULE_SVGS !== 'undefined' ? CAPSULE_SVGS.nativeRight : '';
+            const capsule = document.getElementById('action-capsule');
+            if (capsule) capsule.dataset.mode = 'native';
+
+            // 瞬間移到右側準備
+            leftBtn.style.setProperty('transition', 'none', 'important');
+            leftBtn.style.setProperty('transform', `translateX(30px)`, 'important');
+            rightBtn.style.setProperty('transition', 'none', 'important');
+            rightBtn.style.setProperty('transform', `translateX(30px)`, 'important');
+
+            // 標準的 300ms 進場
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    leftBtn.style.setProperty('transition', 'transform 300ms cubic-bezier(0.0, 0.0, 0.2, 1)', 'important');
+                    leftBtn.style.setProperty('transform', `translateX(0px)`, 'important');
+
+                    rightBtn.style.setProperty('transition', 'transform 300ms cubic-bezier(0.0, 0.0, 0.2, 1)', 'important');
+                    rightBtn.style.setProperty('transform', `translateX(0px)`, 'important');
+                });
+            });
+        }, remainingOutTime);
+    };
+
+    // =========================================================
+    // 🟢 邊緣手勢引擎 (右 ➔ 左) + 1/3 強制接管
     // =========================================================
     let swipeStartX = 0;
     let swipeStartY = 0;
     let isSwiping = false;
     let swipeLocked = false; 
 
-    // 🔧 【微調設定區】
-    // 1. 滑動寬容度 (Tolerance)
-    // 說明：0.6 代表允許手勢有約 31 度的傾斜。
-    // 如果你覺得很容易誤觸成上下滾動，就把數字加大（例如 0.8 或 1.0，越寬容）。
-    // 如果你想嚴格要求水平滑動，就改小（例如 0.3）。
-    const swipeTolerance = 0.8; 
-    
-    // 2. 鬆手觸發關閉的角度 (Degrees)
-    // 說明：超過這個角度鬆手才會關閉，否則回彈。目前設定為 20 度。
-    const releaseThresholdAngle = 20; 
+    const swipeTolerance = 0.6; 
+    const triggerThreshold = window.innerWidth / 3;
 
     overlay.addEventListener('touchstart', (e) => {
         if (e.touches.length > 1 || window.isFlipAnimating) return;
@@ -1054,11 +1091,14 @@ window.openBlankOverlay = function(hexColor) {
         
         const currentX = e.touches[0].clientX;
         const currentY = e.touches[0].clientY;
-        const deltaX = currentX - swipeStartX; // 向左滑 deltaX 會是負數
+        const deltaX = currentX - swipeStartX; 
         const deltaY = currentY - swipeStartY;
+        
+        const leftBtn = document.getElementById('capsule-main-btn');
+        const rightBtn = document.getElementById('capsule-secondary-btn');
 
         if (!swipeLocked) {
-            if (deltaX < -5) { // 🟢 判定向左滑動 (數值小於 -5px)
+            if (deltaX < -5) { 
                 if (Math.abs(deltaY) < Math.abs(deltaX) * swipeTolerance) { 
                     isSwiping = true;
                     swipeLocked = true;
@@ -1073,18 +1113,42 @@ window.openBlankOverlay = function(hexColor) {
         if (isSwiping) {
             e.preventDefault(); 
             
-            card.classList.add('hardware-accelerated');
-            container.classList.add('is-flipping');
-
             const resistance = 0.5;
-            // 取絕對值來計算拖曳進度
             const dragDistance = Math.abs(deltaX) * resistance;
             const maxDist = window.innerWidth * 0.6;
             let progress = Math.max(0, Math.min(dragDistance / maxDist, 1));
             
+            // ==========================================
+            // 🟢 1/3 螢幕強制接管判定 (手指還在螢幕上，但強迫成功)
+            // ==========================================
+            if (Math.abs(deltaX) >= triggerThreshold) {
+                isSwiping = false; 
+                
+                clearInlineStyles(card);
+                triggerSVGHandOff(progress); // 呼叫精準接手演算
+                window.closeBlankOverlay(true); 
+                return;
+            }
+
+            // ==========================================
+            // 🟢 尚未超過 1/3 時的跟手連動邏輯
+            // ==========================================
+            card.classList.add('hardware-accelerated');
+            container.classList.add('is-flipping');
+
+            // 1. 卡片 3D 聯動
             card.style.setProperty('transition', 'none', 'important');
             card.style.setProperty('transform', `scale(1) rotateY(${-90 * progress}deg)`, 'important');
             card.style.setProperty('box-shadow', '0 20px 40px rgba(0,0,0,0)', 'important');
+            
+            // 2. SVG 圖示聯動 (純位移，無透明度淡化)
+            if (leftBtn && rightBtn) {
+                leftBtn.style.setProperty('transition', 'none', 'important');
+                leftBtn.style.setProperty('transform', `translateX(${-30 * progress}px)`, 'important');
+
+                rightBtn.style.setProperty('transition', 'none', 'important');
+                rightBtn.style.setProperty('transform', `translateX(${-30 * progress}px)`, 'important');
+            }
         }
     }, { passive: false });
 
@@ -1098,35 +1162,50 @@ window.openBlankOverlay = function(hexColor) {
         const currentX = e.changedTouches[0].clientX;
         const deltaX = currentX - swipeStartX;
         
-        // 計算放手瞬間，卡片已經翻轉了幾度
         const resistance = 0.5;
         const dragDistance = Math.abs(deltaX) * resistance;
         const maxDist = window.innerWidth * 0.6;
         let progress = Math.max(0, Math.min(dragDistance / maxDist, 1));
         const flippedDegrees = 90 * progress;
         
-        // 🟢 判定放手：翻轉超過 20 度 (releaseThresholdAngle)，或快速向左短滑 (deltaX < -50)
-        if (flippedDegrees > releaseThresholdAngle || deltaX < -50) { 
+        const leftBtn = document.getElementById('capsule-main-btn');
+        const rightBtn = document.getElementById('capsule-secondary-btn');
+        
+        // ==========================================
+        // 🟢 未達 1/3 但鬆手判定：超過 20 度或快速滑動
+        // ==========================================
+        if (flippedDegrees > 20 || deltaX < -50) { 
             
             clearInlineStyles(card);
-            window.closeBlankOverlay(); // 完美交接給系統動畫
+            triggerSVGHandOff(progress); // 呼叫精準接手演算
+            window.closeBlankOverlay(true); 
 
         } else {
-            // 🟢 取消關閉：未滿 20 度，使用果凍彈性曲線回彈原位！
+            // 🟢 取消：原地 Q 彈回彈 (卡片與 SVG 一起彈回原位)
             card.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15), box-shadow 0.3s linear', 'important');
             card.style.setProperty('transform', `scale(1) rotateY(0deg)`, 'important');
             
+            if (leftBtn && rightBtn) {
+                leftBtn.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15)', 'important');
+                leftBtn.style.setProperty('transform', `translateX(0px)`, 'important');
+
+                rightBtn.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15)', 'important');
+                rightBtn.style.setProperty('transform', `translateX(0px)`, 'important');
+            }
+            
             setTimeout(() => {
                 clearInlineStyles(card);
+                clearInlineStyles(leftBtn);
+                clearInlineStyles(rightBtn);
                 container.classList.remove('is-flipping');
                 card.classList.remove('hardware-accelerated');
             }, 500);
         }
+        
         swipeStartX = 0;
     });
     // =========================================================
 
-    // 啟動空白卡片開場動畫
     originalContainer.classList.add('perspective-container', 'is-flipping'); 
     originalInner.classList.remove('flip-back-in');
     originalInner.classList.add('flip-out');
@@ -1161,7 +1240,7 @@ window.openBlankOverlay = function(hexColor) {
 // 🟢 空白彈窗關閉邏輯
 // ============================================================================
 
-window.closeBlankOverlay = function() {
+window.closeBlankOverlay = function(skipCapsuleAnimation = false) {
     if (window.isFlipAnimating) return; 
     window.isFlipAnimating = true;
 
@@ -1186,7 +1265,10 @@ window.closeBlankOverlay = function() {
     blankCard.classList.remove('flip-in-active');
     blankCard.classList.add('flip-out-reverse'); 
 
-    if (window.slideCapsuleMode) window.slideCapsuleMode(false);
+    // 如果是由手勢接管進來的，不執行預設的膠囊動畫，避免打架！
+    if (window.slideCapsuleMode && !skipCapsuleAnimation) {
+        window.slideCapsuleMode(false);
+    }
 
     setTimeout(() => {
         originalInner.classList.remove('flip-out');
@@ -1214,12 +1296,16 @@ window.closeBlankOverlay = function() {
             originalContainer.classList.remove('perspective-container', 'is-flipping');
             originalInner.classList.remove('hardware-accelerated');
             
+            const leftBtn = document.getElementById('capsule-main-btn');
+            const rightBtn = document.getElementById('capsule-secondary-btn');
+            if(leftBtn) leftBtn.style.cssText = ''; 
+            if(rightBtn) rightBtn.style.cssText = ''; 
+
             window.isFlipAnimating = false; 
         }, 450); 
 
     }, 300); 
 };
-
 // ============================================================================
 // 🟢 空白彈窗關閉邏輯 (包含防連點保護)
 // ============================================================================
