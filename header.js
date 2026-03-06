@@ -5,19 +5,9 @@ export function initHeader(onSearchCallback, getActiveCardId) {
     const searchContainer = document.getElementById('search-container');
     let isComposing = false;
 
-    // 將 HTML 需要呼叫的函數綁定到 window 上，確保 onclick 有效
     window.toggleSearch = function(show) {
         const dismissIcon = document.getElementById('dismiss-icon');
         
-        if (show) {
-            const capsule = document.getElementById('action-capsule');
-            if (capsule && capsule.classList.contains('menu-expanded')) {
-                capsule.classList.remove('menu-expanded');
-                searchContainer.classList.remove('menu-open'); 
-                document.body.classList.remove('menu-active');
-            }
-        }
-
         if (show) {
             searchContainer.classList.add('active');
             document.body.classList.add('searching'); 
@@ -28,7 +18,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
             document.body.classList.remove('searching'); 
             searchInput.value = '';
             searchInput.blur();
-            onSearchCallback(''); // 觸發清空搜尋
+            onSearchCallback(''); 
             if (dismissIcon && getActiveCardId()) {
                 dismissIcon.style.opacity = '1';
             }
@@ -36,40 +26,9 @@ export function initHeader(onSearchCallback, getActiveCardId) {
     };
 
     window.handleCapsuleMainClick = function() {
-        const capsule = document.getElementById('action-capsule');
-        if (capsule.classList.contains('menu-expanded')) {
-            window.toggleCapsuleMenu();
-        } else {
-            console.log('Plus Action Triggered');
-        }
+        console.log('Plus Action Triggered');
+        // 🟢 未來的膠囊變形與展開隱藏 SVG 的邏輯可以寫在這裡
     };
-
-    window.toggleCapsuleMenu = function() {
-        const capsule = document.getElementById('action-capsule');
-        if (capsule.classList.contains('menu-expanded')) {
-            capsule.classList.remove('menu-expanded');
-            searchContainer.classList.remove('menu-open'); 
-            document.body.classList.remove('menu-active');
-        } else {
-            capsule.classList.add('animating-shrink');
-            setTimeout(() => {
-                capsule.classList.remove('animating-shrink');
-                capsule.classList.add('menu-expanded');
-                searchContainer.classList.add('menu-open'); 
-                document.body.classList.add('menu-active');
-            }, 150);
-        }
-    };
-
-    // 點擊空白處關閉選單
-    document.addEventListener('click', (e) => {
-        const capsule = document.getElementById('action-capsule');
-        if (capsule && capsule.classList.contains('menu-expanded') && !capsule.contains(e.target)) {
-            capsule.classList.remove('menu-expanded');
-            searchContainer.classList.remove('menu-open');
-            document.body.classList.remove('menu-active');
-        }
-    });
 
     // 搜尋輸入監聽
     searchInput.addEventListener('compositionstart', () => { isComposing = true; });
