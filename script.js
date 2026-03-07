@@ -1068,31 +1068,40 @@ if (activeCardId) {
     }
 }
 
-// 🟢 注入左上角標題、分層文字說明與 2x2 膠囊按鈕網格 (自適應縮放版)
+// 🟢 注入左上角標題、分層文字說明與 4欄網格 (自適應與正圓按鈕版)
 card.innerHTML = `
-<div class="card-header" style="padding-bottom: clamp(2px, 1vh, 5px);">
-    <span class="line-name">カスタマイズ</span>
+<div class="card-header" style="padding-bottom: 5px;">
+    <span class="line-name">個性化設置</span>
 </div>
 
 <div class="card-content">
+    <p class="description" style="font-size: 0.85rem; margin-bottom: 12px;">測試測試（標題下方說明文字）</p>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: clamp(6px, 2vw, 12px); margin-bottom: clamp(4px, 1.5vh, 15px);">
+    <div style="--btn-height: 44px; display: grid; grid-template-columns: max-content 1fr var(--btn-height) var(--btn-height); gap: 8px; margin-bottom: 12px;">
         
-        <button class="info-tag-item" style="cursor: pointer; text-align: center; padding: clamp(8px, 2vh, 12px) 4px; border-radius: 100px; font-size: clamp(0.8rem, 3.5vw, 0.95rem); width: 100%; opacity: 0.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">表示名</button>
+        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; white-space: nowrap;">表示名</button>
         
-        <button class="info-tag-item" style="cursor: pointer; text-align: center; padding: clamp(8px, 2vh, 12px) 4px; border-radius: 100px; font-size: clamp(0.8rem, 3.5vw, 0.95rem); width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${targetName}</button>
+        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px; font-size: 0.95rem; display: flex; align-items: center; justify-content: flex-start; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${targetName}</button>
+
+        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; font-size: 0.95rem; display: flex; align-items: center; justify-content: center;">A</button>
+
+        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; font-size: 0.95rem; display: flex; align-items: center; justify-content: center;">B</button>
     </div>
     
-    <p class="description" style="font-size: clamp(0.75rem, 3.5vw, 0.85rem); margin-bottom: clamp(8px, 2vh, 16px);">測試測試（第一列下方說明文字）</p>
+    <p class="description" style="font-size: 0.85rem; margin-bottom: 12px;">測試測試（第一列下方說明文字）</p>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: clamp(6px, 2vw, 12px); margin-bottom: clamp(4px, 1.5vh, 8px);">
+    <div style="--btn-height: 44px; display: grid; grid-template-columns: max-content 1fr var(--btn-height) var(--btn-height); gap: 8px; margin-bottom: 12px;">
         
-        <button class="info-tag-item" style="cursor: pointer; text-align: center; padding: clamp(8px, 2vh, 12px) 4px; border-radius: 100px; font-size: clamp(0.8rem, 3.5vw, 0.95rem); width: 100%; opacity: 0.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">カラー</button>
+        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; white-space: nowrap;">カラー</button>
         
-        <button class="info-tag-item" style="cursor: pointer; text-align: center; padding: clamp(8px, 2vh, 12px) 4px; border-radius: 100px; font-size: clamp(0.8rem, 3.5vw, 0.95rem); width: 100%; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${targetHex.toUpperCase()}</button>
+        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px; font-size: 0.95rem; font-family: monospace; display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${targetHex.toUpperCase()}</button>
+
+        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; font-size: 0.95rem; display: flex; align-items: center; justify-content: center;">C</button>
+
+        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; font-size: 0.95rem; display: flex; align-items: center; justify-content: center;">D</button>
     </div>
     
-    <p class="description" style="font-size: clamp(0.75rem, 3.5vw, 0.85rem); margin-bottom: clamp(8px, 2vh, 16px);">測試測試（第二列下方說明文字）</p>
+    <p class="description" style="font-size: 0.85rem; margin-bottom: 12px;">測試測試（第二列下方說明文字）</p>
 </div>
 `;
 
