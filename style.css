@@ -1022,9 +1022,9 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 
 /* ==========================================================================
    🟢 殭屍殘影封殺力場 (Zombie Flash Killer)
-   當詳情彈窗不在 active (開啟) 狀態時，強制將打叉圖示從視覺與物理上抹除
    ========================================================================== */
-   #detail-overlay:not(.active) #dismiss-icon {
+/* 加入 ~ 符號，告訴瀏覽器 dismiss-icon 是在 detail-overlay 之後的兄弟元素 */
+#detail-overlay:not(.active) ~ #dismiss-icon {
     opacity: 0 !important;
     visibility: hidden !important;
     transition: none !important;

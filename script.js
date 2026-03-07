@@ -754,13 +754,13 @@ function initOverlayGestures() {
     detailOverlay.ontouchstart = e => {
         overlayStartY = e.touches[0].pageY;
         inner.style.transition = 'none';
-        
+
         if (dismissIcon) {
             dismissIcon.style.transition = 'none';
-            
+
             // 🟢 1. 拔除 wrapper 可能殘留的強制不透明 (!important)
             dismissIcon.style.removeProperty('opacity');
-            
+
             // 🟢 2. 拔除內部 SVG 可能殘留的強制旋轉 (!important) 與過渡
             const dismissSvg = dismissIcon.querySelector('svg');
             if (dismissSvg) {
@@ -768,7 +768,7 @@ function initOverlayGestures() {
                 dismissSvg.style.removeProperty('transition');
             }
         }
-    
+
         extraElements.forEach(el => el.style.transition = 'none');
     };
 
@@ -806,6 +806,10 @@ function initOverlayGestures() {
     };
 
     detailOverlay.ontouchend = e => {
+
+        // 🟢 終極防禦鎖：如果下拉距離已經觸發了關閉流程，直接中斷，絕對不允許執行恢復動畫！
+        if (!detailOverlay.classList.contains('active')) return;
+        
         // 1. 恢復卡片本體的彈簧動畫，並設定目的地為 0 (原點)
         inner.style.transition = 'transform 0.55s var(--spring-release)';
         inner.style.transform = 'translate3d(0, 0, 0)';
@@ -849,7 +853,7 @@ function initOverlayGestures() {
 
         if (dismissIcon) {
             dismissIcon.style.transition = 'none';
-            
+
             // 🟢 滾輪觸發的瞬間，一樣先淨空殘留的霸王條款
             dismissIcon.style.removeProperty('opacity');
             const dismissSvg = dismissIcon.querySelector('svg');
@@ -857,7 +861,7 @@ function initOverlayGestures() {
                 dismissSvg.style.removeProperty('transform');
                 dismissSvg.style.removeProperty('transition');
             }
-            
+
             // 淨空後，再由手勢數學接管透明度
             dismissIcon.style.opacity = Math.max(0, 1 - (overlayWheelSum / 150));
         }
