@@ -1052,24 +1052,24 @@ window.openBlankOverlay = function (hexColor) {
     card.className = 'detail-card-inner flip-in-start';
     applyThemeToCard(card, hexColor);
 
-// 🟢 取得當前打開卡片的名稱與顏色 (用以動態顯示於按鈕)
-let targetName = '未知名稱';
-let targetHex = hexColor || '#2C2C2E';
+    // 🟢 取得當前打開卡片的名稱與顏色 (用以動態顯示於按鈕)
+    let targetName = '未知名稱';
+    let targetHex = hexColor || '#2C2C2E';
 
-if (activeCardId) {
-    if (activeCardId === 'fixed-bottom') {
-        targetName = '運行情報';
-    } else {
-        const currentData = window.appRailwayData.find(l => l.id === activeCardId);
-        if (currentData) {
-            targetName = currentData.name;
-            targetHex = currentData.hex;
+    if (activeCardId) {
+        if (activeCardId === 'fixed-bottom') {
+            targetName = '運行情報';
+        } else {
+            const currentData = window.appRailwayData.find(l => l.id === activeCardId);
+            if (currentData) {
+                targetName = currentData.name;
+                targetHex = currentData.hex;
+            }
         }
     }
-}
 
-// 🟢 注入左上角標題、分層文字說明與 4欄網格 (自適應與正圓按鈕版)
-card.innerHTML = `
+    // 🟢 注入左上角標題、分層文字說明與 4欄網格 (自適應與正圓按鈕版)
+    card.innerHTML = `
 <div class="card-header" style="padding-bottom: 5px; margin-bottom: 15px;">
     <span class="line-name">カスタマイズ</span>
 </div>
@@ -1085,11 +1085,68 @@ card.innerHTML = `
         <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
         ${targetName}</button>
 
-        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; font-size: 0.95rem; display: flex; align-items: center; justify-content: center;">
-        A</button>
+        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block;">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
+         style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease;
+                opacity: 0.8; visibility: visible; 
+                width: 20px; height: 20px; stroke-width: 2px;">
+        <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/>
+    </svg>
 
-        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; font-size: 0.95rem; display: flex; align-items: center; justify-content: center;">
-        B</button>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
+         style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease;
+                opacity: 0; visibility: hidden; 
+                width: 20px; height: 20px; stroke-width: 2px;">
+        <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>
+    </svg>
+
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
+         style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease;
+                opacity: 0; visibility: hidden; 
+                width: 20px; height: 20px; stroke-width: 2px;">
+        <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m15 11-6 6"/><path d="m9 11 6 6"/>
+    </svg>
+
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
+         style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease;
+                opacity: 0; visibility: hidden; 
+                width: 22px; height: 22px; stroke-width: 2.5px;">
+        <path d="M20 6 9 17l-5-5"/>
+    </svg>
+
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
+         style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease;
+                opacity: 0; visibility: hidden; 
+                width: 22px; height: 22px; stroke-width: 2.5px;">
+        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+    </svg>
+</button>
+
+        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block;">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
+         style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease;
+                opacity: 0.8; visibility: visible; 
+                width: 20px; height: 20px; stroke-width: 2px;">
+        <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M16 4h2a2 2 0 0 1 2 2v4"/><path d="M21 14H11"/><path d="m15 10-4 4 4 4"/>
+    </svg>
+
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
+         style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease;
+                opacity: 0; visibility: hidden; 
+                width: 20px; height: 20px; stroke-width: 2px;">
+        <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>
+    </svg>
+
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
+         style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease;
+                opacity: 0; visibility: hidden; 
+                width: 20px; height: 20px; stroke-width: 2px;">
+        <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m15 11-6 6"/><path d="m9 11 6 6"/>
+    </svg>
+    
+</button>
 
     </div>
     
@@ -1104,11 +1161,68 @@ card.innerHTML = `
         <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px; font-size: 0.95rem; font-family: monospace; display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
         ${targetHex.toUpperCase()}</button>
 
-        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; font-size: 0.95rem; display: flex; align-items: center; justify-content: center;">
-        C</button>
+<button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block;">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
+         style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease;
+                opacity: 0.8; visibility: visible; 
+                width: 20px; height: 20px; stroke-width: 2px;">
+        <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/>
+    </svg>
 
-        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; font-size: 0.95rem; display: flex; align-items: center; justify-content: center;">
-        D</button>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
+         style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease;
+                opacity: 0; visibility: hidden; 
+                width: 20px; height: 20px; stroke-width: 2px;">
+        <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>
+    </svg>
+
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
+         style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease;
+                opacity: 0; visibility: hidden; 
+                width: 20px; height: 20px; stroke-width: 2px;">
+        <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m15 11-6 6"/><path d="m9 11 6 6"/>
+    </svg>
+
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
+         style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease;
+                opacity: 0; visibility: hidden; 
+                width: 22px; height: 22px; stroke-width: 2.5px;">
+        <path d="M20 6 9 17l-5-5"/>
+    </svg>
+
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
+         style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease;
+                opacity: 0; visibility: hidden; 
+                width: 22px; height: 22px; stroke-width: 2.5px;">
+        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+    </svg>
+</button>
+
+        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block;">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
+         style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease;
+                opacity: 0.8; visibility: visible; 
+                width: 20px; height: 20px; stroke-width: 2px;">
+        <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M16 4h2a2 2 0 0 1 2 2v4"/><path d="M21 14H11"/><path d="m15 10-4 4 4 4"/>
+    </svg>
+
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
+         style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease;
+                opacity: 0; visibility: hidden; 
+                width: 20px; height: 20px; stroke-width: 2px;">
+        <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>
+    </svg>
+
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
+         style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease;
+                opacity: 0; visibility: hidden; 
+                width: 20px; height: 20px; stroke-width: 2px;">
+        <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m15 11-6 6"/><path d="m9 11 6 6"/>
+    </svg>
+    
+</button>
 
     </div>
     
@@ -1470,7 +1584,7 @@ window.openInfoOverlay = function (hexColor, contentHTML = '') {
     const card = document.createElement('div');
     card.className = 'detail-card-inner flip-in-start';
     applyThemeToCard(card, hexColor);
-    
+
     // 注入自訂資訊內容
     if (contentHTML) {
         card.innerHTML = contentHTML;
@@ -1713,7 +1827,7 @@ window.closeInfoOverlay = function (isFromGesture = false) {
         if (!isFromGesture) {
             dismissSvg.style.setProperty('transition', 'none', 'important');
             dismissSvg.style.setProperty('transform', `rotate(${window.DISMISS_ICON_TARGET_ROTATION}deg)`, 'important');
-            void dismissSvg.offsetWidth; 
+            void dismissSvg.offsetWidth;
         }
         dismissSvg.style.setProperty('transition', 'transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1)', 'important');
         dismissSvg.style.setProperty('transform', 'rotate(0deg)', 'important');
