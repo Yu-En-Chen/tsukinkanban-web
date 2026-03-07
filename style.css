@@ -1021,6 +1021,16 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 }
 
 /* ==========================================================================
+   🟢 殭屍殘影封殺力場 (Zombie Flash Killer)
+   當詳情彈窗不在 active (開啟) 狀態時，強制將打叉圖示從視覺與物理上抹除
+   ========================================================================== */
+   #detail-overlay:not(.active) #dismiss-icon {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: none !important;
+}
+
+/* ==========================================================================
    裝置方向控制 (Landscape Prompt) - 階層式淡出高質感版
    ========================================================================== */
    #landscape-prompt {
