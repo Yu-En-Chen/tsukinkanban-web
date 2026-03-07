@@ -754,8 +754,21 @@ function initOverlayGestures() {
     detailOverlay.ontouchstart = e => {
         overlayStartY = e.touches[0].pageY;
         inner.style.transition = 'none';
-        if (dismissIcon) dismissIcon.style.transition = 'none';
-
+        
+        if (dismissIcon) {
+            dismissIcon.style.transition = 'none';
+            
+            // 🟢 1. 拔除 wrapper 可能殘留的強制不透明 (!important)
+            dismissIcon.style.removeProperty('opacity');
+            
+            // 🟢 2. 拔除內部 SVG 可能殘留的強制旋轉 (!important) 與過渡
+            const dismissSvg = dismissIcon.querySelector('svg');
+            if (dismissSvg) {
+                dismissSvg.style.removeProperty('transform');
+                dismissSvg.style.removeProperty('transition');
+            }
+        }
+    
         extraElements.forEach(el => el.style.transition = 'none');
     };
 
@@ -836,6 +849,16 @@ function initOverlayGestures() {
 
         if (dismissIcon) {
             dismissIcon.style.transition = 'none';
+            
+            // 🟢 滾輪觸發的瞬間，一樣先淨空殘留的霸王條款
+            dismissIcon.style.removeProperty('opacity');
+            const dismissSvg = dismissIcon.querySelector('svg');
+            if (dismissSvg) {
+                dismissSvg.style.removeProperty('transform');
+                dismissSvg.style.removeProperty('transition');
+            }
+            
+            // 淨空後，再由手勢數學接管透明度
             dismissIcon.style.opacity = Math.max(0, 1 - (overlayWheelSum / 150));
         }
 
@@ -1118,7 +1141,9 @@ window.openBlankOverlay = function (hexColor) {
 
             // 箭頭 SVG 旋轉聯動
             if (dismissIcon) {
-                dismissIcon.style.setProperty('opacity', '1', 'important');
+                // 解除 !important 鎖定，讓後續的下拉手勢能夠再次接管 opacity
+                dismissIcon.style.removeProperty('opacity');
+                dismissIcon.style.opacity = '1';
             }
             if (dismissSvg) {
                 dismissSvg.style.setProperty('transform-origin', '50% 50%', 'important');
@@ -1208,7 +1233,9 @@ window.openBlankOverlay = function (hexColor) {
     const dismissSvg = dismissIcon ? dismissIcon.querySelector('svg') : null;
 
     if (dismissIcon) {
-        dismissIcon.style.setProperty('opacity', '1', 'important');
+        // 解除 !important 鎖定，讓後續的下拉手勢能夠再次接管 opacity
+        dismissIcon.style.removeProperty('opacity');
+        dismissIcon.style.opacity = '1';
     }
     if (dismissSvg) {
         dismissSvg.style.setProperty('transform-origin', '50% 50%', 'important');
@@ -1269,8 +1296,11 @@ window.closeBlankOverlay = function (isFromGesture = false) {
     const dismissIcon = document.getElementById('dismiss-icon');
     const dismissSvg = dismissIcon ? dismissIcon.querySelector('svg') : null;
 
+    // 箭頭 SVG 旋轉聯動
     if (dismissIcon) {
-        dismissIcon.style.setProperty('opacity', '1', 'important');
+        // 先移除可能殘留的 !important，再乾淨地賦予 1
+        dismissIcon.style.removeProperty('opacity');
+        dismissIcon.style.opacity = '1';
     }
 
     if (dismissSvg) {
