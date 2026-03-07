@@ -74,7 +74,7 @@ card.innerHTML = `
         mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);
     ">
         
-        <button id="p-btn-label" class="info-tag-item interactive-btn" style="
+        <button id="p-btn-label" class="info-tag-item interactive-btn" onclick="window.toggleEditNameMode()" style="
             cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px;
             font-size: 0.95rem; display: flex; align-items: center; justify-content: center;
             white-space: nowrap; flex-shrink: 0; max-width: 120px; overflow: hidden;
