@@ -692,11 +692,11 @@ body.searching .dismiss-icon {
     transition: opacity 0.3s linear;
 }
 
-/* 🟢 當外層容器被 JS 標記為翻轉中時，分離陰影浮現 */
-.perspective-container.is-flipping::after,
-.perspective-container.is-flipping::before {
-    opacity: 1;
-    transition: opacity 0.3s linear;
+/* 🟢 新增：手勢跟手專用陰影 (拔除 CSS 過渡延遲，完全由 JS 變數 1:1 控制) */
+.perspective-container.is-swiping::after,
+.perspective-container.is-swiping::before {
+    opacity: var(--swipe-shadow-opacity, 0) !important;
+    transition: none !important;
 }
 
 /* 🟢 動態硬體加速 Class (交由 JS 在翻轉瞬間賦予，結束後收回) */

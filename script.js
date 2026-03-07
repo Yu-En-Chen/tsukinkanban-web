@@ -1119,13 +1119,14 @@ window.openBlankOverlay = function(hexColor) {
             let progress = Math.max(0, Math.min(dragDistance / maxDist, 1));
             
             // ==========================================
-            // 🟢 1/3 螢幕強制接管判定 (手指還在螢幕上，但強迫成功)
+            // 🟢 1/3 螢幕強制接管判定
             // ==========================================
             if (Math.abs(deltaX) >= triggerThreshold) {
                 isSwiping = false; 
                 
+                container.classList.remove('is-swiping'); // 🟢 拔除跟手鎖定，交回給 CSS 系統動畫
                 clearInlineStyles(card);
-                triggerSVGHandOff(progress); // 呼叫精準接手演算
+                triggerSVGHandOff(progress); 
                 window.closeBlankOverlay(true); 
                 return;
             }
@@ -1135,13 +1136,19 @@ window.openBlankOverlay = function(hexColor) {
             // ==========================================
             card.classList.add('hardware-accelerated');
             container.classList.add('is-flipping');
+            container.classList.add('is-swiping'); // 🟢 啟動跟手專用狀態 (拔除動畫延遲)
 
             // 1. 卡片 3D 聯動
             card.style.setProperty('transition', 'none', 'important');
             card.style.setProperty('transform', `scale(1) rotateY(${-90 * progress}deg)`, 'important');
-            card.style.setProperty('box-shadow', '0 20px 40px rgba(0,0,0,0)', 'important');
             
-            // 2. SVG 圖示聯動 (純位移，無透明度淡化)
+            // 🟢 2. 核心修正：陰影精準跟手漸變
+            // 讓替身陰影隨手指淡入，實體陰影隨手指淡出 (加倍數率 progress * 2 確保交接迅速不突兀)
+            const shadowFadeProgress = Math.min(progress * 2, 1);
+            card.style.setProperty('box-shadow', `0 20px 40px rgba(0,0,0,${0.2 * (1 - shadowFadeProgress)})`, 'important');
+            container.style.setProperty('--swipe-shadow-opacity', `${shadowFadeProgress}`, 'important');
+            
+            // 3. SVG 圖示聯動
             if (leftBtn && rightBtn) {
                 leftBtn.style.setProperty('transition', 'none', 'important');
                 leftBtn.style.setProperty('transform', `translateX(${-30 * progress}px)`, 'important');
@@ -1176,14 +1183,20 @@ window.openBlankOverlay = function(hexColor) {
         // ==========================================
         if (flippedDegrees > 20 || deltaX < -50) { 
             
+            container.classList.remove('is-swiping'); // 🟢 拔除跟手鎖定
             clearInlineStyles(card);
-            triggerSVGHandOff(progress); // 呼叫精準接手演算
+            triggerSVGHandOff(progress); 
             window.closeBlankOverlay(true); 
 
         } else {
             // 🟢 取消：原地 Q 彈回彈 (卡片與 SVG 一起彈回原位)
+            container.classList.remove('is-swiping'); // 🟢 拔除跟手鎖定
+            container.classList.remove('is-flipping'); // 🟢 讓替身陰影優雅淡出
+            container.style.removeProperty('--swipe-shadow-opacity'); // 清理變數
+            
             card.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15), box-shadow 0.3s linear', 'important');
             card.style.setProperty('transform', `scale(1) rotateY(0deg)`, 'important');
+            card.style.setProperty('box-shadow', 'var(--ray-shadow-active)', 'important'); // 🟢 優雅恢復原生實體陰影
             
             if (leftBtn && rightBtn) {
                 leftBtn.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15)', 'important');
