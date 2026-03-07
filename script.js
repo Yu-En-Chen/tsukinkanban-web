@@ -1052,6 +1052,21 @@ window.openBlankOverlay = function (hexColor) {
     card.className = 'detail-card-inner flip-in-start';
     applyThemeToCard(card, hexColor);
 
+    // 🟢 新增：注入左上角標題與 2x2 膠囊按鈕網格
+    card.innerHTML = `
+        <div class="card-header">
+            <span class="line-name">カスタマイズ</span>
+        </div>
+        <div class="card-content">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+                <button class="info-tag-item" style="cursor: pointer; text-align: center; padding: 12px; border-radius: 100px; font-size: 0.95rem; width: 100%;">表示名</button>
+                <button class="info-tag-item" style="cursor: pointer; text-align: center; padding: 12px; border-radius: 100px; font-size: 0.95rem; width: 100%;">按鈕 2</button>
+                <button class="info-tag-item" style="cursor: pointer; text-align: center; padding: 12px; border-radius: 100px; font-size: 0.95rem; width: 100%;">カラー</button>
+                <button class="info-tag-item" style="cursor: pointer; text-align: center; padding: 12px; border-radius: 100px; font-size: 0.95rem; width: 100%;">按鈕 4</button>
+            </div>
+        </div>
+    `;
+
     container.appendChild(card);
     overlay.appendChild(container);
     document.body.appendChild(overlay);
