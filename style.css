@@ -3,35 +3,44 @@
 /* 淺色模式例外配置 (處理不屬於變數的結構變化) */
 @media (prefers-color-scheme: light) {
     .fixed-bottom-card {
-        border: 1px solid rgba(0,0,0,0.1);
+        border: 1px solid rgba(0, 0, 0, 0.1);
     }
 }
 
-::-webkit-scrollbar { display: none !important; width: 0px !important; background: transparent !important; }
-* { 
-    -ms-overflow-style: none !important;  
-    scrollbar-width: none !important;  
-    box-sizing: border-box; 
-    -webkit-tap-highlight-color: transparent; 
-    -webkit-user-select: none; 
-    -webkit-touch-callout: none; 
-    user-select: none;         
-    touch-action: pan-x pan-y; 
+::-webkit-scrollbar {
+    display: none !important;
+    width: 0px !important;
+    background: transparent !important;
 }
-*:focus, *:focus-visible {
+
+* {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    user-select: none;
+    touch-action: pan-x pan-y;
+}
+
+*:focus,
+*:focus-visible {
     outline: none !important;
 }
 
-html, body {
-    width: 100%; 
-    height: 100%; 
-    margin: 0; padding: 0;
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
     background-color: var(--bg-color);
     color: var(--text-main);
-    position: fixed; 
-    overflow: hidden !important; 
-    overscroll-behavior: none;   
-    font-family: var(--font-main); 
+    position: fixed;
+    overflow: hidden !important;
+    overscroll-behavior: none;
+    font-family: var(--font-main);
     transition: background-color 0.5s ease, color 0.5s ease;
 }
 
@@ -40,37 +49,37 @@ html, body {
    ========================================= */
 
 .search-mask {
-    position: fixed !important; 
-    top: 0 !important; 
-    left: 0 !important; 
-    right: 0 !important; 
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
     bottom: 0 !important;
     width: 100vw !important;
     height: 100vh !important;
-    border-radius: 0 !important; 
+    border-radius: 0 !important;
     margin: 0 !important;
-    
+
     /* 1. 與漢堡按鈕一模一樣的優雅模糊度 (20px) */
     -webkit-backdrop-filter: blur(20px) !important;
     backdrop-filter: blur(20px) !important;
-    
+
     /* 2. 微弱的底色，用來稍微壓暗背後卡片，讓搜尋框跳出來 */
-    background: rgba(0, 0, 0, 0.2) !important; 
-    
+    background: rgba(0, 0, 0, 0.2) !important;
+
     /* 確保沒有多餘的光影與干擾 */
     box-shadow: none !important;
     border: none !important;
-        
-    opacity: 0 !important; 
-    visibility: hidden !important; 
-    z-index: 5500 !important; 
-    
+
+    opacity: 0 !important;
+    visibility: hidden !important;
+    z-index: 5500 !important;
+
     /* 0.3秒極致滑順的淡入，絕不延遲 */
     transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s 0.3s !important;
 }
 
 body.searching .search-mask {
-    opacity: 1 !important; 
+    opacity: 1 !important;
     visibility: visible !important;
     transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s 0s !important;
 }
@@ -85,212 +94,413 @@ body.searching .search-mask {
 @media (prefers-color-scheme: light) {
     .search-mask {
         /* 淺色模式下一樣是 20px 模糊，底色改為微弱的白色 */
-        background: rgba(255, 255, 255, 0.2) !important; 
+        background: rgba(255, 255, 255, 0.2) !important;
         -webkit-backdrop-filter: blur(20px) !important;
         backdrop-filter: blur(20px) !important;
     }
 }
+
 /*body.menu-active .search-mask { transition-delay: 0.15s; }*/
 
-#app-stage { width: 100%; max-width: 500px; height: 100%; margin: 0 auto; position: relative; display: flex; flex-direction: column; }
-
-.header { 
-    width: 100%; 
-    padding: 12px;
-    padding-top: calc(env(safe-area-inset-top) + 12px);
-    background: transparent; 
-    z-index: 6000; 
-    pointer-events: none; 
+#app-stage {
+    width: 100%;
+    max-width: 500px;
+    height: 100%;
+    margin: 0 auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
-.search-container { 
-    width: var(--card-width);  
-    max-width: 420px;          
-    margin: 0 auto;            
-    height: 50px; 
-    display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 0; 
+.header {
+    width: 100%;
+    padding: 12px;
+    padding-top: calc(env(safe-area-inset-top) + 12px);
+    background: transparent;
+    z-index: 6000;
+    pointer-events: none;
+}
+
+.search-container {
+    width: var(--card-width);
+    max-width: 420px;
+    margin: 0 auto;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 0;
     box-sizing: border-box;
-    position: relative; pointer-events: auto; 
-    transition: gap 0.4s var(--active-bounce); 
+    position: relative;
+    pointer-events: auto;
+    transition: gap 0.4s var(--active-bounce);
 }
 
 .left-circle-btn {
-    width: 44px; height: 44px; background: var(--search-bg); border-radius: 50%; border: 1px solid var(--search-border); 
-    -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); color: var(--icon-color); 
-    position: absolute; 
-    
-    top: 3px; /* 🟢 核心修復 1：明確鎖死 Y 軸座標，防止手機瀏覽器亂算！ */
-    left: -10px; 
-    
+    width: 44px;
+    height: 44px;
+    background: var(--search-bg);
+    border-radius: 50%;
+    border: 1px solid var(--search-border);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    color: var(--icon-color);
+    position: absolute;
+
+    top: 3px;
+    /* 🟢 核心修復 1：明確鎖死 Y 軸座標，防止手機瀏覽器亂算！ */
+    left: -10px;
+
     z-index: 5;
-    display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     transition: transform 0.5s var(--apple-spring), opacity 0.35s ease, scale 0.4s var(--apple-spring);
 }
 
-.left-circle-btn svg { width: 20px !important; height: 20px !important; opacity: 0.7; display: block; transition: opacity 0.3s ease, transform 0.3s ease; }
+.left-circle-btn svg {
+    width: 20px !important;
+    height: 20px !important;
+    opacity: 0.7;
+    display: block;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
 
 .search-container.active .left-circle-btn,
-.search-container.menu-open .left-circle-btn { transform: translate3d(-50px, 0, 0) scale(0.8); opacity: 0; pointer-events: none; }
+.search-container.menu-open .left-circle-btn {
+    transform: translate3d(-50px, 0, 0) scale(0.8);
+    opacity: 0;
+    pointer-events: none;
+}
 
 .search-trigger {
-    width: 44px; height: 44px; background: var(--search-bg); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); 
-    border-radius: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; margin-right: 60px; 
-    transition: all 0.5s var(--active-bounce), transform 0.5s var(--apple-spring), opacity 0.4s linear, scale 0.4s var(--apple-spring); 
-    border: 1px solid var(--search-border); position: relative; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); z-index: 2; 
+    width: 44px;
+    height: 44px;
+    background: var(--search-bg);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-right: 60px;
+    transition: all 0.5s var(--active-bounce), transform 0.5s var(--apple-spring), opacity 0.4s linear, scale 0.4s var(--apple-spring);
+    border: 1px solid var(--search-border);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    z-index: 2;
 }
 
-.search-container.menu-open .search-trigger { transform: translate3d(-135px, 0, 0); opacity: 0; pointer-events: none; }
+.search-container.menu-open .search-trigger {
+    transform: translate3d(-135px, 0, 0);
+    opacity: 0;
+    pointer-events: none;
+}
 
 .search-container.active .search-trigger {
-    width: calc(100% - 54px); margin-right: 0; background: var(--search-bg); border: 1px solid var(--search-border); 
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 8px 30px rgba(0, 0, 0, 0.2); justify-content: flex-start; padding-left: 12px;
+    width: calc(100% - 54px);
+    margin-right: 0;
+    background: var(--search-bg);
+    border: 1px solid var(--search-border);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 8px 30px rgba(0, 0, 0, 0.2);
+    justify-content: flex-start;
+    padding-left: 12px;
 }
 
-.search-icon { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; color: var(--icon-color); flex-shrink: 0; transition: transform 0.4s var(--active-bounce); }
-.search-icon svg { width: 100%; height: 100%; display: block; opacity: 0.7; }
+.search-icon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--icon-color);
+    flex-shrink: 0;
+    transition: transform 0.4s var(--active-bounce);
+}
 
-.input-wrapper { position: absolute; left: 44px; width: 0; height: 100%; display: flex; align-items: center; opacity: 0; transition: width 0.5s var(--active-bounce), opacity 0.3s ease; }
-#search-input { width: 100%; height: 100%; background: transparent; border: none; padding: 0 10px; color: var(--text-main); font-size: 16px; outline: none; -webkit-user-select: text; user-select: text; }
+.search-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    opacity: 0.7;
+}
+
+.input-wrapper {
+    position: absolute;
+    left: 44px;
+    width: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    opacity: 0;
+    transition: width 0.5s var(--active-bounce), opacity 0.3s ease;
+}
+
+#search-input {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    padding: 0 10px;
+    color: var(--text-main);
+    font-size: 16px;
+    outline: none;
+    -webkit-user-select: text;
+    user-select: text;
+}
 
 .action-capsule {
-    height: 44px; width: 90px; background: var(--search-bg); border: 1px solid var(--search-border); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
-    border-radius: 22px; display: block; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); overflow: hidden; position: absolute; right: -10px; top: 50%;
-    transform: translateY(-50%) translateX(0px); transform-origin: top right; z-index: 5600; 
-    flex-shrink: 0; 
-    transition: width 0.5s var(--apple-spring), height 0.5s var(--apple-spring), opacity 0.2s ease, transform 0.5s var(--apple-spring), border-radius 0.5s var(--apple-spring), margin 0.5s var(--apple-spring), top 0.5s var(--apple-spring), scale 0.4s var(--apple-spring);  
+    height: 44px;
+    width: 90px;
+    background: var(--search-bg);
+    border: 1px solid var(--search-border);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border-radius: 22px;
+    display: block;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    position: absolute;
+    right: -10px;
+    top: 50%;
+    transform: translateY(-50%) translateX(0px);
+    transform-origin: top right;
+    z-index: 5600;
+    flex-shrink: 0;
+    transition: width 0.5s var(--apple-spring), height 0.5s var(--apple-spring), opacity 0.2s ease, transform 0.5s var(--apple-spring), border-radius 0.5s var(--apple-spring), margin 0.5s var(--apple-spring), top 0.5s var(--apple-spring), scale 0.4s var(--apple-spring);
 }
 
 /* 保留原本的 Grid 佈局 */
 
 /* 🟢 將 justify-items 改為 stretch，確保按鈕的感應熱區 100% 填滿左右半部 */
-.capsule-grid-layout { 
-    display: grid; 
-    grid-template-columns: 1fr auto 1fr; 
-    align-items: center; 
-    justify-items: stretch; /* 修改這裡 */
-    width: 100%; 
-    height: 100%; 
-    transition: opacity 0.2s ease; 
+.capsule-grid-layout {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    justify-items: stretch;
+    /* 修改這裡 */
+    width: 100%;
+    height: 100%;
+    transition: opacity 0.2s ease;
 }
 
 /* 🟢 加入 position: relative，讓內部的 SVG 能夠絕對定位重疊在正中央 */
-.capsule-btn-item { position: relative; width: 100%; height: 100%; background: transparent; border: none; display: flex; align-items: center; justify-content: center; color: var(--icon-color); cursor: pointer; padding: 0; transition: transform 0.4s var(--apple-spring), opacity 0.3s ease; }
+.capsule-btn-item {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--icon-color);
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.4s var(--apple-spring), opacity 0.3s ease;
+}
 
-.capsule-divider { width: 1px; height: 16px; background: var(--border-color); opacity: 0.5; margin: 0; }
+.capsule-divider {
+    width: 1px;
+    height: 16px;
+    background: var(--border-color);
+    opacity: 0.5;
+    margin: 0;
+}
 
 /* =========================================
    🟢 膠囊按鈕 SVG 聯動系統 (同步卡片滑動 + 微互動)
    ========================================= */
-   :root {
+:root {
     /* 💡 微互動數值微調區：你可以隨時來這裡修改彈跳的力道與時間 */
-    --icon-pop-scale: 1.2;    /* 內部 SVG 的放大倍率 (稍大一點會更有彈出感) */
-    --pop-duration: 0.3s;      /* 彈跳動畫總時間 */
+    --icon-pop-scale: 1.2;
+    /* 內部 SVG 的放大倍率 (稍大一點會更有彈出感) */
+    --pop-duration: 0.3s;
+    /* 彈跳動畫總時間 */
 }
 
 /* 強制將按鈕內的 SVG 絕對定位，達成完美疊加 */
 /* 🟢 過渡時間改為 0.55s var(--spring-release)，與你的卡片上彈時間「完美同步」！ */
-.capsule-btn-item svg { position: absolute; transition: opacity 0.4s ease, transform 0.55s var(--spring-release); }
+.capsule-btn-item svg {
+    position: absolute;
+    transition: opacity 0.4s ease, transform 0.55s var(--spring-release);
+}
 
 /* 1. 預設狀態：舊圖示在中心，新圖示躲在下方 120% 的位置待命 */
-.capsule-btn-item svg.icon-default { opacity: 0.8 !important; transform: translateY(0) !important; pointer-events: auto !important; }
-.capsule-btn-item svg.icon-hidden { opacity: 0 !important; transform: translateY(120%) !important; pointer-events: none !important; }
+.capsule-btn-item svg.icon-default {
+    opacity: 0.8 !important;
+    transform: translateY(0) !important;
+    pointer-events: auto !important;
+}
+
+.capsule-btn-item svg.icon-hidden {
+    opacity: 0 !important;
+    transform: translateY(120%) !important;
+    pointer-events: none !important;
+}
 
 /* 2. 聯動狀態：卡片展開時，膠囊會獲得 .detail-active */
 /* 舊圖示往上 (-120%) 滑出消失，新圖示從底下完美歸位到 0 */
-.action-capsule.detail-active .capsule-btn-item svg.icon-default { opacity: 0 !important; transform: translateY(-120%) !important; pointer-events: none !important; }
-.action-capsule.detail-active .capsule-btn-item svg.icon-hidden { opacity: 0.8 !important; transform: translateY(0) !important; pointer-events: auto !important; }
+.action-capsule.detail-active .capsule-btn-item svg.icon-default {
+    opacity: 0 !important;
+    transform: translateY(-120%) !important;
+    pointer-events: none !important;
+}
+
+.action-capsule.detail-active .capsule-btn-item svg.icon-hidden {
+    opacity: 0.8 !important;
+    transform: translateY(0) !important;
+    pointer-events: auto !important;
+}
 
 /* 3. 微互動彈跳動畫 Keyframes */
 @keyframes capsulePop {
-    0% { scale: 1; }
-    40% { scale: var(--capsule-pop-scale); }
-    100% { scale: 1; }
+    0% {
+        scale: 1;
+    }
+
+    40% {
+        scale: var(--capsule-pop-scale);
+    }
+
+    100% {
+        scale: 1;
+    }
 }
+
 @keyframes iconPop {
-    0% { scale: 1; }
-    40% { scale: var(--icon-pop-scale); }
-    100% { scale: 1; }
+    0% {
+        scale: 1;
+    }
+
+    40% {
+        scale: var(--icon-pop-scale);
+    }
+
+    100% {
+        scale: 1;
+    }
 }
 
 /* 4. 觸發微互動的瞬間 */
 .action-capsule.trigger-pop {
     animation: capsulePop var(--pop-duration) var(--apple-spring) forwards !important;
 }
+
 .action-capsule.trigger-pop .capsule-btn-item svg.icon-hidden {
     animation: iconPop var(--pop-duration) var(--apple-spring) forwards !important;
 }
 
-.search-container.active .action-capsule { width: 0; opacity: 0; padding: 0; margin: 0; transform: translateY(-50%) translateX(40px) scale(0.8); pointer-events: none; }
+.search-container.active .action-capsule {
+    width: 0;
+    opacity: 0;
+    padding: 0;
+    margin: 0;
+    transform: translateY(-50%) translateX(40px) scale(0.8);
+    pointer-events: none;
+}
 
 /* --- 取消按鈕 (Cancel Button) --- */
 .cancel-circle-btn {
-    width: 0; height: 44px; background: var(--search-bg); border-radius: 50%; border: 1px solid var(--border-color); color: var(--icon-color); 
-    display: flex; align-items: center; justify-content: center; padding: 12px; overflow: hidden; 
-    cursor: pointer; opacity: 0; position: relative; z-index: 5700;
+    width: 0;
+    height: 44px;
+    background: var(--search-bg);
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    color: var(--icon-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    opacity: 0;
+    position: relative;
+    z-index: 5700;
     transition: width 0.4s var(--active-bounce), opacity 0.3s ease, transform 0.4s var(--active-bounce), scale 0.4s var(--apple-spring);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
-.cancel-circle-btn svg { 
-    width: 17px !important; height: 17px !important; min-width: 17px; min-height: 17px; 
-    display: block; flex-shrink: 0; opacity: 0.8; 
+
+.cancel-circle-btn svg {
+    width: 17px !important;
+    height: 17px !important;
+    min-width: 17px;
+    min-height: 17px;
+    display: block;
+    flex-shrink: 0;
+    opacity: 0.8;
 }
-.search-container.active .input-wrapper { width: calc(100% - 44px); opacity: 1; }
-.search-container.active .cancel-circle-btn { width: 44px; opacity: 1; transform: scale(1); }
+
+.search-container.active .input-wrapper {
+    width: calc(100% - 44px);
+    opacity: 1;
+}
+
+.search-container.active .cancel-circle-btn {
+    width: 44px;
+    opacity: 1;
+    transform: scale(1);
+}
 
 /* =========================================
    🟢 膠囊 2D 滑動切換系統 (完美同步卡片 3D 翻轉)
    ========================================= */
 /* 1. 向右滑出消失 (進入 Blank 模式)
    膠囊寬 90px，向右平移 90px 剛好讓左側調色盤徹底越過右側中線並消失 */
-   .action-capsule.slide-out-right .capsule-btn-item svg.icon-hidden,
-   .action-capsule.slide-out-right .capsule-btn-item svg.icon-blank-mode {
-       transform: translate3d(90px, 0, 0) !important;
-       opacity: 0 !important;
-       transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), opacity 0.2s 0.1s linear !important;
-   }
-   
-   /* 2. 從左側準備滑入 (Blank 模式圖示就位) */
-   .action-capsule.slide-in-left-start .capsule-btn-item svg.icon-hidden,
-   .action-capsule.slide-in-left-start .capsule-btn-item svg.icon-blank-mode {
-       transform: translate3d(-90px, 0, 0) !important;
-       opacity: 0 !important;
-       transition: none !important;
-   }
-   
-   /* 3. 從左側滑入定位 */
-   .action-capsule.slide-in-active .capsule-btn-item svg.icon-hidden,
-   .action-capsule.slide-in-active .capsule-btn-item svg.icon-blank-mode {
-       transform: translate3d(0, 0, 0) !important;
-       opacity: 0.8 !important;
-       transition: transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1), opacity 0.3s ease-out !important;
-   }
-   
-   /* 4. 反向：向左滑出消失 (離開 Blank 模式，原路返回) */
-   .action-capsule.slide-out-left .capsule-btn-item svg.icon-hidden,
-   .action-capsule.slide-out-left .capsule-btn-item svg.icon-blank-mode {
-       transform: translate3d(-90px, 0, 0) !important;
-       opacity: 0 !important;
-       transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), opacity 0.2s 0.1s linear !important;
-   }
-   
-   /* 5. 反向：從右側準備滑入 (原生圖示就位) */
-   .action-capsule.slide-in-right-start .capsule-btn-item svg.icon-hidden,
-   .action-capsule.slide-in-right-start .capsule-btn-item svg.icon-blank-mode {
-       transform: translate3d(90px, 0, 0) !important;
-       opacity: 0 !important;
-       transition: none !important;
-   }
-   
-   /* =========================================
+.action-capsule.slide-out-right .capsule-btn-item svg.icon-hidden,
+.action-capsule.slide-out-right .capsule-btn-item svg.icon-blank-mode {
+    transform: translate3d(90px, 0, 0) !important;
+    opacity: 0 !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), opacity 0.2s 0.1s linear !important;
+}
+
+/* 2. 從左側準備滑入 (Blank 模式圖示就位) */
+.action-capsule.slide-in-left-start .capsule-btn-item svg.icon-hidden,
+.action-capsule.slide-in-left-start .capsule-btn-item svg.icon-blank-mode {
+    transform: translate3d(-90px, 0, 0) !important;
+    opacity: 0 !important;
+    transition: none !important;
+}
+
+/* 3. 從左側滑入定位 */
+.action-capsule.slide-in-active .capsule-btn-item svg.icon-hidden,
+.action-capsule.slide-in-active .capsule-btn-item svg.icon-blank-mode {
+    transform: translate3d(0, 0, 0) !important;
+    opacity: 0.8 !important;
+    transition: transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1), opacity 0.3s ease-out !important;
+}
+
+/* 4. 反向：向左滑出消失 (離開 Blank 模式，原路返回) */
+.action-capsule.slide-out-left .capsule-btn-item svg.icon-hidden,
+.action-capsule.slide-out-left .capsule-btn-item svg.icon-blank-mode {
+    transform: translate3d(-90px, 0, 0) !important;
+    opacity: 0 !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), opacity 0.2s 0.1s linear !important;
+}
+
+/* 5. 反向：從右側準備滑入 (原生圖示就位) */
+.action-capsule.slide-in-right-start .capsule-btn-item svg.icon-hidden,
+.action-capsule.slide-in-right-start .capsule-btn-item svg.icon-blank-mode {
+    transform: translate3d(90px, 0, 0) !important;
+    opacity: 0 !important;
+    transition: none !important;
+}
+
+/* =========================================
       🟢 空白模式下專屬 SVG 設定 (獨立樣式不打架)
       ========================================= */
-   .capsule-btn-item svg.icon-blank-mode {
-       position: relative !important; 
-       opacity: 0.8 !important;
-       transform: scale(1) !important;
-       pointer-events: auto !important;
-   }
+.capsule-btn-item svg.icon-blank-mode {
+    position: relative !important;
+    opacity: 0.8 !important;
+    transform: scale(1) !important;
+    pointer-events: auto !important;
+}
 
 /* ==========================================================================
    卡片堆疊與物理邏輯
@@ -298,84 +508,117 @@ body.searching .search-mask {
 .card-stack {
     /* 🟢 1. 殺手鐧：脫離一般排版流，使用絕對定位直接對齊螢幕最底部 */
     position: absolute;
-    bottom: var(--bottom-anchor); /* 完美套用你設定的 12px 貼地距離 */
+    bottom: var(--bottom-anchor);
+    /* 完美套用你設定的 12px 貼地距離 */
     left: 0;
     width: 100%;
-    
+
     /* 🟢 2. 內部卡片排列：維持由下往上推疊 */
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    justify-content: flex-end; 
-    
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+
     /* 🟢 3. 清除所有干擾：把 Padding 歸零，徹底消滅幽靈空間 */
     padding: 0;
     margin: 0;
-    
+
     /* 🟢 4. 鎖死滾動：為接下來的 JS 手勢全接管做準備 */
-    overflow: visible; 
-    touch-action: none; 
-    
+    overflow: visible;
+    touch-action: none;
+
     /* 動畫與物理層設定 */
-    transition: transform 0.8s var(--premium-ease), filter 0.8s ease; 
-    transform: translate3d(0, 0, 0); 
+    transition: transform 0.8s var(--premium-ease), filter 0.8s ease;
+    transform: translate3d(0, 0, 0);
     z-index: 10;
 }
 
 /* 🟢 5. 修復：加入拖曳狀態，強制關閉任何動畫延遲，避免連續滑動時引擎錯亂 */
-.card-stack.dragging, 
-.card-stack.dragging .card { 
-    transition: none !important; 
+.card-stack.dragging,
+.card-stack.dragging .card {
+    transition: none !important;
 }
 
-.card-stack.bounce-back { transition: transform 0.5s var(--ios-snap) !important; }
-.card-stack.bounce-back .card { transition: margin 0.5s var(--ios-snap) !important; }
-.card-stack::-webkit-scrollbar { display: none; }
+.card-stack.bounce-back {
+    transition: transform 0.5s var(--ios-snap) !important;
+}
+
+.card-stack.bounce-back .card {
+    transition: margin 0.5s var(--ios-snap) !important;
+}
+
+.card-stack::-webkit-scrollbar {
+    display: none;
+}
 
 .card {
-    width: var(--card-width); 
-    max-width: 420px; 
-    aspect-ratio: var(--card-ratio); 
+    width: var(--card-width);
+    max-width: 420px;
+    aspect-ratio: var(--card-ratio);
     border-radius: var(--card-radius);
-    
+
     /* 🟢 終極幾何對齊：使用 min() 抓取卡片的「真實物理寬度」來計算高度 */
     /* 前半段往上拉 1 個真實高度，後半段往下推 28% 的真實高度 */
-    margin-bottom: calc(-1 * (min(var(--card-width), 420px) / 1.586) + (min(var(--card-width), 420px) / 1.586) * 0.28 + var(--stack-spread, 0px)); 
-    
-    position: relative; 
+    margin-bottom: calc(-1 * (min(var(--card-width), 420px) / 1.586) + (min(var(--card-width), 420px) / 1.586) * 0.28 + var(--stack-spread, 0px));
+
+    position: relative;
     /* 🟢 物理細邊框，顏色吃 JS 判斷的變數。平時透明，黑白極端色時自動顯現 */
     /* border: 1px solid var(--full-wrap-border, transparent); */
     box-shadow: var(--ray-shadow-resting);
-    isolation: isolate; 
+    isolation: isolate;
     transform: translate3d(0, 0, 0);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    overflow: hidden; 
-    z-index: 1; 
+    overflow: hidden;
+    z-index: 1;
     transition: transform var(--dynamic-speed, 0.65s) var(--active-bounce), opacity 0.3s ease, box-shadow 0.6s var(--premium-ease);
-    cursor: pointer; 
-    color: var(--card-text-color); 
+    cursor: pointer;
+    color: var(--card-text-color);
     text-shadow: var(--text-shadow-subtle);
-    flex-shrink: 0; 
+    flex-shrink: 0;
 }
-.card:last-child { margin-bottom: 0; }
+
+.card:last-child {
+    margin-bottom: 0;
+}
 
 .card.active {
-    margin-bottom: 50px; z-index: 999 !important; transform: translate3d(0, var(--travel-y, 0px), 0) scale(1);
-    box-shadow: var(--ray-shadow-active); transition: transform var(--dynamic-speed, 0.65s) var(--active-bounce), margin var(--dynamic-speed, 0.65s) ease, box-shadow 0.6s ease;
+    margin-bottom: 50px;
+    z-index: 999 !important;
+    transform: translate3d(0, var(--travel-y, 0px), 0) scale(1);
+    box-shadow: var(--ray-shadow-active);
+    transition: transform var(--dynamic-speed, 0.65s) var(--active-bounce), margin var(--dynamic-speed, 0.65s) ease, box-shadow 0.6s ease;
 }
 
-.card.hidden-placeholder { opacity: 0 !important; pointer-events: none; }
-.card.lifted-state { transform: translate3d(0, -100px, 0); opacity: 0 !important; pointer-events: none; transition: none !important; }
-.card.returning { animation: snapIn 0.6s var(--impact-bounce) forwards; opacity: 1 !important; pointer-events: auto; transition: none !important; }
-.card-stack.has-active { 
-    transform: scale(0.92); 
-    filter: blur(10px) brightness(1); 
-    pointer-events: none; 
+.card.hidden-placeholder {
+    opacity: 0 !important;
+    pointer-events: none;
 }
+
+.card.lifted-state {
+    transform: translate3d(0, -100px, 0);
+    opacity: 0 !important;
+    pointer-events: none;
+    transition: none !important;
+}
+
+.card.returning {
+    animation: snapIn 0.6s var(--impact-bounce) forwards;
+    opacity: 1 !important;
+    pointer-events: auto;
+    transition: none !important;
+}
+
+.card-stack.has-active {
+    transform: scale(0.92);
+    filter: blur(10px) brightness(1);
+    pointer-events: none;
+}
+
 /* 🟢 桌面與 iPad 觸控板專屬：極致優雅的懸浮微交互 */
 /* 💡 關鍵修復：使用 any-hover，這樣 iPad 的外接觸控板才能被正確識別！ */
 @media (any-hover: hover) {
+
     /* 1. 基礎引擎：準備好 0.4s 的柔和位移過渡 */
     .card-stack.allow-hover:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull) {
         transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
@@ -385,17 +628,18 @@ body.searching .search-mask {
     .card-stack.allow-hover.just-awoke:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull) {
         transition: transform 1.5s cubic-bezier(0.4, 0, 0.1, 1) !important;
     }
+
     .card-stack.allow-hover:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover {
         transform: translate3d(0, -8px, 0);
     }
-    
+
 }
 
 /* 🟢 手機觸控專屬：長按掃描浮起狀態 (Scrubbing Mode) (無陰影純淨版) */
 .card.touch-lifted {
     /* 只做純粹的 Z 軸抬升與鎖定縮放 */
     transform: translate3d(0, -8px, 0) scale(1) !important;
-    
+
     /* 過渡動畫只針對 transform 進行，保持跟滑鼠 Hover 一模一樣的順滑感 */
     transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
 }
@@ -404,72 +648,168 @@ body.searching .search-mask {
 .card.touch-lifted:active {
     transform: translate3d(0, -8px, 0) scale(1) !important;
 }
+
 /* ==========================================================================
    內容佈局、膠囊標籤與文字格
    ========================================================================== */
-.card-content { padding: 0 24px 40px 24px; opacity: 0; visibility: hidden; pointer-events: none; transform: translate3d(0, 15px, 0); transition: opacity 0.4s ease 0.2s, visibility 0.4s, transform var(--dynamic-speed, 0.65s) var(--active-bounce) 0.2s; }
-.active .card-content { opacity: 1; visibility: visible; pointer-events: auto; transform: translate3d(0, 0, 0); }
-.card-header { padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; }
-.line-name { font-size: 1.3rem; font-weight: 800; opacity: 0.9; }
+.card-content {
+    padding: 0 24px 40px 24px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translate3d(0, 15px, 0);
+    transition: opacity 0.4s ease 0.2s, visibility 0.4s, transform var(--dynamic-speed, 0.65s) var(--active-bounce) 0.2s;
+}
 
-.status-tag { 
-    padding: 6px 14px; border: 1px solid var(--border-color); background: var(--tag-bg); border-radius: 100px; font-size: 0.8rem; font-weight: 600; 
-    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); 
-    display: inline-block; width: fit-content; min-width: 4.5em; text-align: center; white-space: nowrap; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
-    
+.active .card-content {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translate3d(0, 0, 0);
+}
+
+.card-header {
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.line-name {
+    font-size: 1.3rem;
+    font-weight: 800;
+    opacity: 0.9;
+}
+
+.status-tag {
+    padding: 6px 14px;
+    border: 1px solid var(--border-color);
+    background: var(--tag-bg);
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    display: inline-block;
+    width: fit-content;
+    min-width: 4.5em;
+    text-align: center;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
     /* 🟢 直接拔除 JS 變數連動，強制鎖死為純白色與深色陰影 */
-    color: #ffffff !important; 
+    color: #ffffff !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
 }
 
-.description { 
-    line-height: 1.6; 
-    margin-top: 0; 
-    color: var(--text-secondary); /* 🟢 改為吃次要文字的顏色變數，不再需要強寫 opacity */
-    
+.description {
+    line-height: 1.6;
+    margin-top: 0;
+    color: var(--text-secondary);
+    /* 🟢 改為吃次要文字的顏色變數，不再需要強寫 opacity */
+
     /* 🟢 說明文字專屬漸層綁定 (左亮右暗，與卡片底色完美對齊) */
     background-image: var(--text-bg-gradient-secondary, none);
     -webkit-background-clip: var(--text-clip, border-box);
     background-clip: var(--text-clip, border-box);
-    -webkit-text-fill-color: var(--text-fill, var(--text-secondary)); 
+    -webkit-text-fill-color: var(--text-fill, var(--text-secondary));
 }
-.info-row { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding: 15px 0; font-size: 1.05rem; }
-.info-tags-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-.info-tag-item { background: var(--tag-bg); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 500; color: var(--card-text-color); text-shadow: var(--text-shadow-subtle); }
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-color);
+    padding: 15px 0;
+    font-size: 1.05rem;
+}
+
+.info-tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.info-tag-item {
+    background: var(--tag-bg);
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--card-text-color);
+    text-shadow: var(--text-shadow-subtle);
+}
 
 /* ==========================================================================
    獨立詳情層 (Detail Overlay)
    ========================================================================== */
-.detail-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; height: auto; background: transparent; z-index: 2500; display: flex; align-items: flex-start; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.3s ease; }
-.detail-overlay.active { opacity: 1; visibility: visible; }
-#detail-card-container { width: 100%; display: flex; justify-content: center; margin-top: calc(env(safe-area-inset-top) + 160px); }
+.detail-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: auto;
+    background: transparent;
+    z-index: 2500;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+}
+
+.detail-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+#detail-card-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: calc(env(safe-area-inset-top) + 160px);
+}
 
 .detail-card-inner {
-    width: var(--card-width); max-width: 420px; aspect-ratio: var(--card-ratio); border-radius: var(--card-radius);
+    width: var(--card-width);
+    max-width: 420px;
+    aspect-ratio: var(--card-ratio);
+    border-radius: var(--card-radius);
     box-shadow: var(--ray-shadow-active);
-    isolation: isolate; transform: translate3d(0, 100vh, 0); transition: transform 0.55s var(--spring-release); overflow: hidden; color: var(--card-text-color); text-shadow: var(--text-shadow-subtle);
+    isolation: isolate;
+    transform: translate3d(0, 100vh, 0);
+    transition: transform 0.55s var(--spring-release);
+    overflow: hidden;
+    color: var(--card-text-color);
+    text-shadow: var(--text-shadow-subtle);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
 }
-.detail-overlay.active .detail-card-inner { transform: translate3d(0, 0, 0); }
+
+.detail-overlay.active .detail-card-inner {
+    transform: translate3d(0, 0, 0);
+}
 
 /* ==========================================================================
    互動提示圖標 (Dismiss Icon)
    ========================================================================== */
-   .dismiss-icon {
-    position: fixed; 
-    top: calc(env(safe-area-inset-top) + 100px); 
-    left: 50%; 
-    transform: translateX(-50%); 
-    width: 45px; 
-    height: 30px; 
-    z-index: 2600; 
-    fill: rgba(142, 142, 147, 0.6); 
-    opacity: 0; 
-    visibility: hidden; 
-    pointer-events: none; 
+.dismiss-icon {
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + 100px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 45px;
+    height: 30px;
+    z-index: 2600;
+    fill: rgba(142, 142, 147, 0.6);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
     transition: opacity 1s ease, visibility 0.3s ease;
 
     /* 🟢 真正解決偏左的關鍵：強制讓裡面的 SVG 絕對置中於這個 45px 的容器內！ */
@@ -478,78 +818,123 @@ body.searching .search-mask {
     align-items: center;
 }
 
-@media (prefers-color-scheme: dark) { .dismiss-icon { fill: rgba(174, 174, 178, 0.6); } }
+@media (prefers-color-scheme: dark) {
+    .dismiss-icon {
+        fill: rgba(174, 174, 178, 0.6);
+    }
+}
 
 /* 質感紋理系統 (Texture System) */
 /* ==========================================================================
    靜態高光邊框 (Static Rim) - 全平台防彈版
    ========================================================================== */
-.card::before, .fixed-bottom-card::before, .detail-card-inner::before {
+.card::before,
+.fixed-bottom-card::before,
+.detail-card-inner::before {
     content: "";
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    
+
     /* 1. 退回最安全的 1px 厚度，確保不會被瀏覽器幾何引擎吃掉 */
-    padding: 1px; 
-    
-/* 🟢 完美融合版背景： */
-    background: 
+    padding: 1px;
+
+    /* 🟢 完美融合版背景： */
+    background:
         /* 1. 上層：接收 JS 的智慧透明度，並移除 20% 的截斷點！
            光線會從起點完美、平滑地一路延伸漸淡到 180px 才完全消失！ */
-        linear-gradient(135deg, var(--rim-glare-start, rgba(255,255,255,0.8)) 0%, rgba(255,255,255,0) 180px),
-        
+        linear-gradient(135deg, var(--rim-glare-start, rgba(255, 255, 255, 0.8)) 0%, rgba(255, 255, 255, 0) 180px),
+
         /* 2. 底層：邊緣防護線，精準在底部圓角前消散 (維持不變) */
-        linear-gradient(to bottom, 
-            var(--full-wrap-border, transparent) 0%, 
-            var(--full-wrap-border, transparent) calc(100% - 40px), 
-            transparent calc(100% - 15px)
-        );
-    
+        linear-gradient(to bottom,
+            var(--full-wrap-border, transparent) 0%,
+            var(--full-wrap-border, transparent) calc(100% - 40px),
+            transparent calc(100% - 15px));
+
     /* 3. 【終極解法】禁止使用縮寫！將遮罩屬性徹底拆開，強制所有瀏覽器乖乖聽話 */
     /* WebKit 核心 (Safari, 舊版 Chrome, 手機瀏覽器) */
     -webkit-mask-image: linear-gradient(white, white), linear-gradient(white, white);
     -webkit-mask-clip: content-box, padding-box;
     -webkit-mask-composite: xor;
-    
+
     /* 標準語法 (新版 Chrome, Firefox) */
     mask-image: linear-gradient(white, white), linear-gradient(white, white);
     mask-clip: content-box, padding-box;
     mask-composite: exclude;
-    
+
     z-index: 10;
     pointer-events: none;
     -webkit-clip-path: inset(0 round var(--card-radius));
     clip-path: inset(0 round var(--card-radius));
 }
-.card::after, .fixed-bottom-card::after, .detail-card-inner::after {
-    content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; transition: --glare-angle 0.15s;
+
+.card::after,
+.fixed-bottom-card::after,
+.detail-card-inner::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    transition: --glare-angle 0.15s;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E");
-    
+
     /* 🟢 同色系反光魔法：注入動態算出的顏色 */
     background-color: var(--dynamic-glare, transparent);
 
-    opacity: 0.23; filter: contrast(500%) brightness(500%); mix-blend-mode: overlay;
-    -webkit-mask-image: linear-gradient(var(--glare-angle, 135deg), rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 25%, rgba(0,0,0,0.2) 55%, transparent 75%);
-    mask-image: linear-gradient(var(--glare-angle, 135deg), rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 25%, rgba(0,0,0,0.2) 55%, transparent 75%);
-    background-size: 150px 150px; border-radius: inherit; background-clip: padding-box;
+    opacity: 0.23;
+    filter: contrast(500%) brightness(500%);
+    mix-blend-mode: overlay;
+    -webkit-mask-image: linear-gradient(var(--glare-angle, 135deg), rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.8) 25%, rgba(0, 0, 0, 0.2) 55%, transparent 75%);
+    mask-image: linear-gradient(var(--glare-angle, 135deg), rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.8) 25%, rgba(0, 0, 0, 0.2) 55%, transparent 75%);
+    background-size: 150px 150px;
+    border-radius: inherit;
+    background-clip: padding-box;
     -webkit-clip-path: inset(0 round var(--card-radius));
     clip-path: inset(0 round var(--card-radius));
 }
 
-.card-stack.bounce-back .card::after, .card-stack.bounce-back ~ .fixed-bottom-card::after { transition: --glare-angle 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
-
-@media (prefers-color-scheme: dark) {
-    .card, .fixed-bottom-card, .detail-card-inner { filter: saturate(1.3) brightness(1.15); }
-    body.searching .fixed-bottom-card { filter: blur(var(--bg-content-blur)) saturate(1.3) brightness(1.15); }
-    .card-stack.has-active ~ .fixed-bottom-card { filter: blur(10px) saturate(1.3) brightness(1.15); }
-    
-    /* 🟢 已經把 .card::before 的 0.06 opacity 限制整行刪除了！讓高光解放出來！ */
-    
-    .card::after, .fixed-bottom-card::after, .detail-card-inner::after { mix-blend-mode: hard-light !important; opacity: 0.09 !important; }
+.card-stack.bounce-back .card::after,
+.card-stack.bounce-back~.fixed-bottom-card::after {
+    transition: --glare-angle 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.card-content, .card-header, .line-name, .status-tag { position: relative; z-index: 2; }
+@media (prefers-color-scheme: dark) {
+
+    .card,
+    .fixed-bottom-card,
+    .detail-card-inner {
+        filter: saturate(1.3) brightness(1.15);
+    }
+
+    body.searching .fixed-bottom-card {
+        filter: blur(var(--bg-content-blur)) saturate(1.3) brightness(1.15);
+    }
+
+    .card-stack.has-active~.fixed-bottom-card {
+        filter: blur(10px) saturate(1.3) brightness(1.15);
+    }
+
+    /* 🟢 已經把 .card::before 的 0.06 opacity 限制整行刪除了！讓高光解放出來！ */
+
+    .card::after,
+    .fixed-bottom-card::after,
+    .detail-card-inner::after {
+        mix-blend-mode: hard-light !important;
+        opacity: 0.09 !important;
+    }
+}
+
+.card-content,
+.card-header,
+.line-name,
+.status-tag {
+    position: relative;
+    z-index: 2;
+}
 
 /* =========================================
    🟢 終極 Z 軸景深魔法 (True Depth of Field)
@@ -572,9 +957,9 @@ body:has(.detail-overlay.active):has(.universal-window.is-active) .card-stack,
 body:has(.detail-overlay.active).searching .card-stack {
     /* 空間數學疊加：scale(0.9 * 0.9 = 0.81), translateY(15 + 15 = 30px) */
     transform: scale(0.81) translateY(30px) !important;
-    
+
     /* 🟢 核心修復 2：疊加狀態必須繼承原本的 blur(10px)，避免 filter 屬性覆蓋導致瞬間變清晰 */
-    filter: blur(10px) brightness(0.5) !important; 
+    filter: blur(10px) brightness(0.5) !important;
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
@@ -583,18 +968,18 @@ body.menu-active #detail-card-container,
 body:has(.left-circle-btn.is-expanded) #detail-card-container,
 body:has(.universal-window.is-active) #detail-card-container,
 body.searching #detail-card-container,
-body.menu-active #dynamic-blank-overlay > .perspective-container,
-body:has(.left-circle-btn.is-expanded) #dynamic-blank-overlay > .perspective-container,
-body:has(.universal-window.is-active) #dynamic-blank-overlay > .perspective-container,
-body.searching #dynamic-blank-overlay > .perspective-container {
+body.menu-active #dynamic-blank-overlay>.perspective-container,
+body:has(.left-circle-btn.is-expanded) #dynamic-blank-overlay>.perspective-container,
+body:has(.universal-window.is-active) #dynamic-blank-overlay>.perspective-container,
+body.searching #dynamic-blank-overlay>.perspective-container {
     transform: scale(0.90) translateY(15px) !important;
     pointer-events: none !important;
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* 確保容器本身平時有平滑的恢復動畫 */
-#detail-card-container, 
-#dynamic-blank-overlay > .perspective-container {
+#detail-card-container,
+#dynamic-blank-overlay>.perspective-container {
     transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -607,9 +992,9 @@ body.menu-active .search-trigger,
 body:has(.left-circle-btn.is-expanded) .search-trigger,
 body:has(.universal-window.is-active) .search-trigger {
     transform: scale(0.90) translateY(15px) !important;
-    opacity: 0 !important; 
+    opacity: 0 !important;
     pointer-events: none !important;
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease !important; 
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease !important;
 }
 
 /* 2. 膠囊按鈕：當漢堡選單、通用彈窗、或【詳情卡片】開啟時，往後沉並淡出 */
@@ -617,7 +1002,7 @@ body.menu-active .action-capsule,
 body:has(.left-circle-btn.is-expanded) .action-capsule,
 body:has(.universal-window.is-active) .action-capsule {
     transform: translateY(-50%) scale(0.90) translateY(15px) !important;
-    opacity: 0 !important; 
+    opacity: 0 !important;
     pointer-events: none !important;
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease !important;
 }
@@ -625,7 +1010,7 @@ body:has(.universal-window.is-active) .action-capsule {
 /* 3. 漢堡按鈕：當通用彈窗開啟時，往後沉並淡出 */
 body:has(.universal-window.is-active) .left-circle-btn {
     transform: scale(0.90) translateY(15px) !important;
-    opacity: 0 !important; 
+    opacity: 0 !important;
     pointer-events: none !important;
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease !important;
 }
@@ -644,6 +1029,7 @@ body.searching .dismiss-icon {
 .card-stack {
     transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
 /* ========================================== */
 /* 「慢速回彈」 */
 /* ========================================== */
@@ -654,14 +1040,14 @@ body.searching .dismiss-icon {
 }
 
 /* 2. 🟢 確保卡片的間距 (margin) 縮放也跟著變慢，維持完美同步 */
-.card-stack.bounce-back-wheel .card { 
-    transition: margin 0.85s cubic-bezier(0.16, 1, 0.3, 1) !important; 
+.card-stack.bounce-back-wheel .card {
+    transition: margin 0.85s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* 3. 確保光影動畫也跟著變慢，保持同步 */
-.card-stack.bounce-back-wheel .card::after, 
-.card-stack.bounce-back-wheel ~ .fixed-bottom-card::after { 
-    transition: --glare-angle 0.85s cubic-bezier(0.16, 1, 0.3, 1); 
+.card-stack.bounce-back-wheel .card::after,
+.card-stack.bounce-back-wheel~.fixed-bottom-card::after {
+    transition: --glare-angle 0.85s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ==========================================================================
@@ -671,24 +1057,41 @@ body.searching .dismiss-icon {
 /* 1. 提供 3D 空間透視深度 */
 .perspective-container {
     perspective: 1500px !important;
-    position: relative; 
+    position: relative;
 }
 
 /* 🟢 光影分離層：下方景深陰影 (完美對齊原始陰影的擴散程度與顏色強度) */
 .perspective-container::after {
-    content: ''; position: absolute; bottom: -20px; left: 10%; width: 80%; height: 40px;
-    background: rgba(0, 0, 0, 0.2); border-radius: 50%; filter: blur(20px);
-    opacity: 0; pointer-events: none; z-index: -1;
+    content: '';
+    position: absolute;
+    bottom: -20px;
+    left: 10%;
+    width: 80%;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    filter: blur(20px);
+    opacity: 0;
+    pointer-events: none;
+    z-index: -1;
     /* 配合實體陰影的淡出，進行完美線性交接 */
     transition: opacity 0.3s linear;
 }
 
 /* 🟢 光影分離層：上方景深陰影 (降低強度避免突兀) */
 .perspective-container::before {
-    content: ''; position: absolute; top: -20px; left: 10%; width: 80%; height: 40px;
-    background: radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 70%);
-    border-radius: 50%; filter: blur(15px);
-    opacity: 0; pointer-events: none; z-index: -1;
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: 10%;
+    width: 80%;
+    height: 40px;
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+    border-radius: 50%;
+    filter: blur(15px);
+    opacity: 0;
+    pointer-events: none;
+    z-index: -1;
     transition: opacity 0.3s linear;
 }
 
@@ -709,17 +1112,17 @@ body.searching .dismiss-icon {
 /* 2. 第一半段：原卡片翻出去 (0度 -> 90度) */
 .detail-card-inner.flip-out {
     transform: scale(1) rotateY(90deg) !important;
-    
+
     /* 🔴 終極修復：維持 20px 位移與 40px 模糊，只將顏色設為透明。這樣陰影會原地淡出，絕對不會突然抽走縮小！ */
-    box-shadow: 0 20px 40px rgba(0,0,0,0) !important; 
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0) !important;
     /* 🔴 改用 linear 讓淡出與替身陰影的淡入完美互補 */
     transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), box-shadow 0.3s linear !important;
     pointer-events: none;
 }
 
 /* 3. 第一半段防破圖：內容物提早線性淡出 */
-.detail-card-inner.flip-out > .card-header,
-.detail-card-inner.flip-out > .card-content {
+.detail-card-inner.flip-out>.card-header,
+.detail-card-inner.flip-out>.card-content {
     opacity: 0 !important;
     transition: opacity 0.15s linear !important;
 }
@@ -730,8 +1133,9 @@ body.searching .dismiss-icon {
     box-shadow: var(--ray-shadow-active) !important;
     transition: transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1), box-shadow 0.3s linear !important;
 }
-.detail-card-inner.flip-back-in > .card-header,
-.detail-card-inner.flip-back-in > .card-content {
+
+.detail-card-inner.flip-back-in>.card-header,
+.detail-card-inner.flip-back-in>.card-content {
     opacity: 1 !important;
     transition: opacity 0.2s linear 0.1s !important;
 }
@@ -740,10 +1144,11 @@ body.searching .dismiss-icon {
 .detail-card-inner.flip-in-start {
     transform: scale(1) rotateY(-90deg) !important;
     /* 維持幾何形狀，透明度歸零 */
-    box-shadow: 0 20px 40px rgba(0,0,0,0) !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0) !important;
     transition: none !important;
 }
-.detail-card-inner.flip-in-start > * {
+
+.detail-card-inner.flip-in-start>* {
     opacity: 0 !important;
     transition: none !important;
 }
@@ -754,7 +1159,8 @@ body.searching .dismiss-icon {
     box-shadow: var(--ray-shadow-active) !important;
     transition: transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1), box-shadow 0.3s linear !important;
 }
-.detail-card-inner.flip-in-active > * {
+
+.detail-card-inner.flip-in-active>* {
     opacity: 1 !important;
     transition: opacity 0.2s linear 0.1s !important;
 }
@@ -763,11 +1169,12 @@ body.searching .dismiss-icon {
 .detail-card-inner.flip-out-reverse {
     transform: scale(1) rotateY(-90deg) !important;
     /* 退場原地淡出 */
-    box-shadow: 0 20px 40px rgba(0,0,0,0) !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0) !important;
     transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), box-shadow 0.3s linear !important;
     pointer-events: none;
 }
-.detail-card-inner.flip-out-reverse > * {
+
+.detail-card-inner.flip-out-reverse>* {
     opacity: 0 !important;
     transition: opacity 0.15s linear !important;
 }
@@ -775,10 +1182,11 @@ body.searching .dismiss-icon {
 /* 8. [關閉] 第二半段：原卡片強制 90 度起跑點 */
 .detail-card-inner.flip-back-start {
     transform: scale(1) rotateY(90deg) !important;
-    box-shadow: 0 20px 40px rgba(0,0,0,0) !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0) !important;
     transition: none !important;
 }
-.detail-card-inner.flip-back-start > * {
+
+.detail-card-inner.flip-back-start>* {
     opacity: 0 !important;
     transition: none !important;
 }
@@ -789,11 +1197,13 @@ body.searching .dismiss-icon {
     box-shadow: var(--ray-shadow-active) !important;
     transition: transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1), box-shadow 0.3s linear !important;
 }
-.detail-card-inner.flip-back-active > .card-header,
-.detail-card-inner.flip-back-active > .card-content {
+
+.detail-card-inner.flip-back-active>.card-header,
+.detail-card-inner.flip-back-active>.card-content {
     opacity: 1 !important;
     transition: opacity 0.2s linear 0.25s !important;
 }
+
 /* ==========================================================================
    🟢 全站 SVG 骨架圖示：終極控制中心 (!important 強制覆蓋版)
    ========================================================================== */
@@ -801,41 +1211,70 @@ body.searching .dismiss-icon {
 /* 1. 【全局基礎設定：強制轉為骨架型與尺寸】
    作用範圍：包含上面找出的 3 個 X 關閉按鈕，以及搜尋放大鏡、膠囊按鈕。
 */
-.search-icon svg           /* 頂部搜尋列 (放大鏡) */
-{
-    fill: none !important;               /* 清除實體填色，確保為純線條 */
-    stroke: currentColor !important;     /* 線條顏色繼承父元素 */
-    stroke-linecap: round !important;    /* 線條端點圓角 */
-    stroke-linejoin: round !important;   /* 線條交界圓角 */
-    pointer-events: none !important;     /* 拔除觸控干擾，讓點擊穿透到按鈕本體 */
-    
-    width: 23px !important;              /* 預設統一寬度 */
-    height: 23px !important;             /* 預設統一高度 */
-    stroke-width: 2px !important;      /* 預設統一粗細 (1.8px 呈現最佳 iOS 質感) */
+.search-icon svg
+
+/* 頂部搜尋列 (放大鏡) */
+    {
+    fill: none !important;
+    /* 清除實體填色，確保為純線條 */
+    stroke: currentColor !important;
+    /* 線條顏色繼承父元素 */
+    stroke-linecap: round !important;
+    /* 線條端點圓角 */
+    stroke-linejoin: round !important;
+    /* 線條交界圓角 */
+    pointer-events: none !important;
+    /* 拔除觸控干擾，讓點擊穿透到按鈕本體 */
+
+    width: 23px !important;
+    /* 預設統一寬度 */
+    height: 23px !important;
+    /* 預設統一高度 */
+    stroke-width: 2px !important;
+    /* 預設統一粗細 (1.8px 呈現最佳 iOS 質感) */
 }
 
-.cancel-circle-btn svg,     /* 搜尋列展開時的右側 (取消X) */
-.capsule-btn-item svg,      /* 右上角膠囊按鈕 (包含加號與 ⋯ ) */
-#dismiss-icon svg           /* 詳情卡片展開時的右上角 (下拉關閉X) */
-{
-    fill: none !important;               /* 清除實體填色，確保為純線條 */
-    stroke: currentColor !important;     /* 線條顏色繼承父元素 */
-    stroke-linecap: round !important;    /* 線條端點圓角 */
-    stroke-linejoin: round !important;   /* 線條交界圓角 */
-    pointer-events: none !important;     /* 拔除觸控干擾，讓點擊穿透到按鈕本體 */
+.cancel-circle-btn svg,
+/* 搜尋列展開時的右側 (取消X) */
+.capsule-btn-item svg,
+/* 右上角膠囊按鈕 (包含加號與 ⋯ ) */
+#dismiss-icon svg
+
+/* 詳情卡片展開時的右上角 (下拉關閉X) */
+    {
+    fill: none !important;
+    /* 清除實體填色，確保為純線條 */
+    stroke: currentColor !important;
+    /* 線條顏色繼承父元素 */
+    stroke-linecap: round !important;
+    /* 線條端點圓角 */
+    stroke-linejoin: round !important;
+    /* 線條交界圓角 */
+    pointer-events: none !important;
+    /* 拔除觸控干擾，讓點擊穿透到按鈕本體 */
 }
 
-.left-circle-btn svg       /* 左上角選單按鈕 (包含漢堡/鈴鐺 與 關閉X) */
-{
-    fill: none !important;               /* 清除實體填色，確保為純線條 */
-    stroke: currentColor !important;     /* 線條顏色繼承父元素 */
-    stroke-linecap: round !important;    /* 線條端點圓角 */
-    stroke-linejoin: round !important;   /* 線條交界圓角 */
-    pointer-events: none !important;     /* 拔除觸控干擾，讓點擊穿透到按鈕本體 */
-    
-    width: 21px !important;              /* 預設統一寬度 */
-    height: 21px !important;             /* 預設統一高度 */
-    stroke-width: 1.8px !important;      /* 預設統一粗細 (1.8px 呈現最佳 iOS 質感) */
+.left-circle-btn svg
+
+/* 左上角選單按鈕 (包含漢堡/鈴鐺 與 關閉X) */
+    {
+    fill: none !important;
+    /* 清除實體填色，確保為純線條 */
+    stroke: currentColor !important;
+    /* 線條顏色繼承父元素 */
+    stroke-linecap: round !important;
+    /* 線條端點圓角 */
+    stroke-linejoin: round !important;
+    /* 線條交界圓角 */
+    pointer-events: none !important;
+    /* 拔除觸控干擾，讓點擊穿透到按鈕本體 */
+
+    width: 21px !important;
+    /* 預設統一寬度 */
+    height: 21px !important;
+    /* 預設統一高度 */
+    stroke-width: 1.8px !important;
+    /* 預設統一粗細 (1.8px 呈現最佳 iOS 質感) */
 }
 
 /* 2. 【透明度強制統一】
@@ -852,12 +1291,22 @@ body.searching .dismiss-icon {
    所以我們針對狀態，用 !important 決定誰該顯示、誰該隱藏。
 */
 /* 狀態一：未展開時 (顯示漢堡/鈴鐺，隱藏 X) */
-.left-circle-btn:not(.is-expanded) .icon-hamburger { opacity: 0.8 !important; }
-.left-circle-btn:not(.is-expanded) .icon-close { opacity: 0 !important; }
+.left-circle-btn:not(.is-expanded) .icon-hamburger {
+    opacity: 0.8 !important;
+}
+
+.left-circle-btn:not(.is-expanded) .icon-close {
+    opacity: 0 !important;
+}
 
 /* 狀態二：展開時 (隱藏漢堡/鈴鐺，顯示 X) */
-.left-circle-btn.is-expanded .icon-hamburger { opacity: 0 !important; }
-.left-circle-btn.is-expanded .icon-close { opacity: 0.8 !important; }
+.left-circle-btn.is-expanded .icon-hamburger {
+    opacity: 0 !important;
+}
+
+.left-circle-btn.is-expanded .icon-close {
+    opacity: 0.8 !important;
+}
 
 /* ==========================================================================
    🟢 獨立微調區 (針對個別按鈕的視覺體積平衡)
@@ -867,10 +1316,12 @@ body.searching .dismiss-icon {
    實際位置：右上角膠囊右側
 */
 .capsule-btn-item:not(.main-btn) svg {
-    width: 20px !important; 
+    width: 20px !important;
     height: 20px !important;
-    stroke-width: 1.5px !important; /* 單獨稍微加粗，讓點點更飽滿清晰 */
+    stroke-width: 1.5px !important;
+    /* 單獨稍微加粗，讓點點更飽滿清晰 */
 }
+
 /* 🟢 針對 ⋯ 圖示：強制將裡面的圓形填滿實心色，解決中空問題 */
 .capsule-btn-item:not(.main-btn) svg circle {
     fill: currentColor !important;
@@ -880,18 +1331,23 @@ body.searching .dismiss-icon {
    實際位置：右上角膠囊左側
 */
 .capsule-btn-item.main-btn svg {
-    width: 25px !important; 
+    width: 25px !important;
     height: 25px !important;
     stroke-width: 1.7px !important;
 }
+
 /* 微調 B-2：新增的「調色盤」圖示 (預設隱藏)
    實際位置：右上角膠囊左側
 */
 .capsule-btn-item svg.lucide-palette {
-    width: 22px !important;          /* 獨立控制調色盤的寬度 */
-    height: 22px !important;         /* 獨立控制調色盤的高度 */
-    stroke-width: 1.8px !important;  /* 獨立控制調色盤的線條粗細 */
+    width: 22px !important;
+    /* 獨立控制調色盤的寬度 */
+    height: 22px !important;
+    /* 獨立控制調色盤的高度 */
+    stroke-width: 1.8px !important;
+    /* 獨立控制調色盤的線條粗細 */
 }
+
 /* 🟢 確保調色盤上面的顏料圓點保持實心色，不會被全局設定變透明 */
 .capsule-btn-item svg.lucide-palette circle {
     fill: currentColor !important;
@@ -901,79 +1357,101 @@ body.searching .dismiss-icon {
    實際位置：右上角膠囊右側
 */
 .capsule-btn-item svg.lucide-external-link {
-    width: 22px !important;          /* 獨立控制外部連結的寬度 */
-    height: 22px !important;         /* 獨立控制外部連結的高度 */
-    stroke-width: 1.8px !important;  /* 獨立控制外部連結的線條粗細 */
+    width: 22px !important;
+    /* 獨立控制外部連結的寬度 */
+    height: 22px !important;
+    /* 獨立控制外部連結的高度 */
+    stroke-width: 1.8px !important;
+    /* 獨立控制外部連結的線條粗細 */
 }
 
 /* 微調 B-4：空白模式的「返回 (左箭頭)」圖示
    實際位置：空白模式展開時的膠囊左側
 */
 .capsule-btn-item svg.lucide-chevron-left {
-    width: 28px !important;          /* 控制箭頭寬度 */
-    height: 28px !important;         /* 控制箭頭高度 */
-    stroke-width: 1.7px !important;  /* 箭頭線條可以稍微粗一點，更有安全感 */
-    transform: translateX(-1px) !important; /* 視覺重心微調：稍微往左靠一點點會更置中 */
+    width: 28px !important;
+    /* 控制箭頭寬度 */
+    height: 28px !important;
+    /* 控制箭頭高度 */
+    stroke-width: 1.7px !important;
+    /* 箭頭線條可以稍微粗一點，更有安全感 */
+    transform: translateX(-1px) !important;
+    /* 視覺重心微調：稍微往左靠一點點會更置中 */
 }
 
 /* 微調 B-5：空白模式的「雲端下載」圖示
    實際位置：空白模式展開時的膠囊右側
 */
 .capsule-btn-item svg.lucide-cloud-download {
-    width: 21px !important;          /* 控制下載圖示寬度 */
-    height: 21px !important;         /* 控制下載圖示高度 */
-    stroke-width: 1.8px !important;  /* 控制下載圖示的線條粗細 */
-    transform: translateY(0px) !important; /* 預留這個參數：未來如果覺得它偏高或偏低，可以改這裡 (例如 1px 或 -1px) */
+    width: 21px !important;
+    /* 控制下載圖示寬度 */
+    height: 21px !important;
+    /* 控制下載圖示高度 */
+    stroke-width: 1.8px !important;
+    /* 控制下載圖示的線條粗細 */
+    transform: translateY(0px) !important;
+    /* 預留這個參數：未來如果覺得它偏高或偏低，可以改這裡 (例如 1px 或 -1px) */
 }
 
 /* 微調 C：搜尋狀態下的取消按鈕 (X)
    實際位置：搜尋列展開後的右方圓形按鈕內
 */
 .cancel-circle-btn svg {
-    width: 24px !important; /* 配合較小的圓形背景外框稍微縮小 */
+    width: 24px !important;
+    /* 配合較小的圓形背景外框稍微縮小 */
     height: 24px !important;
     stroke-width: 1.5px !important;
-    opacity: 0.9 !important;      /* 👈 在這裡獨立控制透明度 (數值可自行修改) */
+    opacity: 0.9 !important;
+    /* 👈 在這裡獨立控制透明度 (數值可自行修改) */
 }
 
 /* 微調 D：卡片專屬的關閉按鈕
    實際位置：詳情卡片點開後，置頂的下拉提示
 */
 #dismiss-icon svg {
-    width: 28px !important; /* 畫面放大，增加視覺引導 */
+    width: 28px !important;
+    /* 畫面放大，增加視覺引導 */
     height: 28px !important;
     stroke-width: 2px !important;
 }
 
 /* 微調 E：左上角漢堡選單的關閉按鈕 (X) 獨立控制 */
 .left-circle-btn svg.icon-close {
-    width: 26px !important;         
-    height: 26px !important;        
-    stroke-width: 1.8px !important; 
-    
+    width: 26px !important;
+    height: 26px !important;
+    stroke-width: 1.8px !important;
+
     /* 🟢 核心修復 2：鎖死縮放中心點，防止手機端放大動畫時發生飄移 */
-    transform-origin: center center !important; 
-    
+    transform-origin: center center !important;
+
     /* 把剛剛的 margin 刪除，讓高解析度手機螢幕回歸絕對物理置中 */
 }
 
 /* ==========================================================================
    🟢 頂部導航列微互動 (Hover & Touch Scale)
    ========================================================================== */
-   .left-circle-btn, .menu-close-btn, .search-trigger, .action-capsule, .cancel-circle-btn {
-    scale: 1; /* 獨立於 transform 之外的縮放引擎 */
+.left-circle-btn,
+.menu-close-btn,
+.search-trigger,
+.action-capsule,
+.cancel-circle-btn {
+    scale: 1;
+    /* 獨立於 transform 之外的縮放引擎 */
 }
 
 /* 1. 桌面版滑鼠 Hover 狀態 */
 @media (any-hover: hover) {
+
     /* 當展開成大視窗時不觸發放大 */
     .left-circle-btn:not(.is-expanded):hover,
     .menu-close-btn:hover,
-    .search-container:not(.active) .search-trigger:hover,  /* 🟢 修改這裡：搜尋框展開時不放大 */
+    .search-container:not(.active) .search-trigger:hover,
+    /* 🟢 修改這裡：搜尋框展開時不放大 */
     .action-capsule:not(.menu-expanded):hover,
     .cancel-circle-btn:hover {
         scale: 1.05;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important; /* 輕微加深陰影增強浮出感 */
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+        /* 輕微加深陰影增強浮出感 */
     }
 }
 
@@ -991,9 +1469,9 @@ body.searching .dismiss-icon {
 html.is-android-blink .card::after,
 html.is-android-blink .fixed-bottom-card::after,
 html.is-android-blink .detail-card-inner::after {
-    background-image: none !important; 
-    filter: none !important; 
-    opacity: 0.65 !important; 
+    background-image: none !important;
+    filter: none !important;
+    opacity: 0.65 !important;
 }
 
 /* 2. ⚡ 互動瞬間 (拖曳/縮放/回彈)：暫時拔除 GPU 殺手，徹底消滅切塊閃爍 */
@@ -1004,9 +1482,9 @@ html.is-android-blink .card-stack.bounce-back-wheel .card::after {
     mix-blend-mode: normal !important;
     -webkit-mask-image: none !important;
     mask-image: none !important;
-    
+
     /* 替換成極度輕量的純色微光，維持卡片層次感但保證 0 運算負擔 */
-    background-color: rgba(255, 255, 255, 0.08) !important; 
+    background-color: rgba(255, 255, 255, 0.08) !important;
     opacity: 1 !important;
     transition: none !important;
 }
@@ -1024,7 +1502,7 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
    🟢 殭屍殘影封殺力場 (Zombie Flash Killer)
    ========================================================================== */
 /* 加入 ~ 符號，告訴瀏覽器 dismiss-icon 是在 detail-overlay 之後的兄弟元素 */
-#detail-overlay:not(.active) ~ #dismiss-icon {
+#detail-overlay:not(.active)~#dismiss-icon {
     opacity: 0 !important;
     visibility: hidden !important;
     transition: none !important;
@@ -1033,7 +1511,7 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 /* ==========================================================================
    裝置方向控制 (Landscape Prompt) - 階層式淡出高質感版
    ========================================================================== */
-   #landscape-prompt {
+#landscape-prompt {
     /* 1. 拔除 display: none，改用 opacity 控制，讓它能夠吃動畫 */
     display: flex;
     opacity: 0;
@@ -1044,7 +1522,8 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: var(--bg-color); /* 自動適應黑/白主題 */
+    background: var(--bg-color);
+    /* 自動適應黑/白主題 */
     color: var(--text-main);
     z-index: 999999;
     flex-direction: column;
@@ -1053,8 +1532,18 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
     text-align: center;
     padding: 40px;
 
-    /* 🟢 轉回直向 (退場) 的動畫：
-       背景「等待 0.4 秒」後，才花 0.6 秒慢慢淡出，總時長剛好 1 秒 */
+    /* 🟢 新增：封殺所有手勢與選取動作 */
+    touch-action: none !important;
+    /* 絕對禁止任何滑動與原生縮放 */
+    overscroll-behavior: none !important;
+    /* 禁止 iOS 邊緣回彈 (Rubber-banding) */
+    -webkit-user-select: none !important;
+    /* 禁止游標或手指選取文字 */
+    user-select: none !important;
+    -webkit-touch-callout: none !important;
+    /* 禁止長按呼叫系統選單 (如存圖、複製) */
+
+    /* 🟢 轉回直向 (退場) 的動畫 */
     transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s, visibility 0s 1s;
 }
 
@@ -1087,9 +1576,17 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 }
 
 @keyframes rotatePhone {
-    0% { transform: rotate(-90deg); }
-    50% { transform: rotate(0deg); }
-    100% { transform: rotate(-90deg); }
+    0% {
+        transform: rotate(-90deg);
+    }
+
+    50% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(-90deg);
+    }
 }
 
 /* 偵測條件：觸控設備 + 橫向 + 高度低於 600px */
@@ -1110,12 +1607,15 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
     }
 
     .landscape-desc {
-        opacity: 0.7 !important; /* 恢復原本半透明的設計 */
+        opacity: 0.7 !important;
+        /* 恢復原本半透明的設計 */
         transition: opacity 0.3s ease 0.1s !important;
     }
 
-    #app-stage, #detail-overlay, .search-mask {
-        display: none !important; 
+    #app-stage,
+    #detail-overlay,
+    .search-mask {
+        display: none !important;
     }
 }
 
@@ -1125,14 +1625,18 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 
 /* 🟢 只在支援精細滑鼠的設備上啟用 (徹底排除手機與平板，保護效能) */
 @media (pointer: fine) {
+
     /* 抹除全站「所有」元素的預設游標，並針對 Chrome Shadow DOM 進行穿透打擊！ */
-    *, *::before, *::after,
-    input, textarea,
+    *,
+    *::before,
+    *::after,
+    input,
+    textarea,
     input::-webkit-search-cancel-button,
     input::-webkit-search-decoration,
     input::-webkit-search-results-button,
-    input::-webkit-search-results-decoration { 
-        cursor: none !important; 
+    input::-webkit-search-results-decoration {
+        cursor: none !important;
     }
 
     /* 自訂游標本體 */
@@ -1143,14 +1647,17 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        background-color: #ffffff; /* 搭配 difference，白點會自動轉換成底圖的反轉色 */
-        pointer-events: none; /* 絕對不能擋住滑鼠點擊 */
+        background-color: #ffffff;
+        /* 搭配 difference，白點會自動轉換成底圖的反轉色 */
+        pointer-events: none;
+        /* 絕對不能擋住滑鼠點擊 */
         z-index: 99999;
-        mix-blend-mode: difference; /* 核心魔法：色彩反轉疊加 */
-        
+        mix-blend-mode: difference;
+        /* 核心魔法：色彩反轉疊加 */
+
         /* 提示瀏覽器將游標推入 GPU 運算層，保證極致滑順 */
-        will-change: transform; 
-        
+        will-change: transform;
+
         /* 點擊時的縮放動畫 */
         transition: width 0.15s ease-out, height 0.15s ease-out;
     }

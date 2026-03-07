@@ -1460,3 +1460,33 @@ function initCustomCursor() {
 }
 
 document.addEventListener('DOMContentLoaded', initCustomCursor);
+
+// ============================================================================
+// 🟢 橫向畫面 (Landscape Prompt) 絕對鎖死防護網
+// ============================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    const landscapePrompt = document.getElementById('landscape-prompt');
+    if (landscapePrompt) {
+        // 1. 禁止任何滑動行為 (徹底防止畫面被拖走)
+        landscapePrompt.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        }, { passive: false });
+
+        // 2. 禁止多指觸控 (防止 Safari 強制雙指放大縮小)
+        landscapePrompt.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // 3. 禁止連點雙擊 (防止雙擊放大畫面)
+        landscapePrompt.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+        });
+
+        // 4. 禁止長按右鍵 (防止跳出系統選單)
+        landscapePrompt.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+    }
+});
