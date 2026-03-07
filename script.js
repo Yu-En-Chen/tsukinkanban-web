@@ -1359,7 +1359,6 @@ window.closeBlankOverlay = function(skipCapsuleAnimation = false) {
     }, 300); 
 };
 
-
 window.closeBlankOverlay = function() {
     const overlay = document.getElementById('dynamic-blank-overlay');
     const blankCard = overlay ? overlay.querySelector('.detail-card-inner') : null;
