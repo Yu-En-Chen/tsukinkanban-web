@@ -1,8 +1,8 @@
 // script.js - 主 UI 邏輯與狀態控制 (動畫與 History API 修正版)
 
 import { bottomCardConfig, railwayData } from './data.js';
-import { initPhysics } from './physics.js'; 
-import { initHeader } from './header.js'; 
+import { initPhysics } from './physics.js';
+import { initHeader } from './header.js';
 import { getAllUserPreferences } from './db.js'; // 🟢 引入 IndexedDB 引擎
 
 // 🟢 宣告全域變數，作為整個 App 實際渲染、搜尋、點擊的唯一資料來源
@@ -17,8 +17,8 @@ if (/Android/i.test(ua) && /Chrome/i.test(ua)) {
 // 狀態旗標
 let isInitialLoad = true;
 let isAnimating = false;
-let liftTimer = null; 
-let activeCardId = null; 
+let liftTimer = null;
+let activeCardId = null;
 
 // ============================================================================
 // 🟢 色彩學與動態適應引擎 (Adaptive UI Engine)
@@ -26,8 +26,8 @@ let activeCardId = null;
 
 function hexToRgb(hex) {
     let c = hex.replace('#', '');
-    if(c.length === 3) c = c.split('').map(x => x+x).join('');
-    return { r: parseInt(c.substring(0,2), 16), g: parseInt(c.substring(2,4), 16), b: parseInt(c.substring(4,6), 16) };
+    if (c.length === 3) c = c.split('').map(x => x + x).join('');
+    return { r: parseInt(c.substring(0, 2), 16), g: parseInt(c.substring(2, 4), 16), b: parseInt(c.substring(4, 6), 16) };
 }
 
 function rgbToHsl(r, g, b) {
@@ -52,7 +52,7 @@ function getDynamicTheme(hex, opacity = 1) {
     const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
 
     const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
-    const isLight = luminance > 0.55; 
+    const isLight = luminance > 0.55;
 
     // 🟢 動態漸層幅度分配 (加入極端純黑/純白處理)
     let topShift = 17;
@@ -99,30 +99,30 @@ function getDynamicTheme(hex, opacity = 1) {
     const lTop = Math.min(100, hsl.l + topShift);
     const lBottom = Math.max(0, hsl.l - bottomShift);
 
-    const gradient = opacity < 1 
+    const gradient = opacity < 1
         ? `linear-gradient(135deg, hsla(${hsl.h}, ${hsl.s}%, ${lTop}%, ${opacity}), hsla(${hsl.h}, ${hsl.s}%, ${lBottom}%, ${opacity}))`
         : `linear-gradient(135deg, hsl(${hsl.h}, ${hsl.s}%, ${lTop}%), hsl(${hsl.h}, ${hsl.s}%, ${lBottom}%))`;
 
     // 🟢 1. 宣告新增的光影變數：glareColor (反光色), innerGlow (微光層)
     let textColor, textSecondary, borderColor, tagBg, textShadow;
     let textBgGradientSecondary, textBgGradientTag, textClip, textFill;
-    let glareColor, innerGlow; 
+    let glareColor, innerGlow;
 
     if (isLight) {
-        const textS = hsl.s > 5 ? 100 : 0; 
-        const textL = 35; 
+        const textS = hsl.s > 5 ? 100 : 0;
+        const textL = 35;
 
         textColor = `hsl(${hsl.h}, ${textS}%, ${textL}%)`;
-        textSecondary = `hsl(${hsl.h}, ${textS}%, ${textL + 5}%)`; 
+        textSecondary = `hsl(${hsl.h}, ${textS}%, ${textL + 5}%)`;
         borderColor = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.35)`;
         tagBg = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.15)`;
         textShadow = `0 1px 1px hsla(${hsl.h}, ${textS}%, ${textL - 10}%, 0.2)`;
 
         const textLTop = textL;
-        const textLBottom = Math.max(0, textL - 12); 
+        const textLBottom = Math.max(0, textL - 12);
         textBgGradientSecondary = `linear-gradient(135deg, hsl(${hsl.h}, ${textS}%, ${textLTop + 5}%), hsl(${hsl.h}, ${textS}%, ${textLBottom + 5}%))`;
-        
-        textBgGradientTag = 'none'; 
+
+        textBgGradientTag = 'none';
         textClip = 'text';
         textFill = 'transparent';
 
@@ -132,16 +132,16 @@ function getDynamicTheme(hex, opacity = 1) {
         glareColor = `hsla(${hsl.h}, ${hsl.s}%, 96%, 0.35)`;
         innerGlow = `inset 0 1px 1px hsla(${hsl.h}, ${Math.max(30, hsl.s)}%, 100%, 0.45)`;
         const glowS = hsl.s < 5 ? 0 : Math.max(30, hsl.s);
-        
+
         glareColor = `hsla(${hsl.h}, ${hsl.s}%, 96%, 0.35)`;
         innerGlow = `inset 0 1px 1px hsla(${hsl.h}, ${glowS}%, 100%, 0.45)`;
-    }else {
+    } else {
         textColor = '#ffffff';
         textSecondary = 'rgba(255, 255, 255, 0.8)';
         borderColor = 'rgba(255, 255, 255, 0.12)';
         tagBg = 'rgba(255, 255, 255, 0.15)';
         textShadow = '0 1px 2px rgba(0, 0, 0, 0.2)';
-        
+
         textBgGradientSecondary = 'none';
         textBgGradientTag = 'none';
         textClip = 'border-box';
@@ -167,7 +167,7 @@ function getDynamicTheme(hex, opacity = 1) {
 // 🟢 封裝主題套用器：安全且獨立地渲染每一張卡片，絕不互相干擾
 function applyThemeToCard(cardElement, hex, opacity = 1) {
     const theme = getDynamicTheme(hex, opacity);
-    
+
     if (opacity < 1) {
         cardElement.style.setProperty('--fixed-bg', theme.gradient);
     } else {
@@ -179,7 +179,7 @@ function applyThemeToCard(cardElement, hex, opacity = 1) {
     cardElement.style.setProperty('--border-color', theme.borderColor, 'important');
     cardElement.style.setProperty('--tag-bg', theme.tagBg, 'important');
     cardElement.style.setProperty('--text-shadow-subtle', theme.textShadow, 'important');
-    
+
     // 🟢 注入詳細文字專用的漸層引擎變數
     cardElement.style.setProperty('--text-bg-gradient-secondary', theme.textBgGradientSecondary, 'important');
     cardElement.style.setProperty('--text-clip', theme.textClip, 'important');
@@ -187,7 +187,7 @@ function applyThemeToCard(cardElement, hex, opacity = 1) {
     // 🟢 注入光影與微光層變數
     cardElement.style.setProperty('--dynamic-glare', theme.glareColor, 'important');
     cardElement.style.setProperty('--dynamic-inner-glow', theme.innerGlow, 'important');
-    
+
     // 🟢 注入全包覆防護邊框
     cardElement.style.setProperty('--rim-glare-start', theme.rimGlareStart, 'important');
     cardElement.style.setProperty('--full-wrap-border', theme.fullWrapBorder, 'important');
@@ -210,14 +210,14 @@ let lastVibrateTime = 0;
 
 mainStack.addEventListener('touchstart', (e) => {
     // 🟢 1. 觸控防禦鎖：只要還在拖拉，或是「回彈動畫（含滾輪慢速回彈）」還沒播完，嚴格禁止進入長按掃描！
-    if (isAnimating || 
-        mainStack.classList.contains('dragging') || 
-        mainStack.classList.contains('bounce-back') || 
-        mainStack.classList.contains('bounce-back-wheel') || 
+    if (isAnimating ||
+        mainStack.classList.contains('dragging') ||
+        mainStack.classList.contains('bounce-back') ||
+        mainStack.classList.contains('bounce-back-wheel') ||
         activeCardId) {
         return;
     }
-    
+
     // 如果點擊的不是卡片，就不理它
     const targetCard = e.target.closest('.card');
     if (!targetCard) return;
@@ -233,13 +233,13 @@ mainStack.addEventListener('touchstart', (e) => {
         mainStack.dataset.isScrubbing = 'true';
         currentScrubCard = targetCard;
         currentScrubCard.classList.add('touch-lifted');
-        
+
         // 🟢 救命關鍵：立刻沒收 Hover 權限！殺死 Android 瀏覽器的「殘影 Hover」
         mainStack.classList.remove('allow-hover');
-        
+
         // 鎖死卡片堆的物理引擎，避免滾動打架
-        mainStack.style.touchAction = 'none'; 
-        
+        mainStack.style.touchAction = 'none';
+
         if (window.navigator.vibrate) window.navigator.vibrate(15);
     }, 400);
 }, { passive: true });
@@ -257,27 +257,27 @@ mainStack.addEventListener('touchmove', (e) => {
 
     // 2. 如果已經進入掃描模式：
     // 🟢 核心魔法：因為已經 touchAction='none'，我們必須阻止預設滾動，並用雷射槍掃描手指下的元素
-    if (e.cancelable) e.preventDefault(); 
+    if (e.cancelable) e.preventDefault();
 
     const touch = e.touches[0];
     // 使用雷射槍 (elementFromPoint) 找出手指目前座標底下的元素
     const elemUnderFinger = document.elementFromPoint(touch.clientX, touch.clientY);
-    
+
     if (elemUnderFinger) {
         const hoveredCard = elemUnderFinger.closest('.card');
-        
+
         // 如果手指滑到了新的卡片上
         if (hoveredCard && hoveredCard !== currentScrubCard) {
             // 把舊的放下
             if (currentScrubCard) currentScrubCard.classList.remove('touch-lifted');
-            
+
             // 把新的抬起
             currentScrubCard = hoveredCard;
             currentScrubCard.classList.add('touch-lifted');
-            
+
             // 🟢 救命關鍵：把震動調高到 20ms，Android 硬體馬達才會有反應！
-            if (window.navigator.vibrate) window.navigator.vibrate(20); 
-        } 
+            if (window.navigator.vibrate) window.navigator.vibrate(20);
+        }
         // 如果手指滑到了沒有卡片的地方 (例如最頂部或最底層)
         else if (!hoveredCard && currentScrubCard) {
             currentScrubCard.classList.remove('touch-lifted');
@@ -298,20 +298,20 @@ mainStack.addEventListener('touchmove', (e) => {
 
     // 2. 如果已經進入掃描模式：
     // 🟢 核心魔法：因為已經 touchAction='none'，我們必須阻止預設滾動，並用雷射槍掃描手指下的元素
-    if (e.cancelable) e.preventDefault(); 
+    if (e.cancelable) e.preventDefault();
 
     const touch = e.touches[0];
     // 使用雷射槍 (elementFromPoint) 找出手指目前座標底下的元素
     const elemUnderFinger = document.elementFromPoint(touch.clientX, touch.clientY);
-    
+
     if (elemUnderFinger) {
         const hoveredCard = elemUnderFinger.closest('.card');
-        
+
         // 如果手指滑到了新的卡片上
         if (hoveredCard && hoveredCard !== currentScrubCard) {
             // 把舊的放下
             if (currentScrubCard) currentScrubCard.classList.remove('touch-lifted');
-            
+
             // 把新的抬起
             currentScrubCard = hoveredCard;
             currentScrubCard.classList.add('touch-lifted');
@@ -319,10 +319,10 @@ mainStack.addEventListener('touchmove', (e) => {
             // 🟢 破解安卓限制：將震動時間提高到 20ms，並加入 50ms 的冷卻時間！
             const now = Date.now();
             if (window.navigator.vibrate && (now - lastVibrateTime > 50)) {
-                window.navigator.vibrate(20); 
+                window.navigator.vibrate(20);
                 lastVibrateTime = now;
             }
-        } 
+        }
         // 如果手指滑到了沒有卡片的地方 (例如最頂部或最底層)
         else if (!hoveredCard && currentScrubCard) {
             currentScrubCard.classList.remove('touch-lifted');
@@ -337,14 +337,14 @@ mainStack.addEventListener('touchcancel', endScrubbing);
 function endScrubbing() {
     clearTimeout(scanTimer);
     scanTimer = null;
-    
+
     if (isScrubbingMode) {
         isScrubbingMode = false;
-        
-        // 🟢 跨檔案通訊：拔除牌子，允許 physics.js 恢復運作
-        mainStack.dataset.isScrubbing = 'false'; 
 
-        mainStack.style.touchAction = ''; 
+        // 🟢 跨檔案通訊：拔除牌子，允許 physics.js 恢復運作
+        mainStack.dataset.isScrubbing = 'false';
+
+        mainStack.style.touchAction = '';
         if (currentScrubCard) {
             const cardToDrop = currentScrubCard;
             setTimeout(() => {
@@ -358,8 +358,8 @@ function endScrubbing() {
 
 // 啟運動理引擎
 const physicsEngine = initPhysics(
-    mainStack, 
-    () => activeCardId, 
+    mainStack,
+    () => activeCardId,
     () => closeAllCards(false)
 );
 
@@ -367,8 +367,8 @@ const physicsEngine = initPhysics(
 initHeader(filterCards, () => activeCardId);
 
 // 點擊空白處關閉卡片
-mainStack.addEventListener('click', (e) => { 
-    if (activeCardId && e.target === mainStack) closeAllCards(false); 
+mainStack.addEventListener('click', (e) => {
+    if (activeCardId && e.target === mainStack) closeAllCards(false);
 });
 
 function renderCards(data) {
@@ -376,17 +376,17 @@ function renderCards(data) {
         mainStack.innerHTML = '<p style="text-align:center; padding:40px; color:#666;">該当する駅・路線が見つかりません</p>';
         return;
     }
-    
+
     mainStack.innerHTML = '';
     const template = document.getElementById('railway-card-template');
 
     data.forEach((line, index) => {
         const clone = template.content.cloneNode(true);
         const card = clone.querySelector('.card');
-        
+
         card.id = `card-${line.id}`;
         card.style.background = applyThemeToCard(card, line.hex);
-        
+
         if (isInitialLoad) {
             card.classList.add('opening-pull');
             card.style.animationDelay = `${(data.length - index) * 0.08}s`;
@@ -398,21 +398,21 @@ function renderCards(data) {
             card.classList.add('hidden-placeholder', 'lifted-state');
             card.style.transform = 'translate3d(0, -100px, 0)';
         }
-        
+
         card.onclick = () => handleCardClick(line.id);
-        
+
         // --- 🟢 新增：手機/iPad 觸控螢幕的 Haptic Touch 長按浮起邏輯 ---
         let pressTimer = null;
         let startY = 0;
         let isLifted = false;
 
-        
+
         // --- 結束新增 ---
-        
+
         clone.querySelector('.line-name').textContent = line.name;
         clone.querySelector('.status-tag').textContent = line.status;
         clone.querySelector('.description').textContent = line.desc;
-        
+
         const tagsContainer = clone.querySelector('.info-tags-container');
         line.detail.forEach(info => {
             const tagDiv = document.createElement('div');
@@ -430,7 +430,7 @@ function renderCards(data) {
         // 👇 加上這一行，凍結開場的光影計算 👇
         mainStack.dataset.freezeGlare = 'true';
 
-        setTimeout(() => { 
+        setTimeout(() => {
             isInitialLoad = false;
             document.querySelectorAll('.card').forEach(c => {
                 c.classList.remove('opening-pull');
@@ -441,43 +441,43 @@ function renderCards(data) {
 
             // 👇 加上這一行，解除光影凍結，讓 Hover 可以正常運作 👇
             mainStack.dataset.freezeGlare = 'false';
-            
+
             // 等 1.5 秒鋼琴動畫「徹底播完」後，才開始監聽滑鼠移動！
             // 這樣在動畫期間不管滑鼠怎麼動，allow-hover 都絕對處於「上鎖」狀態。
             window.addEventListener('mousemove', function unlockHover() {
                 if (!mainStack.classList.contains('allow-hover')) {
                     mainStack.classList.add('allow-hover');
                 }
-                
+
                 window.removeEventListener('mousemove', unlockHover);
             }, { once: true });
 
-        }, 1500); 
+        }, 1500);
 
         // 依然保留 2 秒的甦醒護身符，確保解鎖後的第一次升起是柔和的
         setTimeout(() => {
             mainStack.classList.remove('just-awoke');
-        }, 2000); 
+        }, 2000);
     } else {
         mainStack.classList.add('allow-hover');
     }
 }
 function handleCardClick(id) {
-// 🟢 2. 點擊防禦鎖：防止在牌組還在「回彈飛行」的半空中時，誤觸打開卡片導致動畫錯亂
-    if (isAnimating || 
-        mainStack.classList.contains('dragging') || 
-        mainStack.classList.contains('bounce-back') || 
+    // 🟢 2. 點擊防禦鎖：防止在牌組還在「回彈飛行」的半空中時，誤觸打開卡片導致動畫錯亂
+    if (isAnimating ||
+        mainStack.classList.contains('dragging') ||
+        mainStack.classList.contains('bounce-back') ||
         mainStack.classList.contains('bounce-back-wheel')) {
-        return; 
+        return;
     }
 
     // 🟢 改用 window.appRailwayData
     const data = window.appRailwayData.find(l => l.id === id);
     if (!data) return;
-    
+
     const originalCard = document.getElementById(`card-${id}`);
     activeCardId = id;
-    isAnimating = true; 
+    isAnimating = true;
 
     history.pushState({ cardActive: true }, '');
 
@@ -485,12 +485,12 @@ function handleCardClick(id) {
     const template = document.getElementById('detail-card-template');
     const clone = template.content.cloneNode(true);
     const inner = clone.querySelector('.detail-card-inner');
-    
+
     inner.style.background = applyThemeToCard(inner, data.hex);
     clone.querySelector('.line-name').textContent = data.name;
     clone.querySelector('.status-tag').textContent = data.status;
     clone.querySelector('.description').textContent = data.desc;
-    
+
     const tagsContainer = clone.querySelector('.info-tags-container');
     data.detail.forEach(info => {
         const tagDiv = document.createElement('div');
@@ -504,16 +504,16 @@ function handleCardClick(id) {
     // 🟢 同步聯動：一展開卡片，膠囊的圖示就跟著上滑切換
     const capsule = document.getElementById('action-capsule');
     if (capsule) capsule.classList.add('detail-active');
-    
+
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             detailOverlay.classList.add('active');
-            mainStack.classList.add('has-active'); 
-            
+            mainStack.classList.add('has-active');
+
             const dismissIcon = document.getElementById('dismiss-icon');
             if (dismissIcon) {
                 dismissIcon.style.visibility = 'visible';
-                dismissIcon.style.opacity = '0'; 
+                dismissIcon.style.opacity = '0';
                 setTimeout(() => {
                     if (activeCardId && !document.body.classList.contains('searching')) {
                         dismissIcon.style.opacity = '1';
@@ -523,18 +523,18 @@ function handleCardClick(id) {
             if (originalCard) originalCard.classList.add('hidden-placeholder');
         });
     });
-    
+
     if (window.navigator.vibrate) window.navigator.vibrate(10);
     initOverlayGestures();
 
     if (liftTimer) clearTimeout(liftTimer);
-    liftTimer = setTimeout(() => { 
+    liftTimer = setTimeout(() => {
         isAnimating = false;
-        if (originalCard && activeCardId === id) { 
-            originalCard.style.transform = 'translate3d(0, -100px, 0)'; 
-            originalCard.classList.add('lifted-state'); 
+        if (originalCard && activeCardId === id) {
+            originalCard.style.transform = 'translate3d(0, -100px, 0)';
+            originalCard.classList.add('lifted-state');
         }
-        
+
     }, 600);
 }
 
@@ -582,11 +582,11 @@ function handleBottomCardClick() {
         requestAnimationFrame(() => {
             detailOverlay.classList.add('active');
             mainStack.classList.add('has-active');
-            
+
             const dismissIcon = document.getElementById('dismiss-icon');
             if (dismissIcon) {
                 dismissIcon.style.visibility = 'visible';
-                dismissIcon.style.opacity = '0'; 
+                dismissIcon.style.opacity = '0';
                 setTimeout(() => {
                     if (activeCardId && !document.body.classList.contains('searching')) {
                         dismissIcon.style.opacity = '1';
@@ -601,7 +601,7 @@ function handleBottomCardClick() {
     initOverlayGestures();
 
     if (liftTimer) clearTimeout(liftTimer);
-    liftTimer = setTimeout(() => { 
+    liftTimer = setTimeout(() => {
         isAnimating = false;
         if (originalCard && activeCardId === id) {
             originalCard.classList.add('lifted-state');
@@ -610,8 +610,8 @@ function handleBottomCardClick() {
 }
 
 function handleOverlayClick(e) {
-    if (isAnimating) return; 
-    
+    if (isAnimating) return;
+
     // 🟢 核心修復：使用 closest() 往上找父元素
     // 意思是：「只要你點擊的地方，不包含實體卡片 (.detail-card-inner)，就一律關閉！」
     if (!e.target.closest('.detail-card-inner')) {
@@ -621,13 +621,13 @@ function handleOverlayClick(e) {
 
 function closeAllCards(isPopState = false) {
     if (!activeCardId || isAnimating) return;
-    
+
     if (!isPopState && history.state && history.state.cardActive) {
         history.back();
-        return; 
+        return;
     }
 
-    isAnimating = true; 
+    isAnimating = true;
 
     // 🟢 1. 關閉瞬間上鎖：告訴物理引擎現在不准動！
     mainStack.dataset.blockScroll = 'true';
@@ -648,9 +648,11 @@ function closeAllCards(isPopState = false) {
         icon.style.removeProperty('transform');
         icon.style.removeProperty('opacity');
     });
-    
+
+    // 🟢 確保關閉時有滑順的淡出動畫
     const dismissIcon = document.getElementById('dismiss-icon');
     if (dismissIcon) {
+        dismissIcon.style.transition = 'opacity 0.2s ease';
         dismissIcon.style.opacity = '0';
         setTimeout(() => { dismissIcon.style.visibility = 'hidden'; }, 300);
     }
@@ -661,10 +663,10 @@ function closeAllCards(isPopState = false) {
     }
 
     detailOverlay.classList.remove('active');
-    mainStack.classList.remove('has-active'); 
+    mainStack.classList.remove('has-active');
     // 🟢 1. 關閉的瞬間：沒收卡片堆的 Hover 權限，避免滑鼠穿透導致下方卡片誤彈起
     mainStack.classList.remove('allow-hover');
-    
+
     let originalCard;
     if (activeCardId === 'fixed-bottom') {
         originalCard = document.getElementById('fixed-info-card');
@@ -675,10 +677,10 @@ function closeAllCards(isPopState = false) {
     if (originalCard) {
         originalCard.classList.remove('hidden-placeholder');
         originalCard.classList.remove('lifted-state');
-        originalCard.style.transform = ''; 
+        originalCard.style.transform = '';
         originalCard.style.animationDelay = '';
         originalCard.classList.add('returning');
-        
+
         if (activeCardId !== 'fixed-bottom') {
             let nextCard = originalCard.nextElementSibling;
             let delay = 0;
@@ -686,7 +688,7 @@ function closeAllCards(isPopState = false) {
                 if (nextCard && nextCard.classList && nextCard.classList.contains('card')) {
                     nextCard.style.animationDelay = `${delay}s`;
                     nextCard.classList.add('piano-ripple');
-                    delay += 0.05; 
+                    delay += 0.05;
                 }
                 nextCard = nextCard.nextElementSibling;
             }
@@ -700,7 +702,7 @@ function closeAllCards(isPopState = false) {
                 c.style.animationDelay = '';
             });
             if (window.navigator.vibrate) window.navigator.vibrate(5);
-        }, 550); 
+        }, 550);
     }
 
     activeCardId = null;
@@ -708,17 +710,17 @@ function closeAllCards(isPopState = false) {
     if (inner) {
         // 🟢 救命關鍵：把滑動時鎖住的 transition 拔掉，恢復原本 CSS 寫好的彈簧動畫！
         // 這樣卡片就不會瞬間瞬移，而是從你放手的地方滑順飛走
-        inner.style.transition = ''; 
-        
-        inner.style.transform = ''; 
+        inner.style.transition = '';
+
+        inner.style.transform = '';
     }
-    
+
     setTimeout(() => {
         if (!activeCardId) detailContainer.innerHTML = '';
-        isAnimating = false; 
-         // 👇 加上這一行，重新解鎖光影 👇
+        isAnimating = false;
+        // 👇 加上這一行，重新解鎖光影 👇
         mainStack.dataset.freezeGlare = 'false';
-        
+
         // 🟢 2. 動畫結束後：升級版防手震解鎖機制 (必須移動超過 5px)
         let startX = null, startY = null;
         window.addEventListener('mousemove', function unlockHoverAfterClose(e) {
@@ -749,25 +751,25 @@ function initOverlayGestures() {
     const defaultIcons = document.querySelectorAll('#action-capsule .icon-default');
     const hiddenIcons = document.querySelectorAll('#action-capsule .icon-hidden');
 
-    detailOverlay.ontouchstart = e => { 
-        overlayStartY = e.touches[0].pageY; 
-        inner.style.transition = 'none'; 
+    detailOverlay.ontouchstart = e => {
+        overlayStartY = e.touches[0].pageY;
+        inner.style.transition = 'none';
         if (dismissIcon) dismissIcon.style.transition = 'none';
-        
-        extraElements.forEach(el => el.style.transition = 'none'); 
+
+        extraElements.forEach(el => el.style.transition = 'none');
     };
-    
+
     detailOverlay.ontouchmove = e => {
         const rawMoveY = e.touches[0].pageY - overlayStartY;
-        if (rawMoveY > 0) { 
-            if (rawMoveY > 10 && e.cancelable) e.preventDefault(); 
+        if (rawMoveY > 0) {
+            if (rawMoveY > 10 && e.cancelable) e.preventDefault();
             const resistedY = rawMoveY * 0.5;
             inner.style.transform = `translate3d(0, ${resistedY}px, 0)`;
-            
+
             if (dismissIcon) dismissIcon.style.opacity = Math.max(0, 1 - (rawMoveY / 150));
-            
+
             const progress = Math.min(rawMoveY / 200, 1);
-            
+
             // 預設圖示 (加號/點點)：從頂部 (-120%) 降回中央 (0%)，透明度從 0 變 0.8
             defaultIcons.forEach(icon => {
                 icon.style.setProperty('transform', `translateY(${-120 + (120 * progress)}%)`, 'important');
@@ -786,21 +788,21 @@ function initOverlayGestures() {
             }
             extraElements.forEach(el => el.style.opacity = textOpacity);
 
-            if (rawMoveY > 200) closeAllCards(false); 
+            if (rawMoveY > 200) closeAllCards(false);
         }
     };
-    
+
     detailOverlay.ontouchend = e => {
         // 1. 恢復卡片本體的彈簧動畫，並設定目的地為 0 (原點)
         inner.style.transition = 'transform 0.55s var(--spring-release)';
-        inner.style.transform = 'translate3d(0, 0, 0)'; 
-        
+        inner.style.transform = 'translate3d(0, 0, 0)';
+
         // 2. 恢復打叉圖示的淡入動畫與不透明度
         if (dismissIcon) {
             dismissIcon.style.transition = 'opacity 0.3s ease';
             dismissIcon.style.opacity = '1';
         }
-        
+
         // 3. 恢復內部文字的淡入動畫與不透明度
         extraElements.forEach(el => {
             el.style.transition = 'opacity 0.3s ease';
@@ -829,9 +831,9 @@ function initOverlayGestures() {
         const resistedY = overlayWheelSum * 0.2;
         inner.style.transition = 'none';
         inner.style.transform = `translate3d(0, ${resistedY}px, 0)`;
-        
+
         extraElements.forEach(el => el.style.transition = 'none');
-        
+
         if (dismissIcon) {
             dismissIcon.style.transition = 'none';
             dismissIcon.style.opacity = Math.max(0, 1 - (overlayWheelSum / 150));
@@ -845,8 +847,8 @@ function initOverlayGestures() {
         extraElements.forEach(el => el.style.opacity = textOpacity);
 
         if (overlayWheelSum > 200) {
-            closeAllCards(false); 
-            overlayWheelSum = 0; 
+            closeAllCards(false);
+            overlayWheelSum = 0;
             return;
         }
 
@@ -855,7 +857,7 @@ function initOverlayGestures() {
             if (activeCardId && overlayWheelSum <= 200) {
                 inner.style.transition = 'transform 0.6s var(--active-bounce)';
                 inner.style.transform = 'translate3d(0, 0, 0)';
-                
+
                 extraElements.forEach(el => {
                     el.style.transition = 'opacity 0.3s ease';
                     el.style.opacity = '1';
@@ -867,14 +869,14 @@ function initOverlayGestures() {
                 }
             }
             overlayWheelSum = 0;
-        }, 150); 
+        }, 150);
     };
 }
 
 function initBottomCard() {
     const card = document.getElementById('fixed-info-card');
     if (!card) return;
-    
+
     if (isInitialLoad) {
         card.classList.add('opening-pull-fixed');
         // 置底卡片最後彈出
@@ -882,24 +884,24 @@ function initBottomCard() {
     }
 
     let finalBg;
-    const bgOpacity = 0.65; 
+    const bgOpacity = 0.65;
 
     if (bottomCardConfig.hex) {
-        finalBg = bottomCardConfig.hex; 
+        finalBg = bottomCardConfig.hex;
     } else {
         const h = bottomCardConfig.hue;
-        const colorTop = `hsla(${h}, 65%, 40%, ${bgOpacity})`;    
-        const colorBottom = `hsla(${h}, 45%, 25%, ${bgOpacity})`; 
+        const colorTop = `hsla(${h}, 65%, 40%, ${bgOpacity})`;
+        const colorBottom = `hsla(${h}, 45%, 25%, ${bgOpacity})`;
         finalBg = `linear-gradient(135deg, ${colorTop}, ${colorBottom})`;
     }
-    
+
     card.style.setProperty('--fixed-bg', finalBg);
     card.style.setProperty('--fixed-border', `rgba(255, 255, 255, ${bottomCardConfig.borderColorOpacity})`);
-    
+
     document.getElementById('fixed-title').textContent = bottomCardConfig.title;
     document.getElementById('fixed-status').textContent = bottomCardConfig.status;
     document.getElementById('fixed-desc').textContent = bottomCardConfig.description;
-    
+
     const tag = card.querySelector('.status-tag');
     if (tag) tag.style.background = `rgba(255, 255, 255, ${bottomCardConfig.tagBgOpacity})`;
 }
@@ -908,8 +910,8 @@ function filterCards(keyword) {
     isInitialLoad = false;
     const lowKeyword = keyword.toLowerCase().trim();
     // 🟢 改用 window.appRailwayData
-    const filtered = window.appRailwayData.filter(line => 
-        line.name.toLowerCase().includes(lowKeyword) || 
+    const filtered = window.appRailwayData.filter(line =>
+        line.name.toLowerCase().includes(lowKeyword) ||
         (line.kana && line.kana.toLowerCase().includes(lowKeyword)) // 加了容錯避免 kana 沒填
     );
     renderCards(filtered);
@@ -929,13 +931,13 @@ function initDismissIcon() {
     iconDiv.innerHTML = svgContent;
     // 確保新圖示吃的到線條顏色
     iconDiv.style.color = 'rgba(142, 142, 147, 0.8)';
-    
+
     document.body.appendChild(iconDiv);
 }
 
 window.addEventListener('popstate', (e) => {
     if (activeCardId) {
-        closeAllCards(true); 
+        closeAllCards(true);
     }
 });
 
@@ -954,19 +956,19 @@ async function initApp() {
                 hex: pref.customHex || route.hex
             };
         }
-        return route; 
+        return route;
     });
 
     // 3. 用「合併後的資料」來生成畫面
     renderCards(window.appRailwayData);
     initBottomCard();
-    initDismissIcon(); 
+    initDismissIcon();
 }
 
 // 因為 script type="module" 會延遲執行，這裡可以直接呼叫啟動
 initApp();
 
-document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
+document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
 
 // 將模組內的函數暴露給全域
 window.handleBottomCardClick = handleBottomCardClick;
@@ -977,9 +979,9 @@ window.handleOverlayClick = handleOverlayClick;
 // ============================================================================
 
 // 🔧 【箭頭 SVG 旋轉角度設定】
-window.DISMISS_ICON_TARGET_ROTATION = 90; 
+window.DISMISS_ICON_TARGET_ROTATION = 90;
 
-window.openBlankOverlay = function(hexColor) {
+window.openBlankOverlay = function (hexColor) {
     if (document.getElementById('dynamic-blank-overlay') || window.isFlipAnimating) return;
     window.isFlipAnimating = true;
 
@@ -988,7 +990,7 @@ window.openBlankOverlay = function(hexColor) {
             const currentData = window.appRailwayData.find(l => l.id === activeCardId);
             if (currentData) hexColor = currentData.hex;
         }
-        if (!hexColor) hexColor = '#2C2C2E'; 
+        if (!hexColor) hexColor = '#2C2C2E';
     }
 
     const originalInner = document.querySelector('#detail-card-container .detail-card-inner');
@@ -1000,14 +1002,14 @@ window.openBlankOverlay = function(hexColor) {
 
     const overlay = document.createElement('div');
     overlay.id = 'dynamic-blank-overlay';
-    overlay.className = 'detail-overlay active'; 
+    overlay.className = 'detail-overlay active';
 
     const container = document.createElement('div');
-    container.className = 'perspective-container is-flipping'; 
+    container.className = 'perspective-container is-flipping';
     container.style.cssText = 'width: 100%; display: flex; justify-content: center; margin-top: calc(env(safe-area-inset-top) + 160px);';
 
     const card = document.createElement('div');
-    card.className = 'detail-card-inner flip-in-start'; 
+    card.className = 'detail-card-inner flip-in-start';
     applyThemeToCard(card, hexColor);
 
     container.appendChild(card);
@@ -1033,9 +1035,9 @@ window.openBlankOverlay = function(hexColor) {
     let swipeStartX = 0;
     let swipeStartY = 0;
     let isSwiping = false;
-    let swipeLocked = false; 
+    let swipeLocked = false;
 
-    const swipeTolerance = 0.6; 
+    const swipeTolerance = 0.6;
     const triggerThreshold = window.innerWidth / 3;
 
     overlay.addEventListener('touchstart', (e) => {
@@ -1048,64 +1050,64 @@ window.openBlankOverlay = function(hexColor) {
 
     overlay.addEventListener('touchmove', (e) => {
         if (window.isFlipAnimating || swipeStartX === 0) return;
-        
+
         const currentX = e.touches[0].clientX;
         const currentY = e.touches[0].clientY;
-        const deltaX = currentX - swipeStartX; 
+        const deltaX = currentX - swipeStartX;
         const deltaY = currentY - swipeStartY;
-        
+
         const leftBtn = document.getElementById('capsule-main-btn');
         const rightBtn = document.getElementById('capsule-secondary-btn');
         const dismissIcon = document.getElementById('dismiss-icon');
         const dismissSvg = dismissIcon ? dismissIcon.querySelector('svg') : null;
 
         if (!swipeLocked) {
-            if (deltaX < -5) { 
-                if (Math.abs(deltaY) < Math.abs(deltaX) * swipeTolerance) { 
+            if (deltaX < -5) {
+                if (Math.abs(deltaY) < Math.abs(deltaX) * swipeTolerance) {
                     isSwiping = true;
                     swipeLocked = true;
                 } else {
-                    swipeLocked = true; 
+                    swipeLocked = true;
                 }
             } else if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
-                swipeLocked = true; 
+                swipeLocked = true;
             }
         }
 
         if (isSwiping) {
-            e.preventDefault(); 
-            
+            e.preventDefault();
+
             const resistance = 0.5;
             const dragDistance = Math.abs(deltaX) * resistance;
             const maxDist = window.innerWidth * 0.6;
             let progress = Math.max(0, Math.min(dragDistance / maxDist, 1));
-            
+
             // 🟢 1/3 螢幕強制接管：成功關閉
             if (Math.abs(deltaX) >= triggerThreshold) {
-                isSwiping = false; 
-                container.classList.remove('is-swiping'); 
-                
+                isSwiping = false;
+                container.classList.remove('is-swiping');
+
                 // 放手瞬間：立刻把手動寫入的膠囊偏移清空，還給系統乾淨的狀態！
                 clearInlineStyles(card);
                 clearInlineStyles(leftBtn);
                 clearInlineStyles(rightBtn);
-                
+
                 // 呼叫樞紐並告知 isFromGesture = true
-                window.closeBlankOverlay(true); 
+                window.closeBlankOverlay(true);
                 return;
             }
 
             // 🟢 尚未超過 1/3 時的跟手連動邏輯
             card.classList.add('hardware-accelerated');
             container.classList.add('is-flipping');
-            container.classList.add('is-swiping'); 
+            container.classList.add('is-swiping');
 
             card.style.setProperty('transition', 'none', 'important');
             card.style.setProperty('transform', `scale(1) rotateY(${-90 * progress}deg)`, 'important');
             const shadowFadeProgress = Math.min(progress * 2, 1);
             card.style.setProperty('box-shadow', `0 20px 40px rgba(0,0,0,${0.2 * (1 - shadowFadeProgress)})`, 'important');
             container.style.setProperty('--swipe-shadow-opacity', `${shadowFadeProgress}`, 'important');
-            
+
             // 手勢拉動時：膠囊按鈕跟隨位移
             if (leftBtn && rightBtn) {
                 leftBtn.style.setProperty('transition', 'none', 'important');
@@ -1116,7 +1118,7 @@ window.openBlankOverlay = function(hexColor) {
 
             // 箭頭 SVG 旋轉聯動
             if (dismissIcon) {
-                dismissIcon.style.setProperty('opacity', '1', 'important'); 
+                dismissIcon.style.setProperty('opacity', '1', 'important');
             }
             if (dismissSvg) {
                 dismissSvg.style.setProperty('transform-origin', '50% 50%', 'important');
@@ -1133,42 +1135,42 @@ window.openBlankOverlay = function(hexColor) {
             return;
         }
         isSwiping = false;
-        
+
         const currentX = e.changedTouches[0].clientX;
         const deltaX = currentX - swipeStartX;
-        
+
         const resistance = 0.5;
         const dragDistance = Math.abs(deltaX) * resistance;
         const maxDist = window.innerWidth * 0.6;
         let progress = Math.max(0, Math.min(dragDistance / maxDist, 1));
         const flippedDegrees = 90 * progress;
-        
+
         const leftBtn = document.getElementById('capsule-main-btn');
         const rightBtn = document.getElementById('capsule-secondary-btn');
         const dismissIcon = document.getElementById('dismiss-icon');
         const dismissSvg = dismissIcon ? dismissIcon.querySelector('svg') : null;
-        
+
         // 🟢 未達 1/3 但鬆手判定成功
-        if (flippedDegrees > 20 || deltaX < -50) { 
-            container.classList.remove('is-swiping'); 
-            
+        if (flippedDegrees > 20 || deltaX < -50) {
+            container.classList.remove('is-swiping');
+
             // 放手瞬間：把手動寫入的膠囊偏移清空
             clearInlineStyles(card);
             clearInlineStyles(leftBtn);
             clearInlineStyles(rightBtn);
-            
+
             // 呼叫樞紐並告知 isFromGesture = true
-            window.closeBlankOverlay(true); 
+            window.closeBlankOverlay(true);
         } else {
             // 🟢 取消關閉：Q彈回歸完全打開的狀態
-            container.classList.remove('is-swiping'); 
-            container.classList.remove('is-flipping'); 
-            container.style.removeProperty('--swipe-shadow-opacity'); 
-            
+            container.classList.remove('is-swiping');
+            container.classList.remove('is-flipping');
+            container.style.removeProperty('--swipe-shadow-opacity');
+
             card.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15), box-shadow 0.3s linear', 'important');
             card.style.setProperty('transform', `scale(1) rotateY(0deg)`, 'important');
-            card.style.setProperty('box-shadow', 'var(--ray-shadow-active)', 'important'); 
-            
+            card.style.setProperty('box-shadow', 'var(--ray-shadow-active)', 'important');
+
             if (leftBtn && rightBtn) {
                 leftBtn.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15)', 'important');
                 leftBtn.style.setProperty('transform', `translateX(0px)`, 'important');
@@ -1180,7 +1182,7 @@ window.openBlankOverlay = function(hexColor) {
                 dismissSvg.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15)', 'important');
                 dismissSvg.style.setProperty('transform', `rotate(${window.DISMISS_ICON_TARGET_ROTATION}deg)`, 'important');
             }
-            
+
             setTimeout(() => {
                 clearInlineStyles(card);
                 clearInlineStyles(leftBtn);
@@ -1189,28 +1191,28 @@ window.openBlankOverlay = function(hexColor) {
                 card.classList.remove('hardware-accelerated');
             }, 500);
         }
-        
+
         swipeStartX = 0;
     });
     // =========================================================
 
-    originalContainer.classList.add('perspective-container', 'is-flipping'); 
+    originalContainer.classList.add('perspective-container', 'is-flipping');
     originalInner.classList.remove('flip-back-in');
     originalInner.classList.add('flip-out');
-    originalInner.classList.add('hardware-accelerated'); 
-    card.classList.add('hardware-accelerated');          
+    originalInner.classList.add('hardware-accelerated');
+    card.classList.add('hardware-accelerated');
 
     if (window.slideCapsuleMode) window.slideCapsuleMode(true);
 
     const dismissIcon = document.getElementById('dismiss-icon');
     const dismissSvg = dismissIcon ? dismissIcon.querySelector('svg') : null;
-    
+
     if (dismissIcon) {
-        dismissIcon.style.setProperty('opacity', '1', 'important'); 
+        dismissIcon.style.setProperty('opacity', '1', 'important');
     }
     if (dismissSvg) {
         dismissSvg.style.setProperty('transform-origin', '50% 50%', 'important');
-        void dismissSvg.offsetWidth; 
+        void dismissSvg.offsetWidth;
         dismissSvg.style.setProperty('transition', 'transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1)', 'important');
         dismissSvg.style.setProperty('transform', `rotate(${window.DISMISS_ICON_TARGET_ROTATION}deg)`, 'important');
     }
@@ -1224,18 +1226,18 @@ window.openBlankOverlay = function(hexColor) {
             card.classList.remove('hardware-accelerated');
             originalContainer.classList.remove('is-flipping');
             container.classList.remove('is-flipping');
-            window.isFlipAnimating = false; 
+            window.isFlipAnimating = false;
         }, 450);
 
-    }, 300); 
+    }, 300);
 };
 
 // ============================================================================
 // 🟢 空白彈窗關閉樞紐 (將動畫權限 100% 歸還原生模組)
 // ============================================================================
 
-window.closeBlankOverlay = function(isFromGesture = false) {
-    if (window.isFlipAnimating) return; 
+window.closeBlankOverlay = function (isFromGesture = false) {
+    if (window.isFlipAnimating) return;
     window.isFlipAnimating = true;
 
     const overlay = document.getElementById('dynamic-blank-overlay');
@@ -1257,7 +1259,7 @@ window.closeBlankOverlay = function(isFromGesture = false) {
     if (blankContainer) blankContainer.classList.add('is-flipping');
 
     blankCard.classList.remove('flip-in-active');
-    blankCard.classList.add('flip-out-reverse'); 
+    blankCard.classList.add('flip-out-reverse');
 
     // 🟢 解法核心：無論是手勢還是點擊，通通觸發原生的膠囊切換！絕不自己動手改 SVG！
     if (window.slideCapsuleMode) {
@@ -1268,9 +1270,9 @@ window.closeBlankOverlay = function(isFromGesture = false) {
     const dismissSvg = dismissIcon ? dismissIcon.querySelector('svg') : null;
 
     if (dismissIcon) {
-        dismissIcon.style.setProperty('opacity', '1', 'important'); 
+        dismissIcon.style.setProperty('opacity', '1', 'important');
     }
-    
+
     if (dismissSvg) {
         dismissSvg.style.setProperty('transform-origin', '50% 50%', 'important');
         // 如果是點擊進來的，因為它沒有被手勢帶著轉，所以我們要在這裡強制給它 90 度的起跑點
@@ -1279,7 +1281,7 @@ window.closeBlankOverlay = function(isFromGesture = false) {
             dismissSvg.style.setProperty('transform', `rotate(${window.DISMISS_ICON_TARGET_ROTATION}deg)`, 'important');
             void dismissSvg.offsetWidth; // 強制重繪
         }
-        
+
         // 開始平滑轉正
         dismissSvg.style.setProperty('transition', 'transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1)', 'important');
         dismissSvg.style.setProperty('transform', 'rotate(0deg)', 'important');
@@ -1290,7 +1292,7 @@ window.closeBlankOverlay = function(isFromGesture = false) {
         originalInner.classList.add('flip-back-start');
 
         overlay.style.opacity = '0';
-        overlay.style.transition = 'opacity 0.1s ease'; 
+        overlay.style.transition = 'opacity 0.1s ease';
 
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
@@ -1304,11 +1306,11 @@ window.closeBlankOverlay = function(isFromGesture = false) {
             originalInner.classList.remove('flip-back-active');
             originalContainer.classList.remove('perspective-container', 'is-flipping');
             originalInner.classList.remove('hardware-accelerated');
-            
+
             // 🟢 徹底清理我們的盾牌，把原生權限還給 physics.js 和 header.js
             if (dismissIcon) {
                 // 不使用 removeProperty，直接給 1 讓 physics.js 接手不消失
-                dismissIcon.style.opacity = '1'; 
+                dismissIcon.style.opacity = '1';
             }
             if (dismissSvg) {
                 dismissSvg.style.removeProperty('transform');
@@ -1316,10 +1318,10 @@ window.closeBlankOverlay = function(isFromGesture = false) {
                 dismissSvg.style.removeProperty('transform-origin');
             }
 
-            window.isFlipAnimating = false; 
-        }, 450); 
+            window.isFlipAnimating = false;
+        }, 450);
 
-    }, 300); 
+    }, 300);
 };
 
 // ============================================================================
@@ -1328,7 +1330,7 @@ window.closeBlankOverlay = function(isFromGesture = false) {
 function initHeaderButtonGestures() {
     // 抓取所有 Header 的互動按鈕
     const headerBtns = document.querySelectorAll('.left-circle-btn, .menu-close-btn, .search-trigger, .action-capsule, .cancel-circle-btn');
-    
+
     headerBtns.forEach(btn => {
         let pressTimer = null;
         let isLifted = false;
@@ -1349,16 +1351,16 @@ function initHeaderButtonGestures() {
                 isLifted = true;
                 btn.classList.add('touch-lifted-btn');
                 // 觸發硬體微震動回饋 (如果手機支援)
-                if (window.navigator.vibrate) window.navigator.vibrate(10); 
-            }, 400); 
+                if (window.navigator.vibrate) window.navigator.vibrate(10);
+            }, 400);
         }, { passive: true });
 
         btn.addEventListener('touchmove', (e) => {
             if (!pressTimer && !isLifted) return;
-            
+
             const moveX = e.touches[0].clientX;
             const moveY = e.touches[0].clientY;
-            
+
             // 如果手指滑動超過 10px，視為誤觸或滾動，立刻取消長按判定
             if (Math.abs(moveX - startX) > 10 || Math.abs(moveY - startY) > 10) {
                 clearTimeout(pressTimer);
