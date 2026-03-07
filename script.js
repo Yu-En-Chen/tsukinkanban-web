@@ -973,8 +973,12 @@ window.handleBottomCardClick = handleBottomCardClick;
 window.handleOverlayClick = handleOverlayClick;
 
 // ============================================================================
-// 🟢 3D 翻轉萬用空白彈窗引擎 (拔除淡化 + 動態計算 SVG 接手時間版)
+// 🟢 3D 翻轉萬用空白彈窗引擎 (SVG 完美連動 + 清理重複代碼版)
 // ============================================================================
+
+// 🔧 【箭頭 SVG 旋轉角度設定】
+// 備註：90度為朝左，45度為左下，315度(或-45度)為右下
+const DISMISS_ICON_TARGET_ROTATION = 90; 
 
 window.openBlankOverlay = function(hexColor) {
     if (document.getElementById('dynamic-blank-overlay') || window.isFlipAnimating) return;
@@ -1020,55 +1024,59 @@ window.openBlankOverlay = function(hexColor) {
         el.style.removeProperty('transform');
         el.style.removeProperty('transition');
         el.style.removeProperty('box-shadow');
+        el.style.removeProperty('opacity');
+        el.style.removeProperty('transform-origin');
     };
 
     // =========================================================
-    // 🟢 膠囊 SVG 精準接手演算法 (Dynamic Handoff)
+    // 🟢 膠囊與箭頭 SVG 精準接手演算法
     // =========================================================
     const triggerSVGHandOff = (progress) => {
         const leftBtn = document.getElementById('capsule-main-btn');
         const rightBtn = document.getElementById('capsule-secondary-btn');
-        if (!leftBtn || !rightBtn) return;
-
-        // 🟢 核心修正：依照手指已滑動的進度，動態扣除退場需要的時間！
-        // 假設總時間 300ms，如果你已經滑了 50% (progress = 0.5)，剩下的退場就只跑 150ms！
+        const dismissIcon = document.getElementById('dismiss-icon');
+        const dismissSvg = dismissIcon ? dismissIcon.querySelector('svg') : null;
+        
         const remainingOutTime = Math.max(50, 300 * (1 - progress));
 
-        // 1. 讓舊的 SVG 用「剩下的時間」走完剩下的路
-        leftBtn.style.setProperty('transition', `transform ${remainingOutTime}ms cubic-bezier(0.0, 0.0, 0.2, 1)`, 'important');
-        leftBtn.style.setProperty('transform', `translateX(-30px)`, 'important');
+        if (dismissSvg) {
+            dismissSvg.style.setProperty('transition', `transform ${remainingOutTime}ms cubic-bezier(0.0, 0.0, 0.2, 1)`, 'important');
+            dismissSvg.style.setProperty('transform', `rotate(0deg)`, 'important');
+        }
 
-        rightBtn.style.setProperty('transition', `transform ${remainingOutTime}ms cubic-bezier(0.0, 0.0, 0.2, 1)`, 'important');
-        rightBtn.style.setProperty('transform', `translateX(-30px)`, 'important');
+        if (leftBtn && rightBtn) {
+            leftBtn.style.setProperty('transition', `transform ${remainingOutTime}ms cubic-bezier(0.0, 0.0, 0.2, 1)`, 'important');
+            leftBtn.style.setProperty('transform', `translateX(-30px)`, 'important');
 
-        // 2. 當舊的 SVG 完全抵達 -30px 時，瞬間切換並讓新 SVG 進場
-        setTimeout(() => {
-            leftBtn.innerHTML = typeof CAPSULE_SVGS !== 'undefined' ? CAPSULE_SVGS.nativeLeft : '';
-            rightBtn.innerHTML = typeof CAPSULE_SVGS !== 'undefined' ? CAPSULE_SVGS.nativeRight : '';
-            const capsule = document.getElementById('action-capsule');
-            if (capsule) capsule.dataset.mode = 'native';
+            rightBtn.style.setProperty('transition', `transform ${remainingOutTime}ms cubic-bezier(0.0, 0.0, 0.2, 1)`, 'important');
+            rightBtn.style.setProperty('transform', `translateX(-30px)`, 'important');
 
-            // 瞬間移到右側準備
-            leftBtn.style.setProperty('transition', 'none', 'important');
-            leftBtn.style.setProperty('transform', `translateX(30px)`, 'important');
-            rightBtn.style.setProperty('transition', 'none', 'important');
-            rightBtn.style.setProperty('transform', `translateX(30px)`, 'important');
+            setTimeout(() => {
+                leftBtn.innerHTML = typeof CAPSULE_SVGS !== 'undefined' ? CAPSULE_SVGS.nativeLeft : '';
+                rightBtn.innerHTML = typeof CAPSULE_SVGS !== 'undefined' ? CAPSULE_SVGS.nativeRight : '';
+                const capsule = document.getElementById('action-capsule');
+                if (capsule) capsule.dataset.mode = 'native';
 
-            // 標準的 300ms 進場
-            requestAnimationFrame(() => {
+                leftBtn.style.setProperty('transition', 'none', 'important');
+                leftBtn.style.setProperty('transform', `translateX(30px)`, 'important');
+                rightBtn.style.setProperty('transition', 'none', 'important');
+                rightBtn.style.setProperty('transform', `translateX(30px)`, 'important');
+
                 requestAnimationFrame(() => {
-                    leftBtn.style.setProperty('transition', 'transform 300ms cubic-bezier(0.0, 0.0, 0.2, 1)', 'important');
-                    leftBtn.style.setProperty('transform', `translateX(0px)`, 'important');
+                    requestAnimationFrame(() => {
+                        leftBtn.style.setProperty('transition', 'transform 300ms cubic-bezier(0.0, 0.0, 0.2, 1)', 'important');
+                        leftBtn.style.setProperty('transform', `translateX(0px)`, 'important');
 
-                    rightBtn.style.setProperty('transition', 'transform 300ms cubic-bezier(0.0, 0.0, 0.2, 1)', 'important');
-                    rightBtn.style.setProperty('transform', `translateX(0px)`, 'important');
+                        rightBtn.style.setProperty('transition', 'transform 300ms cubic-bezier(0.0, 0.0, 0.2, 1)', 'important');
+                        rightBtn.style.setProperty('transform', `translateX(0px)`, 'important');
+                    });
                 });
-            });
-        }, remainingOutTime);
+            }, remainingOutTime);
+        }
     };
 
     // =========================================================
-    // 🟢 邊緣手勢引擎 (右 ➔ 左) + 1/3 強制接管
+    // 🟢 邊緣手勢引擎 (右 ➔ 左)
     // =========================================================
     let swipeStartX = 0;
     let swipeStartY = 0;
@@ -1096,6 +1104,8 @@ window.openBlankOverlay = function(hexColor) {
         
         const leftBtn = document.getElementById('capsule-main-btn');
         const rightBtn = document.getElementById('capsule-secondary-btn');
+        const dismissIcon = document.getElementById('dismiss-icon');
+        const dismissSvg = dismissIcon ? dismissIcon.querySelector('svg') : null;
 
         if (!swipeLocked) {
             if (deltaX < -5) { 
@@ -1118,43 +1128,46 @@ window.openBlankOverlay = function(hexColor) {
             const maxDist = window.innerWidth * 0.6;
             let progress = Math.max(0, Math.min(dragDistance / maxDist, 1));
             
-            // ==========================================
-            // 🟢 1/3 螢幕強制接管判定
-            // ==========================================
             if (Math.abs(deltaX) >= triggerThreshold) {
                 isSwiping = false; 
                 
-                container.classList.remove('is-swiping'); // 🟢 拔除跟手鎖定，交回給 CSS 系統動畫
+                container.classList.remove('is-swiping'); 
                 clearInlineStyles(card);
                 triggerSVGHandOff(progress); 
                 window.closeBlankOverlay(true); 
                 return;
             }
 
-            // ==========================================
-            // 🟢 尚未超過 1/3 時的跟手連動邏輯
-            // ==========================================
             card.classList.add('hardware-accelerated');
             container.classList.add('is-flipping');
-            container.classList.add('is-swiping'); // 🟢 啟動跟手專用狀態 (拔除動畫延遲)
+            container.classList.add('is-swiping'); 
 
-            // 1. 卡片 3D 聯動
+            // 1. 卡片與陰影 3D 聯動
             card.style.setProperty('transition', 'none', 'important');
             card.style.setProperty('transform', `scale(1) rotateY(${-90 * progress}deg)`, 'important');
-            
-            // 🟢 2. 核心修正：陰影精準跟手漸變
-            // 讓替身陰影隨手指淡入，實體陰影隨手指淡出 (加倍數率 progress * 2 確保交接迅速不突兀)
             const shadowFadeProgress = Math.min(progress * 2, 1);
             card.style.setProperty('box-shadow', `0 20px 40px rgba(0,0,0,${0.2 * (1 - shadowFadeProgress)})`, 'important');
             container.style.setProperty('--swipe-shadow-opacity', `${shadowFadeProgress}`, 'important');
             
-            // 3. SVG 圖示聯動
+            // 2. 膠囊 SVG 圖示聯動
             if (leftBtn && rightBtn) {
                 leftBtn.style.setProperty('transition', 'none', 'important');
                 leftBtn.style.setProperty('transform', `translateX(${-30 * progress}px)`, 'important');
 
                 rightBtn.style.setProperty('transition', 'none', 'important');
                 rightBtn.style.setProperty('transform', `translateX(${-30 * progress}px)`, 'important');
+            }
+
+            // 3. 箭頭 SVG 旋轉聯動
+            if (dismissIcon) {
+                dismissIcon.style.setProperty('opacity', '1', 'important'); 
+            }
+            if (dismissSvg) {
+                dismissSvg.style.setProperty('transform-origin', '50% 50%', 'important');
+                dismissSvg.style.setProperty('transition', 'none', 'important');
+                
+                const currentAngle = DISMISS_ICON_TARGET_ROTATION * (1 - progress);
+                dismissSvg.style.setProperty('transform', `rotate(${currentAngle}deg)`, 'important');
             }
         }
     }, { passive: false });
@@ -1177,26 +1190,25 @@ window.openBlankOverlay = function(hexColor) {
         
         const leftBtn = document.getElementById('capsule-main-btn');
         const rightBtn = document.getElementById('capsule-secondary-btn');
+        const dismissIcon = document.getElementById('dismiss-icon');
+        const dismissSvg = dismissIcon ? dismissIcon.querySelector('svg') : null;
         
-        // ==========================================
-        // 🟢 未達 1/3 但鬆手判定：超過 20 度或快速滑動
-        // ==========================================
         if (flippedDegrees > 20 || deltaX < -50) { 
             
-            container.classList.remove('is-swiping'); // 🟢 拔除跟手鎖定
+            container.classList.remove('is-swiping'); 
             clearInlineStyles(card);
             triggerSVGHandOff(progress); 
             window.closeBlankOverlay(true); 
 
         } else {
-            // 🟢 取消：原地 Q 彈回彈 (卡片與 SVG 一起彈回原位)
-            container.classList.remove('is-swiping'); // 🟢 拔除跟手鎖定
-            container.classList.remove('is-flipping'); // 🟢 讓替身陰影優雅淡出
-            container.style.removeProperty('--swipe-shadow-opacity'); // 清理變數
+            // 取消關閉：Q彈回歸完全打開的狀態
+            container.classList.remove('is-swiping'); 
+            container.classList.remove('is-flipping'); 
+            container.style.removeProperty('--swipe-shadow-opacity'); 
             
             card.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15), box-shadow 0.3s linear', 'important');
             card.style.setProperty('transform', `scale(1) rotateY(0deg)`, 'important');
-            card.style.setProperty('box-shadow', 'var(--ray-shadow-active)', 'important'); // 🟢 優雅恢復原生實體陰影
+            card.style.setProperty('box-shadow', 'var(--ray-shadow-active)', 'important'); 
             
             if (leftBtn && rightBtn) {
                 leftBtn.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15)', 'important');
@@ -1204,6 +1216,11 @@ window.openBlankOverlay = function(hexColor) {
 
                 rightBtn.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15)', 'important');
                 rightBtn.style.setProperty('transform', `translateX(0px)`, 'important');
+            }
+
+            if (dismissSvg) {
+                dismissSvg.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15)', 'important');
+                dismissSvg.style.setProperty('transform', `rotate(${DISMISS_ICON_TARGET_ROTATION}deg)`, 'important');
             }
             
             setTimeout(() => {
@@ -1228,9 +1245,15 @@ window.openBlankOverlay = function(hexColor) {
     if (window.slideCapsuleMode) window.slideCapsuleMode(true);
 
     const dismissIcon = document.getElementById('dismiss-icon');
+    const dismissSvg = dismissIcon ? dismissIcon.querySelector('svg') : null;
+    
     if (dismissIcon) {
-        dismissIcon.style.transition = 'opacity 0.3s linear';
-        dismissIcon.style.opacity = '0';
+        dismissIcon.style.setProperty('opacity', '1', 'important'); 
+    }
+    if (dismissSvg) {
+        dismissSvg.style.setProperty('transform-origin', '50% 50%', 'important');
+        dismissSvg.style.setProperty('transition', 'transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1)', 'important');
+        dismissSvg.style.setProperty('transform', `rotate(${DISMISS_ICON_TARGET_ROTATION}deg)`, 'important');
     }
 
     setTimeout(() => {
@@ -1278,20 +1301,26 @@ window.closeBlankOverlay = function(skipCapsuleAnimation = false) {
     blankCard.classList.remove('flip-in-active');
     blankCard.classList.add('flip-out-reverse'); 
 
-    // 如果是由手勢接管進來的，不執行預設的膠囊動畫，避免打架！
-    if (window.slideCapsuleMode && !skipCapsuleAnimation) {
-        window.slideCapsuleMode(false);
+    const dismissIcon = document.getElementById('dismiss-icon');
+    const dismissSvg = dismissIcon ? dismissIcon.querySelector('svg') : null;
+
+    // 🟢 核心修正點：如果不是手勢接管進來的（也就是點擊按鈕時），立刻同步啟動 SVG 旋轉回正！
+    if (!skipCapsuleAnimation) {
+        if (window.slideCapsuleMode) window.slideCapsuleMode(false);
+        
+        if (dismissIcon) {
+            dismissIcon.style.setProperty('opacity', '1', 'important'); 
+        }
+        if (dismissSvg) {
+            // 不再延遲 300ms，點擊瞬間立刻平滑旋轉回 0 度！
+            dismissSvg.style.setProperty('transition', 'transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1)', 'important');
+            dismissSvg.style.setProperty('transform', 'rotate(0deg)', 'important');
+        }
     }
 
     setTimeout(() => {
         originalInner.classList.remove('flip-out');
         originalInner.classList.add('flip-back-start');
-
-        const dismissIcon = document.getElementById('dismiss-icon');
-        if (dismissIcon) {
-            dismissIcon.style.transition = 'opacity 0.3s linear';
-            dismissIcon.style.opacity = '1';
-        }
 
         overlay.style.opacity = '0';
         overlay.style.transition = 'opacity 0.1s ease'; 
@@ -1313,75 +1342,24 @@ window.closeBlankOverlay = function(skipCapsuleAnimation = false) {
             const rightBtn = document.getElementById('capsule-secondary-btn');
             if(leftBtn) leftBtn.style.cssText = ''; 
             if(rightBtn) rightBtn.style.cssText = ''; 
+            
+            // 🟢 動畫徹底跑完後，乾淨地交還權限給 physics.js！
+            if (dismissIcon) {
+                dismissIcon.style.removeProperty('opacity');
+            }
+            if (dismissSvg) {
+                dismissSvg.style.removeProperty('transform');
+                dismissSvg.style.removeProperty('transition');
+                dismissSvg.style.removeProperty('transform-origin');
+            }
 
             window.isFlipAnimating = false; 
         }, 450); 
 
     }, 300); 
 };
-// ============================================================================
-// 🟢 空白彈窗關閉邏輯 (包含防連點保護)
-// ============================================================================
 
-window.closeBlankOverlay = function() {
-    if (window.isFlipAnimating) return; // 確保不會被滑動跟點擊重複觸發
-    window.isFlipAnimating = true;
 
-    const overlay = document.getElementById('dynamic-blank-overlay');
-    const blankCard = overlay ? overlay.querySelector('.detail-card-inner') : null;
-    const originalContainer = document.getElementById('detail-card-container');
-    const originalInner = originalContainer ? originalContainer.querySelector('.detail-card-inner') : null;
-    const blankContainer = overlay ? overlay.querySelector('.perspective-container') : null;
-
-    if (!overlay || !blankCard || !originalInner || !originalContainer) {
-        window.isFlipAnimating = false;
-        return;
-    }
-
-    overlay.style.pointerEvents = 'none';
-
-    blankCard.classList.add('hardware-accelerated');
-    originalInner.classList.add('hardware-accelerated');
-    originalContainer.classList.add('is-flipping');
-    if (blankContainer) blankContainer.classList.add('is-flipping');
-
-    blankCard.classList.remove('flip-in-active');
-    blankCard.classList.add('flip-out-reverse'); // CSS 會自動接手滑動留下的 -45 度並滑順轉到 -90 度
-
-    // 🟢 觸發膠囊 SVG 切換動畫！(原汁原味)
-    if (window.slideCapsuleMode) window.slideCapsuleMode(false);
-
-    setTimeout(() => {
-        originalInner.classList.remove('flip-out');
-        originalInner.classList.add('flip-back-start');
-
-        const dismissIcon = document.getElementById('dismiss-icon');
-        if (dismissIcon) {
-            dismissIcon.style.transition = 'opacity 0.3s linear';
-            dismissIcon.style.opacity = '1';
-        }
-
-        overlay.style.opacity = '0';
-        overlay.style.transition = 'opacity 0.1s ease'; 
-
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                originalInner.classList.remove('flip-back-start');
-                originalInner.classList.add('flip-back-active');
-            });
-        });
-
-        setTimeout(() => {
-            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-            originalInner.classList.remove('flip-back-active');
-            originalContainer.classList.remove('perspective-container', 'is-flipping');
-            originalInner.classList.remove('hardware-accelerated');
-            
-            window.isFlipAnimating = false; // 徹底解鎖
-        }, 450); 
-
-    }, 300); 
-};
 window.closeBlankOverlay = function() {
     const overlay = document.getElementById('dynamic-blank-overlay');
     const blankCard = overlay ? overlay.querySelector('.detail-card-inner') : null;
