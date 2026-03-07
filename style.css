@@ -493,14 +493,15 @@ body.searching .search-mask {
 }
 
 /* =========================================
-      🟢 空白模式下專屬 SVG 設定 (獨立樣式不打架)
-      ========================================= */
-.capsule-btn-item svg.icon-blank-mode {
-    position: relative !important;
-    opacity: 0.8 !important;
-    transform: scale(1) !important;
-    pointer-events: auto !important;
-}
+   🟢 空白/資訊模式下專屬 SVG 設定
+   ========================================= */
+   .capsule-btn-item svg.icon-blank-mode,
+   .capsule-btn-item svg.icon-info-mode {
+       position: relative !important; 
+       opacity: 0.8 !important;
+       transform: scale(1) !important;
+       pointer-events: auto !important;
+   }
 
 /* ==========================================================================
    卡片堆疊與物理邏輯
@@ -963,23 +964,28 @@ body:has(.detail-overlay.active).searching .card-stack {
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-/* 3. 【詳情卡片本體景深】將景深縮放移交給「外層容器」，徹底解決 3D 翻轉被強制覆蓋的 Bug！ */
+/* 3. 【詳情卡片本體景深】將景深縮放移交給「外層容器」 */
 body.menu-active #detail-card-container,
 body:has(.left-circle-btn.is-expanded) #detail-card-container,
 body:has(.universal-window.is-active) #detail-card-container,
 body.searching #detail-card-container,
-body.menu-active #dynamic-blank-overlay>.perspective-container,
-body:has(.left-circle-btn.is-expanded) #dynamic-blank-overlay>.perspective-container,
-body:has(.universal-window.is-active) #dynamic-blank-overlay>.perspective-container,
-body.searching #dynamic-blank-overlay>.perspective-container {
+body.menu-active #dynamic-blank-overlay > .perspective-container,
+body:has(.left-circle-btn.is-expanded) #dynamic-blank-overlay > .perspective-container,
+body:has(.universal-window.is-active) #dynamic-blank-overlay > .perspective-container,
+body.searching #dynamic-blank-overlay > .perspective-container,
+body.menu-active #dynamic-info-overlay > .perspective-container,
+body:has(.left-circle-btn.is-expanded) #dynamic-info-overlay > .perspective-container,
+body:has(.universal-window.is-active) #dynamic-info-overlay > .perspective-container,
+body.searching #dynamic-info-overlay > .perspective-container {
     transform: scale(0.90) translateY(15px) !important;
     pointer-events: none !important;
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* 確保容器本身平時有平滑的恢復動畫 */
-#detail-card-container,
-#dynamic-blank-overlay>.perspective-container {
+#detail-card-container, 
+#dynamic-blank-overlay > .perspective-container,
+#dynamic-info-overlay > .perspective-container {
     transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
