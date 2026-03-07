@@ -35,6 +35,7 @@ const CAPSULE_SVGS = {
     `
 };
 
+
 export function initHeader(onSearchCallback, getActiveCardId) {
     const searchInput = document.getElementById('search-input');
     const searchContainer = document.getElementById('search-container');
