@@ -60,15 +60,25 @@ card.innerHTML = `
 </div>
 
 <div class="card-content">
-    <div id="p-edit-row" style="--btn-height: 44px; display: flex; gap: 8px; margin-bottom: 12px; width: 100%; position: relative;
+    <div id="p-edit-row" style="
+        --btn-height: 44px; 
+        display: flex; gap: 8px; margin-bottom: 12px; position: relative;
+        
+        /* 🟢 魔法機制：把容器左右各拉長 15px，再用 padding 把按鈕推回原本視覺上的位置 */
+        width: calc(100% + 30px); 
+        margin-left: -15px; 
+        padding: 0 15px;
+        
+        /* 🟢 這樣遮罩的透明漸層 (0~15px) 就會完美落在空白的 padding 上，平時絕對不吃按鈕！ */
         -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);
-        mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);">
+        mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);
+    ">
         
         <button id="p-btn-label" class="info-tag-item interactive-btn" style="
             cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px;
             font-size: 0.95rem; display: flex; align-items: center; justify-content: center;
             white-space: nowrap; flex-shrink: 0; max-width: 120px; overflow: hidden;
-            transition: transform 0.4s var(--apple-spring), opacity 0.3s ease, max-width 0.4s var(--apple-spring), padding 0.4s var(--apple-spring), margin 0.4s var(--apple-spring);
+            transition: transform 0.4s var(--apple-spring), max-width 0.4s var(--apple-spring), padding 0.4s var(--apple-spring), margin 0.4s var(--apple-spring);
         ">
             <span style="white-space: nowrap;">表示名</span>
         </button>
@@ -85,7 +95,7 @@ card.innerHTML = `
                 width: 100%; text-align: left; overflow: hidden; text-overflow: ellipsis;
             ">${targetName}</span>
 
-            <input id="p-real-input" type="text" value="${targetName}" style="
+            <input id="p-real-input" type="text" placeholder="${targetName}" maxlength="10" oninput="window.updateCharCount(this.value)" style="
                 position: absolute; left: 16px; right: 16px; top: 0; bottom: 0;
                 background: transparent; border: none; color: inherit; font-family: inherit;
                 font-size: 0.95rem; outline: none; opacity: 0; pointer-events: none;
@@ -114,7 +124,7 @@ card.innerHTML = `
         <button id="p-btn-circle-2" class="info-tag-item interactive-btn" style="
             cursor: pointer; height: var(--btn-height); width: var(--btn-height); padding: 0;
             border-radius: 50%; position: relative; overflow: hidden; display: block; flex-shrink: 0;
-            transition: transform 0.4s var(--apple-spring), opacity 0.3s ease, max-width 0.4s var(--apple-spring), margin 0.4s var(--apple-spring), padding 0.4s var(--apple-spring);
+            transition: transform 0.4s var(--apple-spring), max-width 0.4s var(--apple-spring), margin 0.4s var(--apple-spring), padding 0.4s var(--apple-spring);
             max-width: var(--btn-height);
         ">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
@@ -123,6 +133,11 @@ card.innerHTML = `
             </svg>
         </button>
     </div>
+    
+    <p class="description" style="font-size: clamp(0.85rem, 3vw, 0.95rem); margin-bottom: 12px; display: flex; justify-content: space-between; padding: 0 4px;">
+        <span>　- 十文字以內 -</span>
+        <span id="p-char-count" style="opacity: 0; transition: opacity 0.4s var(--apple-spring); font-family: monospace; font-size: 0.9em; margin-right: 4px;">0/10</span>
+    </p>
     
     <p class="description" style="font-size: clamp(0.85rem, 3vw, 0.95rem); margin-bottom: 12px;">　- HEX形式で入力してください -</p>
 </div>
@@ -405,7 +420,7 @@ card.innerHTML = `
     };
 }
 // =========================================================
-    // 🟢 輸入框絲滑變形動畫引擎 (0.4s Apple Spring)
+    // 🟢 輸入框絲滑變形動畫引擎 (0.4s Apple Spring + 邊緣物理遮罩)
     // =========================================================
     window.toggleEditNameMode = function() {
         const row = document.getElementById('p-edit-row');
@@ -418,40 +433,47 @@ card.innerHTML = `
         const realInput = document.getElementById('p-real-input');
         const iconClip = document.getElementById('p-icon-clipboard');
         const iconX = document.getElementById('p-icon-x');
+        const charCount = document.getElementById('p-char-count');
 
-        // 1. 向左推擠並淡出「表示名」
+        // 1. 向左推擠「表示名」
+        // 💡 拔除 opacity: 0，讓按鈕維持實體，完全依靠外層的 mask-image 邊緣淡化防穿幫
         label.style.maxWidth = '0px';
         label.style.padding = '0px';
         label.style.marginRight = '-8px'; // 抵銷 gap
-        label.style.opacity = '0';
         label.style.transform = 'translateX(-30px)';
 
-        // 2. 向右推擠並淡出「圓形按鈕 2」
+        // 2. 向右推擠「圓形按鈕 2」
+        // 💡 拔除 opacity: 0，靠右側邊緣遮罩吃掉
         circle2.style.maxWidth = '0px';
         circle2.style.padding = '0px';
         circle2.style.marginLeft = '-8px'; // 抵銷 gap
-        circle2.style.opacity = '0';
         circle2.style.transform = 'translateX(30px)';
 
-        // 3. 輸入框浮現 (文字上浮淡出，輸入框上浮淡入)
+        // 3. 輸入框浮現 (打開時強制清空，並顯示 Placeholder)
         displayName.style.opacity = '0';
         displayName.style.transform = 'translateY(-15px)';
 
+        realInput.value = ''; // 🟢 每次打開都是全空的
+        window.updateCharCount(''); // 重置字數顯示為 0/10
+        
         realInput.style.opacity = '1';
         realInput.style.pointerEvents = 'auto';
         realInput.style.transform = 'translateY(0)';
         realInput.focus(); // 自動聚焦彈出鍵盤
 
-        // 4. SVG 「向右不淡化」切換 (延遲 0.2s = 總行程 0.4s 的一半)
+        // 🟢 字數統計浮現
+        if(charCount) charCount.style.opacity = '0.8';
+
+        // 4. SVG 「向右不淡化」實體切換 (總行程的一半 = 0.2s 時觸發)
         setTimeout(() => {
-            if (row.dataset.editing !== 'true') return; // 防連點
-            iconClip.style.transform = 'translate(150%, -50%)'; // 往右滑出
-            iconX.style.transform = 'translate(-50%, -50%)';    // 從左滑入置中
+            if (row.dataset.editing !== 'true') return;
+            iconClip.style.transform = 'translate(150%, -50%)'; // 原本的向右滑出
+            iconX.style.transform = 'translate(-50%, -50%)';    // X 從左側補位
         }, 200);
     };
 
     window.closeEditNameMode = function(e) {
-        e.stopPropagation(); // 防止點擊穿透觸發外層
+        e.stopPropagation(); // 防止點擊穿透
         const row = document.getElementById('p-edit-row');
         if (!row || row.dataset.editing !== 'true') return;
         row.dataset.editing = 'false'; // 解鎖
@@ -462,27 +484,27 @@ card.innerHTML = `
         const realInput = document.getElementById('p-real-input');
         const iconClip = document.getElementById('p-icon-clipboard');
         const iconX = document.getElementById('p-icon-x');
+        const charCount = document.getElementById('p-char-count');
 
-        // 1. 恢復「表示名」
+        // 1. 原路恢復「表示名」
         label.style.maxWidth = '120px';
         label.style.padding = '0 16px';
         label.style.marginRight = '0px';
-        label.style.opacity = '1';
         label.style.transform = 'translateX(0px)';
 
-        // 2. 恢復「圓形按鈕 2」
+        // 2. 原路恢復「圓形按鈕 2」
         circle2.style.maxWidth = 'var(--btn-height)';
         circle2.style.padding = '0px';
         circle2.style.marginLeft = '0px';
-        circle2.style.opacity = '1';
         circle2.style.transform = 'translateX(0px)';
 
-        // 🟢 將輸入框的內容同步回按鈕的顯示文字上
-        if(realInput.value.trim() !== '') {
-            displayName.textContent = realInput.value;
+        // 🟢 判斷輸入內容：如果有打字就更新，沒打字就維持原樣
+        const finalVal = realInput.value.trim();
+        if(finalVal !== '') {
+            displayName.textContent = finalVal;
         }
 
-        // 3. 輸入框收回 (文字下沉淡入，輸入框下沉淡出)
+        // 3. 輸入框原路收回
         displayName.style.opacity = '1';
         displayName.style.transform = 'translateY(0)';
 
@@ -491,10 +513,21 @@ card.innerHTML = `
         realInput.style.transform = 'translateY(15px)';
         realInput.blur(); // 收起鍵盤
 
-        // 4. SVG 「向左不淡化」切換回歸 (一樣延遲 0.2s)
+        // 🟢 字數統計淡出隱藏
+        if(charCount) charCount.style.opacity = '0';
+
+        // 4. SVG 原路切換回歸
         setTimeout(() => {
             if (row.dataset.editing === 'true') return;
             iconClip.style.transform = 'translate(-50%, -50%)'; // 回歸置中
-            iconX.style.transform = 'translate(-250%, -50%)';   // 退回左側躲好
+            iconX.style.transform = 'translate(-250%, -50%)';   // 往左退回待命
         }, 200);
+    };
+
+    // 🟢 綁定在 Input 上的即時字數更新器
+    window.updateCharCount = function(val) {
+        const countElement = document.getElementById('p-char-count');
+        if(countElement) {
+            countElement.textContent = val.length + '/10';
+        }
     };
