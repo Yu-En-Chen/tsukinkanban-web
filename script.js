@@ -1052,20 +1052,49 @@ window.openBlankOverlay = function (hexColor) {
     card.className = 'detail-card-inner flip-in-start';
     applyThemeToCard(card, hexColor);
 
-    // 🟢 新增：注入左上角標題與 2x2 膠囊按鈕網格
-    card.innerHTML = `
-        <div class="card-header">
-            <span class="line-name">カスタマイズ</span>
-        </div>
-        <div class="card-content">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
-                <button class="info-tag-item" style="cursor: pointer; text-align: center; padding: 12px; border-radius: 100px; font-size: 0.95rem; width: 100%;">表示名</button>
-                <button class="info-tag-item" style="cursor: pointer; text-align: center; padding: 12px; border-radius: 100px; font-size: 0.95rem; width: 100%;">按鈕 2</button>
-                <button class="info-tag-item" style="cursor: pointer; text-align: center; padding: 12px; border-radius: 100px; font-size: 0.95rem; width: 100%;">カラー</button>
-                <button class="info-tag-item" style="cursor: pointer; text-align: center; padding: 12px; border-radius: 100px; font-size: 0.95rem; width: 100%;">按鈕 4</button>
-            </div>
-        </div>
-    `;
+// 🟢 取得當前打開卡片的名稱與顏色 (用以動態顯示於按鈕)
+let targetName = '未知名稱';
+let targetHex = hexColor || '#2C2C2E';
+
+if (activeCardId) {
+    if (activeCardId === 'fixed-bottom') {
+        targetName = '運行情報';
+    } else {
+        const currentData = window.appRailwayData.find(l => l.id === activeCardId);
+        if (currentData) {
+            targetName = currentData.name;
+            targetHex = currentData.hex;
+        }
+    }
+}
+
+// 🟢 注入左上角標題、分層文字說明與 2x2 膠囊按鈕網格 (自適應縮放版)
+card.innerHTML = `
+<div class="card-header" style="padding-bottom: clamp(2px, 1vh, 5px);">
+    <span class="line-name">カスタマイズ</span>
+</div>
+
+<div class="card-content">
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: clamp(6px, 2vw, 12px); margin-bottom: clamp(4px, 1.5vh, 15px);">
+        
+        <button class="info-tag-item" style="cursor: pointer; text-align: center; padding: clamp(8px, 2vh, 12px) 4px; border-radius: 100px; font-size: clamp(0.8rem, 3.5vw, 0.95rem); width: 100%; opacity: 0.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">表示名</button>
+        
+        <button class="info-tag-item" style="cursor: pointer; text-align: center; padding: clamp(8px, 2vh, 12px) 4px; border-radius: 100px; font-size: clamp(0.8rem, 3.5vw, 0.95rem); width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${targetName}</button>
+    </div>
+    
+    <p class="description" style="font-size: clamp(0.75rem, 3.5vw, 0.85rem); margin-bottom: clamp(8px, 2vh, 16px);">測試測試（第一列下方說明文字）</p>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: clamp(6px, 2vw, 12px); margin-bottom: clamp(4px, 1.5vh, 8px);">
+        
+        <button class="info-tag-item" style="cursor: pointer; text-align: center; padding: clamp(8px, 2vh, 12px) 4px; border-radius: 100px; font-size: clamp(0.8rem, 3.5vw, 0.95rem); width: 100%; opacity: 0.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">カラー</button>
+        
+        <button class="info-tag-item" style="cursor: pointer; text-align: center; padding: clamp(8px, 2vh, 12px) 4px; border-radius: 100px; font-size: clamp(0.8rem, 3.5vw, 0.95rem); width: 100%; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${targetHex.toUpperCase()}</button>
+    </div>
+    
+    <p class="description" style="font-size: clamp(0.75rem, 3.5vw, 0.85rem); margin-bottom: clamp(8px, 2vh, 16px);">測試測試（第二列下方說明文字）</p>
+</div>
+`;
 
     container.appendChild(card);
     overlay.appendChild(container);
