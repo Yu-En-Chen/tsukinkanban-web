@@ -1480,6 +1480,17 @@ body.searching .dismiss-icon {
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
 }
 
+/* 🟢 當進入編輯模式時，禁用輸入框容器的縮放微互動，僅保留陰影 */
+#p-edit-row[data-editing="true"] #p-btn-input-container.interactive-btn {
+    scale: 1 !important;
+    cursor: default;
+}
+
+#p-edit-row[data-editing="true"] #p-btn-input-container.interactive-btn:active {
+    scale: 1 !important;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important; /* 僅保留陰影回饋 */
+}
+
 /* ==========================================================================
    🟢 Android Blink 引擎專屬防閃爍修復 (動態降級法)
    ========================================================================== */

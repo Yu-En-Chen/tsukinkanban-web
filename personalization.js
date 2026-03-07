@@ -61,15 +61,8 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
 
 <div class="card-content">
     <div id="p-edit-row" style="--btn-height: 44px; display: flex; gap: 8px; position: relative;
-        /* 1. 左右防吃字設定 */
-        width: calc(100% + 30px); 
-        margin-left: -15px; 
-        
-        /* 2. 🟢 陰影解放魔法：上下各增加 20px 的隱形空間讓微互動能飛出，再用 margin 扣回來維持排版 */
-        padding: 30px 15px; 
-        margin-top: -20px; 
-        margin-bottom: -18px; /* 原本的 12px 減去 padding 30px = -18px */
-        
+        width: calc(100% + 30px); margin-left: -15px; 
+        padding: 20px 15px; margin-top: -20px; margin-bottom: -8px; 
         -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);
         mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);">
         
@@ -104,19 +97,17 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         </div>
 
         <button id="p-btn-circle-1" class="info-tag-item interactive-btn" style="
-        /* 上排第三顆按鈕（複製、關閉、確認） */
             cursor: pointer; height: var(--btn-height); width: var(--btn-height); padding: 0;
             border-radius: 50%; position: relative; overflow: hidden; display: block; flex-shrink: 0;
             transition: all 0.4s var(--apple-spring);
-        " onclick="window.closeEditNameMode(event)">
+        " onclick="window.handleCopyAction(event)">
             
-            <svg id="p-icon-clipboard" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
-                style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: transform 0.4s var(--apple-spring); opacity: 0.8; 
-                width: 21px !important; /* 👈 寬度加大 */
-                height: 20.7px !important; /* 👈 高度跟著加大，保持正方形 */
-                stroke-width: 2px;">
-                <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M16 4h2a2 2 0 0 1 2 2v4"/><path d="M21 14H11"/><path d="m15 10-4 4 4 4"/>
-            </svg>
+            <span id="p-icon-clipboard" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: transform 0.4s var(--apple-spring); display: flex; align-items: center; justify-content: center; width: 21.1px; height: 20.7px;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
+                     style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px; transform: scaleX(-1);">
+                    <path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/>
+                </svg>
+            </span>
             
             <svg id="p-icon-x" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
                  style="position: absolute; top: 50%; left: 50%; transform: translate(-250%, -50%); transition: transform 0.4s var(--apple-spring); opacity: 0.8; width: 22px; height: 22px; stroke-width: 2.5px;">
@@ -125,25 +116,14 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         </button>
 
         <button id="p-btn-circle-2" class="info-tag-item interactive-btn" style="
-        /* 上排第四顆按鈕（貼上） */
             cursor: pointer; height: var(--btn-height); width: var(--btn-height); padding: 0;
             border-radius: 50%; position: relative; overflow: hidden; display: block; flex-shrink: 0;
             transition: transform 0.4s var(--apple-spring), max-width 0.4s var(--apple-spring), margin 0.4s var(--apple-spring), padding 0.4s var(--apple-spring);
             max-width: var(--btn-height);
         ">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
-                 style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease; opacity: 0.8; visibility: visible; width: 20px; height: 20px; stroke-width: 2px;">
+                 style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.8; width: 20px; height: 20px; stroke-width: 2px;">
                 <path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/>
-            </svg>
-
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
-                 style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease; opacity: 0; visibility: hidden; width: 20px; height: 20px; stroke-width: 2px;">
-                <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>
-            </svg>
-
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
-                 style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease; opacity: 0; visibility: hidden; width: 20px; height: 20px; stroke-width: 2px;">
-                <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m15 11-6 6"/><path d="m9 11 6 6"/>
             </svg>
         </button>
     </div>
@@ -152,6 +132,41 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         <span>　- 十文字以內 -</span>
         <span id="p-char-count" style="opacity: 0; transition: opacity 0.4s var(--apple-spring); font-family: monospace; font-size: 0.9em; margin-right: 4px;">0/10</span>
     </p>
+
+    <div style="--btn-height: 44px; display: grid; grid-template-columns: max-content 1fr var(--btn-height) var(--btn-height); gap: 8px; margin-bottom: 12px;">
+        <button class="info-tag-item interactive-btn" style="cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; white-space: nowrap;">カラー</button>
+        <button class="info-tag-item interactive-btn" style="cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px; font-size: 0.95rem; font-family: monospace; display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${targetHex.toUpperCase()}</button>
+
+        <button class="info-tag-item interactive-btn" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease; opacity: 0.8; visibility: visible; width: 20px; height: 20px; stroke-width: 2px;">
+                <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/>
+            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease; opacity: 0; visibility: hidden; width: 20px; height: 20px; stroke-width: 2px;">
+                <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>
+            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease; opacity: 0; visibility: hidden; width: 20px; height: 20px; stroke-width: 2px;">
+                <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m15 11-6 6"/><path d="m9 11 6 6"/>
+            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease; opacity: 0; visibility: hidden; width: 22px; height: 22px; stroke-width: 2.5px;">
+                <path d="M20 6 9 17l-5-5"/>
+            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease; opacity: 0; visibility: hidden; width: 22px; height: 22px; stroke-width: 2.5px;">
+                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </svg>
+        </button>
+
+        <button class="info-tag-item interactive-btn" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease; opacity: 0.8; visibility: visible; width: 20px; height: 20px; stroke-width: 2px;">
+                <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M16 4h2a2 2 0 0 1 2 2v4"/><path d="M21 14H11"/><path d="m15 10-4 4 4 4"/>
+            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease; opacity: 0; visibility: hidden; width: 20px; height: 20px; stroke-width: 2px;">
+                <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>
+            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease; opacity: 0; visibility: hidden; width: 20px; height: 20px; stroke-width: 2px;">
+                <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m15 11-6 6"/><path d="m9 11 6 6"/>
+            </svg>
+        </button>
+    </div>
     
     <p class="description" style="font-size: clamp(0.85rem, 3vw, 0.95rem); margin-bottom: 12px;">　- HEX形式で入力してください -</p>
 </div>
@@ -544,4 +559,55 @@ window.updateCharCount = function (val) {
     if (countElement) {
         countElement.textContent = val.length + '/10';
     }
+};
+// 🟢 全域狀態鎖
+let isCopyingLocked = false;
+
+window.handleCopyAction = function(e) {
+    const row = document.getElementById('p-edit-row');
+    
+    // 1. 如果正在編輯模式中，按鈕 3 的功能是「關閉」
+    if (row && row.dataset.editing === 'true') {
+        window.closeEditNameMode(e);
+        return;
+    }
+
+    // 2. 如果處於冷卻或動畫鎖定中，拒絕執行
+    if (isCopyingLocked) return;
+
+    // 🟢 執行複製邏輯
+    const displayName = document.getElementById('p-display-name');
+    const textToCopy = displayName ? displayName.textContent : "";
+
+    if (textToCopy) {
+        isCopyingLocked = true; // 立即上鎖 (拔除權限)
+        
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            console.log('已複製到剪貼簿:', textToCopy);
+            // 這裡可以加入您未來的切換 SVG 到「打勾」的邏輯
+        }).catch(err => {
+            console.error('複製失敗:', err);
+        }).finally(() => {
+            // 0.5 秒冷卻時間後才解鎖恢復權限
+            setTimeout(() => {
+                isCopyingLocked = false;
+            }, 500);
+        });
+    }
+};
+
+// 🟢 修正：當進入編輯模式時，也要暫時鎖定複製權限直到退出
+const originalToggleEdit = window.toggleEditNameMode;
+window.toggleEditNameMode = function() {
+    isCopyingLocked = true; // 進入行程時拔除權限
+    originalToggleEdit();
+};
+
+const originalCloseEdit = window.closeEditNameMode;
+window.closeEditNameMode = function(e) {
+    originalCloseEdit(e);
+    // 行程結束後，給予 0.5s 冷卻再恢復權限
+    setTimeout(() => {
+        isCopyingLocked = false;
+    }, 500);
 };
