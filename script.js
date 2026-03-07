@@ -760,6 +760,7 @@ function initOverlayGestures() {
 
             // 🟢 1. 拔除 wrapper 可能殘留的強制不透明 (!important)
             dismissIcon.style.removeProperty('opacity');
+            dismissIcon.style.opacity = '1';
 
             // 🟢 2. 拔除內部 SVG 可能殘留的強制旋轉 (!important) 與過渡
             const dismissSvg = dismissIcon.querySelector('svg');
