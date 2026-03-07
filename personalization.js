@@ -77,7 +77,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
 
         <div id="p-btn-input-container" class="info-tag-item interactive-btn" style="
             cursor: pointer; height: var(--btn-height); border-radius: 100px;
-            font-size: 0.95rem; display: flex; align-items: center; justify-content: flex-start;
+            display: flex; align-items: center; justify-content: flex-start;
             white-space: nowrap; overflow: hidden; flex-grow: 1; position: relative; padding: 0 16px;
             transition: all 0.4s var(--apple-spring);
         " onclick="window.toggleEditNameMode()">
@@ -85,12 +85,22 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             <span id="p-display-name" style="
                 transition: opacity 0.3s ease, transform 0.4s var(--apple-spring);
                 width: 100%; text-align: left; overflow: hidden; text-overflow: ellipsis;
+                font-size: clamp(0.85rem, 3.5vw, 1.05rem);
             ">${targetName}</span>
 
-            <input id="p-real-input" type="text" placeholder="${targetName}" maxlength="10" oninput="window.updateCharCount(this.value)" style="
+            <span id="p-display-copied" style="
                 position: absolute; left: 16px; right: 16px; top: 0; bottom: 0;
+                display: flex; align-items: center; justify-content: flex-start;
+                font-size: clamp(0.85rem, 3.5vw, 1.05rem); font-weight: normal; 
+                opacity: 0; pointer-events: none;
+                transition: opacity 0.3s ease, transform 0.4s var(--apple-spring);
+                transform: translateY(-15px);
+            ">已複製</span>
+
+            <input id="p-real-input" type="text" placeholder="${targetName}" maxlength="10" oninput="window.updateCharCount(this.value)" style="
+                position: absolute; left: 16px; right: 16px; top: 0; bottom: 0; margin: 0; padding: 0; height: 100%;
                 background: transparent; border: none; color: inherit; font-family: inherit;
-                font-size: 0.95rem; outline: none; opacity: 0; pointer-events: none;
+                font-size: clamp(0.85rem, 3.5vw, 1.05rem); outline: none; opacity: 0; pointer-events: none;
                 transition: opacity 0.3s ease, transform 0.4s var(--apple-spring);
                 transform: translateY(15px);
             ">
@@ -109,6 +119,11 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                 </svg>
             </span>
             
+            <svg id="p-icon-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
+                 style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -250%); transition: transform 0.4s var(--apple-spring); opacity: 0.8; width: 22px; height: 22px; stroke-width: 2px;">
+                <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>
+            </svg>
+
             <svg id="p-icon-x" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
                  style="position: absolute; top: 50%; left: 50%; transform: translate(-250%, -50%); transition: transform 0.4s var(--apple-spring); opacity: 0.8; width: 22px; height: 22px; stroke-width: 2.5px;">
                 <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
@@ -566,13 +581,13 @@ let isCopyingLocked = false;
 window.handleCopyAction = function(e) {
     const row = document.getElementById('p-edit-row');
     
-    // 1. 如果正在編輯模式中，按鈕 3 的功能是「關閉」
+    // 1. 如果正在編輯模式中，這顆按鈕是「關閉/取消」
     if (row && row.dataset.editing === 'true') {
         window.closeEditNameMode(e);
         return;
     }
 
-    // 2. 如果處於冷卻或動畫鎖定中，拒絕執行
+    // 2. 如果處於動畫或冷卻鎖定中，拒絕任何點擊 (1.4秒內絕對無效化)
     if (isCopyingLocked) return;
 
     // 🟢 執行複製邏輯
@@ -580,33 +595,66 @@ window.handleCopyAction = function(e) {
     const textToCopy = displayName ? displayName.textContent : "";
 
     if (textToCopy) {
-        isCopyingLocked = true; // 立即上鎖 (拔除權限)
+        isCopyingLocked = true; // 立即上鎖，拔除點擊權限
         
         navigator.clipboard.writeText(textToCopy).then(() => {
-            console.log('已複製到剪貼簿:', textToCopy);
-            // 這裡可以加入您未來的切換 SVG 到「打勾」的邏輯
+            const iconClip = document.getElementById('p-icon-clipboard');
+            const iconCheck = document.getElementById('p-icon-check');
+            const textCopied = document.getElementById('p-display-copied');
+
+            // 🟢 [階段 1] 0.0s：啟動向下切換動畫 (耗時約 0.4s)
+            // 原本的圖示與文字往下掉，新的圖示與文字從上面降落
+            if (iconClip) iconClip.style.transform = 'translate(-50%, 150%)';
+            if (iconCheck) iconCheck.style.transform = 'translate(-50%, -50%)';
+            
+            if (displayName) {
+                displayName.style.transform = 'translateY(15px)';
+                displayName.style.opacity = '0';
+            }
+            if (textCopied) {
+                textCopied.style.transform = 'translateY(0)';
+                textCopied.style.opacity = '1';
+            }
+
+            // 🟢 [階段 2] 0.9s：停留 0.5s 後觸發原路退回 (0.4s 動畫 + 0.5s 停留 = 0.9s)
+            setTimeout(() => {
+                if (iconClip) iconClip.style.transform = 'translate(-50%, -50%)';
+                if (iconCheck) iconCheck.style.transform = 'translate(-50%, -250%)';
+                
+                if (displayName) {
+                    displayName.style.transform = 'translateY(0)';
+                    displayName.style.opacity = '1';
+                }
+                if (textCopied) {
+                    textCopied.style.transform = 'translateY(-15px)';
+                    textCopied.style.opacity = '0';
+                }
+                
+                // 🟢 [階段 3] 1.4s：退回動畫完全就緒後，解除冷卻鎖，恢復權限
+                // (退回需 0.4s，加上 0.1s 安全緩衝 = 0.5s)
+                setTimeout(() => {
+                    isCopyingLocked = false;
+                }, 500);
+                
+            }, 900);
+
         }).catch(err => {
             console.error('複製失敗:', err);
-        }).finally(() => {
-            // 0.5 秒冷卻時間後才解鎖恢復權限
-            setTimeout(() => {
-                isCopyingLocked = false;
-            }, 500);
+            isCopyingLocked = false; // 若發生錯誤直接解鎖
         });
     }
 };
 
-// 🟢 修正：當進入編輯模式時，也要暫時鎖定複製權限直到退出
+// 確保點擊編輯框時也拔除複製權限
 const originalToggleEdit = window.toggleEditNameMode;
 window.toggleEditNameMode = function() {
-    isCopyingLocked = true; // 進入行程時拔除權限
+    isCopyingLocked = true;
     originalToggleEdit();
 };
 
 const originalCloseEdit = window.closeEditNameMode;
 window.closeEditNameMode = function(e) {
     originalCloseEdit(e);
-    // 行程結束後，給予 0.5s 冷卻再恢復權限
     setTimeout(() => {
         isCopyingLocked = false;
     }, 500);
