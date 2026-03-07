@@ -807,9 +807,21 @@ function initOverlayGestures() {
 
     detailOverlay.ontouchend = e => {
 
+        // 🟢 第一優先：無論卡片最終是要關閉還是彈回，都必須立刻把膠囊按鈕的控制權還給 CSS！
+        defaultIcons.forEach(icon => {
+            icon.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
+            icon.style.removeProperty('transform');
+            icon.style.removeProperty('opacity');
+        });
+        hiddenIcons.forEach(icon => {
+            icon.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
+            icon.style.removeProperty('transform');
+            icon.style.removeProperty('opacity');
+        });
+
         // 🟢 終極防禦鎖：如果下拉距離已經觸發了關閉流程，直接中斷，絕對不允許執行恢復動畫！
         if (!detailOverlay.classList.contains('active')) return;
-        
+
         // 1. 恢復卡片本體的彈簧動畫，並設定目的地為 0 (原點)
         inner.style.transition = 'transform 0.55s var(--spring-release)';
         inner.style.transform = 'translate3d(0, 0, 0)';
