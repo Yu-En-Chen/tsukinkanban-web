@@ -973,11 +973,10 @@ window.handleBottomCardClick = handleBottomCardClick;
 window.handleOverlayClick = handleOverlayClick;
 
 // ============================================================================
-// 🟢 3D 翻轉萬用空白彈窗引擎 (唯一樞紐版：確保所有觸發方式皆 100% 轉正)
+// 🟢 3D 翻轉萬用空白彈窗引擎 (完美融合版：解決消失問題 + 膠囊進場修復)
 // ============================================================================
 
 // 🔧 【箭頭 SVG 旋轉角度設定】
-// 備註：90度為朝左，45度為左下，315度(或-45度)為右下
 const DISMISS_ICON_TARGET_ROTATION = 90; 
 
 window.openBlankOverlay = function(hexColor) {
@@ -1029,7 +1028,7 @@ window.openBlankOverlay = function(hexColor) {
     };
 
     // =========================================================
-    // 🟢 手勢專用：膠囊與箭頭 SVG 精準接手演算法
+    // 🟢 膠囊與箭頭 SVG 精準接手演算法
     // =========================================================
     const triggerSVGHandOff = (progress) => {
         const leftBtn = document.getElementById('capsule-main-btn');
@@ -1069,6 +1068,12 @@ window.openBlankOverlay = function(hexColor) {
 
                         rightBtn.style.setProperty('transition', 'transform 300ms cubic-bezier(0.0, 0.0, 0.2, 1)', 'important');
                         rightBtn.style.setProperty('transform', `translateX(0px)`, 'important');
+                        
+                        // 🟢 完美修復 2：等 300ms 新圖示徹底滑入後，再單獨清理它自己的行內屬性！
+                        setTimeout(() => {
+                            leftBtn.style.cssText = '';
+                            rightBtn.style.cssText = '';
+                        }, 300);
                     });
                 });
             }, remainingOutTime);
@@ -1133,7 +1138,7 @@ window.openBlankOverlay = function(hexColor) {
                 container.classList.remove('is-swiping'); 
                 clearInlineStyles(card);
                 triggerSVGHandOff(progress); 
-                window.closeBlankOverlay(true); // 傳入 true，告訴樞紐「手勢已接管動畫」
+                window.closeBlankOverlay(true); 
                 return;
             }
 
@@ -1238,7 +1243,6 @@ window.openBlankOverlay = function(hexColor) {
     const dismissIcon = document.getElementById('dismiss-icon');
     const dismissSvg = dismissIcon ? dismissIcon.querySelector('svg') : null;
     
-    // 🟢 打開卡片瞬間：啟動 SVG 旋轉到目標角度
     if (dismissIcon) {
         dismissIcon.style.setProperty('opacity', '1', 'important'); 
     }
@@ -1265,7 +1269,7 @@ window.openBlankOverlay = function(hexColor) {
 };
 
 // ============================================================================
-// 🟢 空白彈窗關閉樞紐 (點擊背景、按鈕，通通會進到這裡強制轉回！)
+// 🟢 空白彈窗關閉樞紐
 // ============================================================================
 
 window.closeBlankOverlay = function(skipCapsuleAnimation = false) {
@@ -1296,7 +1300,6 @@ window.closeBlankOverlay = function(skipCapsuleAnimation = false) {
     const dismissIcon = document.getElementById('dismiss-icon');
     const dismissSvg = dismissIcon ? dismissIcon.querySelector('svg') : null;
 
-    // 🟢 核心防禦：如果是由點擊觸發的 (!skipCapsuleAnimation)，強制執行轉正！
     if (!skipCapsuleAnimation) {
         if (window.slideCapsuleMode) window.slideCapsuleMode(false);
         
@@ -1304,15 +1307,12 @@ window.closeBlankOverlay = function(skipCapsuleAnimation = false) {
             dismissIcon.style.setProperty('opacity', '1', 'important'); 
         }
         if (dismissSvg) {
-            // 1. 強制設定起點 90 度，防止瀏覽器忘記狀態
             dismissSvg.style.setProperty('transform-origin', '50% 50%', 'important');
             dismissSvg.style.setProperty('transition', 'none', 'important');
             dismissSvg.style.setProperty('transform', `rotate(${DISMISS_ICON_TARGET_ROTATION}deg)`, 'important');
             
-            // 2. 賞瀏覽器一個巴掌 (Force Reflow)，強迫它立刻畫出 90 度的樣子
             void dismissSvg.offsetWidth; 
             
-            // 3. 順滑轉回 0 度！
             dismissSvg.style.setProperty('transition', 'transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1)', 'important');
             dismissSvg.style.setProperty('transform', 'rotate(0deg)', 'important');
         }
@@ -1338,14 +1338,19 @@ window.closeBlankOverlay = function(skipCapsuleAnimation = false) {
             originalContainer.classList.remove('perspective-container', 'is-flipping');
             originalInner.classList.remove('hardware-accelerated');
             
-            const leftBtn = document.getElementById('capsule-main-btn');
-            const rightBtn = document.getElementById('capsule-secondary-btn');
-            if(leftBtn) leftBtn.style.cssText = ''; 
-            if(rightBtn) rightBtn.style.cssText = ''; 
+            // 🟢 完美修復 2：如果是手勢接管 (!skipCapsuleAnimation = false)，不要在這裡清除膠囊樣式！
+            // 讓 triggerSVGHandOff 自己算完時間再清，才不會砍斷新圖示的滑入動畫
+            if (!skipCapsuleAnimation) {
+                const leftBtn = document.getElementById('capsule-main-btn');
+                const rightBtn = document.getElementById('capsule-secondary-btn');
+                if(leftBtn) leftBtn.style.cssText = ''; 
+                if(rightBtn) rightBtn.style.cssText = ''; 
+            }
             
-            // 🟢 動畫徹底跑完後，將控制權乾乾淨淨地還給系統
+            // 🟢 完美修復 1：不要使用 removeProperty('opacity')！
+            // 直接賦予常規優先級的 opacity: 1，讓它交接給 physics.js，這樣就不會瞬間消失！
             if (dismissIcon) {
-                dismissIcon.style.removeProperty('opacity');
+                dismissIcon.style.opacity = '1'; 
             }
             if (dismissSvg) {
                 dismissSvg.style.removeProperty('transform');
@@ -1357,160 +1362,6 @@ window.closeBlankOverlay = function(skipCapsuleAnimation = false) {
         }, 450); 
 
     }, 300); 
-};
-
-// ============================================================================
-// 🟢 空白彈窗關閉邏輯 (含 SVG 恢復 & 100% 畫格同步鏡像)
-// ============================================================================
-
-window.closeBlankOverlay = function() {
-    const overlay = document.getElementById('dynamic-blank-overlay');
-    const blankCard = overlay ? overlay.querySelector('.detail-card-inner') : null;
-    const originalInner = document.querySelector('#detail-card-container .detail-card-inner');
-
-    if (!overlay || !blankCard || !originalInner) return;
-
-    overlay.style.pointerEvents = 'none';
-
-    // 1. 空白卡片執行退場動畫
-    blankCard.classList.remove('flip-in-active');
-    blankCard.classList.add('flip-out-reverse');
-
-    // 🟢 同步觸發膠囊原路向左滑回
-    if (window.slideCapsuleMode) window.slideCapsuleMode(false);
-
-    window.closeBlankOverlay = function(skipCapsuleAnimation = false) {
-        if (window.isFlipAnimating) return; 
-        window.isFlipAnimating = true;
-    
-        const overlay = document.getElementById('dynamic-blank-overlay');
-        const blankCard = overlay ? overlay.querySelector('.detail-card-inner') : null;
-        const originalContainer = document.getElementById('detail-card-container');
-        const originalInner = originalContainer ? originalContainer.querySelector('.detail-card-inner') : null;
-        const blankContainer = overlay ? overlay.querySelector('.perspective-container') : null;
-    
-        if (!overlay || !blankCard || !originalInner || !originalContainer) {
-            window.isFlipAnimating = false;
-            return;
-        }
-    
-        overlay.style.pointerEvents = 'none';
-    
-        blankCard.classList.add('hardware-accelerated');
-        originalInner.classList.add('hardware-accelerated');
-        originalContainer.classList.add('is-flipping');
-        if (blankContainer) blankContainer.classList.add('is-flipping');
-    
-        blankCard.classList.remove('flip-in-active');
-        blankCard.classList.add('flip-out-reverse'); 
-    
-        const dismissIcon = document.getElementById('dismiss-icon');
-        const dismissSvg = dismissIcon ? dismissIcon.querySelector('svg') : null;
-    
-        // 🟢 核心防禦：如果是由點擊觸發的 (!skipCapsuleAnimation)，強制執行轉正！
-        if (!skipCapsuleAnimation) {
-            if (window.slideCapsuleMode) window.slideCapsuleMode(false);
-            
-            if (dismissIcon) {
-                dismissIcon.style.setProperty('opacity', '1', 'important'); 
-            }
-            if (dismissSvg) {
-                // 1. 強制設定起點 90 度，防止瀏覽器忘記狀態
-                dismissSvg.style.setProperty('transform-origin', '50% 50%', 'important');
-                dismissSvg.style.setProperty('transition', 'none', 'important');
-                dismissSvg.style.setProperty('transform', `rotate(${DISMISS_ICON_TARGET_ROTATION}deg)`, 'important');
-                
-                // 2. 賞瀏覽器一個巴掌 (Force Reflow)，強迫它立刻畫出 90 度的樣子
-                void dismissSvg.offsetWidth; 
-                
-                // 3. 順滑轉回 0 度！
-                dismissSvg.style.setProperty('transition', 'transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1)', 'important');
-                dismissSvg.style.setProperty('transform', 'rotate(0deg)', 'important');
-            }
-        }
-    
-        setTimeout(() => {
-            originalInner.classList.remove('flip-out');
-            originalInner.classList.add('flip-back-start');
-    
-            overlay.style.opacity = '0';
-            overlay.style.transition = 'opacity 0.1s ease'; 
-    
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    originalInner.classList.remove('flip-back-start');
-                    originalInner.classList.add('flip-back-active');
-                });
-            });
-    
-            setTimeout(() => {
-                if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-                originalInner.classList.remove('flip-back-active');
-                originalContainer.classList.remove('perspective-container', 'is-flipping');
-                originalInner.classList.remove('hardware-accelerated');
-                
-                const leftBtn = document.getElementById('capsule-main-btn');
-                const rightBtn = document.getElementById('capsule-secondary-btn');
-                if(leftBtn) leftBtn.style.cssText = ''; 
-                if(rightBtn) rightBtn.style.cssText = ''; 
-                
-                // 🟢 動畫徹底跑完後，將控制權乾乾淨淨地還給系統
-                if (dismissIcon) {
-                    dismissIcon.style.removeProperty('opacity');
-                }
-                if (dismissSvg) {
-                    dismissSvg.style.removeProperty('transform');
-                    dismissSvg.style.removeProperty('transition');
-                    dismissSvg.style.removeProperty('transform-origin');
-                }
-    
-                window.isFlipAnimating = false; 
-            }, 450); 
-    
-        }, 300); 
-    };
-
-    // 2. ⚡ 300ms 完美換手
-    setTimeout(() => {
-        // 🌟 100% 複製開啟邏輯：先強制給原卡片 90 度的「起跑點」
-        originalInner.classList.remove('flip-out');
-        originalInner.classList.add('flip-back-start');
-
-        // SVG 打叉圖示同步線性淡入恢復 (0.3s)
-        const dismissIcon = document.getElementById('dismiss-icon');
-        if (dismissIcon) {
-            dismissIcon.style.transition = 'opacity 0.3s linear';
-            dismissIcon.style.opacity = '1';
-        }
-
-        // 讓翻轉完的空白卡片立刻隱藏
-        overlay.style.opacity = '0';
-        overlay.style.transition = 'opacity 0.1s ease'; 
-
-        // 🌟 核心修復：確保原卡片的 90 度起跑點被瀏覽器畫出來後，再翻轉回 0 度
-        // 這會把被省略的物理拉扯感 100% 還原！
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                originalInner.classList.remove('flip-back-start');
-                originalInner.classList.add('flip-back-active');
-            });
-        });
-
-        // 3. 等原卡片徹底翻轉完成並靜止後，再安全地移除 DOM 節點
-        setTimeout(() => {
-            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-            
-            // 清理 3D 視角與狀態類別
-            originalInner.classList.remove('flip-back-active');
-            const originalContainer = document.getElementById('detail-card-container');
-            if (originalContainer) originalContainer.classList.remove('perspective-container');
-        
-            // 🟢 動畫徹底跑完後，收回原卡片的硬體加速 (👈 新增這行)
-            originalInner.classList.remove('hardware-accelerated');
-            
-        }, 450); // 🟢 記得把這裡的 350 改成 450，配合你調慢的文字浮現時間！
-
-    }, 300); // 嚴格遵守 300ms 原速交接點
 };
 
 // ============================================================================
