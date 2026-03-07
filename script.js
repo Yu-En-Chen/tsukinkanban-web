@@ -973,7 +973,7 @@ window.handleBottomCardClick = handleBottomCardClick;
 window.handleOverlayClick = handleOverlayClick;
 
 // ============================================================================
-// 🟢 3D 翻轉萬用空白彈窗引擎 (SVG 完美連動 + 清理重複代碼版)
+// 🟢 3D 翻轉萬用空白彈窗引擎 (唯一樞紐版：確保所有觸發方式皆 100% 轉正)
 // ============================================================================
 
 // 🔧 【箭頭 SVG 旋轉角度設定】
@@ -1029,7 +1029,7 @@ window.openBlankOverlay = function(hexColor) {
     };
 
     // =========================================================
-    // 🟢 膠囊與箭頭 SVG 精準接手演算法
+    // 🟢 手勢專用：膠囊與箭頭 SVG 精準接手演算法
     // =========================================================
     const triggerSVGHandOff = (progress) => {
         const leftBtn = document.getElementById('capsule-main-btn');
@@ -1130,11 +1130,10 @@ window.openBlankOverlay = function(hexColor) {
             
             if (Math.abs(deltaX) >= triggerThreshold) {
                 isSwiping = false; 
-                
                 container.classList.remove('is-swiping'); 
                 clearInlineStyles(card);
                 triggerSVGHandOff(progress); 
-                window.closeBlankOverlay(true); 
+                window.closeBlankOverlay(true); // 傳入 true，告訴樞紐「手勢已接管動畫」
                 return;
             }
 
@@ -1142,30 +1141,25 @@ window.openBlankOverlay = function(hexColor) {
             container.classList.add('is-flipping');
             container.classList.add('is-swiping'); 
 
-            // 1. 卡片與陰影 3D 聯動
             card.style.setProperty('transition', 'none', 'important');
             card.style.setProperty('transform', `scale(1) rotateY(${-90 * progress}deg)`, 'important');
             const shadowFadeProgress = Math.min(progress * 2, 1);
             card.style.setProperty('box-shadow', `0 20px 40px rgba(0,0,0,${0.2 * (1 - shadowFadeProgress)})`, 'important');
             container.style.setProperty('--swipe-shadow-opacity', `${shadowFadeProgress}`, 'important');
             
-            // 2. 膠囊 SVG 圖示聯動
             if (leftBtn && rightBtn) {
                 leftBtn.style.setProperty('transition', 'none', 'important');
                 leftBtn.style.setProperty('transform', `translateX(${-30 * progress}px)`, 'important');
-
                 rightBtn.style.setProperty('transition', 'none', 'important');
                 rightBtn.style.setProperty('transform', `translateX(${-30 * progress}px)`, 'important');
             }
 
-            // 3. 箭頭 SVG 旋轉聯動
             if (dismissIcon) {
                 dismissIcon.style.setProperty('opacity', '1', 'important'); 
             }
             if (dismissSvg) {
                 dismissSvg.style.setProperty('transform-origin', '50% 50%', 'important');
                 dismissSvg.style.setProperty('transition', 'none', 'important');
-                
                 const currentAngle = DISMISS_ICON_TARGET_ROTATION * (1 - progress);
                 dismissSvg.style.setProperty('transform', `rotate(${currentAngle}deg)`, 'important');
             }
@@ -1194,14 +1188,11 @@ window.openBlankOverlay = function(hexColor) {
         const dismissSvg = dismissIcon ? dismissIcon.querySelector('svg') : null;
         
         if (flippedDegrees > 20 || deltaX < -50) { 
-            
             container.classList.remove('is-swiping'); 
             clearInlineStyles(card);
             triggerSVGHandOff(progress); 
             window.closeBlankOverlay(true); 
-
         } else {
-            // 取消關閉：Q彈回歸完全打開的狀態
             container.classList.remove('is-swiping'); 
             container.classList.remove('is-flipping'); 
             container.style.removeProperty('--swipe-shadow-opacity'); 
@@ -1247,11 +1238,13 @@ window.openBlankOverlay = function(hexColor) {
     const dismissIcon = document.getElementById('dismiss-icon');
     const dismissSvg = dismissIcon ? dismissIcon.querySelector('svg') : null;
     
+    // 🟢 打開卡片瞬間：啟動 SVG 旋轉到目標角度
     if (dismissIcon) {
         dismissIcon.style.setProperty('opacity', '1', 'important'); 
     }
     if (dismissSvg) {
         dismissSvg.style.setProperty('transform-origin', '50% 50%', 'important');
+        void dismissSvg.offsetWidth; 
         dismissSvg.style.setProperty('transition', 'transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1)', 'important');
         dismissSvg.style.setProperty('transform', `rotate(${DISMISS_ICON_TARGET_ROTATION}deg)`, 'important');
     }
@@ -1265,7 +1258,6 @@ window.openBlankOverlay = function(hexColor) {
             card.classList.remove('hardware-accelerated');
             originalContainer.classList.remove('is-flipping');
             container.classList.remove('is-flipping');
-            
             window.isFlipAnimating = false; 
         }, 450);
 
@@ -1273,7 +1265,7 @@ window.openBlankOverlay = function(hexColor) {
 };
 
 // ============================================================================
-// 🟢 空白彈窗關閉邏輯
+// 🟢 空白彈窗關閉樞紐 (點擊背景、按鈕，通通會進到這裡強制轉回！)
 // ============================================================================
 
 window.closeBlankOverlay = function(skipCapsuleAnimation = false) {
@@ -1304,7 +1296,7 @@ window.closeBlankOverlay = function(skipCapsuleAnimation = false) {
     const dismissIcon = document.getElementById('dismiss-icon');
     const dismissSvg = dismissIcon ? dismissIcon.querySelector('svg') : null;
 
-    // 🟢 核心修正點：如果不是手勢接管進來的（也就是點擊按鈕時），立刻同步啟動 SVG 旋轉回正！
+    // 🟢 核心防禦：如果是由點擊觸發的 (!skipCapsuleAnimation)，強制執行轉正！
     if (!skipCapsuleAnimation) {
         if (window.slideCapsuleMode) window.slideCapsuleMode(false);
         
@@ -1312,7 +1304,15 @@ window.closeBlankOverlay = function(skipCapsuleAnimation = false) {
             dismissIcon.style.setProperty('opacity', '1', 'important'); 
         }
         if (dismissSvg) {
-            // 不再延遲 300ms，點擊瞬間立刻平滑旋轉回 0 度！
+            // 1. 強制設定起點 90 度，防止瀏覽器忘記狀態
+            dismissSvg.style.setProperty('transform-origin', '50% 50%', 'important');
+            dismissSvg.style.setProperty('transition', 'none', 'important');
+            dismissSvg.style.setProperty('transform', `rotate(${DISMISS_ICON_TARGET_ROTATION}deg)`, 'important');
+            
+            // 2. 賞瀏覽器一個巴掌 (Force Reflow)，強迫它立刻畫出 90 度的樣子
+            void dismissSvg.offsetWidth; 
+            
+            // 3. 順滑轉回 0 度！
             dismissSvg.style.setProperty('transition', 'transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1)', 'important');
             dismissSvg.style.setProperty('transform', 'rotate(0deg)', 'important');
         }
@@ -1343,7 +1343,7 @@ window.closeBlankOverlay = function(skipCapsuleAnimation = false) {
             if(leftBtn) leftBtn.style.cssText = ''; 
             if(rightBtn) rightBtn.style.cssText = ''; 
             
-            // 🟢 動畫徹底跑完後，乾淨地交還權限給 physics.js！
+            // 🟢 動畫徹底跑完後，將控制權乾乾淨淨地還給系統
             if (dismissIcon) {
                 dismissIcon.style.removeProperty('opacity');
             }
@@ -1356,161 +1356,6 @@ window.closeBlankOverlay = function(skipCapsuleAnimation = false) {
             window.isFlipAnimating = false; 
         }, 450); 
 
-    }, 300); 
-};
-window.closeBlankOverlay = function() {
-    const overlay = document.getElementById('dynamic-blank-overlay');
-    const blankCard = overlay ? overlay.querySelector('.detail-card-inner') : null;
-    const originalContainer = document.getElementById('detail-card-container');
-    const originalInner = originalContainer ? originalContainer.querySelector('.detail-card-inner') : null;
-    const blankContainer = overlay ? overlay.querySelector('.perspective-container') : null;
-
-    if (!overlay || !blankCard || !originalInner || !originalContainer) return;
-
-    overlay.style.pointerEvents = 'none';
-
-    blankCard.classList.add('hardware-accelerated');
-    originalInner.classList.add('hardware-accelerated');
-    originalContainer.classList.add('is-flipping');
-    if (blankContainer) blankContainer.classList.add('is-flipping');
-
-    blankCard.classList.remove('flip-in-active');
-    blankCard.classList.add('flip-out-reverse');
-
-    if (window.slideCapsuleMode) window.slideCapsuleMode(false);
-
-    setTimeout(() => {
-        originalInner.classList.remove('flip-out');
-        originalInner.classList.add('flip-back-start');
-
-        const dismissIcon = document.getElementById('dismiss-icon');
-        if (dismissIcon) {
-            dismissIcon.style.transition = 'opacity 0.3s linear';
-            dismissIcon.style.opacity = '1';
-        }
-
-        overlay.style.opacity = '0';
-        overlay.style.transition = 'opacity 0.1s ease'; 
-
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                originalInner.classList.remove('flip-back-start');
-                originalInner.classList.add('flip-back-active');
-            });
-        });
-
-        setTimeout(() => {
-            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-            originalInner.classList.remove('flip-back-active');
-            originalContainer.classList.remove('perspective-container', 'is-flipping');
-            originalInner.classList.remove('hardware-accelerated');
-        }, 450); 
-
-    }, 300); 
-};
-
-// ============================================================================
-// 🟢 空白彈窗關閉邏輯 (維持按鈕點擊時的原狀)
-// ============================================================================
-
-window.closeBlankOverlay = function() {
-    const overlay = document.getElementById('dynamic-blank-overlay');
-    const blankCard = overlay ? overlay.querySelector('.detail-card-inner') : null;
-    const originalContainer = document.getElementById('detail-card-container');
-    const originalInner = originalContainer ? originalContainer.querySelector('.detail-card-inner') : null;
-    const blankContainer = overlay ? overlay.querySelector('.perspective-container') : null;
-
-    if (!overlay || !blankCard || !originalInner || !originalContainer) return;
-
-    overlay.style.pointerEvents = 'none';
-
-    blankCard.classList.add('hardware-accelerated');
-    originalInner.classList.add('hardware-accelerated');
-    originalContainer.classList.add('is-flipping');
-    if (blankContainer) blankContainer.classList.add('is-flipping');
-
-    blankCard.classList.remove('flip-in-active');
-    blankCard.classList.add('flip-out-reverse');
-
-    if (window.slideCapsuleMode) window.slideCapsuleMode(false);
-
-    setTimeout(() => {
-        originalInner.classList.remove('flip-out');
-        originalInner.classList.add('flip-back-start');
-
-        const dismissIcon = document.getElementById('dismiss-icon');
-        if (dismissIcon) {
-            dismissIcon.style.transition = 'opacity 0.3s linear';
-            dismissIcon.style.opacity = '1';
-        }
-
-        overlay.style.opacity = '0';
-        overlay.style.transition = 'opacity 0.1s ease'; 
-
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                originalInner.classList.remove('flip-back-start');
-                originalInner.classList.add('flip-back-active');
-            });
-        });
-
-        setTimeout(() => {
-            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-            originalInner.classList.remove('flip-back-active');
-            originalContainer.classList.remove('perspective-container', 'is-flipping');
-            originalInner.classList.remove('hardware-accelerated');
-        }, 450); 
-
-    }, 300); 
-};
-
-window.closeBlankOverlay = function() {
-    const overlay = document.getElementById('dynamic-blank-overlay');
-    const blankCard = overlay ? overlay.querySelector('.detail-card-inner') : null;
-    const originalInner = document.querySelector('#detail-card-container .detail-card-inner');
-
-    if (!overlay || !blankCard || !originalInner) return;
-    overlay.style.pointerEvents = 'none';
-
-    // 🟢 翻轉回去前，重新賦予硬體加速
-    blankCard.classList.add('hardware-accelerated');
-    originalInner.classList.add('hardware-accelerated');
-
-    // 🟢 1. 空白卡片反向翻轉消失 & 膠囊滑回
-    blankCard.classList.remove('flip-in-active');
-    blankCard.classList.add('flip-out-reverse');
-
-    if (window.slideCapsuleMode) window.slideCapsuleMode(false);
-
-    // 🟢 2. 原卡片完美銜接
-    setTimeout(() => {
-        originalInner.classList.remove('flip-out');
-        originalInner.classList.add('flip-back-start'); // 歸位到 90 度準備
-
-        const dismissIcon = document.getElementById('dismiss-icon');
-        if (dismissIcon) {
-            dismissIcon.style.transition = 'opacity 0.3s linear';
-            dismissIcon.style.opacity = '1';
-        }
-
-        // 為了避免擋住視線，把舊的殼變透明
-        overlay.style.opacity = '0';
-        overlay.style.transition = 'opacity 0.1s ease'; 
-
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                originalInner.classList.remove('flip-back-start');
-                originalInner.classList.add('flip-back-active');
-            });
-        });
-
-        // 🟢 3. 等原卡片翻完後，才優雅地清理 DOM 垃圾
-        setTimeout(() => {
-            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-            originalInner.classList.remove('flip-back-active');
-            const originalContainer = document.getElementById('detail-card-container');
-            if (originalContainer) originalContainer.classList.remove('perspective-container');
-        }, 350); 
     }, 300); 
 };
 
@@ -1533,6 +1378,97 @@ window.closeBlankOverlay = function() {
 
     // 🟢 同步觸發膠囊原路向左滑回
     if (window.slideCapsuleMode) window.slideCapsuleMode(false);
+
+    window.closeBlankOverlay = function(skipCapsuleAnimation = false) {
+        if (window.isFlipAnimating) return; 
+        window.isFlipAnimating = true;
+    
+        const overlay = document.getElementById('dynamic-blank-overlay');
+        const blankCard = overlay ? overlay.querySelector('.detail-card-inner') : null;
+        const originalContainer = document.getElementById('detail-card-container');
+        const originalInner = originalContainer ? originalContainer.querySelector('.detail-card-inner') : null;
+        const blankContainer = overlay ? overlay.querySelector('.perspective-container') : null;
+    
+        if (!overlay || !blankCard || !originalInner || !originalContainer) {
+            window.isFlipAnimating = false;
+            return;
+        }
+    
+        overlay.style.pointerEvents = 'none';
+    
+        blankCard.classList.add('hardware-accelerated');
+        originalInner.classList.add('hardware-accelerated');
+        originalContainer.classList.add('is-flipping');
+        if (blankContainer) blankContainer.classList.add('is-flipping');
+    
+        blankCard.classList.remove('flip-in-active');
+        blankCard.classList.add('flip-out-reverse'); 
+    
+        const dismissIcon = document.getElementById('dismiss-icon');
+        const dismissSvg = dismissIcon ? dismissIcon.querySelector('svg') : null;
+    
+        // 🟢 核心防禦：如果是由點擊觸發的 (!skipCapsuleAnimation)，強制執行轉正！
+        if (!skipCapsuleAnimation) {
+            if (window.slideCapsuleMode) window.slideCapsuleMode(false);
+            
+            if (dismissIcon) {
+                dismissIcon.style.setProperty('opacity', '1', 'important'); 
+            }
+            if (dismissSvg) {
+                // 1. 強制設定起點 90 度，防止瀏覽器忘記狀態
+                dismissSvg.style.setProperty('transform-origin', '50% 50%', 'important');
+                dismissSvg.style.setProperty('transition', 'none', 'important');
+                dismissSvg.style.setProperty('transform', `rotate(${DISMISS_ICON_TARGET_ROTATION}deg)`, 'important');
+                
+                // 2. 賞瀏覽器一個巴掌 (Force Reflow)，強迫它立刻畫出 90 度的樣子
+                void dismissSvg.offsetWidth; 
+                
+                // 3. 順滑轉回 0 度！
+                dismissSvg.style.setProperty('transition', 'transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1)', 'important');
+                dismissSvg.style.setProperty('transform', 'rotate(0deg)', 'important');
+            }
+        }
+    
+        setTimeout(() => {
+            originalInner.classList.remove('flip-out');
+            originalInner.classList.add('flip-back-start');
+    
+            overlay.style.opacity = '0';
+            overlay.style.transition = 'opacity 0.1s ease'; 
+    
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    originalInner.classList.remove('flip-back-start');
+                    originalInner.classList.add('flip-back-active');
+                });
+            });
+    
+            setTimeout(() => {
+                if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                originalInner.classList.remove('flip-back-active');
+                originalContainer.classList.remove('perspective-container', 'is-flipping');
+                originalInner.classList.remove('hardware-accelerated');
+                
+                const leftBtn = document.getElementById('capsule-main-btn');
+                const rightBtn = document.getElementById('capsule-secondary-btn');
+                if(leftBtn) leftBtn.style.cssText = ''; 
+                if(rightBtn) rightBtn.style.cssText = ''; 
+                
+                // 🟢 動畫徹底跑完後，將控制權乾乾淨淨地還給系統
+                if (dismissIcon) {
+                    dismissIcon.style.removeProperty('opacity');
+                }
+                if (dismissSvg) {
+                    dismissSvg.style.removeProperty('transform');
+                    dismissSvg.style.removeProperty('transition');
+                    dismissSvg.style.removeProperty('transform-origin');
+                }
+    
+                window.isFlipAnimating = false; 
+            }, 450); 
+    
+        }, 300); 
+    };
 
     // 2. ⚡ 300ms 完美換手
     setTimeout(() => {
