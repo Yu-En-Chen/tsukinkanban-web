@@ -1094,7 +1094,7 @@ card.innerHTML = `
     </div>
     
     <p class="description" style="font-size: clamp(0.85rem, 3vw, 0.95rem); margin-bottom: 12px;">
-     　十文字以內</p>
+     　- 十文字以內 -</p>
 
     <div style="--btn-height: 44px; display: grid; grid-template-columns: max-content 1fr var(--btn-height) var(--btn-height); gap: 8px; margin-bottom: 12px;">
 
@@ -1113,7 +1113,7 @@ card.innerHTML = `
     </div>
     
     <p class="description" style="font-size: clamp(0.85rem, 3vw, 0.95rem); margin-bottom: 12px;">
-    　HEX形式で入力してください</p>
+    　- HEX形式で入力してください -</p>
 </div>
 `;
 
