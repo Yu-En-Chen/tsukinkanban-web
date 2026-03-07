@@ -1434,15 +1434,21 @@ body.searching .dismiss-icon {
 }
 
 /* ==========================================================================
-   🟢 頂部導航列微互動 (Hover & Touch Scale)
+   🟢 按鈕微互動 (Hover & Touch Scale)
    ========================================================================== */
 .left-circle-btn,
 .menu-close-btn,
 .search-trigger,
 .action-capsule,
-.cancel-circle-btn {
+.cancel-circle-btn,
+.interactive-btn {
     scale: 1;
     /* 獨立於 transform 之外的縮放引擎 */
+}
+
+/* 🟢 短按觸控回饋專用的動畫過渡時間 */
+.interactive-btn {
+    transition: scale 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.15), box-shadow 0.4s ease;
 }
 
 /* 1. 桌面版滑鼠 Hover 狀態 */
@@ -1454,14 +1460,21 @@ body.searching .dismiss-icon {
     .search-container:not(.active) .search-trigger:hover,
     /* 🟢 修改這裡：搜尋框展開時不放大 */
     .action-capsule:not(.menu-expanded):hover,
-    .cancel-circle-btn:hover {
+    .cancel-circle-btn:hover,
+    .interactive-btn:hover {
         scale: 1.05;
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
         /* 輕微加深陰影增強浮出感 */
     }
 }
 
-/* 2. 手機版長按浮起狀態 (由 JS 觸發) */
+/* 2. 手機版：瞬間點擊微縮放 (比長按更適合功能按鈕，極致 Q 彈) */
+.interactive-btn:active {
+    scale: 0.94;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 3. 手機版長按浮起狀態 (由 JS 觸發) */
 .touch-lifted-btn {
     scale: 1.05;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;

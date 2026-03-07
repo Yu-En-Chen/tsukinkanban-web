@@ -53,18 +53,18 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             }
         }
 
-        // 🟢 注入左上角標題、分層文字說明與包含 SVG 的網格
-        card.innerHTML = `
+// 🟢 注入左上角標題、分層文字說明與包含 SVG 的網格
+card.innerHTML = `
 <div class="card-header" style="padding-bottom: 5px; margin-bottom: 15px;">
     <span class="line-name">カスタマイズ</span>
 </div>
 
 <div class="card-content">
     <div style="--btn-height: 44px; display: grid; grid-template-columns: max-content 1fr var(--btn-height) var(--btn-height); gap: 8px; margin-bottom: 12px;">
-        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; white-space: nowrap;">表示名</button>
-        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${targetName}</button>
+        <button class="info-tag-item interactive-btn" style="cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; white-space: nowrap;">表示名</button>
+        <button class="info-tag-item interactive-btn" style="cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${targetName}</button>
 
-        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block;">
+        <button class="info-tag-item interactive-btn" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block;">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease; opacity: 0.8; visibility: visible; width: 20px; height: 20px; stroke-width: 2px;">
                 <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/>
             </svg>
@@ -82,7 +82,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             </svg>
         </button>
 
-        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block;">
+        <button class="info-tag-item interactive-btn" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block;">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease; opacity: 0.8; visibility: visible; width: 20px; height: 20px; stroke-width: 2px;">
                 <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M16 4h2a2 2 0 0 1 2 2v4"/><path d="M21 14H11"/><path d="m15 10-4 4 4 4"/>
             </svg>
@@ -98,10 +98,10 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
     <p class="description" style="font-size: clamp(0.85rem, 3vw, 0.95rem); margin-bottom: 12px;">　- 十文字以內 -</p>
 
     <div style="--btn-height: 44px; display: grid; grid-template-columns: max-content 1fr var(--btn-height) var(--btn-height); gap: 8px; margin-bottom: 12px;">
-        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; white-space: nowrap;">カラー</button>
-        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px; font-size: 0.95rem; font-family: monospace; display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${targetHex.toUpperCase()}</button>
+        <button class="info-tag-item interactive-btn" style="cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; white-space: nowrap;">カラー</button>
+        <button class="info-tag-item interactive-btn" style="cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px; font-size: 0.95rem; font-family: monospace; display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${targetHex.toUpperCase()}</button>
 
-        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block;">
+        <button class="info-tag-item interactive-btn" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block;">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease; opacity: 0.8; visibility: visible; width: 20px; height: 20px; stroke-width: 2px;">
                 <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/>
             </svg>
@@ -119,7 +119,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             </svg>
         </button>
 
-        <button class="info-tag-item" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block;">
+        <button class="info-tag-item interactive-btn" style="cursor: pointer; height: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block;">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: all 0.3s ease; opacity: 0.8; visibility: visible; width: 20px; height: 20px; stroke-width: 2px;">
                 <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M16 4h2a2 2 0 0 1 2 2v4"/><path d="M21 14H11"/><path d="m15 10-4 4 4 4"/>
             </svg>
