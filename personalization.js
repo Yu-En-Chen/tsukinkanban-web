@@ -96,7 +96,11 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                 transform: translateX(-40px);
             ">コピーしました</span>
 
-            <input id="p-real-input" type="text" placeholder="${targetName}" maxlength="10" oninput="window.updateCharCount(this.value)" style="
+            <input id="p-real-input" type="text" placeholder="${targetName}" maxlength="10" 
+                       enterkeyhint="done"
+                       oninput="window.updateCharCount(this.value)" 
+                       onkeydown="window.handleInputEnter(event)"
+                       style="
                 position: absolute; left: 16px; right: 16px; top: 0; bottom: 0; margin: 0; padding: 0; height: 100%;
                 background: transparent; border: none; color: inherit; font-family: inherit;
                 font-size: 0.95rem; outline: none; opacity: 0; pointer-events: none;
@@ -475,7 +479,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
 // =========================================================
 
 // 🟢 全域防捲動攔截器 (只允許在輸入框內操作，其他滑動一律禁止)
-window._pLockScroll = function(e) {
+window._pLockScroll = function (e) {
     if (e.target.id !== 'p-real-input') {
         e.preventDefault();
     }
@@ -521,7 +525,20 @@ window.toggleEditNameMode = function () {
     realInput.style.transform = 'translateY(0)';
     realInput.focus(); // 自動聚焦彈出鍵盤
 
-    // 🟢 強制鎖定畫面：禁止鍵盤彈出時的上下捲動與橡皮筋回彈
+    // 🟢 終極畫面鎖定 (解決 iOS 鍵盤無視 overflow 的問題)
+    // 1. 記錄當下捲動高度
+    window._pScrollY = window.scrollY;
+
+    // 2. 鎖死 Body 位置與尺寸
+    document.body.style.setProperty('position', 'fixed', 'important');
+    document.body.style.setProperty('top', `-${window._pScrollY}px`, 'important');
+    document.body.style.setProperty('width', '100%', 'important');
+
+    // 3. 關閉橡皮筋邊緣回彈與滾動鏈
+    document.body.style.setProperty('overscroll-behavior', 'none', 'important');
+    document.documentElement.style.setProperty('overscroll-behavior', 'none', 'important');
+
+    // 4. 原有的攔截與隱藏
     document.body.style.setProperty('overflow', 'hidden', 'important');
     document.documentElement.style.setProperty('overflow', 'hidden', 'important');
     document.addEventListener('touchmove', window._pLockScroll, { passive: false });
@@ -578,10 +595,20 @@ window.closeEditNameMode = function (e) {
     realInput.style.transform = 'translateX(-10px)';
     realInput.blur(); // 收起鍵盤
 
-    // 🟢 解除鎖定，恢復原本畫面的可拖曳狀態
+    // 🟢 解除所有鎖定並恢復原狀
+    document.body.style.removeProperty('position');
+    document.body.style.removeProperty('top');
+    document.body.style.removeProperty('width');
+    document.body.style.removeProperty('overscroll-behavior');
+    document.documentElement.style.removeProperty('overscroll-behavior');
     document.body.style.removeProperty('overflow');
     document.documentElement.style.removeProperty('overflow');
     document.removeEventListener('touchmove', window._pLockScroll);
+
+    // 恢復解除鎖定前的捲動高度
+    if (window._pScrollY !== undefined) {
+        window.scrollTo(0, window._pScrollY);
+    }
 
     // 🟢 字數統計淡出隱藏
     if (charCount) charCount.style.opacity = '0';
@@ -601,12 +628,49 @@ window.updateCharCount = function (val) {
         countElement.textContent = val.length + '/10';
     }
 };
+
+// 🟢 鍵盤「完成/Enter」鍵的條件攔截器
+window.handleInputEnter = function (e) {
+    if (e.key === 'Enter' || e.keyCode === 13) {
+        e.preventDefault();
+
+        if (e.isComposing) return;
+
+        const val = e.target.value.trim();
+        const len = val.length;
+
+        // 🟢 超過 10 個字：拒絕執行 (鎖定鍵盤)
+        if (len > 10) {
+            return;
+        }
+
+        // 🟢 0 個字 或 1~10 個字：皆執行關閉
+        // (若為 0 字，closeEditNameMode 內建邏輯會自動忽略修改，達成「單純關閉」的效果)
+        window.closeEditNameMode(e);
+
+        // 🟢 解除所有鎖定並恢復原狀
+        document.body.style.removeProperty('position');
+        document.body.style.removeProperty('top');
+        document.body.style.removeProperty('width');
+        document.body.style.removeProperty('overscroll-behavior');
+        document.documentElement.style.removeProperty('overscroll-behavior');
+        document.body.style.removeProperty('overflow');
+        document.documentElement.style.removeProperty('overflow');
+        document.removeEventListener('touchmove', window._pLockScroll);
+
+        // 恢復解除鎖定前的捲動高度
+        if (window._pScrollY !== undefined) {
+            window.scrollTo(0, window._pScrollY);
+        }
+    }
+};
+
 // 🟢 全域狀態鎖
 let isCopyingLocked = false;
 
-window.handleCopyAction = function(e) {
+window.handleCopyAction = function (e) {
     const row = document.getElementById('p-edit-row');
-    
+
     // 1. 如果正在編輯模式中，這顆按鈕是「關閉/取消」
     if (row && row.dataset.editing === 'true') {
         window.closeEditNameMode(e);
@@ -622,7 +686,7 @@ window.handleCopyAction = function(e) {
 
     if (textToCopy) {
         isCopyingLocked = true; // 立即上鎖，拔除點擊權限
-        
+
         navigator.clipboard.writeText(textToCopy).then(() => {
             const iconClip = document.getElementById('p-icon-clipboard');
             const iconCheck = document.getElementById('p-icon-check');
@@ -632,7 +696,7 @@ window.handleCopyAction = function(e) {
             // SVG：同步向右推移 40px
             if (iconClip) iconClip.style.transform = 'translate(calc(-50% + -40px), -50%)';
             if (iconCheck) iconCheck.style.transform = 'translate(-50%, -50%)'; // 回到置中
-            
+
             // 文字：同步向右推移 40px，並在 0.3s 時提早線性淡出，完美防穿幫
             if (displayName) {
                 displayName.style.transform = 'translateX(-40px)';
@@ -645,11 +709,11 @@ window.handleCopyAction = function(e) {
 
             // 🟢 [階段 2] 1.0s：停留 0.5s 後觸發原路退回 (0.5s 動畫 + 0.5s 停留 = 1.0s)
             setTimeout(() => {
-                
+
                 // SVG 原路向左滑回
                 if (iconClip) iconClip.style.transform = 'translate(-50%, -50%)';
                 if (iconCheck) iconCheck.style.transform = 'translate(calc(-50% + 40px), -50%)';
-                
+
                 // 文字原路向左滑回，線性淡入淡出
                 if (displayName) {
                     displayName.style.transform = 'translateX(0px)';
@@ -659,30 +723,30 @@ window.handleCopyAction = function(e) {
                     textCopied.style.transform = 'translateX(40px)';
                     textCopied.style.opacity = '0';
                 }
-                
+
                 // 🟢 [階段 3] 1.6s：退出動畫完成 (0.5s) + 安全緩衝 (0.07s) 後解鎖
                 setTimeout(() => {
                     isCopyingLocked = false;
                 }, 750);
-                
+
             }, 600);
 
         }).catch(err => {
             console.error('複製失敗:', err);
-            isCopyingLocked = false; 
+            isCopyingLocked = false;
         });
     }
 };
 
 // 確保點擊編輯框時也拔除複製權限
 const originalToggleEdit = window.toggleEditNameMode;
-window.toggleEditNameMode = function() {
+window.toggleEditNameMode = function () {
     isCopyingLocked = true;
     originalToggleEdit();
 };
 
 const originalCloseEdit = window.closeEditNameMode;
-window.closeEditNameMode = function(e) {
+window.closeEditNameMode = function (e) {
     originalCloseEdit(e);
     setTimeout(() => {
         isCopyingLocked = false;
