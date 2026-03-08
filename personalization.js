@@ -1,6 +1,34 @@
 // personalization.js - 個性化設定 (Customize) 專用彈窗引擎
 
 export function initPersonalization(applyThemeToCard, getActiveCardId) {
+    // =========================================================
+    // 🟢 終極系統防護：徹底封鎖系統返回鍵與邊緣右滑返回
+    // =========================================================
+    if (!window._pNavBlockerInited) {
+        window._pNavBlockerInited = true;
+
+        // 1. 封殺 iOS 左側邊緣右滑返回 (Edge Swipe Back)
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches && e.touches.length > 0 && e.touches[0].clientX < 30) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // 2. 封殺 Android 實體返回鍵與瀏覽器上一頁 (History Trap)
+        history.pushState(null, null, location.href);
+        window.addEventListener('popstate', function () {
+            history.pushState(null, null, location.href);
+            // 如果面板開著，按返回鍵就當作「關閉面板」而不是退出網頁
+            if (document.getElementById('dynamic-blank-overlay') && window.closeBlankOverlay) {
+                window.closeBlankOverlay();
+            }
+        });
+
+        // 3. 永久封鎖全域橡皮筋與 Safari 滑動導覽
+        document.documentElement.style.setProperty('overscroll-behavior', 'none', 'important');
+        document.body.style.setProperty('overscroll-behavior', 'none', 'important');
+    }
+
     window.DISMISS_ICON_TARGET_ROTATION = 90;
 
     window.openBlankOverlay = function (hexColor) {
@@ -58,6 +86,19 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
 
 <div class="card-content">
     <style>
+        /* 徹底封鎖長按文字選取與放大鏡造成的 SVG 破圖外漏 */
+        #p-edit-row, #p-color-edit-row {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        /* 僅保留輸入框本體可以被選取與操作 */
+        #p-real-input, #p-color-real-input {
+            -webkit-touch-callout: default;
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
         @keyframes p-spin-ease {
             0% { transform: rotate(0deg); animation-timing-function: ease-in-out; }
             100% { transform: rotate(360deg); }
@@ -192,7 +233,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             const row1 = document.getElementById('p-edit-row');
             const row2 = document.getElementById('p-color-edit-row');
             if ((row1 && row1.dataset.editing === 'true') || (row2 && row2.dataset.editing === 'true')) {
-                return; // 編輯中強制封鎖背景點擊關閉
+                return; 
             }
             if (!e.target.closest('.detail-card-inner')) window.closeBlankOverlay();
         });
@@ -475,18 +516,15 @@ const pState = {
     color: { isCopying: false, isPasting: false }
 };
 
-// 🟢 1. 防連點機制 (Spam Tracker)
+let _pGlobalToggleCooldown = false; 
+
 const pSpamTracker = {
     clicks: [],
     inputRevealTimer: null,
-    // 檢查是否處於「狂點狀態」(0.3秒內 >= 3次點擊)
     checkSpam: function() {
         const now = Date.now();
         this.clicks.push(now);
         this.clicks = this.clicks.filter(t => now - t < 300);
-        return this.clicks.length >= 3;
-    },
-    isSpamming: function() {
         return this.clicks.length >= 3;
     }
 };
@@ -500,6 +538,18 @@ window._pPreventBlur = function(e) {
     if (!isAnyEditing) return;
 
     if (e.target.tagName === 'INPUT' || e.target.closest('.interactive-btn')) return;
+
+    let clientY = 0;
+    if (e.touches && e.touches.length > 0) clientY = e.touches[0].clientY;
+    else if (e.clientY) clientY = e.clientY;
+
+    const card = document.querySelector('.detail-card-inner');
+    if (card) {
+        const rect = card.getBoundingClientRect();
+        if (clientY < rect.top) {
+            return; 
+        }
+    }
     
     e.preventDefault();
     
@@ -511,7 +561,6 @@ window._pPreventBlur = function(e) {
     });
 };
 
-// 🟢 2. 高度安全與延遲解鎖管理器
 const pScrollManager = {
     isLocked: false,
     scrollY: 0,
@@ -520,7 +569,6 @@ const pScrollManager = {
         clearTimeout(this.unlockTimer);
         if (this.isLocked) return; 
         
-        // 使用 RAF 確保畫面靜止後才抓取高度，拒絕盲目鎖定
         requestAnimationFrame(() => {
             if (!this.isLocked) {
                 this.scrollY = window.scrollY; 
@@ -529,8 +577,9 @@ const pScrollManager = {
                 document.body.style.setProperty('position', 'fixed', 'important');
                 document.body.style.setProperty('top', `-${this.scrollY}px`, 'important');
                 document.body.style.setProperty('width', '100%', 'important');
-                document.body.style.setProperty('overscroll-behavior', 'none', 'important');
-                document.documentElement.style.setProperty('overscroll-behavior', 'none', 'important');
+                
+                // 💡 刪除了設定 overscroll 的行，因為我們在頂部已經全域永久封鎖了
+                
                 document.body.style.setProperty('overflow', 'hidden', 'important');
                 document.documentElement.style.setProperty('overflow', 'hidden', 'important');
                 
@@ -541,34 +590,32 @@ const pScrollManager = {
             }
         });
     },
-    // instant 決定是否要無條件瞬間解放
     unlock: function(instant = true) {
         clearTimeout(this.unlockTimer);
         if (!this.isLocked) return; 
 
-        if (instant) {
-            this.executeUnlock();
-        } else {
-            // 在連點狂點狀態下，給予 0.3 秒冷卻後才解除版面鎖定
-            this.unlockTimer = setTimeout(() => this.executeUnlock(), 300);
-        }
-    },
-    executeUnlock: function() {
-        this.isLocked = false;
-        document.body.style.removeProperty('position');
-        document.body.style.removeProperty('top');
-        document.body.style.removeProperty('width');
-        document.body.style.removeProperty('overscroll-behavior');
-        document.documentElement.style.removeProperty('overscroll-behavior');
-        document.body.style.removeProperty('overflow');
-        document.documentElement.style.removeProperty('overflow');
-        
-        document.removeEventListener('touchmove', window._pLockScroll);
-        document.removeEventListener('touchstart', window._pPreventBlur);
-        document.removeEventListener('touchend', window._pPreventBlur);
-        document.removeEventListener('mousedown', window._pPreventBlur);
+        const doUnlock = () => {
+            if (document.querySelector('[data-editing="true"]')) return;
 
-        window.scrollTo(0, this.scrollY); 
+            this.isLocked = false;
+            document.body.style.removeProperty('position');
+            document.body.style.removeProperty('top');
+            document.body.style.removeProperty('width');
+            
+            // 💡 關鍵修復：這裡絕對不再去 removeProperty('overscroll-behavior')，讓系統返回永久死亡！
+            
+            document.body.style.removeProperty('overflow');
+            document.documentElement.style.removeProperty('overflow');
+            
+            document.removeEventListener('touchmove', window._pLockScroll);
+            document.removeEventListener('touchstart', window._pPreventBlur);
+            document.removeEventListener('touchend', window._pPreventBlur);
+            document.removeEventListener('mousedown', window._pPreventBlur);
+
+            window.scrollTo(0, this.scrollY); 
+        };
+
+        this.unlockTimer = setTimeout(doUnlock, instant ? 50 : 300);
     }
 };
 
@@ -613,24 +660,23 @@ window.handleNameInput = function(val) {
     window.checkFontFamily(val);
 };
 
-// 🟢 3. 鍵盤意外關閉強制監視器
 window.handleInputBlur = function(type) {
     setTimeout(() => {
         const els = getElements(type);
         if (!els.row || els.row.dataset.editing !== 'true') return;
         
-        // 如果焦點跑到其他輸入框(例如上下切換)，不用關閉
         if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
-        
-        // 如果是因為按了複製貼上，不用關閉
         if (pState[type].isCopying || pState[type].isPasting) return;
 
-        // 走到這步代表鍵盤真的被系統意外收起了，立刻強制執行關閉動畫！
         window.closeEditMode(type);
     }, 50); 
 };
 
 window.toggleEditMode = function (type) {
+    if (_pGlobalToggleCooldown) return;
+    _pGlobalToggleCooldown = true;
+    setTimeout(() => { _pGlobalToggleCooldown = false; }, 100);
+
     const isSpamming = pSpamTracker.checkSpam();
     
     const otherType = type === 'name' ? 'color' : 'name';
@@ -662,13 +708,10 @@ window.toggleEditMode = function (type) {
     els.input.value = '';
     if (type === 'name') window.handleNameInput('');
 
-    // 上鎖高度防護
     pScrollManager.lock();
 
-    // 🟢 防連點：0.5秒輸入框延遲顯示機制
     clearTimeout(pSpamTracker.inputRevealTimer);
     if (isSpamming) {
-        // 連點狂暴狀態：膠囊變形，但輸入游標隱藏並倒數 0.5s
         pSpamTracker.inputRevealTimer = setTimeout(() => {
             if (els.row.dataset.editing === 'true') {
                 els.input.style.opacity = '1';
@@ -678,7 +721,6 @@ window.toggleEditMode = function (type) {
             }
         }, 500);
     } else {
-        // 正常狀態：順暢瞬間顯示
         els.input.style.opacity = '1';
         els.input.style.pointerEvents = 'auto';
         els.input.style.transform = 'translateY(0)';
@@ -699,7 +741,6 @@ window.closeEditMode = function (type, e) {
     const els = getElements(type);
     if (!els.row || els.row.dataset.editing !== 'true') return;
     
-    // 如果正在等待顯示輸入框，直接取消它
     clearTimeout(pSpamTracker.inputRevealTimer);
     
     els.row.dataset.editing = 'false';
@@ -722,14 +763,13 @@ window.closeEditMode = function (type, e) {
 
     els.display.style.transition = '';
     els.display.style.opacity = '1';
-    els.display.style.transform = 'translateX(-10px)'; // 保持左對齊視覺
+    els.display.style.transform = 'translateX(-10px)'; 
 
     els.input.style.opacity = '0';
     els.input.style.pointerEvents = 'none';
     els.input.style.transform = 'translateX(-10px)';
     els.input.blur();
 
-    // 🟢 瞬間解鎖判斷：沒狂點就瞬間解，狂點就稍微等待 0.3s
     pScrollManager.unlock(!isSpamming);
 
     if (type === 'name') {
@@ -760,7 +800,7 @@ window.handleInputEnter = function (e, type) {
 };
 
 window.handleCopyAction = function(e, type) {
-    pSpamTracker.checkSpam(); // 加入連點監視
+    pSpamTracker.checkSpam(); 
     const els = getElements(type);
     if (els.row && els.row.dataset.editing === 'true') {
         window.closeEditMode(type, e);
@@ -817,7 +857,7 @@ window.handleCopyAction = function(e, type) {
 
 window.handlePasteAction = function(e, type) {
     if (e) e.stopPropagation();
-    pSpamTracker.checkSpam(); // 加入連點監視
+    pSpamTracker.checkSpam(); 
     
     const els = getElements(type);
     if (els.row && els.row.dataset.editing === 'true') return; 
