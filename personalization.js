@@ -44,9 +44,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         if (document.getElementById('dynamic-blank-overlay') || window.isFlipAnimating) return;
         window.isFlipAnimating = true;
 
-        // 🟢 暴力死鎖：卡片一準備開啟，立刻將整個網頁鎖成磚頭！
-        if (window.pScrollManager) window.pScrollManager.lock();
-
         const activeId = getActiveCardId(); 
 
         if (!hexColor) {
@@ -108,22 +105,31 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             -webkit-user-select: text;
             user-select: text;
         }
+        
+        /* 🚀 終極 GPU 硬體加速：徹底消除初次點擊卡頓 */
+        .info-tag-item, #p-ghost-input, #p-shared-status, svg {
+            will-change: transform, max-width, opacity;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            transform: translate3d(0, 0, 0); 
+        }
+
         .p-bump-active {
-            transform: scale(0.92) !important;
+            transform: scale(0.92) translate3d(0,0,0) !important;
             opacity: 0.8 !important;
             transition: transform 0.15s cubic-bezier(0.34, 1.6, 0.64, 1), opacity 0.15s ease !important;
         }
 
         @keyframes p-spin-ease {
-            0% { transform: rotate(0deg); animation-timing-function: ease-in-out; }
-            100% { transform: rotate(360deg); }
+            0% { transform: rotate(0deg) translate3d(0,0,0); animation-timing-function: ease-in-out; }
+            100% { transform: rotate(360deg) translate3d(0,0,0); }
         }
         @keyframes p-shake-anim {
-            0%, 100% { transform: translateX(0); }
-            20% { transform: translateX(-4px); }
-            40% { transform: translateX(4px); }
-            60% { transform: translateX(-4px); }
-            80% { transform: translateX(4px); }
+            0%, 100% { transform: translate3d(0, 0, 0); }
+            20% { transform: translate3d(-4px, 0, 0); }
+            40% { transform: translate3d(4px, 0, 0); }
+            60% { transform: translate3d(-4px, 0, 0); }
+            80% { transform: translate3d(4px, 0, 0); }
         }
         .p-spin { animation: p-spin-ease 1.2s infinite; }
         .p-shake-active { animation: p-shake-anim 0.4s cubic-bezier(.36,.07,.19,.97) both; }
@@ -142,36 +148,36 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         <div id="p-btn-input-container" class="info-tag-item interactive-btn" onclick="window.toggleGhostEditMode('name', event, this)" style="
             cursor: pointer; height: var(--btn-height); border-radius: 100px; display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden; flex-grow: 1; position: relative; padding: 0 16px; transition: transform 0.4s var(--apple-spring), box-shadow 0.4s var(--apple-spring);">
             
-            <span id="p-display-name" style="transition: opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); width: 100%; text-align: center; overflow: hidden; text-overflow: ellipsis; font-size: 0.95rem; font-family: inherit; font-weight: inherit; transform: translateX(0px);">${targetName}</span>
+            <span id="p-display-name" style="transition: opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); width: 100%; text-align: center; overflow: hidden; text-overflow: ellipsis; font-size: 0.95rem; font-family: inherit; font-weight: inherit; transform: translate3d(0, 0, 0);">${targetName}</span>
 
-            <span id="p-shared-status" style="position: absolute; left: 16px; right: 16px; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-family: inherit; font-weight: inherit; opacity: 0; pointer-events: none; transition: opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); transform: translateX(0px);">
+            <span id="p-shared-status" style="position: absolute; left: 16px; right: 16px; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-family: inherit; font-weight: inherit; opacity: 0; pointer-events: none; transition: opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); transform: translate3d(0, 0, 0);">
                 <span id="p-shared-status-text" style="display:inline-block;"></span>
             </span>
         </div>
 
         <button id="p-btn-circle-1" class="info-tag-item interactive-btn" onclick="window.handleCopyAction(event, 'name', this)" style="
             cursor: pointer; height: var(--btn-height); width: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block; flex-shrink: 0; transition: transform 0.4s var(--apple-spring), box-shadow 0.4s var(--apple-spring);">
-            <span id="p-icon-clipboard" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 21.1px; height: 20.7px;">
+            <span id="p-icon-clipboard" style="position: absolute; top: 50%; left: 50%; transform: translate3d(-50%, -50%, 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 21.1px; height: 20.7px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M16 4h2a2 2 0 0 1 2 2v4"/><path d="M21 14H11"/><path d="m15 10-4 4 4 4"/></svg>
             </span>
-            <span id="p-icon-check" style="position: absolute; top: 50%; left: 50%; transform: translate(calc(-50% + 40px), -50%); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
+            <span id="p-icon-check" style="position: absolute; top: 50%; left: 50%; transform: translate3d(calc(-50% + 40px), -50%, 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
             </span>
-            <svg id="p-icon-x" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; top: 50%; left: 50%; transform: translate(-250%, -50%); transition: transform 0.4s var(--apple-spring); opacity: 0.8; width: 22px; height: 22px; stroke-width: 2.5px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            <svg id="p-icon-x" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; top: 50%; left: 50%; transform: translate3d(-250%, -50%, 0); transition: transform 0.4s var(--apple-spring); opacity: 0.8; width: 22px; height: 22px; stroke-width: 2.5px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
 
         <button id="p-btn-circle-2" class="info-tag-item interactive-btn" onclick="window.handlePasteAction(event, 'name', this)" style="
             cursor: pointer; height: var(--btn-height); width: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block; flex-shrink: 0; transition: transform 0.4s var(--apple-spring), max-width 0.4s var(--apple-spring), margin 0.4s var(--apple-spring), padding 0.4s var(--apple-spring); max-width: var(--btn-height);">
-            <span id="p-icon-paste-default" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 20px; height: 20px;">
+            <span id="p-icon-paste-default" style="position: absolute; top: 50%; left: 50%; transform: translate3d(-50%, -50%, 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 20px; height: 20px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
             </span>
-            <span id="p-icon-paste-loader" style="position: absolute; top: 50%; left: 50%; transform: translate(calc(-50% - 40px), -50%); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
+            <span id="p-icon-paste-loader" style="position: absolute; top: 50%; left: 50%; transform: translate3d(calc(-50% - 40px), -50%, 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
                 <svg class="p-spin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
             </span>
-            <span id="p-icon-paste-error" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, calc(-50% - 40px)); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
+            <span id="p-icon-paste-error" style="position: absolute; top: 50%; left: 50%; transform: translate3d(-50%, calc(-50% - 40px), 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2.5px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
             </span>
-            <span id="p-icon-paste-check" style="position: absolute; top: 50%; left: 50%; transform: translate(calc(-50% - 40px), -50%); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
+            <span id="p-icon-paste-check" style="position: absolute; top: 50%; left: 50%; transform: translate3d(calc(-50% - 40px), -50%, 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
             </span>
         </button>
@@ -195,36 +201,36 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         <div id="p-btn-color-input-container" class="info-tag-item interactive-btn" onclick="window.toggleGhostEditMode('color', event, this)" style="
             cursor: pointer; height: var(--btn-height); border-radius: 100px; display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden; flex-grow: 1; position: relative; padding: 0 16px; transition: transform 0.4s var(--apple-spring), box-shadow 0.4s var(--apple-spring);">
             
-            <span id="p-display-color" style="transition: opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); width: 100%; text-align: center; overflow: hidden; text-overflow: ellipsis; font-size: 0.95rem; font-family: monospace; font-weight: inherit; transform: translateX(0px);">${targetHex.toUpperCase()}</span>
+            <span id="p-display-color" style="transition: opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); width: 100%; text-align: center; overflow: hidden; text-overflow: ellipsis; font-size: 0.95rem; font-family: monospace; font-weight: inherit; transform: translate3d(0, 0, 0);">${targetHex.toUpperCase()}</span>
 
-            <span id="p-color-shared-status" style="position: absolute; left: 16px; right: 16px; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-family: inherit; font-weight: inherit; opacity: 0; pointer-events: none; transition: opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); transform: translateX(0px);">
+            <span id="p-color-shared-status" style="position: absolute; left: 16px; right: 16px; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-family: inherit; font-weight: inherit; opacity: 0; pointer-events: none; transition: opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); transform: translate3d(0, 0, 0);">
                 <span id="p-color-shared-status-text" style="display:inline-block;"></span>
             </span>
         </div>
 
         <button id="p-btn-color-circle-1" class="info-tag-item interactive-btn" onclick="window.handleCopyAction(event, 'color', this)" style="
             cursor: pointer; height: var(--btn-height); width: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block; flex-shrink: 0; transition: transform 0.4s var(--apple-spring), box-shadow 0.4s var(--apple-spring);">
-            <span id="p-color-icon-clipboard" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 21.1px; height: 20.7px;">
+            <span id="p-color-icon-clipboard" style="position: absolute; top: 50%; left: 50%; transform: translate3d(-50%, -50%, 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 21.1px; height: 20.7px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M16 4h2a2 2 0 0 1 2 2v4"/><path d="M21 14H11"/><path d="m15 10-4 4 4 4"/></svg>
             </span>
-            <span id="p-color-icon-check" style="position: absolute; top: 50%; left: 50%; transform: translate(calc(-50% + 40px), -50%); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
+            <span id="p-color-icon-check" style="position: absolute; top: 50%; left: 50%; transform: translate3d(calc(-50% + 40px), -50%, 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
             </span>
-            <svg id="p-color-icon-x" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; top: 50%; left: 50%; transform: translate(-250%, -50%); transition: transform 0.4s var(--apple-spring); opacity: 0.8; width: 22px; height: 22px; stroke-width: 2.5px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            <svg id="p-color-icon-x" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; top: 50%; left: 50%; transform: translate3d(-250%, -50%, 0); transition: transform 0.4s var(--apple-spring); opacity: 0.8; width: 22px; height: 22px; stroke-width: 2.5px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
 
         <button id="p-btn-color-circle-2" class="info-tag-item interactive-btn" onclick="window.handlePasteAction(event, 'color', this)" style="
             cursor: pointer; height: var(--btn-height); width: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block; flex-shrink: 0; transition: transform 0.4s var(--apple-spring), max-width 0.4s var(--apple-spring), margin 0.4s var(--apple-spring), padding 0.4s var(--apple-spring); max-width: var(--btn-height);">
-            <span id="p-color-icon-paste-default" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 20px; height: 20px;">
+            <span id="p-color-icon-paste-default" style="position: absolute; top: 50%; left: 50%; transform: translate3d(-50%, -50%, 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 20px; height: 20px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
             </span>
-            <span id="p-color-icon-paste-loader" style="position: absolute; top: 50%; left: 50%; transform: translate(calc(-50% - 40px), -50%); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
+            <span id="p-color-icon-paste-loader" style="position: absolute; top: 50%; left: 50%; transform: translate3d(calc(-50% - 40px), -50%, 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
                 <svg class="p-spin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
             </span>
-            <span id="p-color-icon-paste-error" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, calc(-50% - 40px)); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
+            <span id="p-color-icon-paste-error" style="position: absolute; top: 50%; left: 50%; transform: translate3d(-50%, calc(-50% - 40px), 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2.5px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
             </span>
-            <span id="p-color-icon-paste-check" style="position: absolute; top: 50%; left: 50%; transform: translate(calc(-50% - 40px), -50%); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
+            <span id="p-color-icon-paste-check" style="position: absolute; top: 50%; left: 50%; transform: translate3d(calc(-50% - 40px), -50%, 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
             </span>
         </button>
@@ -336,9 +342,9 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
 
                 if (leftBtn && rightBtn) {
                     leftBtn.style.setProperty('transition', 'none', 'important');
-                    leftBtn.style.setProperty('transform', `translateX(${-30 * progress}px)`, 'important');
+                    leftBtn.style.setProperty('transform', `translate3d(${-30 * progress}px, 0, 0)`, 'important');
                     rightBtn.style.setProperty('transition', 'none', 'important');
-                    rightBtn.style.setProperty('transform', `translateX(${-30 * progress}px)`, 'important');
+                    rightBtn.style.setProperty('transform', `translate3d(${-30 * progress}px, 0, 0)`, 'important');
                 }
 
                 if (dismissIcon) {
@@ -391,9 +397,9 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
 
                 if (leftBtn && rightBtn) {
                     leftBtn.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15)', 'important');
-                    leftBtn.style.setProperty('transform', `translateX(0px)`, 'important');
+                    leftBtn.style.setProperty('transform', `translate3d(0px, 0, 0)`, 'important');
                     rightBtn.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15)', 'important');
-                    rightBtn.style.setProperty('transform', `translateX(0px)`, 'important');
+                    rightBtn.style.setProperty('transform', `translate3d(0px, 0, 0)`, 'important');
                 }
 
                 if (dismissSvg) {
@@ -438,6 +444,9 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             card.classList.remove('flip-in-start');
             card.classList.add('flip-in-active');
 
+            // 🟢 全域高度強制鎖定：卡片開啟期間，永遠不允許重算與推動高度
+            if (window.pScrollManager) window.pScrollManager.lock();
+
             setTimeout(() => {
                 originalInner.classList.remove('hardware-accelerated');
                 card.classList.remove('hardware-accelerated');
@@ -451,6 +460,11 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
     window.closeBlankOverlay = function (isFromGesture = false) {
         if (window.isFlipAnimating) return;
         window.isFlipAnimating = true;
+
+        // 🟢 卡片關閉，徹底解除全域高度鎖定
+        if (window.pScrollManager) {
+            window.pScrollManager.unlock();
+        }
 
         const ghost = document.getElementById('p-ghost-input');
         if (ghost) ghost.blur();
@@ -513,9 +527,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             });
 
             setTimeout(() => {
-                // 🟢 卡片完全關閉後，才徹底解鎖網頁高度！
-                if (window.pScrollManager) window.pScrollManager.unlock();
-
                 if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
                 originalInner.classList.remove('flip-back-active');
                 originalContainer.classList.remove('perspective-container', 'is-flipping');
@@ -666,12 +677,11 @@ const getElements = (type) => {
 
 window.checkFontFamily = function(val) {
     const ghost = document.getElementById('p-ghost-input');
-    if (!ghost) return;
-    if (val.length > 0 && /^[\x00-\x7F]*$/.test(val)) {
-        ghost.style.fontFamily = 'monospace';
-    } else {
-        ghost.style.fontFamily = 'inherit';
-    }
+    const nameDisplay = document.getElementById('p-display-name');
+    const family = (val.length > 0 && /^[\x00-\x7F]*$/.test(val)) ? 'monospace' : 'inherit';
+    
+    if (ghost) ghost.style.fontFamily = family;
+    if (nameDisplay) nameDisplay.style.fontFamily = family;
 };
 
 window.handleGhostInput = function(val) {
@@ -736,11 +746,11 @@ window.toggleGhostEditMode = function(type, e, element) {
         oldEls.label.style.maxWidth = '120px';
         oldEls.label.style.padding = '0 16px';
         oldEls.label.style.marginRight = '0px';
-        oldEls.label.style.transform = 'translateX(0px)';
+        oldEls.label.style.transform = 'translate3d(0px, 0, 0)';
         oldEls.circle2.style.maxWidth = 'var(--btn-height)';
         oldEls.circle2.style.padding = '0px';
         oldEls.circle2.style.marginLeft = '0px';
-        oldEls.circle2.style.transform = 'translateX(0px)';
+        oldEls.circle2.style.transform = 'translate3d(0px, 0, 0)';
         
         let finalVal = ghost.value.trim();
         if (finalVal !== '') {
@@ -751,8 +761,8 @@ window.toggleGhostEditMode = function(type, e, element) {
         
         setTimeout(() => {
             if (window.pActiveEditType !== oldEls.type) {
-                oldEls.clip.style.transform = 'translate(-50%, -50%)';
-                oldEls.x.style.transform = 'translate(-250%, -50%)';
+                oldEls.clip.style.transform = 'translate3d(-50%, -50%, 0)';
+                oldEls.x.style.transform = 'translate3d(-250%, -50%, 0)';
             }
         }, 200);
     }
@@ -766,12 +776,12 @@ window.toggleGhostEditMode = function(type, e, element) {
     els.label.style.maxWidth = '0px';
     els.label.style.padding = '0px';
     els.label.style.marginRight = '-8px';
-    els.label.style.transform = 'translateX(-30px)';
+    els.label.style.transform = 'translate3d(-30px, 0, 0)';
 
     els.circle2.style.maxWidth = '0px';
     els.circle2.style.padding = '0px';
     els.circle2.style.marginLeft = '-8px';
-    els.circle2.style.transform = 'translateX(30px)';
+    els.circle2.style.transform = 'translate3d(30px, 0, 0)';
 
     els.display.style.transition = 'opacity 0.2s ease';
     els.display.style.opacity = '0';
@@ -794,7 +804,7 @@ window.toggleGhostEditMode = function(type, e, element) {
     
     ghost.style.pointerEvents = 'auto';
     
-    // 聚焦！加入 preventScroll: true 暴力禁止瀏覽器雞婆滾動
+    // 聚焦！強制阻止系統視窗滾動
     ghost.focus({ preventScroll: true });
 
     void ghost.offsetWidth;
@@ -808,8 +818,8 @@ window.toggleGhostEditMode = function(type, e, element) {
 
     setTimeout(() => {
         if (window.pActiveEditType === type) {
-            els.clip.style.transform = 'translate(150%, -50%)';
-            els.x.style.transform = 'translate(-50%, -50%)';
+            els.clip.style.transform = 'translate3d(150%, -50%, 0)';
+            els.x.style.transform = 'translate3d(-50%, -50%, 0)';
             if (type === 'name') {
                 const countElement = document.getElementById('p-char-count');
                 if (countElement) countElement.style.opacity = '0.8';
@@ -839,12 +849,12 @@ window.closeGhostEditMode = function(forceImmediate = false, triggerElement = nu
     els.label.style.maxWidth = '120px';
     els.label.style.padding = '0 16px';
     els.label.style.marginRight = '0px';
-    els.label.style.transform = 'translateX(0px)';
+    els.label.style.transform = 'translate3d(0px, 0, 0)';
 
     els.circle2.style.maxWidth = 'var(--btn-height)';
     els.circle2.style.padding = '0px';
     els.circle2.style.marginLeft = '0px';
-    els.circle2.style.transform = 'translateX(0px)';
+    els.circle2.style.transform = 'translate3d(0px, 0, 0)';
 
     let finalVal = ghost.value.trim();
     if (finalVal !== '') {
@@ -866,8 +876,8 @@ window.closeGhostEditMode = function(forceImmediate = false, triggerElement = nu
 
     setTimeout(() => {
         if (window.pActiveEditType !== type) {
-            els.clip.style.transform = 'translate(-50%, -50%)';
-            els.x.style.transform = 'translate(-250%, -50%)';
+            els.clip.style.transform = 'translate3d(-50%, -50%, 0)';
+            els.x.style.transform = 'translate3d(-250%, -50%, 0)';
         }
     }, 200);
 };
@@ -893,37 +903,36 @@ window.handleCopyAction = function(e, type, element) {
         pState[type].isCopying = true; 
         
         navigator.clipboard.writeText(textToCopy).then(() => {
-            // 複製：向左移動
             if (els.sharedStatus) {
                 els.sharedStatus.style.transition = 'none';
-                els.sharedStatus.style.transform = 'translateX(40px)';
+                els.sharedStatus.style.transform = 'translate3d(40px, 0, 0)';
                 void els.sharedStatus.offsetWidth; 
                 els.sharedStatus.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
             }
             if (els.sharedText) els.sharedText.textContent = '已複製';
 
-            if (els.clip) els.clip.style.transform = 'translate(calc(-50% - 40px), -50%)';
-            if (els.check) els.check.style.transform = 'translate(-50%, -50%)';
+            if (els.clip) els.clip.style.transform = 'translate3d(calc(-50% - 40px), -50%, 0)';
+            if (els.check) els.check.style.transform = 'translate3d(-50%, -50%, 0)';
             
             if (els.display) {
-                els.display.style.transform = 'translateX(-40px)';
+                els.display.style.transform = 'translate3d(-40px, 0, 0)';
                 els.display.style.opacity = '0';
             }
             if (els.sharedStatus) {
-                els.sharedStatus.style.transform = 'translateX(0px)';
+                els.sharedStatus.style.transform = 'translate3d(0px, 0, 0)';
                 els.sharedStatus.style.opacity = '1';
             }
 
             setTimeout(() => {
-                if (els.clip) els.clip.style.transform = 'translate(-50%, -50%)';
-                if (els.check) els.check.style.transform = 'translate(calc(-50% + 40px), -50%)';
+                if (els.clip) els.clip.style.transform = 'translate3d(-50%, -50%, 0)';
+                if (els.check) els.check.style.transform = 'translate3d(calc(-50% + 40px), -50%, 0)';
                 
                 if (els.display) {
-                    els.display.style.transform = 'translateX(0px)';
+                    els.display.style.transform = 'translate3d(0px, 0, 0)';
                     els.display.style.opacity = '1';
                 }
                 if (els.sharedStatus) {
-                    els.sharedStatus.style.transform = 'translateX(40px)';
+                    els.sharedStatus.style.transform = 'translate3d(40px, 0, 0)';
                     els.sharedStatus.style.opacity = '0';
                 }
                 setTimeout(() => pState[type].isCopying = false, 600);
@@ -951,26 +960,25 @@ window.handlePasteAction = function(e, type, element) {
     if (els.sharedText) els.sharedText.classList.remove('p-shake-active');
     if (errorSvg) errorSvg.classList.remove('p-shake-active');
 
-    // 貼上：向右移動
     if (els.sharedStatus) {
         els.sharedStatus.style.transition = 'none';
-        els.sharedStatus.style.transform = 'translateX(-40px)';
+        els.sharedStatus.style.transform = 'translate3d(-40px, 0, 0)';
         void els.sharedStatus.offsetWidth; 
         els.sharedStatus.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
     }
     if (els.sharedText) els.sharedText.textContent = "請同意許可";
 
     if (els.display) {
-        els.display.style.transform = 'translateX(40px)';
+        els.display.style.transform = 'translate3d(40px, 0, 0)';
         els.display.style.opacity = '0';
     }
     if (els.sharedStatus) {
-        els.sharedStatus.style.transform = 'translateX(0px)';
+        els.sharedStatus.style.transform = 'translate3d(0px, 0, 0)';
         els.sharedStatus.style.opacity = '1';
     }
 
-    if (els.pasteDef) els.pasteDef.style.transform = 'translate(calc(-50% + 40px), -50%)';
-    if (els.pasteLoader) els.pasteLoader.style.transform = 'translate(-50%, -50%)';
+    if (els.pasteDef) els.pasteDef.style.transform = 'translate3d(calc(-50% + 40px), -50%, 0)';
+    if (els.pasteLoader) els.pasteLoader.style.transform = 'translate3d(-50%, -50%, 0)';
 
     navigator.clipboard.readText().then(text => {
         const val = text.trim();
@@ -984,13 +992,13 @@ window.handlePasteAction = function(e, type, element) {
         if (els.sharedText) els.sharedText.textContent = msg;
 
         if (resType === 'error') {
-            if (els.pasteLoader) els.pasteLoader.style.transform = 'translate(-50%, calc(-50% + 40px))';
+            if (els.pasteLoader) els.pasteLoader.style.transform = 'translate3d(-50%, calc(-50% + 40px), 0)';
             if (els.pasteError) {
                 els.pasteError.style.transition = 'none';
-                els.pasteError.style.transform = 'translate(-50%, calc(-50% - 40px))';
+                els.pasteError.style.transform = 'translate3d(-50%, calc(-50% - 40px), 0)';
                 void els.pasteError.offsetWidth;
                 els.pasteError.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-                els.pasteError.style.transform = 'translate(-50%, -50%)';
+                els.pasteError.style.transform = 'translate3d(-50%, -50%, 0)';
             }
             setTimeout(() => {
                 if (els.sharedText) els.sharedText.classList.add('p-shake-active');
@@ -998,13 +1006,13 @@ window.handlePasteAction = function(e, type, element) {
             }, 50);
             setTimeout(() => revert('error'), 800);
         } else {
-            if (els.pasteLoader) els.pasteLoader.style.transform = 'translate(calc(-50% + 40px), -50%)';
+            if (els.pasteLoader) els.pasteLoader.style.transform = 'translate3d(calc(-50% + 40px), -50%, 0)';
             if (els.pasteCheck) {
                 els.pasteCheck.style.transition = 'none';
-                els.pasteCheck.style.transform = 'translate(calc(-50% - 40px), -50%)';
+                els.pasteCheck.style.transform = 'translate3d(calc(-50% - 40px), -50%, 0)';
                 void els.pasteCheck.offsetWidth;
                 els.pasteCheck.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-                els.pasteCheck.style.transform = 'translate(-50%, -50%)';
+                els.pasteCheck.style.transform = 'translate3d(-50%, -50%, 0)';
             }
             if (val) {
                 const finalVal = type === 'color' ? val.substring(0, 7).toUpperCase() : val.substring(0, 10); 
@@ -1016,30 +1024,30 @@ window.handlePasteAction = function(e, type, element) {
 
     function revert(resType) {
         if (els.display) {
-            els.display.style.transform = 'translateX(0px)';
+            els.display.style.transform = 'translate3d(0px, 0, 0)';
             els.display.style.opacity = '1';
         }
         if (els.sharedStatus) {
-            els.sharedStatus.style.transform = 'translateX(-40px)';
+            els.sharedStatus.style.transform = 'translate3d(-40px, 0, 0)';
             els.sharedStatus.style.opacity = '0';
         }
         if (resType === 'error') {
-            if (els.pasteError) els.pasteError.style.transform = 'translate(-50%, calc(-50% - 40px))';
+            if (els.pasteError) els.pasteError.style.transform = 'translate3d(-50%, calc(-50% - 40px), 0)';
             if (els.pasteDef) {
                 els.pasteDef.style.transition = 'none';
-                els.pasteDef.style.transform = 'translate(-50%, calc(-50% + 40px))';
+                els.pasteDef.style.transform = 'translate3d(-50%, calc(-50% + 40px), 0)';
                 void els.pasteDef.offsetWidth; 
                 els.pasteDef.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-                els.pasteDef.style.transform = 'translate(-50%, -50%)';
+                els.pasteDef.style.transform = 'translate3d(-50%, -50%, 0)';
             }
         } else {
-            if (els.pasteCheck) els.pasteCheck.style.transform = 'translate(calc(-50% + 40px), -50%)';
+            if (els.pasteCheck) els.pasteCheck.style.transform = 'translate3d(calc(-50% + 40px), -50%, 0)';
             if (els.pasteDef) {
                 els.pasteDef.style.transition = 'none';
-                els.pasteDef.style.transform = 'translate(calc(-50% - 40px), -50%)';
+                els.pasteDef.style.transform = 'translate3d(calc(-50% - 40px), -50%, 0)';
                 void els.pasteDef.offsetWidth;
                 els.pasteDef.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-                els.pasteDef.style.transform = 'translate(-50%, -50%)';
+                els.pasteDef.style.transform = 'translate3d(-50%, -50%, 0)';
             }
         }
         setTimeout(() => {
