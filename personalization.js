@@ -36,6 +36,28 @@
     };
     applyOverscroll();
     window.addEventListener('DOMContentLoaded', applyOverscroll);
+
+    // 4. 🟢 終極視窗歸位系統 (修復退到桌面再回來時，高度跑掉的 Bug)
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            // 退到背景時：強制關閉輸入框並拔除鍵盤焦點，防止 Safari 把鍵盤高度鎖死在背景
+            if (window.pActiveEditType && typeof window.closeGhostEditMode === 'function') {
+                window.closeGhostEditMode(true);
+            }
+        } else {
+            // 回到前景時：如果卡片還開著，強制將視窗頂回原位，消滅鍵盤抬升殘影
+            if (window.pScrollManager && window.pScrollManager.isLocked) {
+                const forceResetScroll = () => {
+                    window.scrollTo(0, 0);
+                    document.body.scrollTop = 0;
+                    document.documentElement.scrollTop = 0;
+                };
+                // 雙重打擊，對抗 iOS 動畫延遲
+                setTimeout(forceResetScroll, 50);
+                setTimeout(forceResetScroll, 300);
+            }
+        }
+    });
 })();
 
 export function initPersonalization(applyThemeToCard, getActiveCardId) {
@@ -107,6 +129,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             user-select: text;
         }
         
+        /* 🚀 終極 GPU 硬體加速：徹底消除初次點擊卡頓 */
         .info-tag-item, #p-ghost-input, #p-shared-status, svg {
             will-change: transform, max-width, opacity;
             -webkit-backface-visibility: hidden;
@@ -950,87 +973,66 @@ window.handlePasteAction = function(e, type, element) {
     if (els.sharedText) els.sharedText.classList.remove('p-shake-active');
     if (errorSvg) errorSvg.classList.remove('p-shake-active');
 
-    let isResolved = false;
-    let loaderTriggered = false;
-
-    // 🟢 150ms 延遲探針：如果 API 被系統擋下詢問權限，立刻滑入等待 Loader
-    const loaderTimer = setTimeout(() => {
-        if (!isResolved) {
-            loaderTriggered = true;
-            
-            if (els.pasteDef) {
-                els.pasteDef.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-                els.pasteDef.style.transform = 'translate3d(calc(-50% + 40px), -50%, 0)';
-            }
-            if (els.pasteLoader) {
-                els.pasteLoader.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-                els.pasteLoader.style.transform = 'translate3d(-50%, -50%, 0)';
-            }
-
-            if (els.sharedStatus) {
-                els.sharedStatus.style.transition = 'none';
-                els.sharedStatus.style.transform = 'translate3d(-40px, 0, 0)';
-                void els.sharedStatus.offsetWidth;
-                els.sharedStatus.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-                els.sharedText.textContent = "請同意許可";
-                els.sharedStatus.style.transform = 'translate3d(0px, 0, 0)';
-                els.sharedStatus.style.opacity = '1';
-            }
-            if (els.display) {
-                els.display.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-                els.display.style.transform = 'translate3d(40px, 0, 0)';
-                els.display.style.opacity = '0';
-            }
-        }
-    }, 150);
-
+    // 瞬間同步呼叫 API，不再使用 CSS Loader 繞過
     navigator.clipboard.readText().then(text => {
-        isResolved = true;
-        clearTimeout(loaderTimer);
         const val = text.trim();
-        if (!val) {
-            handleResult('剪貼簿無內容', 'error', val, loaderTriggered);
-        } else {
-            handleResult('已貼上', 'success', val, loaderTriggered);
+        
+        if (els.sharedStatus) {
+            els.sharedStatus.style.transition = 'none';
+            els.sharedStatus.style.transform = 'translate3d(-40px, 0, 0)';
+            void els.sharedStatus.offsetWidth; 
+            els.sharedStatus.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
         }
+        
+        if (els.display) {
+            els.display.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+            els.display.style.transform = 'translate3d(40px, 0, 0)';
+            els.display.style.opacity = '0';
+        }
+        
+        if (els.sharedStatus) {
+            els.sharedStatus.style.transform = 'translate3d(0px, 0, 0)';
+            els.sharedStatus.style.opacity = '1';
+        }
+
+        if (!val) handleResult('剪貼簿無內容', 'error');
+        else handleResult('已貼上', 'success', val);
     }).catch(err => {
-        isResolved = true;
-        clearTimeout(loaderTimer);
-        handleResult('未同意權限', 'error', null, loaderTriggered);
+        if (els.sharedStatus) {
+            els.sharedStatus.style.transition = 'none';
+            els.sharedStatus.style.transform = 'translate3d(0, -40px, 0)';
+            void els.sharedStatus.offsetWidth; 
+            els.sharedStatus.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+        }
+        
+        if (els.display) {
+            els.display.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+            els.display.style.transform = 'translate3d(0, 40px, 0)';
+            els.display.style.opacity = '0';
+        }
+        
+        if (els.sharedStatus) {
+            els.sharedStatus.style.transform = 'translate3d(0, 0, 0)';
+            els.sharedStatus.style.opacity = '1';
+        }
+        
+        handleResult('未同意權限', 'error');
     });
 
-    function handleResult(msg, resType, val, wasLoaderShown) {
+    function handleResult(msg, resType, val) {
         if (els.sharedText) els.sharedText.textContent = msg;
 
         if (resType === 'error') {
-            // 🟢 拒絕/無內容：從上往下砸，文字與 SVG 軌跡同步
-            if (wasLoaderShown && els.pasteLoader) {
-                els.pasteLoader.style.transform = 'translate3d(-50%, calc(-50% + 40px), 0)'; 
-            } else if (!wasLoaderShown && els.pasteDef) {
-                els.pasteDef.style.transform = 'translate3d(-50%, calc(-50% + 40px), 0)'; 
+            if (els.pasteDef) {
+                els.pasteDef.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+                els.pasteDef.style.transform = 'translate3d(-50%, calc(-50% + 40px), 0)';
             }
-
             if (els.pasteError) {
                 els.pasteError.style.transition = 'none';
-                els.pasteError.style.transform = 'translate3d(-50%, calc(-50% - 40px), 0)'; 
+                els.pasteError.style.transform = 'translate3d(-50%, calc(-50% - 40px), 0)';
                 void els.pasteError.offsetWidth;
                 els.pasteError.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-                els.pasteError.style.transform = 'translate3d(-50%, -50%, 0)'; 
-            }
-
-            if (els.sharedStatus) {
-                els.sharedStatus.style.transition = 'none';
-                els.sharedStatus.style.transform = 'translate3d(0, -40px, 0)';
-                void els.sharedStatus.offsetWidth;
-                els.sharedStatus.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-                els.sharedStatus.style.transform = 'translate3d(0, 0, 0)';
-                els.sharedStatus.style.opacity = '1';
-            }
-
-            if (els.display && !wasLoaderShown) {
-                els.display.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-                els.display.style.transform = 'translate3d(0, 40px, 0)'; 
-                els.display.style.opacity = '0';
+                els.pasteError.style.transform = 'translate3d(-50%, -50%, 0)';
             }
 
             setTimeout(() => {
@@ -1038,49 +1040,29 @@ window.handlePasteAction = function(e, type, element) {
                 if (errorSvg) errorSvg.classList.add('p-shake-active');
             }, 50);
 
-            setTimeout(() => revert('error', wasLoaderShown), 800);
-
+            setTimeout(() => revert('error'), 800);
         } else {
-            // 🟢 成功貼上：從左往右推
-            if (wasLoaderShown && els.pasteLoader) {
-                els.pasteLoader.style.transform = 'translate3d(calc(-50% + 40px), -50%, 0)'; 
-            } else if (!wasLoaderShown && els.pasteDef) {
-                els.pasteDef.style.transform = 'translate3d(calc(-50% + 40px), -50%, 0)'; 
+            if (els.pasteDef) {
+                els.pasteDef.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+                els.pasteDef.style.transform = 'translate3d(calc(-50% + 40px), -50%, 0)';
             }
-
             if (els.pasteCheck) {
                 els.pasteCheck.style.transition = 'none';
-                els.pasteCheck.style.transform = 'translate3d(calc(-50% - 40px), -50%, 0)'; 
+                els.pasteCheck.style.transform = 'translate3d(calc(-50% - 40px), -50%, 0)';
                 void els.pasteCheck.offsetWidth;
                 els.pasteCheck.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-                els.pasteCheck.style.transform = 'translate3d(-50%, -50%, 0)'; 
+                els.pasteCheck.style.transform = 'translate3d(-50%, -50%, 0)';
             }
-
-            if (els.sharedStatus) {
-                els.sharedStatus.style.transition = 'none';
-                els.sharedStatus.style.transform = 'translate3d(-40px, 0, 0)';
-                void els.sharedStatus.offsetWidth;
-                els.sharedStatus.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-                els.sharedStatus.style.transform = 'translate3d(0, 0, 0)';
-                els.sharedStatus.style.opacity = '1';
-            }
-
-            if (els.display && !wasLoaderShown) {
-                els.display.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-                els.display.style.transform = 'translate3d(40px, 0, 0)'; 
-                els.display.style.opacity = '0';
-            }
-
             if (val) {
                 const finalVal = type === 'color' ? val.substring(0, 7).toUpperCase() : val.substring(0, 10); 
                 if (els.display) els.display.textContent = finalVal;
+                if (type === 'name') window.handleGhostInput(finalVal); 
             }
-
-            setTimeout(() => revert('success', wasLoaderShown), 800);
+            setTimeout(() => revert('success'), 800);
         }
     }
 
-    function revert(resType, wasLoaderShown) {
+    function revert(resType) {
         if (els.display) {
             els.display.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
             els.display.style.transform = 'translate3d(0px, 0, 0)';
@@ -1117,11 +1099,6 @@ window.handlePasteAction = function(e, type, element) {
                 els.pasteDef.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
                 els.pasteDef.style.transform = 'translate3d(-50%, -50%, 0)'; 
             }
-        }
-        
-        if (wasLoaderShown && els.pasteLoader) {
-            els.pasteLoader.style.transition = 'none';
-            els.pasteLoader.style.transform = 'translate3d(calc(-50% - 40px), -50%, 0)'; 
         }
 
         setTimeout(() => {
