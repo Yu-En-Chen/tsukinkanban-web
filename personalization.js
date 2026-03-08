@@ -114,9 +114,9 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             <span id="p-icon-clipboard" style="
                 position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
                 transition: transform 0.5s var(--apple-spring); 
-                display: flex; align-items: center; justify-content: center; width: 21.1px; height: 20.7px;">
+                display: flex; align-items: center; justify-content: center; width: 20px; height: 20px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
-                     style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px; transform: scaleX(-1);">
+                     style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;">
                     <path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/>
                 </svg>
             </span>
@@ -473,6 +473,14 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
 // =========================================================
 // 🟢 輸入框絲滑變形動畫引擎 (0.4s Apple Spring + 邊緣物理遮罩)
 // =========================================================
+
+// 🟢 全域防捲動攔截器 (只允許在輸入框內操作，其他滑動一律禁止)
+window._pLockScroll = function(e) {
+    if (e.target.id !== 'p-real-input') {
+        e.preventDefault();
+    }
+};
+
 window.toggleEditNameMode = function () {
     const row = document.getElementById('p-edit-row');
     if (!row || row.dataset.editing === 'true') return;
@@ -501,8 +509,9 @@ window.toggleEditNameMode = function () {
     circle2.style.transform = 'translateX(30px)';
 
     // 3. 輸入框浮現 (打開時強制清空，並顯示 Placeholder)
+    displayName.style.transition = 'none'; // 🟢 拔除 CSS 過渡，強制瞬間執行
     displayName.style.opacity = '0';
-    displayName.style.transform = 'translateY(-15px)';
+    displayName.style.transform = 'translateY(0)';
 
     realInput.value = ''; // 🟢 每次打開都是全空的
     window.updateCharCount(''); // 重置字數顯示為 0/10
@@ -511,6 +520,11 @@ window.toggleEditNameMode = function () {
     realInput.style.pointerEvents = 'auto';
     realInput.style.transform = 'translateY(0)';
     realInput.focus(); // 自動聚焦彈出鍵盤
+
+    // 🟢 強制鎖定畫面：禁止鍵盤彈出時的上下捲動與橡皮筋回彈
+    document.body.style.setProperty('overflow', 'hidden', 'important');
+    document.documentElement.style.setProperty('overflow', 'hidden', 'important');
+    document.addEventListener('touchmove', window._pLockScroll, { passive: false });
 
     // 🟢 字數統計浮現
     if (charCount) charCount.style.opacity = '0.8';
@@ -561,8 +575,13 @@ window.closeEditNameMode = function (e) {
 
     realInput.style.opacity = '0';
     realInput.style.pointerEvents = 'none';
-    realInput.style.transform = 'translateY(15px)';
+    realInput.style.transform = 'translateX(-10px)';
     realInput.blur(); // 收起鍵盤
+
+    // 🟢 解除鎖定，恢復原本畫面的可拖曳狀態
+    document.body.style.removeProperty('overflow');
+    document.documentElement.style.removeProperty('overflow');
+    document.removeEventListener('touchmove', window._pLockScroll);
 
     // 🟢 字數統計淡出隱藏
     if (charCount) charCount.style.opacity = '0';
