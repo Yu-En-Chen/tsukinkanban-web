@@ -94,7 +94,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                 font-size: 0.95rem; font-weight: inherit; opacity: 0; pointer-events: none;
                 transition: opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1);
                 transform: translateX(-40px);
-            ">已複製</span>
+            ">コピーしました</span>
 
             <input id="p-real-input" type="text" placeholder="${targetName}" maxlength="10" oninput="window.updateCharCount(this.value)" style="
                 position: absolute; left: 16px; right: 16px; top: 0; bottom: 0; margin: 0; padding: 0; height: 100%;
@@ -113,11 +113,11 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             
             <span id="p-icon-clipboard" style="
                 position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                transition: transform 0.5s var(--apple-spring); 
-                display: flex; align-items: center; justify-content: center; width: 20px; height: 20px;">
+                transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); 
+                display: flex; align-items: center; justify-content: center; width: 21.1px; height: 20.7px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
                      style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;">
-                    <path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/>
+                    <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M16 4h2a2 2 0 0 1 2 2v4"/><path d="M21 14H11"/><path d="m15 10-4 4 4 4"/>
                 </svg>
             </span>
             
@@ -571,7 +571,7 @@ window.closeEditNameMode = function (e) {
 
     // 3. 輸入框原路收回
     displayName.style.opacity = '1';
-    displayName.style.transform = 'translateY(0)';
+    displayName.style.transform = 'translateX(-10px)';
 
     realInput.style.opacity = '0';
     realInput.style.pointerEvents = 'none';
@@ -630,12 +630,12 @@ window.handleCopyAction = function(e) {
 
             // 🟢 [階段 1] 0.0s：啟動向右切入動畫 (耗時 0.5s，帶慣性)
             // SVG：同步向右推移 40px
-            if (iconClip) iconClip.style.transform = 'translate(calc(-50% + 40px), -50%)';
+            if (iconClip) iconClip.style.transform = 'translate(calc(-50% + -40px), -50%)';
             if (iconCheck) iconCheck.style.transform = 'translate(-50%, -50%)'; // 回到置中
             
             // 文字：同步向右推移 40px，並在 0.3s 時提早線性淡出，完美防穿幫
             if (displayName) {
-                displayName.style.transform = 'translateX(40px)';
+                displayName.style.transform = 'translateX(-40px)';
                 displayName.style.opacity = '0';
             }
             if (textCopied) {
@@ -648,7 +648,7 @@ window.handleCopyAction = function(e) {
                 
                 // SVG 原路向左滑回
                 if (iconClip) iconClip.style.transform = 'translate(-50%, -50%)';
-                if (iconCheck) iconCheck.style.transform = 'translate(calc(-50% - 40px), -50%)';
+                if (iconCheck) iconCheck.style.transform = 'translate(calc(-50% + 40px), -50%)';
                 
                 // 文字原路向左滑回，線性淡入淡出
                 if (displayName) {
@@ -656,7 +656,7 @@ window.handleCopyAction = function(e) {
                     displayName.style.opacity = '1';
                 }
                 if (textCopied) {
-                    textCopied.style.transform = 'translateX(-40px)';
+                    textCopied.style.transform = 'translateX(40px)';
                     textCopied.style.opacity = '0';
                 }
                 
