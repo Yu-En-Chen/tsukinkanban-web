@@ -147,7 +147,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             <span id="p-shared-status" style="position: absolute; left: 16px; right: 16px; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-family: inherit; font-weight: inherit; opacity: 0; pointer-events: none; transition: opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); transform: translateX(0px);">
                 <span id="p-shared-status-text" style="display:inline-block;"></span>
             </span>
-            </div>
+        </div>
 
         <button id="p-btn-circle-1" class="info-tag-item interactive-btn" onclick="window.handleCopyAction(event, 'name', this)" style="
             cursor: pointer; height: var(--btn-height); width: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block; flex-shrink: 0; transition: transform 0.4s var(--apple-spring), box-shadow 0.4s var(--apple-spring);">
@@ -243,7 +243,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         background: transparent; border: none; outline: none;
         color: inherit; font-size: 0.95rem; font-weight: inherit; text-align: left;
         opacity: 0; pointer-events: none; z-index: 100;
-        transition: top 0.3s var(--apple-spring), opacity 0.3s ease;
+        transition: opacity 0.25s ease;
     ">
 </div>
 `;
@@ -696,7 +696,12 @@ window.handleGhostInput = function(val) {
     } else {
         const ghost = document.getElementById('p-ghost-input');
         const upper = val.toUpperCase();
-        if (val !== upper && ghost) ghost.value = upper;
+        if (val !== upper && ghost) {
+            const start = ghost.selectionStart;
+            const end = ghost.selectionEnd;
+            ghost.value = upper;
+            ghost.setSelectionRange(start, end);
+        }
     }
 };
 
@@ -705,7 +710,8 @@ window.handleGhostBlur = function(e) {
     setTimeout(() => {
         if (window.pScrollManager.absoluteLockActive) return;
         if (!window.pActiveEditType) return;
-        // 若焦點不在幽靈身上，代表鍵盤真被收起了，無條件強制退場！
+        
+        // 由於已經防護了按鈕點擊失焦，若焦點不在幽靈身上，代表系統強制收起了鍵盤，無條件退場！
         if (document.activeElement && document.activeElement.id === 'p-ghost-input') return;
         window.closeGhostEditMode(true);
     }, 50);
@@ -731,7 +737,7 @@ window.toggleGhostEditMode = function(type, e, element) {
     window.pGlobalAnimating = true;
     setTimeout(() => { window.pGlobalAnimating = false; }, 500);
 
-    // 只要有動作，啟動 1 秒鐘絕對高度防護罩
+    // 只要有動作，啟動 1 秒鐘絕對高度防護罩，杜絕一切亂跳
     window.pScrollManager.lock(1000);
 
     if (window.pActiveEditType === type) return;
@@ -757,6 +763,7 @@ window.toggleGhostEditMode = function(type, e, element) {
         if (finalVal !== '') {
             oldEls.display.textContent = window.pActiveEditType === 'color' ? finalVal.toUpperCase() : finalVal;
         }
+        oldEls.display.style.transition = 'opacity 0.2s ease';
         oldEls.display.style.opacity = '1';
         
         setTimeout(() => {
@@ -783,10 +790,12 @@ window.toggleGhostEditMode = function(type, e, element) {
     els.circle2.style.marginLeft = '-8px';
     els.circle2.style.transform = 'translateX(30px)';
 
-    els.display.style.transition = 'none';
+    // 原文字柔和淡出，代替原本生硬的消失
+    els.display.style.transition = 'opacity 0.2s ease';
     els.display.style.opacity = '0';
     
-    // 設定並投射幽靈
+    // 設定並投射幽靈，拔除過渡效果達成「瞬間無殘影瞬移」
+    ghost.style.transition = 'none'; 
     ghost.value = els.display.textContent;
     ghost.maxLength = type === 'color' ? 7 : 10;
     if (type === 'name') window.handleGhostInput(ghost.value);
@@ -802,11 +811,21 @@ window.toggleGhostEditMode = function(type, e, element) {
     ghost.style.left = (offset.left + 16) + 'px';
     ghost.style.width = (els.container.offsetWidth - 32) + 'px';
     
-    ghost.style.opacity = '1';
     ghost.style.pointerEvents = 'auto';
     
-    // 聚焦！鍵盤順滑開啟或保持不動
+    // 聚焦！讓鍵盤無縫順滑開啟或保持不動
     ghost.focus();
+
+    // 強制重繪確立新座標，杜絕任何一絲殘影
+    void ghost.offsetWidth;
+
+    // 定位完成後，重新掛上透明度過渡，並給予 50ms 的自然淡入延遲
+    ghost.style.transition = 'opacity 0.25s ease';
+    setTimeout(() => {
+        if (window.pActiveEditType === type) {
+            ghost.style.opacity = '1';
+        }
+    }, 50); 
 
     setTimeout(() => {
         if (window.pActiveEditType === type) {
@@ -853,9 +872,10 @@ window.closeGhostEditMode = function(forceImmediate = false, triggerElement = nu
         els.display.textContent = type === 'color' ? finalVal.toUpperCase() : finalVal;
     }
 
-    els.display.style.transition = '';
+    els.display.style.transition = 'opacity 0.2s ease';
     els.display.style.opacity = '1';
 
+    ghost.style.transition = 'opacity 0.15s ease';
     ghost.style.opacity = '0';
     ghost.style.pointerEvents = 'none';
     ghost.blur(); // 真正收起鍵盤
