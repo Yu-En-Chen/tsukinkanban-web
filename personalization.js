@@ -107,7 +107,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             user-select: text;
         }
         
-        /* 🚀 終極 GPU 硬體加速：徹底消除初次點擊卡頓 */
         .info-tag-item, #p-ghost-input, #p-shared-status, svg {
             will-change: transform, max-width, opacity;
             -webkit-backface-visibility: hidden;
@@ -121,8 +120,10 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             transition: transform 0.15s cubic-bezier(0.34, 1.6, 0.64, 1), opacity 0.15s ease !important;
         }
 
+        /* 🟢 客製化等待加載動畫：0.7秒線性 + 0.1秒減速緩衝 */
         @keyframes p-spin-ease {
-            0% { transform: rotate(0deg) translate3d(0,0,0); animation-timing-function: ease-in-out; }
+            0% { transform: rotate(0deg) translate3d(0,0,0); animation-timing-function: linear; }
+            87.5% { transform: rotate(315deg) translate3d(0,0,0); animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1); }
             100% { transform: rotate(360deg) translate3d(0,0,0); }
         }
         @keyframes p-shake-anim {
@@ -132,7 +133,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             60% { transform: translate3d(-4px, 0, 0); }
             80% { transform: translate3d(4px, 0, 0); }
         }
-        .p-spin { animation: p-spin-ease 1.2s infinite; }
+        .p-spin { animation: p-spin-ease 0.8s infinite; }
         .p-shake-active { animation: p-shake-anim 0.4s cubic-bezier(.36,.07,.19,.97) both; }
     </style>
 
@@ -173,7 +174,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
             </span>
             <span id="p-icon-paste-loader" style="position: absolute; top: 50%; left: 50%; transform: translate3d(calc(-50% - 40px), -50%, 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
-                <svg class="p-spin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                <svg class="p-spin lucide lucide-loader-circle" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
             </span>
             <span id="p-icon-paste-error" style="position: absolute; top: 50%; left: 50%; transform: translate3d(-50%, calc(-50% - 40px), 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2.5px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -226,7 +227,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
             </span>
             <span id="p-color-icon-paste-loader" style="position: absolute; top: 50%; left: 50%; transform: translate3d(calc(-50% - 40px), -50%, 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
-                <svg class="p-spin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                <svg class="p-spin lucide lucide-loader-circle" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
             </span>
             <span id="p-color-icon-paste-error" style="position: absolute; top: 50%; left: 50%; transform: translate3d(-50%, calc(-50% - 40px), 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2.5px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -445,7 +446,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             card.classList.remove('flip-in-start');
             card.classList.add('flip-in-active');
 
-            // 🟢 全域高度強制鎖定：卡片開啟期間，永遠不允許重算與推動高度
+            // 全域高度強制鎖定
             if (window.pScrollManager) window.pScrollManager.lock();
 
             setTimeout(() => {
@@ -462,7 +463,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         if (window.isFlipAnimating) return;
         window.isFlipAnimating = true;
 
-        // 🟢 卡片關閉，徹底解除全域高度鎖定
         if (window.pScrollManager) {
             window.pScrollManager.unlock();
         }
@@ -555,8 +555,6 @@ const pState = {
 };
 
 window.pActiveEditType = null; 
-
-// 🟢 公用公告標記 (初次載入時預設無標記)
 window.pGhostMarker = false; 
 
 function triggerBump(el) {
@@ -575,7 +573,6 @@ function getOffset(el, parent) {
     return { top, left };
 }
 
-// 🟢 暴力全生命週期高度鎖定 (卡片打開期間，永遠不解鎖！)
 window.pScrollManager = {
     isLocked: false,
     scrollY: 0,
@@ -587,7 +584,6 @@ window.pScrollManager = {
                 this.scrollY = window.scrollY; 
                 this.isLocked = true;
 
-                // 將 body 徹底設定為固定且滿版，完全封殺鍵盤自動推升的空間
                 document.body.style.setProperty('position', 'fixed', 'important');
                 document.body.style.setProperty('top', `-${this.scrollY}px`, 'important');
                 document.body.style.setProperty('left', '0', 'important');
@@ -636,7 +632,6 @@ window._pPreventBlur = function(e) {
     if (!window.pActiveEditType) return;
     if (e.target.id === 'p-ghost-input') return;
 
-    // 焦點防護盾：攔截操作按鈕的點擊，不讓系統焦點被偷走
     const btn = e.target.closest('.interactive-btn');
     if (btn) {
         e.preventDefault(); 
@@ -644,7 +639,6 @@ window._pPreventBlur = function(e) {
         return;
     }
 
-    // 卡片上方安全區放行 (讓使用者能點擊黑屏或上方按鈕正常關閉鍵盤)
     let clientY = 0;
     if (e.touches && e.touches.length > 0) clientY = e.touches[0].clientY;
     else if (e.clientY) clientY = e.clientY;
@@ -705,12 +699,9 @@ window.handleGhostInput = function(val) {
     }
 };
 
-// 🟢 鍵盤收起強制監視器
 window.handleGhostBlur = function(e) {
     setTimeout(() => {
         if (!window.pActiveEditType) return;
-        
-        // 由於我們防護了按鈕點擊失焦，走到這裡代表系統強制收起了鍵盤，立刻無條件退場！
         if (document.activeElement && document.activeElement.id === 'p-ghost-input') return;
         window.closeGhostEditMode(true);
     }, 50);
@@ -728,16 +719,12 @@ window.handleGhostKey = function(e) {
 };
 
 window.toggleGhostEditMode = function(type, e, element) {
-    // 🟢 啟動前檢查：該標記已被標記的話就使用按鈕點選微動畫去敷衍他
     if (window.pGhostMarker) {
         if (element) triggerBump(element);
         return;
     }
     
-    // 🟢 每次文字框一但被觸發就加上標記
     window.pGhostMarker = true;
-    
-    // 🟢 結束後刪除 (完美對應 0.4s CSS 動畫時間)
     setTimeout(() => { window.pGhostMarker = false; }, 400);
 
     if (window.pActiveEditType === type) return;
@@ -746,7 +733,6 @@ window.toggleGhostEditMode = function(type, e, element) {
     const wrapper = document.getElementById('p-ghost-wrapper');
     const els = getElements(type);
 
-    // 若從 A 切到 B，先把 A 的殼原路關閉
     if (window.pActiveEditType) {
         const oldEls = getElements(window.pActiveEditType);
         oldEls.row.dataset.editing = 'false';
@@ -774,7 +760,6 @@ window.toggleGhostEditMode = function(type, e, element) {
         }, 200);
     }
 
-    // 啟動 B 的殼
     window.pActiveEditType = type;
     els.row.dataset.editing = 'true';
     pState[type].isCopying = false;
@@ -810,8 +795,6 @@ window.toggleGhostEditMode = function(type, e, element) {
     ghost.style.width = (els.container.offsetWidth - 32) + 'px';
     
     ghost.style.pointerEvents = 'auto';
-    
-    // 聚焦！強制阻止系統視窗滾動
     ghost.focus({ preventScroll: true });
 
     void ghost.offsetWidth;
@@ -843,7 +826,6 @@ window.closeGhostEditMode = function(forceImmediate = false, triggerElement = nu
         return;
     }
 
-    // 關閉時同樣加上標記，結束後刪除
     window.pGhostMarker = true;
     setTimeout(() => { window.pGhostMarker = false; }, 400);
 
@@ -890,7 +872,6 @@ window.closeGhostEditMode = function(forceImmediate = false, triggerElement = nu
     }, 200);
 };
 
-// 🟢 複製與貼上邏輯 (方向完美校準)
 window.handleCopyAction = function(e, type, element) {
     if (e) e.stopPropagation();
     if (window.pActiveEditType === type) {
@@ -898,7 +879,6 @@ window.handleCopyAction = function(e, type, element) {
         return;
     }
     
-    // 複製時一併檢查公用標記
     if (window.pGhostMarker || pState[type].isCopying || pState[type].isPasting) {
         if (element) triggerBump(element);
         return;
@@ -908,7 +888,6 @@ window.handleCopyAction = function(e, type, element) {
     const textToCopy = els.display ? els.display.textContent : "";
 
     if (textToCopy) {
-        // 觸發時掛上公用標記
         window.pGhostMarker = true;
         setTimeout(() => { window.pGhostMarker = false; }, 400);
         pState[type].isCopying = true; 
@@ -956,13 +935,11 @@ window.handlePasteAction = function(e, type, element) {
     if (e) e.stopPropagation();
     if (window.pActiveEditType === type) return; 
 
-    // 貼上時一併檢查公用標記
     if (window.pGhostMarker || pState[type].isCopying || pState[type].isPasting) {
         if (element) triggerBump(element);
         return;
     }
 
-    // 觸發時掛上公用標記
     window.pGhostMarker = true;
     setTimeout(() => { window.pGhostMarker = false; }, 400);
     pState[type].isPasting = true;
@@ -973,96 +950,180 @@ window.handlePasteAction = function(e, type, element) {
     if (els.sharedText) els.sharedText.classList.remove('p-shake-active');
     if (errorSvg) errorSvg.classList.remove('p-shake-active');
 
-    if (els.sharedStatus) {
-        els.sharedStatus.style.transition = 'none';
-        els.sharedStatus.style.transform = 'translate3d(-40px, 0, 0)';
-        void els.sharedStatus.offsetWidth; 
-        els.sharedStatus.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-    }
-    if (els.sharedText) els.sharedText.textContent = "請同意許可";
+    let isResolved = false;
+    let loaderTriggered = false;
 
-    if (els.display) {
-        els.display.style.transform = 'translate3d(40px, 0, 0)';
-        els.display.style.opacity = '0';
-    }
-    if (els.sharedStatus) {
-        els.sharedStatus.style.transform = 'translate3d(0px, 0, 0)';
-        els.sharedStatus.style.opacity = '1';
-    }
+    // 🟢 150ms 延遲探針：如果 API 被系統擋下詢問權限，立刻滑入等待 Loader
+    const loaderTimer = setTimeout(() => {
+        if (!isResolved) {
+            loaderTriggered = true;
+            
+            if (els.pasteDef) {
+                els.pasteDef.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+                els.pasteDef.style.transform = 'translate3d(calc(-50% + 40px), -50%, 0)';
+            }
+            if (els.pasteLoader) {
+                els.pasteLoader.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+                els.pasteLoader.style.transform = 'translate3d(-50%, -50%, 0)';
+            }
 
-    if (els.pasteDef) els.pasteDef.style.transform = 'translate3d(calc(-50% + 40px), -50%, 0)';
-    if (els.pasteLoader) els.pasteLoader.style.transform = 'translate3d(-50%, -50%, 0)';
+            if (els.sharedStatus) {
+                els.sharedStatus.style.transition = 'none';
+                els.sharedStatus.style.transform = 'translate3d(-40px, 0, 0)';
+                void els.sharedStatus.offsetWidth;
+                els.sharedStatus.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+                els.sharedText.textContent = "請同意許可";
+                els.sharedStatus.style.transform = 'translate3d(0px, 0, 0)';
+                els.sharedStatus.style.opacity = '1';
+            }
+            if (els.display) {
+                els.display.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+                els.display.style.transform = 'translate3d(40px, 0, 0)';
+                els.display.style.opacity = '0';
+            }
+        }
+    }, 150);
 
     navigator.clipboard.readText().then(text => {
+        isResolved = true;
+        clearTimeout(loaderTimer);
         const val = text.trim();
-        if (!val) handleResult('剪貼簿無內容', 'error');
-        else handleResult('已貼上', 'success', val);
+        if (!val) {
+            handleResult('剪貼簿無內容', 'error', val, loaderTriggered);
+        } else {
+            handleResult('已貼上', 'success', val, loaderTriggered);
+        }
     }).catch(err => {
-        handleResult('未同意權限', 'error');
+        isResolved = true;
+        clearTimeout(loaderTimer);
+        handleResult('未同意權限', 'error', null, loaderTriggered);
     });
 
-    function handleResult(msg, resType, val) {
+    function handleResult(msg, resType, val, wasLoaderShown) {
         if (els.sharedText) els.sharedText.textContent = msg;
 
         if (resType === 'error') {
-            if (els.pasteLoader) els.pasteLoader.style.transform = 'translate3d(-50%, calc(-50% + 40px), 0)';
+            // 🟢 拒絕/無內容：從上往下砸，文字與 SVG 軌跡同步
+            if (wasLoaderShown && els.pasteLoader) {
+                els.pasteLoader.style.transform = 'translate3d(-50%, calc(-50% + 40px), 0)'; 
+            } else if (!wasLoaderShown && els.pasteDef) {
+                els.pasteDef.style.transform = 'translate3d(-50%, calc(-50% + 40px), 0)'; 
+            }
+
             if (els.pasteError) {
                 els.pasteError.style.transition = 'none';
-                els.pasteError.style.transform = 'translate3d(-50%, calc(-50% - 40px), 0)';
+                els.pasteError.style.transform = 'translate3d(-50%, calc(-50% - 40px), 0)'; 
                 void els.pasteError.offsetWidth;
                 els.pasteError.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-                els.pasteError.style.transform = 'translate3d(-50%, -50%, 0)';
+                els.pasteError.style.transform = 'translate3d(-50%, -50%, 0)'; 
             }
+
+            if (els.sharedStatus) {
+                els.sharedStatus.style.transition = 'none';
+                els.sharedStatus.style.transform = 'translate3d(0, -40px, 0)';
+                void els.sharedStatus.offsetWidth;
+                els.sharedStatus.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+                els.sharedStatus.style.transform = 'translate3d(0, 0, 0)';
+                els.sharedStatus.style.opacity = '1';
+            }
+
+            if (els.display && !wasLoaderShown) {
+                els.display.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+                els.display.style.transform = 'translate3d(0, 40px, 0)'; 
+                els.display.style.opacity = '0';
+            }
+
             setTimeout(() => {
                 if (els.sharedText) els.sharedText.classList.add('p-shake-active');
                 if (errorSvg) errorSvg.classList.add('p-shake-active');
             }, 50);
-            setTimeout(() => revert('error'), 800);
+
+            setTimeout(() => revert('error', wasLoaderShown), 800);
+
         } else {
-            if (els.pasteLoader) els.pasteLoader.style.transform = 'translate3d(calc(-50% + 40px), -50%, 0)';
+            // 🟢 成功貼上：從左往右推
+            if (wasLoaderShown && els.pasteLoader) {
+                els.pasteLoader.style.transform = 'translate3d(calc(-50% + 40px), -50%, 0)'; 
+            } else if (!wasLoaderShown && els.pasteDef) {
+                els.pasteDef.style.transform = 'translate3d(calc(-50% + 40px), -50%, 0)'; 
+            }
+
             if (els.pasteCheck) {
                 els.pasteCheck.style.transition = 'none';
-                els.pasteCheck.style.transform = 'translate3d(calc(-50% - 40px), -50%, 0)';
+                els.pasteCheck.style.transform = 'translate3d(calc(-50% - 40px), -50%, 0)'; 
                 void els.pasteCheck.offsetWidth;
                 els.pasteCheck.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-                els.pasteCheck.style.transform = 'translate3d(-50%, -50%, 0)';
+                els.pasteCheck.style.transform = 'translate3d(-50%, -50%, 0)'; 
             }
+
+            if (els.sharedStatus) {
+                els.sharedStatus.style.transition = 'none';
+                els.sharedStatus.style.transform = 'translate3d(-40px, 0, 0)';
+                void els.sharedStatus.offsetWidth;
+                els.sharedStatus.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+                els.sharedStatus.style.transform = 'translate3d(0, 0, 0)';
+                els.sharedStatus.style.opacity = '1';
+            }
+
+            if (els.display && !wasLoaderShown) {
+                els.display.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+                els.display.style.transform = 'translate3d(40px, 0, 0)'; 
+                els.display.style.opacity = '0';
+            }
+
             if (val) {
                 const finalVal = type === 'color' ? val.substring(0, 7).toUpperCase() : val.substring(0, 10); 
                 if (els.display) els.display.textContent = finalVal;
             }
-            setTimeout(() => revert('success'), 800);
+
+            setTimeout(() => revert('success', wasLoaderShown), 800);
         }
     }
 
-    function revert(resType) {
+    function revert(resType, wasLoaderShown) {
         if (els.display) {
+            els.display.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
             els.display.style.transform = 'translate3d(0px, 0, 0)';
             els.display.style.opacity = '1';
         }
+        
         if (els.sharedStatus) {
-            els.sharedStatus.style.transform = 'translate3d(-40px, 0, 0)';
+            els.sharedStatus.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+            if (resType === 'error') {
+                els.sharedStatus.style.transform = 'translate3d(0, -40px, 0)'; 
+            } else {
+                els.sharedStatus.style.transform = 'translate3d(-40px, 0, 0)'; 
+            }
             els.sharedStatus.style.opacity = '0';
         }
+
         if (resType === 'error') {
-            if (els.pasteError) els.pasteError.style.transform = 'translate3d(-50%, calc(-50% - 40px), 0)';
+            if (els.pasteError) els.pasteError.style.transform = 'translate3d(-50%, calc(-50% - 40px), 0)'; 
+            
             if (els.pasteDef) {
                 els.pasteDef.style.transition = 'none';
-                els.pasteDef.style.transform = 'translate3d(-50%, calc(-50% + 40px), 0)';
+                els.pasteDef.style.transform = 'translate3d(-50%, calc(-50% + 40px), 0)'; 
                 void els.pasteDef.offsetWidth; 
                 els.pasteDef.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-                els.pasteDef.style.transform = 'translate3d(-50%, -50%, 0)';
+                els.pasteDef.style.transform = 'translate3d(-50%, -50%, 0)'; 
             }
         } else {
-            if (els.pasteCheck) els.pasteCheck.style.transform = 'translate3d(calc(-50% + 40px), -50%, 0)';
+            if (els.pasteCheck) els.pasteCheck.style.transform = 'translate3d(calc(-50% - 40px), -50%, 0)'; 
+            
             if (els.pasteDef) {
                 els.pasteDef.style.transition = 'none';
-                els.pasteDef.style.transform = 'translate3d(calc(-50% - 40px), -50%, 0)';
+                els.pasteDef.style.transform = 'translate3d(calc(-50% + 40px), -50%, 0)'; 
                 void els.pasteDef.offsetWidth;
                 els.pasteDef.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-                els.pasteDef.style.transform = 'translate3d(-50%, -50%, 0)';
+                els.pasteDef.style.transform = 'translate3d(-50%, -50%, 0)'; 
             }
         }
+        
+        if (wasLoaderShown && els.pasteLoader) {
+            els.pasteLoader.style.transition = 'none';
+            els.pasteLoader.style.transform = 'translate3d(calc(-50% - 40px), -50%, 0)'; 
+        }
+
         setTimeout(() => {
             if (els.sharedText) els.sharedText.classList.remove('p-shake-active');
             if (errorSvg) errorSvg.classList.remove('p-shake-active');
