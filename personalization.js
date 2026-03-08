@@ -663,9 +663,9 @@ window.handleCopyAction = function(e) {
                 // 🟢 [階段 3] 1.6s：退出動畫完成 (0.5s) + 安全緩衝 (0.07s) 後解鎖
                 setTimeout(() => {
                     isCopyingLocked = false;
-                }, 600);
+                }, 750);
                 
-            }, 700);
+            }, 600);
 
         }).catch(err => {
             console.error('複製失敗:', err);
