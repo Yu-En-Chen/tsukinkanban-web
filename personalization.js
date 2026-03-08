@@ -8,7 +8,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         if (document.getElementById('dynamic-blank-overlay') || window.isFlipAnimating) return;
         window.isFlipAnimating = true;
 
-        const activeId = getActiveCardId(); // 🟢 取得當下展開的卡片 ID
+        const activeId = getActiveCardId(); 
 
         if (!hexColor) {
             if (activeId) {
@@ -37,7 +37,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         card.className = 'detail-card-inner flip-in-start';
         applyThemeToCard(card, hexColor);
 
-        // 🟢 取得當前打開卡片的名稱與顏色 (用以動態顯示於按鈕)
         let targetName = '未知名稱';
         let targetHex = hexColor || '#2C2C2E';
 
@@ -53,7 +52,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             }
         }
 
-        // 🟢 注入左上角標題、分層文字說明與包含 SVG 的網格
         card.innerHTML = `
 <div class="card-header" style="padding-bottom: 5px; margin-bottom: 15px;">
     <span class="line-name">カスタマイズ</span>
@@ -95,8 +93,8 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                 <span id="p-shared-status-text" style="display:inline-block;"></span>
             </span>
 
-            <input id="p-real-input" type="text" placeholder="${targetName}" maxlength="10" enterkeyhint="done" oninput="window.updateCharCount(this.value)" onkeydown="window.handleInputEnter(event, 'name')" style="
-                position: absolute; left: 16px; right: 16px; top: 0; bottom: 0; margin: 0; padding: 0; height: 100%; background: transparent; border: none; color: inherit; font-family: inherit; font-weight: inherit; font-size: 0.95rem; text-align: center; outline: none; opacity: 0; pointer-events: none; transition: opacity 0.3s ease, transform 0.4s var(--apple-spring); transform: translateY(15px);">
+            <input id="p-real-input" type="text" placeholder="${targetName}" maxlength="10" enterkeyhint="done" oninput="window.handleNameInput(this.value)" onkeydown="window.handleInputEnter(event, 'name')" onblur="window.handleInputBlur('name')" style="
+                position: absolute; left: 16px; right: 16px; top: 0; bottom: 0; margin: 0; padding: 0; height: 100%; background: transparent; border: none; color: inherit; font-family: inherit; font-weight: inherit; font-size: 0.95rem; text-align: left; outline: none; opacity: 0; pointer-events: none; transition: opacity 0.3s ease, transform 0.4s var(--apple-spring); transform: translateY(15px);">
         </div>
 
         <button id="p-btn-circle-1" class="info-tag-item interactive-btn" onclick="window.handleCopyAction(event, 'name')" style="
@@ -151,8 +149,8 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                 <span id="p-color-shared-status-text" style="display:inline-block;"></span>
             </span>
 
-            <input id="p-color-real-input" type="text" placeholder="${targetHex.toUpperCase()}" maxlength="7" enterkeyhint="done" onkeydown="window.handleInputEnter(event, 'color')" style="
-                position: absolute; left: 16px; right: 16px; top: 0; bottom: 0; margin: 0; padding: 0; height: 100%; background: transparent; border: none; color: inherit; font-family: monospace; font-weight: inherit; font-size: 0.95rem; text-align: center; outline: none; opacity: 0; pointer-events: none; transition: opacity 0.3s ease, transform 0.4s var(--apple-spring); transform: translateY(15px);">
+            <input id="p-color-real-input" type="text" placeholder="${targetHex.toUpperCase()}" maxlength="7" enterkeyhint="done" onkeydown="window.handleInputEnter(event, 'color')" onblur="window.handleInputBlur('color')" style="
+                position: absolute; left: 16px; right: 16px; top: 0; bottom: 0; margin: 0; padding: 0; height: 100%; background: transparent; border: none; color: inherit; font-family: monospace; font-weight: inherit; font-size: 0.95rem; text-align: left; outline: none; opacity: 0; pointer-events: none; transition: opacity 0.3s ease, transform 0.4s var(--apple-spring); transform: translateY(15px);">
         </div>
 
         <button id="p-btn-color-circle-1" class="info-tag-item interactive-btn" onclick="window.handleCopyAction(event, 'color')" style="
@@ -463,208 +461,16 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         }, 300);
     };
 }
-// =========================================================
-// 🟢 輸入框絲滑變形動畫引擎 (0.4s Apple Spring + 邊緣物理遮罩)
-// =========================================================
-
-// 🟢 全域防捲動攔截器 (只允許在輸入框內操作，其他滑動一律禁止)
-window._pLockScroll = function (e) {
-    if (e.target.id !== 'p-real-input') {
-        e.preventDefault();
-    }
-};
-
-window.toggleEditNameMode = function () {
-    const row = document.getElementById('p-edit-row');
-    if (!row || row.dataset.editing === 'true') return;
-    row.dataset.editing = 'true'; // 上鎖
-
-    const label = document.getElementById('p-btn-label');
-    const circle2 = document.getElementById('p-btn-circle-2');
-    const displayName = document.getElementById('p-display-name');
-    const realInput = document.getElementById('p-real-input');
-    const iconClip = document.getElementById('p-icon-clipboard');
-    const iconX = document.getElementById('p-icon-x');
-    const charCount = document.getElementById('p-char-count');
-
-    // 1. 向左推擠「表示名」
-    // 💡 拔除 opacity: 0，讓按鈕維持實體，完全依靠外層的 mask-image 邊緣淡化防穿幫
-    label.style.maxWidth = '0px';
-    label.style.padding = '0px';
-    label.style.marginRight = '-8px'; // 抵銷 gap
-    label.style.transform = 'translateX(-30px)';
-
-    // 2. 向右推擠「圓形按鈕 2」
-    // 💡 拔除 opacity: 0，靠右側邊緣遮罩吃掉
-    circle2.style.maxWidth = '0px';
-    circle2.style.padding = '0px';
-    circle2.style.marginLeft = '-8px'; // 抵銷 gap
-    circle2.style.transform = 'translateX(30px)';
-
-    // 3. 輸入框浮現 (打開時強制清空，並顯示 Placeholder)
-    displayName.style.transition = 'none'; // 🟢 拔除 CSS 過渡，強制瞬間執行
-    displayName.style.opacity = '0';
-    displayName.style.transform = 'translateY(0)';
-
-    realInput.value = ''; // 🟢 每次打開都是全空的
-    window.updateCharCount(''); // 重置字數顯示為 0/10
-
-    realInput.style.opacity = '1';
-    realInput.style.pointerEvents = 'auto';
-    realInput.style.transform = 'translateY(0)';
-    realInput.focus(); // 自動聚焦彈出鍵盤
-
-    // 🟢 終極畫面鎖定 (解決 iOS 鍵盤無視 overflow 的問題)
-    // 1. 記錄當下捲動高度
-    window._pScrollY = window.scrollY;
-
-    // 2. 鎖死 Body 位置與尺寸
-    document.body.style.setProperty('position', 'fixed', 'important');
-    document.body.style.setProperty('top', `-${window._pScrollY}px`, 'important');
-    document.body.style.setProperty('width', '100%', 'important');
-
-    // 3. 關閉橡皮筋邊緣回彈與滾動鏈
-    document.body.style.setProperty('overscroll-behavior', 'none', 'important');
-    document.documentElement.style.setProperty('overscroll-behavior', 'none', 'important');
-
-    // 4. 原有的攔截與隱藏
-    document.body.style.setProperty('overflow', 'hidden', 'important');
-    document.documentElement.style.setProperty('overflow', 'hidden', 'important');
-    document.addEventListener('touchmove', window._pLockScroll, { passive: false });
-
-    // 🟢 字數統計浮現
-    if (charCount) charCount.style.opacity = '0.8';
-
-    // 4. SVG 「向右不淡化」實體切換 (總行程的一半 = 0.2s 時觸發)
-    setTimeout(() => {
-        if (row.dataset.editing !== 'true') return;
-        iconClip.style.transform = 'translate(150%, -50%)'; // 原本的向右滑出
-        iconX.style.transform = 'translate(-50%, -50%)';    // X 從左側補位
-    }, 200);
-};
-
-window.closeEditNameMode = function (e) {
-    e.stopPropagation(); // 防止點擊穿透
-    const row = document.getElementById('p-edit-row');
-    if (!row || row.dataset.editing !== 'true') return;
-    row.dataset.editing = 'false'; // 解鎖
-
-    const label = document.getElementById('p-btn-label');
-    const circle2 = document.getElementById('p-btn-circle-2');
-    const displayName = document.getElementById('p-display-name');
-    const realInput = document.getElementById('p-real-input');
-    const iconClip = document.getElementById('p-icon-clipboard');
-    const iconX = document.getElementById('p-icon-x');
-    const charCount = document.getElementById('p-char-count');
-
-    // 1. 原路恢復「表示名」
-    label.style.maxWidth = '120px';
-    label.style.padding = '0 16px';
-    label.style.marginRight = '0px';
-    label.style.transform = 'translateX(0px)';
-
-    // 2. 原路恢復「圓形按鈕 2」
-    circle2.style.maxWidth = 'var(--btn-height)';
-    circle2.style.padding = '0px';
-    circle2.style.marginLeft = '0px';
-    circle2.style.transform = 'translateX(0px)';
-
-    // 🟢 判斷輸入內容：如果有打字就更新，沒打字就維持原樣
-    const finalVal = realInput.value.trim();
-    if (finalVal !== '') {
-        displayName.textContent = finalVal;
-    }
-
-    // 3. 輸入框原路收回
-    displayName.style.opacity = '1';
-    displayName.style.transform = 'translateX(-10px)';
-
-    realInput.style.opacity = '0';
-    realInput.style.pointerEvents = 'none';
-    realInput.style.transform = 'translateX(-10px)';
-    realInput.blur(); // 收起鍵盤
-
-    // 🟢 解除所有鎖定並恢復原狀
-    document.body.style.removeProperty('position');
-    document.body.style.removeProperty('top');
-    document.body.style.removeProperty('width');
-    document.body.style.removeProperty('overscroll-behavior');
-    document.documentElement.style.removeProperty('overscroll-behavior');
-    document.body.style.removeProperty('overflow');
-    document.documentElement.style.removeProperty('overflow');
-    document.removeEventListener('touchmove', window._pLockScroll);
-
-    // 恢復解除鎖定前的捲動高度
-    if (window._pScrollY !== undefined) {
-        window.scrollTo(0, window._pScrollY);
-    }
-
-    // 🟢 字數統計淡出隱藏
-    if (charCount) charCount.style.opacity = '0';
-
-    // 4. SVG 原路切換回歸
-    setTimeout(() => {
-        if (row.dataset.editing === 'true') return;
-        iconClip.style.transform = 'translate(-50%, -50%)'; // 回歸置中
-        iconX.style.transform = 'translate(-250%, -50%)';   // 往左退回待命
-    }, 200);
-};
-
-// 🟢 綁定在 Input 上的即時字數更新器
-window.updateCharCount = function (val) {
-    const countElement = document.getElementById('p-char-count');
-    if (countElement) {
-        countElement.textContent = val.length + '/10';
-    }
-};
-
-// 🟢 鍵盤「完成/Enter」鍵的條件攔截器
-window.handleInputEnter = function (e) {
-    if (e.key === 'Enter' || e.keyCode === 13) {
-        e.preventDefault();
-
-        if (e.isComposing) return;
-
-        const val = e.target.value.trim();
-        const len = val.length;
-
-        // 🟢 超過 10 個字：拒絕執行 (鎖定鍵盤)
-        if (len > 10) {
-            return;
-        }
-
-        // 🟢 0 個字 或 1~10 個字：皆執行關閉
-        // (若為 0 字，closeEditNameMode 內建邏輯會自動忽略修改，達成「單純關閉」的效果)
-        window.closeEditNameMode(e);
-
-        // 🟢 解除所有鎖定並恢復原狀
-        document.body.style.removeProperty('position');
-        document.body.style.removeProperty('top');
-        document.body.style.removeProperty('width');
-        document.body.style.removeProperty('overscroll-behavior');
-        document.documentElement.style.removeProperty('overscroll-behavior');
-        document.body.style.removeProperty('overflow');
-        document.documentElement.style.removeProperty('overflow');
-        document.removeEventListener('touchmove', window._pLockScroll);
-
-        // 恢復解除鎖定前的捲動高度
-        if (window._pScrollY !== undefined) {
-            window.scrollTo(0, window._pScrollY);
-        }
-    }
-};
 
 // =========================================================
 // 🟢 統一互動引擎 (DRY 架構：共用表示名與 HEX 顏色的邏輯)
 // =========================================================
 
-// 狀態管理物件
 const pState = {
     name: { isCopying: false, isPasting: false },
     color: { isCopying: false, isPasting: false }
 };
 
-// 元素選取映射器
 const getElements = (type) => {
     const isColor = type === 'color';
     return {
@@ -686,16 +492,43 @@ const getElements = (type) => {
     };
 };
 
-window.updateCharCount = function (val) {
-    const countElement = document.getElementById('p-char-count');
-    if (countElement) countElement.textContent = val.length + '/10';
-};
-
 window._pLockScroll = function (e) {
     if (e.target.tagName !== 'INPUT') e.preventDefault();
 };
 
-// 🟢 統一開啟編輯模式
+// 🟢 動態字體偵測 (自動套用等寬字型)
+window.checkFontFamily = function(val) {
+    const inputEl = document.getElementById('p-real-input');
+    const displayEl = document.getElementById('p-display-name');
+    if (!inputEl || !displayEl) return;
+    
+    // 如果全為英文、數字、常見符號或空白，則套用等寬字型
+    if (val.length > 0 && /^[\x00-\x7F]*$/.test(val)) {
+        inputEl.style.fontFamily = 'monospace';
+        displayEl.style.fontFamily = 'monospace';
+    } else {
+        inputEl.style.fontFamily = 'inherit';
+        displayEl.style.fontFamily = 'inherit';
+    }
+};
+
+window.handleNameInput = function(val) {
+    const countElement = document.getElementById('p-char-count');
+    if (countElement) countElement.textContent = val.length + '/10';
+    window.checkFontFamily(val);
+};
+
+// 🟢 監聽鍵盤意外關閉 (Blur 事件)
+window.handleInputBlur = function(type) {
+    // 延遲執行，避免與正常關閉按鈕或 Enter 發生衝突
+    setTimeout(() => {
+        const els = getElements(type);
+        if (els.row && els.row.dataset.editing === 'true') {
+            window.closeEditMode(type);
+        }
+    }, 100);
+};
+
 window.toggleEditMode = function (type) {
     const otherType = type === 'name' ? 'color' : 'name';
     const otherEls = getElements(otherType);
@@ -724,7 +557,7 @@ window.toggleEditMode = function (type) {
     els.display.style.transform = 'translateY(0)';
 
     els.input.value = '';
-    if (type === 'name') window.updateCharCount('');
+    if (type === 'name') window.handleNameInput('');
 
     els.input.style.opacity = '1';
     els.input.style.pointerEvents = 'auto';
@@ -748,7 +581,6 @@ window.toggleEditMode = function (type) {
     }, 200);
 };
 
-// 🟢 統一關閉編輯模式
 window.closeEditMode = function (type, e) {
     if (e) e.stopPropagation();
     const els = getElements(type);
@@ -769,6 +601,7 @@ window.closeEditMode = function (type, e) {
     const finalVal = els.input.value.trim();
     if (finalVal !== '') {
         els.display.textContent = type === 'color' ? finalVal.toUpperCase() : finalVal;
+        if (type === 'name') window.checkFontFamily(finalVal);
     }
 
     els.display.style.transition = '';
@@ -805,7 +638,6 @@ window.closeEditMode = function (type, e) {
     setTimeout(() => { pState[type].isCopying = false; }, 500);
 };
 
-// 🟢 統一輸入驗證攔截
 window.handleInputEnter = function (e, type) {
     if (e.key === 'Enter' || e.keyCode === 13) {
         e.preventDefault();
@@ -817,7 +649,6 @@ window.handleInputEnter = function (e, type) {
     }
 };
 
-// 🟢 統一複製動作
 window.handleCopyAction = function(e, type) {
     const els = getElements(type);
     if (els.row && els.row.dataset.editing === 'true') {
@@ -873,7 +704,6 @@ window.handleCopyAction = function(e, type) {
     }
 };
 
-// 🟢 統一貼上動作
 window.handlePasteAction = function(e, type) {
     if (e) e.stopPropagation();
     
@@ -953,7 +783,7 @@ window.handlePasteAction = function(e, type) {
                 const finalVal = type === 'color' ? val.substring(0, 7).toUpperCase() : val.substring(0, 10); 
                 if (els.display) els.display.textContent = finalVal;
                 if (els.input) els.input.value = finalVal;
-                if (type === 'name') window.updateCharCount(finalVal);
+                if (type === 'name') window.handleNameInput(finalVal);
             }
 
             setTimeout(() => revert('success'), 800);
