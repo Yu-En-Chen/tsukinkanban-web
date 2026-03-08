@@ -83,16 +83,16 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         " onclick="window.toggleEditNameMode()">
             
             <span id="p-display-name" style="
-                transition: opacity 0.3s linear, transform 0.5s var(--apple-spring);
-                width: 100%; text-align: left; overflow: hidden; text-overflow: ellipsis;
+                transition: opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1);
+                width: 100%; text-align: center; overflow: hidden; text-overflow: ellipsis;
                 font-size: 0.95rem; transform: translateX(0px);
             ">${targetName}</span>
 
             <span id="p-display-copied" style="
-                position: absolute; left: 16px; right: 16px; top: 0; bottom: 0;
-                display: flex; align-items: center; justify-content: flex-start;
+                position: absolute; left: 16px; right: 16px; top: 0; bottom: 0; text-align: center;
+                display: flex; align-items: center; justify-content: center;
                 font-size: 0.95rem; font-weight: inherit; opacity: 0; pointer-events: none;
-                transition: opacity 0.3s linear, transform 0.5s var(--apple-spring);
+                transition: opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1);
                 transform: translateX(-40px);
             ">已複製</span>
 
@@ -641,12 +641,12 @@ window.handleCopyAction = function(e) {
                     textCopied.style.opacity = '0';
                 }
                 
-                // 🟢 [階段 3] 1.6s：退出動畫完成 (0.5s) + 安全緩衝 (0.1s) 後解鎖
+                // 🟢 [階段 3] 1.6s：退出動畫完成 (0.5s) + 安全緩衝 (0.07s) 後解鎖
                 setTimeout(() => {
                     isCopyingLocked = false;
                 }, 600);
                 
-            }, 1000);
+            }, 700);
 
         }).catch(err => {
             console.error('複製失敗:', err);
