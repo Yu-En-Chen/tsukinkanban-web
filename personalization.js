@@ -83,24 +83,23 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         " onclick="window.toggleEditNameMode()">
             
             <span id="p-display-name" style="
-                transition: opacity 0.3s ease, transform 0.4s var(--apple-spring);
+                transition: opacity 0.3s linear, transform 0.5s var(--apple-spring);
                 width: 100%; text-align: left; overflow: hidden; text-overflow: ellipsis;
-                font-size: clamp(0.85rem, 3.5vw, 1.05rem);
+                font-size: 0.95rem; transform: translateX(0px);
             ">${targetName}</span>
 
             <span id="p-display-copied" style="
                 position: absolute; left: 16px; right: 16px; top: 0; bottom: 0;
                 display: flex; align-items: center; justify-content: flex-start;
-                font-size: clamp(0.85rem, 3.5vw, 1.05rem); font-weight: normal; 
-                opacity: 0; pointer-events: none;
-                transition: opacity 0.3s ease, transform 0.4s var(--apple-spring);
-                transform: translateY(-15px);
+                font-size: 0.95rem; font-weight: inherit; opacity: 0; pointer-events: none;
+                transition: opacity 0.3s linear, transform 0.5s var(--apple-spring);
+                transform: translateX(-40px);
             ">已複製</span>
 
             <input id="p-real-input" type="text" placeholder="${targetName}" maxlength="10" oninput="window.updateCharCount(this.value)" style="
                 position: absolute; left: 16px; right: 16px; top: 0; bottom: 0; margin: 0; padding: 0; height: 100%;
                 background: transparent; border: none; color: inherit; font-family: inherit;
-                font-size: clamp(0.85rem, 3.5vw, 1.05rem); outline: none; opacity: 0; pointer-events: none;
+                font-size: 0.95rem; outline: none; opacity: 0; pointer-events: none;
                 transition: opacity 0.3s ease, transform 0.4s var(--apple-spring);
                 transform: translateY(15px);
             ">
@@ -112,17 +111,25 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             transition: all 0.4s var(--apple-spring);
         " onclick="window.handleCopyAction(event)">
             
-            <span id="p-icon-clipboard" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: transform 0.4s var(--apple-spring); display: flex; align-items: center; justify-content: center; width: 21.1px; height: 20.7px;">
+            <span id="p-icon-clipboard" style="
+                position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                transition: transform 0.5s var(--apple-spring); 
+                display: flex; align-items: center; justify-content: center; width: 21.1px; height: 20.7px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
                      style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px; transform: scaleX(-1);">
                     <path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/>
                 </svg>
             </span>
             
-            <svg id="p-icon-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
-                 style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -250%); transition: transform 0.4s var(--apple-spring); opacity: 0.8; width: 22px; height: 22px; stroke-width: 2px;">
-                <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>
-            </svg>
+            <span id="p-icon-check" style="
+                position: absolute; top: 50%; left: 50%; transform: translate(calc(-50% - 40px), -50%); 
+                transition: transform 0.5s var(--apple-spring); 
+                display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
+                     style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;">
+                    <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>
+                </svg>
+            </span>
 
             <svg id="p-icon-x" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" 
                  style="position: absolute; top: 50%; left: 50%; transform: translate(-250%, -50%); transition: transform 0.4s var(--apple-spring); opacity: 0.8; width: 22px; height: 22px; stroke-width: 2.5px;">
@@ -587,7 +594,7 @@ window.handleCopyAction = function(e) {
         return;
     }
 
-    // 2. 如果處於動畫或冷卻鎖定中，拒絕任何點擊 (1.4秒內絕對無效化)
+    // 2. 如果處於動畫或冷卻鎖定中，拒絕任何點擊
     if (isCopyingLocked) return;
 
     // 🟢 執行複製邏輯
@@ -602,45 +609,48 @@ window.handleCopyAction = function(e) {
             const iconCheck = document.getElementById('p-icon-check');
             const textCopied = document.getElementById('p-display-copied');
 
-            // 🟢 [階段 1] 0.0s：啟動向下切換動畫 (耗時約 0.4s)
-            // 原本的圖示與文字往下掉，新的圖示與文字從上面降落
-            if (iconClip) iconClip.style.transform = 'translate(-50%, 150%)';
-            if (iconCheck) iconCheck.style.transform = 'translate(-50%, -50%)';
+            // 🟢 [階段 1] 0.0s：啟動向右切入動畫 (耗時 0.5s，帶慣性)
+            // SVG：同步向右推移 40px
+            if (iconClip) iconClip.style.transform = 'translate(calc(-50% + 40px), -50%)';
+            if (iconCheck) iconCheck.style.transform = 'translate(-50%, -50%)'; // 回到置中
             
+            // 文字：同步向右推移 40px，並在 0.3s 時提早線性淡出，完美防穿幫
             if (displayName) {
-                displayName.style.transform = 'translateY(15px)';
+                displayName.style.transform = 'translateX(40px)';
                 displayName.style.opacity = '0';
             }
             if (textCopied) {
-                textCopied.style.transform = 'translateY(0)';
+                textCopied.style.transform = 'translateX(0px)';
                 textCopied.style.opacity = '1';
             }
 
-            // 🟢 [階段 2] 0.9s：停留 0.5s 後觸發原路退回 (0.4s 動畫 + 0.5s 停留 = 0.9s)
+            // 🟢 [階段 2] 1.0s：停留 0.5s 後觸發原路退回 (0.5s 動畫 + 0.5s 停留 = 1.0s)
             setTimeout(() => {
-                if (iconClip) iconClip.style.transform = 'translate(-50%, -50%)';
-                if (iconCheck) iconCheck.style.transform = 'translate(-50%, -250%)';
                 
+                // SVG 原路向左滑回
+                if (iconClip) iconClip.style.transform = 'translate(-50%, -50%)';
+                if (iconCheck) iconCheck.style.transform = 'translate(calc(-50% - 40px), -50%)';
+                
+                // 文字原路向左滑回，線性淡入淡出
                 if (displayName) {
-                    displayName.style.transform = 'translateY(0)';
+                    displayName.style.transform = 'translateX(0px)';
                     displayName.style.opacity = '1';
                 }
                 if (textCopied) {
-                    textCopied.style.transform = 'translateY(-15px)';
+                    textCopied.style.transform = 'translateX(-40px)';
                     textCopied.style.opacity = '0';
                 }
                 
-                // 🟢 [階段 3] 1.4s：退回動畫完全就緒後，解除冷卻鎖，恢復權限
-                // (退回需 0.4s，加上 0.1s 安全緩衝 = 0.5s)
+                // 🟢 [階段 3] 1.6s：退出動畫完成 (0.5s) + 安全緩衝 (0.1s) 後解鎖
                 setTimeout(() => {
                     isCopyingLocked = false;
-                }, 500);
+                }, 600);
                 
-            }, 900);
+            }, 1000);
 
         }).catch(err => {
             console.error('複製失敗:', err);
-            isCopyingLocked = false; // 若發生錯誤直接解鎖
+            isCopyingLocked = false; 
         });
     }
 };
