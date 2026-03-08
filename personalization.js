@@ -1,34 +1,44 @@
 // personalization.js - 個性化設定 (Customize) 專用彈窗引擎
 
-export function initPersonalization(applyThemeToCard, getActiveCardId) {
-    // =========================================================
-    // 🟢 終極系統防護：徹底封鎖系統返回鍵與邊緣右滑返回
-    // =========================================================
-    if (!window._pNavBlockerInited) {
-        window._pNavBlockerInited = true;
+// =========================================================
+// 🟢 網頁級別最優先寫死的系統導航防護 (全域封鎖)
+// =========================================================
+(function injectGlobalNavigationBlocker() {
+    if (window._pGlobalNavBlockerActive) return;
+    window._pGlobalNavBlockerActive = true;
 
-        // 1. 封殺 iOS 左側邊緣右滑返回 (Edge Swipe Back)
-        document.addEventListener('touchstart', function(e) {
-            if (e.touches && e.touches.length > 0 && e.touches[0].clientX < 30) {
-                e.preventDefault();
-            }
-        }, { passive: false });
+    // 1. 絕對封鎖邊緣右滑 (iOS 返回手勢) - 使用 capture 搶奪最高優先級
+    const blockEdgeSwipe = (e) => {
+        if (e.touches && e.touches.length > 0 && e.touches[0].clientX < 30) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    };
+    window.addEventListener('touchstart', blockEdgeSwipe, { passive: false, capture: true });
+    window.addEventListener('touchmove', blockEdgeSwipe, { passive: false, capture: true });
 
-        // 2. 封殺 Android 實體返回鍵與瀏覽器上一頁 (History Trap)
+    // 2. 歷史紀錄陷阱 (封鎖 Android 實體返回與瀏覽器上一頁)
+    try {
         history.pushState(null, null, location.href);
-        window.addEventListener('popstate', function () {
+        window.addEventListener('popstate', function (e) {
             history.pushState(null, null, location.href);
-            // 如果面板開著，按返回鍵就當作「關閉面板」而不是退出網頁
-            if (document.getElementById('dynamic-blank-overlay') && window.closeBlankOverlay) {
+            // 若面板開著，按實體返回鍵等同於「關閉面板」
+            if (document.getElementById('dynamic-blank-overlay') && typeof window.closeBlankOverlay === 'function') {
                 window.closeBlankOverlay();
             }
-        });
+        }, { capture: true });
+    } catch(err) {}
 
-        // 3. 永久封鎖全域橡皮筋與 Safari 滑動導覽
+    // 3. 全域頁面彈性封鎖 (Overscroll) - 保證永不橡皮筋
+    const applyOverscroll = () => {
         document.documentElement.style.setProperty('overscroll-behavior', 'none', 'important');
         document.body.style.setProperty('overscroll-behavior', 'none', 'important');
-    }
+    };
+    applyOverscroll();
+    window.addEventListener('DOMContentLoaded', applyOverscroll);
+})();
 
+export function initPersonalization(applyThemeToCard, getActiveCardId) {
     window.DISMISS_ICON_TARGET_ROTATION = 90;
 
     window.openBlankOverlay = function (hexColor) {
@@ -84,19 +94,24 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
     <span class="line-name">カスタマイズ</span>
 </div>
 
-<div class="card-content">
+<div class="card-content" id="p-ghost-wrapper" style="position: relative;">
     <style>
-        /* 徹底封鎖長按文字選取與放大鏡造成的 SVG 破圖外漏 */
         #p-edit-row, #p-color-edit-row {
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
         }
-        /* 僅保留輸入框本體可以被選取與操作 */
-        #p-real-input, #p-color-real-input {
+        /* 幽靈輸入框獨佔選取權 */
+        #p-ghost-input {
             -webkit-touch-callout: default;
             -webkit-user-select: text;
             user-select: text;
+        }
+        /* 🟢 動畫冷卻期間的微互動效果 (敷衍狂點專用) */
+        .p-bump-active {
+            transform: scale(0.92) !important;
+            opacity: 0.8 !important;
+            transition: transform 0.15s cubic-bezier(0.34, 1.6, 0.64, 1), opacity 0.15s ease !important;
         }
 
         @keyframes p-spin-ease {
@@ -119,36 +134,33 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);
         mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);">
         
-        <button id="p-btn-label" class="info-tag-item interactive-btn" onclick="window.toggleEditMode('name')" style="
+        <button id="p-btn-label" class="info-tag-item interactive-btn" onclick="window.toggleGhostEditMode('name', event, this)" style="
             cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; white-space: nowrap; flex-shrink: 0; max-width: 120px; overflow: hidden; transition: transform 0.4s var(--apple-spring), max-width 0.4s var(--apple-spring), padding 0.4s var(--apple-spring), margin 0.4s var(--apple-spring);">
             <span style="white-space: nowrap;">表示名</span>
         </button>
 
-        <div id="p-btn-input-container" class="info-tag-item interactive-btn" onclick="window.toggleEditMode('name')" style="
-            cursor: pointer; height: var(--btn-height); border-radius: 100px; display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden; flex-grow: 1; position: relative; padding: 0 16px; transition: all 0.4s var(--apple-spring);">
+        <div id="p-btn-input-container" class="info-tag-item interactive-btn" onclick="window.toggleGhostEditMode('name', event, this)" style="
+            cursor: pointer; height: var(--btn-height); border-radius: 100px; display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden; flex-grow: 1; position: relative; padding: 0 16px; transition: transform 0.4s var(--apple-spring), box-shadow 0.4s var(--apple-spring);">
             
             <span id="p-display-name" style="transition: opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); width: 100%; text-align: center; overflow: hidden; text-overflow: ellipsis; font-size: 0.95rem; font-family: inherit; font-weight: inherit; transform: translateX(0px);">${targetName}</span>
 
             <span id="p-shared-status" style="position: absolute; left: 16px; right: 16px; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-family: inherit; font-weight: inherit; opacity: 0; pointer-events: none; transition: opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); transform: translateX(0px);">
                 <span id="p-shared-status-text" style="display:inline-block;"></span>
             </span>
+            </div>
 
-            <input id="p-real-input" type="text" placeholder="${targetName}" maxlength="10" enterkeyhint="done" oninput="window.handleNameInput(this.value)" onkeydown="window.handleInputEnter(event, 'name')" onblur="window.handleInputBlur('name')" style="
-                position: absolute; left: 16px; right: 16px; top: 0; bottom: 0; margin: 0; padding: 0; height: 100%; background: transparent; border: none; color: inherit; font-family: inherit; font-weight: inherit; font-size: 0.95rem; text-align: left; outline: none; opacity: 0; pointer-events: none; transition: opacity 0.3s ease, transform 0.4s var(--apple-spring); transform: translateY(15px);">
-        </div>
-
-        <button id="p-btn-circle-1" class="info-tag-item interactive-btn" onclick="window.handleCopyAction(event, 'name')" style="
-            cursor: pointer; height: var(--btn-height); width: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block; flex-shrink: 0; transition: all 0.4s var(--apple-spring);">
+        <button id="p-btn-circle-1" class="info-tag-item interactive-btn" onclick="window.handleCopyAction(event, 'name', this)" style="
+            cursor: pointer; height: var(--btn-height); width: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block; flex-shrink: 0; transition: transform 0.4s var(--apple-spring), box-shadow 0.4s var(--apple-spring);">
             <span id="p-icon-clipboard" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 21.1px; height: 20.7px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M16 4h2a2 2 0 0 1 2 2v4"/><path d="M21 14H11"/><path d="m15 10-4 4 4 4"/></svg>
             </span>
-            <span id="p-icon-check" style="position: absolute; top: 50%; left: 50%; transform: translate(calc(-50% - 40px), -50%); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
+            <span id="p-icon-check" style="position: absolute; top: 50%; left: 50%; transform: translate(calc(-50% + 40px), -50%); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
             </span>
             <svg id="p-icon-x" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; top: 50%; left: 50%; transform: translate(-250%, -50%); transition: transform 0.4s var(--apple-spring); opacity: 0.8; width: 22px; height: 22px; stroke-width: 2.5px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
 
-        <button id="p-btn-circle-2" class="info-tag-item interactive-btn" onclick="window.handlePasteAction(event, 'name')" style="
+        <button id="p-btn-circle-2" class="info-tag-item interactive-btn" onclick="window.handlePasteAction(event, 'name', this)" style="
             cursor: pointer; height: var(--btn-height); width: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block; flex-shrink: 0; transition: transform 0.4s var(--apple-spring), max-width 0.4s var(--apple-spring), margin 0.4s var(--apple-spring), padding 0.4s var(--apple-spring); max-width: var(--btn-height);">
             <span id="p-icon-paste-default" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 20px; height: 20px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
@@ -175,36 +187,33 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);
         mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);">
         
-        <button id="p-btn-color-label" class="info-tag-item interactive-btn" onclick="window.toggleEditMode('color')" style="
+        <button id="p-btn-color-label" class="info-tag-item interactive-btn" onclick="window.toggleGhostEditMode('color', event, this)" style="
             cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; white-space: nowrap; flex-shrink: 0; max-width: 120px; overflow: hidden; transition: transform 0.4s var(--apple-spring), max-width 0.4s var(--apple-spring), padding 0.4s var(--apple-spring), margin 0.4s var(--apple-spring);">
             <span style="white-space: nowrap;">カラー</span>
         </button>
 
-        <div id="p-btn-color-input-container" class="info-tag-item interactive-btn" onclick="window.toggleEditMode('color')" style="
-            cursor: pointer; height: var(--btn-height); border-radius: 100px; display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden; flex-grow: 1; position: relative; padding: 0 16px; transition: all 0.4s var(--apple-spring);">
+        <div id="p-btn-color-input-container" class="info-tag-item interactive-btn" onclick="window.toggleGhostEditMode('color', event, this)" style="
+            cursor: pointer; height: var(--btn-height); border-radius: 100px; display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden; flex-grow: 1; position: relative; padding: 0 16px; transition: transform 0.4s var(--apple-spring), box-shadow 0.4s var(--apple-spring);">
             
             <span id="p-display-color" style="transition: opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); width: 100%; text-align: center; overflow: hidden; text-overflow: ellipsis; font-size: 0.95rem; font-family: monospace; font-weight: inherit; transform: translateX(0px);">${targetHex.toUpperCase()}</span>
 
             <span id="p-color-shared-status" style="position: absolute; left: 16px; right: 16px; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-family: inherit; font-weight: inherit; opacity: 0; pointer-events: none; transition: opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); transform: translateX(0px);">
                 <span id="p-color-shared-status-text" style="display:inline-block;"></span>
             </span>
-
-            <input id="p-color-real-input" type="text" placeholder="${targetHex.toUpperCase()}" maxlength="7" enterkeyhint="done" onkeydown="window.handleInputEnter(event, 'color')" onblur="window.handleInputBlur('color')" style="
-                position: absolute; left: 16px; right: 16px; top: 0; bottom: 0; margin: 0; padding: 0; height: 100%; background: transparent; border: none; color: inherit; font-family: monospace; font-weight: inherit; font-size: 0.95rem; text-align: left; outline: none; opacity: 0; pointer-events: none; transition: opacity 0.3s ease, transform 0.4s var(--apple-spring); transform: translateY(15px);">
         </div>
 
-        <button id="p-btn-color-circle-1" class="info-tag-item interactive-btn" onclick="window.handleCopyAction(event, 'color')" style="
-            cursor: pointer; height: var(--btn-height); width: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block; flex-shrink: 0; transition: all 0.4s var(--apple-spring);">
+        <button id="p-btn-color-circle-1" class="info-tag-item interactive-btn" onclick="window.handleCopyAction(event, 'color', this)" style="
+            cursor: pointer; height: var(--btn-height); width: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block; flex-shrink: 0; transition: transform 0.4s var(--apple-spring), box-shadow 0.4s var(--apple-spring);">
             <span id="p-color-icon-clipboard" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 21.1px; height: 20.7px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M16 4h2a2 2 0 0 1 2 2v4"/><path d="M21 14H11"/><path d="m15 10-4 4 4 4"/></svg>
             </span>
-            <span id="p-color-icon-check" style="position: absolute; top: 50%; left: 50%; transform: translate(calc(-50% - 40px), -50%); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
+            <span id="p-color-icon-check" style="position: absolute; top: 50%; left: 50%; transform: translate(calc(-50% + 40px), -50%); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
             </span>
             <svg id="p-color-icon-x" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; top: 50%; left: 50%; transform: translate(-250%, -50%); transition: transform 0.4s var(--apple-spring); opacity: 0.8; width: 22px; height: 22px; stroke-width: 2.5px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
 
-        <button id="p-btn-color-circle-2" class="info-tag-item interactive-btn" onclick="window.handlePasteAction(event, 'color')" style="
+        <button id="p-btn-color-circle-2" class="info-tag-item interactive-btn" onclick="window.handlePasteAction(event, 'color', this)" style="
             cursor: pointer; height: var(--btn-height); width: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block; flex-shrink: 0; transition: transform 0.4s var(--apple-spring), max-width 0.4s var(--apple-spring), margin 0.4s var(--apple-spring), padding 0.4s var(--apple-spring); max-width: var(--btn-height);">
             <span id="p-color-icon-paste-default" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 20px; height: 20px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
@@ -222,6 +231,20 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
     </div>
     
     <p class="description" style="font-size: clamp(0.85rem, 3vw, 0.95rem); margin-bottom: 12px;">　- HEX形式で入力してください -</p>
+
+    <input id="p-ghost-input" type="text" enterkeyhint="done" autocomplete="off" spellcheck="false"
+        oninput="window.handleGhostInput(this.value)" 
+        onkeydown="window.handleGhostKey(event)" 
+        onblur="window.handleGhostBlur(event)" 
+        style="
+        position: absolute;
+        height: 44px;
+        margin: 0; padding: 0 16px;
+        background: transparent; border: none; outline: none;
+        color: inherit; font-size: 0.95rem; font-weight: inherit; text-align: left;
+        opacity: 0; pointer-events: none; z-index: 100;
+        transition: top 0.3s var(--apple-spring), opacity 0.3s ease;
+    ">
 </div>
 `;
 
@@ -230,11 +253,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         document.body.appendChild(overlay);
 
         overlay.addEventListener('click', (e) => {
-            const row1 = document.getElementById('p-edit-row');
-            const row2 = document.getElementById('p-color-edit-row');
-            if ((row1 && row1.dataset.editing === 'true') || (row2 && row2.dataset.editing === 'true')) {
-                return; 
-            }
+            if (window.pActiveEditType) return; // 編輯中強制封鎖背景點擊
             if (!e.target.closest('.detail-card-inner')) window.closeBlankOverlay();
         });
 
@@ -433,6 +452,11 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         if (window.isFlipAnimating) return;
         window.isFlipAnimating = true;
 
+        if (window.pScrollManager) {
+            window.pScrollManager.absoluteLockEndTime = 0;
+            window.pScrollManager.unlock(false);
+        }
+
         const overlay = document.getElementById('dynamic-blank-overlay');
         const blankCard = overlay ? overlay.querySelector('.detail-card-inner') : null;
         const originalContainer = document.getElementById('detail-card-container');
@@ -508,7 +532,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
 }
 
 // =========================================================
-// 🟢 統一互動引擎與高階狀態守護 (Spam & Focus Guardian)
+// 🟢 幽靈輸入框核心邏輯與高度霸權守護
 // =========================================================
 
 const pState = {
@@ -516,57 +540,68 @@ const pState = {
     color: { isCopying: false, isPasting: false }
 };
 
-let _pGlobalToggleCooldown = false; 
+window.pActiveEditType = null; // 當下正被幽靈附身的對象
+window.pGlobalAnimating = false; // 0.5s 全域物理冷卻鎖
 
-const pSpamTracker = {
-    clicks: [],
-    inputRevealTimer: null,
-    checkSpam: function() {
-        const now = Date.now();
-        this.clicks.push(now);
-        this.clicks = this.clicks.filter(t => now - t < 300);
-        return this.clicks.length >= 3;
+function triggerBump(el) {
+    if (!el) return;
+    el.classList.add('p-bump-active');
+    setTimeout(() => el.classList.remove('p-bump-active'), 150);
+}
+
+function getOffset(el, parent) {
+    let top = 0, left = 0;
+    while (el && el !== parent) {
+        top += el.offsetTop;
+        left += el.offsetLeft;
+        el = el.offsetParent;
     }
-};
+    return { top, left };
+}
 
 window._pLockScroll = function (e) {
-    if (e.target.tagName !== 'INPUT') e.preventDefault();
+    if (e.target.id !== 'p-ghost-input') e.preventDefault();
 };
 
 window._pPreventBlur = function(e) {
-    const isAnyEditing = document.querySelector('[data-editing="true"]');
-    if (!isAnyEditing) return;
+    if (!window.pActiveEditType) return;
+    if (e.target.id === 'p-ghost-input') return;
 
-    if (e.target.tagName === 'INPUT' || e.target.closest('.interactive-btn')) return;
+    // 焦點防護盾：強制攔截操作按鈕的點擊，並主動派發，讓系統焦點永遠出不去
+    const btn = e.target.closest('.interactive-btn');
+    if (btn) {
+        e.preventDefault(); 
+        if (e.type === 'touchend' || e.type === 'mousedown') btn.click();
+        return;
+    }
 
+    // 判斷是否點擊到卡片上方安全區 (放行讓鍵盤自然收起)
     let clientY = 0;
     if (e.touches && e.touches.length > 0) clientY = e.touches[0].clientY;
     else if (e.clientY) clientY = e.clientY;
 
     const card = document.querySelector('.detail-card-inner');
-    if (card) {
-        const rect = card.getBoundingClientRect();
-        if (clientY < rect.top) {
-            return; 
-        }
+    if (card && clientY < card.getBoundingClientRect().top) {
+        return; 
     }
     
     e.preventDefault();
-    
-    requestAnimationFrame(() => {
-        const editingInput = document.querySelector('[data-editing="true"] input');
-        if (editingInput && document.activeElement !== editingInput) {
-            editingInput.focus();
-        }
-    });
 };
 
-const pScrollManager = {
+// 🟢 1秒絕對高度管理器 (Absolute Height Lock)
+window.pScrollManager = {
     isLocked: false,
     scrollY: 0,
     unlockTimer: null,
-    lock: function() {
+    absoluteLockEndTime: 0,
+
+    lock: function(forceDuration = 0) {
         clearTimeout(this.unlockTimer);
+
+        if (forceDuration > 0) {
+            this.absoluteLockEndTime = Math.max(this.absoluteLockEndTime, Date.now() + forceDuration);
+        }
+
         if (this.isLocked) return; 
         
         requestAnimationFrame(() => {
@@ -577,16 +612,13 @@ const pScrollManager = {
                 document.body.style.setProperty('position', 'fixed', 'important');
                 document.body.style.setProperty('top', `-${this.scrollY}px`, 'important');
                 document.body.style.setProperty('width', '100%', 'important');
-                
-                // 💡 刪除了設定 overscroll 的行，因為我們在頂部已經全域永久封鎖了
-                
                 document.body.style.setProperty('overflow', 'hidden', 'important');
                 document.documentElement.style.setProperty('overflow', 'hidden', 'important');
                 
-                document.addEventListener('touchmove', window._pLockScroll, { passive: false });
-                document.addEventListener('touchstart', window._pPreventBlur, { passive: false });
-                document.addEventListener('touchend', window._pPreventBlur, { passive: false });
-                document.addEventListener('mousedown', window._pPreventBlur, { passive: false });
+                document.addEventListener('touchmove', window._pLockScroll, { passive: false, capture: true });
+                document.addEventListener('touchstart', window._pPreventBlur, { passive: false, capture: true });
+                document.addEventListener('touchend', window._pPreventBlur, { passive: false, capture: true });
+                document.addEventListener('mousedown', window._pPreventBlur, { passive: false, capture: true });
             }
         });
     },
@@ -595,22 +627,27 @@ const pScrollManager = {
         if (!this.isLocked) return; 
 
         const doUnlock = () => {
-            if (document.querySelector('[data-editing="true"]')) return;
+            // 如果幽靈還在工作，絕對不解鎖
+            if (window.pActiveEditType) return;
+
+            // 🟢 如果還在 1 秒絕對防護期內，強制延後，保證切換時高度 1px 都不跳！
+            const remaining = this.absoluteLockEndTime - Date.now();
+            if (remaining > 0) {
+                this.unlockTimer = setTimeout(doUnlock, remaining);
+                return;
+            }
 
             this.isLocked = false;
             document.body.style.removeProperty('position');
             document.body.style.removeProperty('top');
             document.body.style.removeProperty('width');
-            
-            // 💡 關鍵修復：這裡絕對不再去 removeProperty('overscroll-behavior')，讓系統返回永久死亡！
-            
             document.body.style.removeProperty('overflow');
             document.documentElement.style.removeProperty('overflow');
             
-            document.removeEventListener('touchmove', window._pLockScroll);
-            document.removeEventListener('touchstart', window._pPreventBlur);
-            document.removeEventListener('touchend', window._pPreventBlur);
-            document.removeEventListener('mousedown', window._pPreventBlur);
+            document.removeEventListener('touchmove', window._pLockScroll, { capture: true });
+            document.removeEventListener('touchstart', window._pPreventBlur, { capture: true });
+            document.removeEventListener('touchend', window._pPreventBlur, { capture: true });
+            document.removeEventListener('mousedown', window._pPreventBlur, { capture: true });
 
             window.scrollTo(0, this.scrollY); 
         };
@@ -622,11 +659,12 @@ const pScrollManager = {
 const getElements = (type) => {
     const isColor = type === 'color';
     return {
+        type: type,
         row: document.getElementById(isColor ? 'p-color-edit-row' : 'p-edit-row'),
+        container: document.getElementById(isColor ? 'p-btn-color-input-container' : 'p-btn-input-container'),
         label: document.getElementById(isColor ? 'p-btn-color-label' : 'p-btn-label'),
         circle2: document.getElementById(isColor ? 'p-btn-color-circle-2' : 'p-btn-circle-2'),
         display: document.getElementById(isColor ? 'p-display-color' : 'p-display-name'),
-        input: document.getElementById(isColor ? 'p-color-real-input' : 'p-real-input'),
         clip: document.getElementById(isColor ? 'p-color-icon-clipboard' : 'p-icon-clipboard'),
         check: document.getElementById(isColor ? 'p-color-icon-check' : 'p-icon-check'),
         x: document.getElementById(isColor ? 'p-color-icon-x' : 'p-icon-x'),
@@ -635,61 +673,105 @@ const getElements = (type) => {
         pasteError: document.getElementById(isColor ? 'p-color-icon-paste-error' : 'p-icon-paste-error'),
         pasteCheck: document.getElementById(isColor ? 'p-color-icon-paste-check' : 'p-icon-paste-check'),
         sharedStatus: document.getElementById(isColor ? 'p-color-shared-status' : 'p-shared-status'),
-        sharedText: document.getElementById(isColor ? 'p-color-shared-status-text' : 'p-shared-status-text'),
-        maxLength: isColor ? 7 : 10
+        sharedText: document.getElementById(isColor ? 'p-color-shared-status-text' : 'p-shared-status-text')
     };
 };
 
 window.checkFontFamily = function(val) {
-    const inputEl = document.getElementById('p-real-input');
-    const displayEl = document.getElementById('p-display-name');
-    if (!inputEl || !displayEl) return;
-    
+    const ghost = document.getElementById('p-ghost-input');
+    if (!ghost) return;
     if (val.length > 0 && /^[\x00-\x7F]*$/.test(val)) {
-        inputEl.style.fontFamily = 'monospace';
-        displayEl.style.fontFamily = 'monospace';
+        ghost.style.fontFamily = 'monospace';
     } else {
-        inputEl.style.fontFamily = 'inherit';
-        displayEl.style.fontFamily = 'inherit';
+        ghost.style.fontFamily = 'inherit';
     }
 };
 
-window.handleNameInput = function(val) {
-    const countElement = document.getElementById('p-char-count');
-    if (countElement) countElement.textContent = val.length + '/10';
-    window.checkFontFamily(val);
+window.handleGhostInput = function(val) {
+    if (!window.pActiveEditType) return;
+    if (window.pActiveEditType === 'name') {
+        const countElement = document.getElementById('p-char-count');
+        if (countElement) countElement.textContent = val.length + '/10';
+        window.checkFontFamily(val);
+    } else {
+        const ghost = document.getElementById('p-ghost-input');
+        const upper = val.toUpperCase();
+        if (val !== upper && ghost) ghost.value = upper;
+    }
 };
 
-window.handleInputBlur = function(type) {
+// 🟢 鍵盤收起強制監視器
+window.handleGhostBlur = function(e) {
     setTimeout(() => {
-        const els = getElements(type);
-        if (!els.row || els.row.dataset.editing !== 'true') return;
-        
-        if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
-        if (pState[type].isCopying || pState[type].isPasting) return;
-
-        window.closeEditMode(type);
-    }, 50); 
+        if (window.pScrollManager.absoluteLockActive) return;
+        if (!window.pActiveEditType) return;
+        // 若焦點不在幽靈身上，代表鍵盤真被收起了，無條件強制退場！
+        if (document.activeElement && document.activeElement.id === 'p-ghost-input') return;
+        window.closeGhostEditMode(true);
+    }, 50);
 };
 
-window.toggleEditMode = function (type) {
-    if (_pGlobalToggleCooldown) return;
-    _pGlobalToggleCooldown = true;
-    setTimeout(() => { _pGlobalToggleCooldown = false; }, 100);
+window.handleGhostKey = function(e) {
+    if (e.key === 'Enter' || e.keyCode === 13) {
+        e.preventDefault();
+        if (e.isComposing) return;
+        const val = e.target.value.trim();
+        const max = window.pActiveEditType === 'color' ? 7 : 10;
+        if (val.length > max) return;
+        window.closeGhostEditMode();
+    }
+};
 
-    const isSpamming = pSpamTracker.checkSpam();
-    
-    const otherType = type === 'name' ? 'color' : 'name';
-    const otherEls = getElements(otherType);
-    if (otherEls.row && otherEls.row.dataset.editing === 'true') {
-        window.closeEditMode(otherType);
+window.toggleGhostEditMode = function(type, e, element) {
+    // 0.5s 全域物理冷卻鎖
+    if (window.pGlobalAnimating) {
+        if (element) triggerBump(element);
+        return;
+    }
+    window.pGlobalAnimating = true;
+    setTimeout(() => { window.pGlobalAnimating = false; }, 500);
+
+    // 只要有動作，啟動 1 秒鐘絕對高度防護罩
+    window.pScrollManager.lock(1000);
+
+    if (window.pActiveEditType === type) return;
+
+    const ghost = document.getElementById('p-ghost-input');
+    const wrapper = document.getElementById('p-ghost-wrapper');
+    const els = getElements(type);
+
+    // 若從 A 切到 B，先把 A 的殼原路關閉 (不呼叫 blur)
+    if (window.pActiveEditType) {
+        const oldEls = getElements(window.pActiveEditType);
+        oldEls.row.dataset.editing = 'false';
+        oldEls.label.style.maxWidth = '120px';
+        oldEls.label.style.padding = '0 16px';
+        oldEls.label.style.marginRight = '0px';
+        oldEls.label.style.transform = 'translateX(0px)';
+        oldEls.circle2.style.maxWidth = 'var(--btn-height)';
+        oldEls.circle2.style.padding = '0px';
+        oldEls.circle2.style.marginLeft = '0px';
+        oldEls.circle2.style.transform = 'translateX(0px)';
+        
+        let finalVal = ghost.value.trim();
+        if (finalVal !== '') {
+            oldEls.display.textContent = window.pActiveEditType === 'color' ? finalVal.toUpperCase() : finalVal;
+        }
+        oldEls.display.style.opacity = '1';
+        
+        setTimeout(() => {
+            if (window.pActiveEditType !== oldEls.type) {
+                oldEls.clip.style.transform = 'translate(-50%, -50%)';
+                oldEls.x.style.transform = 'translate(-250%, -50%)';
+            }
+        }, 200);
     }
 
-    const els = getElements(type);
-    if (!els.row || els.row.dataset.editing === 'true') return;
-    
+    // 啟動 B 的殼
+    window.pActiveEditType = type;
     els.row.dataset.editing = 'true';
-    pState[type].isCopying = true; 
+    pState[type].isCopying = false;
+    pState[type].isPasting = false;
 
     els.label.style.maxWidth = '0px';
     els.label.style.padding = '0px';
@@ -703,46 +785,57 @@ window.toggleEditMode = function (type) {
 
     els.display.style.transition = 'none';
     els.display.style.opacity = '0';
-    els.display.style.transform = 'translateY(0)';
+    
+    // 設定並投射幽靈
+    ghost.value = els.display.textContent;
+    ghost.maxLength = type === 'color' ? 7 : 10;
+    if (type === 'name') window.handleGhostInput(ghost.value);
+    else ghost.style.fontFamily = 'monospace';
 
-    els.input.value = '';
-    if (type === 'name') window.handleNameInput('');
-
-    pScrollManager.lock();
-
-    clearTimeout(pSpamTracker.inputRevealTimer);
-    if (isSpamming) {
-        pSpamTracker.inputRevealTimer = setTimeout(() => {
-            if (els.row.dataset.editing === 'true') {
-                els.input.style.opacity = '1';
-                els.input.style.pointerEvents = 'auto';
-                els.input.style.transform = 'translateY(0)';
-                els.input.focus();
-            }
-        }, 500);
-    } else {
-        els.input.style.opacity = '1';
-        els.input.style.pointerEvents = 'auto';
-        els.input.style.transform = 'translateY(0)';
-        els.input.focus();
+    if (type !== 'name') {
+        const countElement = document.getElementById('p-char-count');
+        if (countElement) countElement.style.opacity = '0';
     }
 
+    const offset = getOffset(els.container, wrapper);
+    ghost.style.top = offset.top + 'px';
+    ghost.style.left = (offset.left + 16) + 'px';
+    ghost.style.width = (els.container.offsetWidth - 32) + 'px';
+    
+    ghost.style.opacity = '1';
+    ghost.style.pointerEvents = 'auto';
+    
+    // 聚焦！鍵盤順滑開啟或保持不動
+    ghost.focus();
+
     setTimeout(() => {
-        if (els.row.dataset.editing !== 'true') return;
-        els.clip.style.transform = 'translate(150%, -50%)';
-        els.x.style.transform = 'translate(-50%, -50%)';
+        if (window.pActiveEditType === type) {
+            els.clip.style.transform = 'translate(150%, -50%)';
+            els.x.style.transform = 'translate(-50%, -50%)';
+            if (type === 'name') {
+                const countElement = document.getElementById('p-char-count');
+                if (countElement) countElement.style.opacity = '0.8';
+            }
+        }
     }, 200);
 };
 
-window.closeEditMode = function (type, e) {
-    if (e) e.stopPropagation();
-    
-    const isSpamming = pSpamTracker.checkSpam();
+window.closeGhostEditMode = function(forceImmediate = false, triggerElement = null) {
+    if (!window.pActiveEditType) return;
+
+    if (window.pGlobalAnimating && !forceImmediate) {
+        if (triggerElement) triggerBump(triggerElement);
+        return;
+    }
+
+    window.pGlobalAnimating = true;
+    setTimeout(() => { window.pGlobalAnimating = false; }, 500);
+
+    const type = window.pActiveEditType;
     const els = getElements(type);
-    if (!els.row || els.row.dataset.editing !== 'true') return;
-    
-    clearTimeout(pSpamTracker.inputRevealTimer);
-    
+    const ghost = document.getElementById('p-ghost-input');
+
+    window.pActiveEditType = null;
     els.row.dataset.editing = 'false';
 
     els.label.style.maxWidth = '120px';
@@ -755,65 +848,56 @@ window.closeEditMode = function (type, e) {
     els.circle2.style.marginLeft = '0px';
     els.circle2.style.transform = 'translateX(0px)';
 
-    const finalVal = els.input.value.trim();
+    let finalVal = ghost.value.trim();
     if (finalVal !== '') {
         els.display.textContent = type === 'color' ? finalVal.toUpperCase() : finalVal;
-        if (type === 'name') window.checkFontFamily(finalVal);
     }
 
     els.display.style.transition = '';
     els.display.style.opacity = '1';
-    els.display.style.transform = 'translateX(-10px)'; 
 
-    els.input.style.opacity = '0';
-    els.input.style.pointerEvents = 'none';
-    els.input.style.transform = 'translateX(-10px)';
-    els.input.blur();
+    ghost.style.opacity = '0';
+    ghost.style.pointerEvents = 'none';
+    ghost.blur(); // 真正收起鍵盤
 
-    pScrollManager.unlock(!isSpamming);
+    if (!forceImmediate) window.pScrollManager.absoluteLockEndTime = 0;
+    window.pScrollManager.unlock(false);
 
     if (type === 'name') {
-        const charCount = document.getElementById('p-char-count');
-        if (charCount) charCount.style.opacity = '0';
+        const countElement = document.getElementById('p-char-count');
+        if (countElement) countElement.style.opacity = '0';
     }
 
     setTimeout(() => {
-        if (els.row.dataset.editing === 'true') return;
-        els.clip.style.transform = 'translate(-50%, -50%)';
-        els.x.style.transform = 'translate(-250%, -50%)';
+        if (window.pActiveEditType !== type) {
+            els.clip.style.transform = 'translate(-50%, -50%)';
+            els.x.style.transform = 'translate(-250%, -50%)';
+        }
     }, 200);
-
-    setTimeout(() => { 
-        pState[type].isCopying = false; 
-    }, 500);
 };
 
-window.handleInputEnter = function (e, type) {
-    if (e.key === 'Enter' || e.keyCode === 13) {
-        e.preventDefault();
-        if (e.isComposing) return;
-        const val = e.target.value.trim();
-        const els = getElements(type);
-        if (val.length > els.maxLength) return;
-        window.closeEditMode(type, e);
-    }
-};
-
-window.handleCopyAction = function(e, type) {
-    pSpamTracker.checkSpam(); 
-    const els = getElements(type);
-    if (els.row && els.row.dataset.editing === 'true') {
-        window.closeEditMode(type, e);
+// 🟢 複製與貼上邏輯 (方向完美校準)
+window.handleCopyAction = function(e, type, element) {
+    if (e) e.stopPropagation();
+    if (window.pActiveEditType === type) {
+        window.closeGhostEditMode(false, element);
         return;
     }
-    if (pState[type].isCopying || pState[type].isPasting) return;
+    if (window.pGlobalAnimating || pState[type].isCopying || pState[type].isPasting) {
+        if (element) triggerBump(element);
+        return;
+    }
 
+    const els = getElements(type);
     const textToCopy = els.display ? els.display.textContent : "";
 
     if (textToCopy) {
+        window.pGlobalAnimating = true;
+        setTimeout(() => { window.pGlobalAnimating = false; }, 500);
         pState[type].isCopying = true; 
         
         navigator.clipboard.writeText(textToCopy).then(() => {
+            // 複製：向左移動
             if (els.sharedStatus) {
                 els.sharedStatus.style.transition = 'none';
                 els.sharedStatus.style.transform = 'translateX(40px)';
@@ -822,7 +906,7 @@ window.handleCopyAction = function(e, type) {
             }
             if (els.sharedText) els.sharedText.textContent = '已複製';
 
-            if (els.clip) els.clip.style.transform = 'translate(calc(-50% + 40px), -50%)';
+            if (els.clip) els.clip.style.transform = 'translate(calc(-50% - 40px), -50%)';
             if (els.check) els.check.style.transform = 'translate(-50%, -50%)';
             
             if (els.display) {
@@ -836,7 +920,7 @@ window.handleCopyAction = function(e, type) {
 
             setTimeout(() => {
                 if (els.clip) els.clip.style.transform = 'translate(-50%, -50%)';
-                if (els.check) els.check.style.transform = 'translate(calc(-50% - 40px), -50%)';
+                if (els.check) els.check.style.transform = 'translate(calc(-50% + 40px), -50%)';
                 
                 if (els.display) {
                     els.display.style.transform = 'translateX(0px)';
@@ -848,28 +932,30 @@ window.handleCopyAction = function(e, type) {
                 }
                 setTimeout(() => pState[type].isCopying = false, 600);
             }, 1000);
-        }).catch(err => {
-            console.error('複製失敗:', err);
-            pState[type].isCopying = false; 
-        });
+        }).catch(err => { pState[type].isCopying = false; });
     }
 };
 
-window.handlePasteAction = function(e, type) {
+window.handlePasteAction = function(e, type, element) {
     if (e) e.stopPropagation();
-    pSpamTracker.checkSpam(); 
-    
-    const els = getElements(type);
-    if (els.row && els.row.dataset.editing === 'true') return; 
-    if (pState[type].isCopying || pState[type].isPasting) return;
+    if (window.pActiveEditType === type) return; 
 
+    if (window.pGlobalAnimating || pState[type].isCopying || pState[type].isPasting) {
+        if (element) triggerBump(element);
+        return;
+    }
+
+    window.pGlobalAnimating = true;
+    setTimeout(() => { window.pGlobalAnimating = false; }, 500);
     pState[type].isPasting = true;
     
+    const els = getElements(type);
     const errorSvg = els.pasteError ? els.pasteError.querySelector('svg') : null;
 
     if (els.sharedText) els.sharedText.classList.remove('p-shake-active');
     if (errorSvg) errorSvg.classList.remove('p-shake-active');
 
+    // 貼上：向右移動
     if (els.sharedStatus) {
         els.sharedStatus.style.transition = 'none';
         els.sharedStatus.style.transform = 'translateX(-40px)';
@@ -892,11 +978,8 @@ window.handlePasteAction = function(e, type) {
 
     navigator.clipboard.readText().then(text => {
         const val = text.trim();
-        if (!val) {
-            handleResult('剪貼簿無內容', 'error');
-        } else {
-            handleResult('已貼上', 'success', val);
-        }
+        if (!val) handleResult('剪貼簿無內容', 'error');
+        else handleResult('已貼上', 'success', val);
     }).catch(err => {
         handleResult('未同意權限', 'error');
     });
@@ -913,14 +996,11 @@ window.handlePasteAction = function(e, type) {
                 els.pasteError.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
                 els.pasteError.style.transform = 'translate(-50%, -50%)';
             }
-
             setTimeout(() => {
                 if (els.sharedText) els.sharedText.classList.add('p-shake-active');
                 if (errorSvg) errorSvg.classList.add('p-shake-active');
             }, 50);
-
             setTimeout(() => revert('error'), 800);
-
         } else {
             if (els.pasteLoader) els.pasteLoader.style.transform = 'translate(calc(-50% + 40px), -50%)';
             if (els.pasteCheck) {
@@ -930,14 +1010,10 @@ window.handlePasteAction = function(e, type) {
                 els.pasteCheck.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
                 els.pasteCheck.style.transform = 'translate(-50%, -50%)';
             }
-
             if (val) {
                 const finalVal = type === 'color' ? val.substring(0, 7).toUpperCase() : val.substring(0, 10); 
                 if (els.display) els.display.textContent = finalVal;
-                if (els.input) els.input.value = finalVal;
-                if (type === 'name') window.handleNameInput(finalVal);
             }
-
             setTimeout(() => revert('success'), 800);
         }
     }
@@ -951,7 +1027,6 @@ window.handlePasteAction = function(e, type) {
             els.sharedStatus.style.transform = 'translateX(-40px)';
             els.sharedStatus.style.opacity = '0';
         }
-
         if (resType === 'error') {
             if (els.pasteError) els.pasteError.style.transform = 'translate(-50%, calc(-50% - 40px))';
             if (els.pasteDef) {
@@ -971,7 +1046,6 @@ window.handlePasteAction = function(e, type) {
                 els.pasteDef.style.transform = 'translate(-50%, -50%)';
             }
         }
-
         setTimeout(() => {
             if (els.sharedText) els.sharedText.classList.remove('p-shake-active');
             if (errorSvg) errorSvg.classList.remove('p-shake-active');
