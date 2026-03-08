@@ -22,6 +22,7 @@
         history.pushState(null, null, location.href);
         window.addEventListener('popstate', function (e) {
             history.pushState(null, null, location.href);
+            // 若面板開著，按實體返回鍵等同於「關閉面板」
             if (document.getElementById('dynamic-blank-overlay') && typeof window.closeBlankOverlay === 'function') {
                 window.closeBlankOverlay();
             }
@@ -554,7 +555,9 @@ const pState = {
 };
 
 window.pActiveEditType = null; 
-window.pGlobalAnimating = false; // 0.5s 全域物理冷卻鎖
+
+// 🟢 公用公告標記 (初次載入時預設無標記)
+window.pGhostMarker = false; 
 
 function triggerBump(el) {
     if (!el) return;
@@ -725,13 +728,17 @@ window.handleGhostKey = function(e) {
 };
 
 window.toggleGhostEditMode = function(type, e, element) {
-    // 0.5s 全域物理冷卻鎖
-    if (window.pGlobalAnimating) {
+    // 🟢 啟動前檢查：該標記已被標記的話就使用按鈕點選微動畫去敷衍他
+    if (window.pGhostMarker) {
         if (element) triggerBump(element);
         return;
     }
-    window.pGlobalAnimating = true;
-    setTimeout(() => { window.pGlobalAnimating = false; }, 500);
+    
+    // 🟢 每次文字框一但被觸發就加上標記
+    window.pGhostMarker = true;
+    
+    // 🟢 結束後刪除 (完美對應 0.4s CSS 動畫時間)
+    setTimeout(() => { window.pGhostMarker = false; }, 400);
 
     if (window.pActiveEditType === type) return;
 
@@ -831,13 +838,14 @@ window.toggleGhostEditMode = function(type, e, element) {
 window.closeGhostEditMode = function(forceImmediate = false, triggerElement = null) {
     if (!window.pActiveEditType) return;
 
-    if (window.pGlobalAnimating && !forceImmediate) {
+    if (window.pGhostMarker && !forceImmediate) {
         if (triggerElement) triggerBump(triggerElement);
         return;
     }
 
-    window.pGlobalAnimating = true;
-    setTimeout(() => { window.pGlobalAnimating = false; }, 500);
+    // 關閉時同樣加上標記，結束後刪除
+    window.pGhostMarker = true;
+    setTimeout(() => { window.pGhostMarker = false; }, 400);
 
     const type = window.pActiveEditType;
     const els = getElements(type);
@@ -889,7 +897,9 @@ window.handleCopyAction = function(e, type, element) {
         window.closeGhostEditMode(false, element);
         return;
     }
-    if (window.pGlobalAnimating || pState[type].isCopying || pState[type].isPasting) {
+    
+    // 複製時一併檢查公用標記
+    if (window.pGhostMarker || pState[type].isCopying || pState[type].isPasting) {
         if (element) triggerBump(element);
         return;
     }
@@ -898,8 +908,9 @@ window.handleCopyAction = function(e, type, element) {
     const textToCopy = els.display ? els.display.textContent : "";
 
     if (textToCopy) {
-        window.pGlobalAnimating = true;
-        setTimeout(() => { window.pGlobalAnimating = false; }, 500);
+        // 觸發時掛上公用標記
+        window.pGhostMarker = true;
+        setTimeout(() => { window.pGhostMarker = false; }, 400);
         pState[type].isCopying = true; 
         
         navigator.clipboard.writeText(textToCopy).then(() => {
@@ -945,13 +956,15 @@ window.handlePasteAction = function(e, type, element) {
     if (e) e.stopPropagation();
     if (window.pActiveEditType === type) return; 
 
-    if (window.pGlobalAnimating || pState[type].isCopying || pState[type].isPasting) {
+    // 貼上時一併檢查公用標記
+    if (window.pGhostMarker || pState[type].isCopying || pState[type].isPasting) {
         if (element) triggerBump(element);
         return;
     }
 
-    window.pGlobalAnimating = true;
-    setTimeout(() => { window.pGlobalAnimating = false; }, 500);
+    // 觸發時掛上公用標記
+    window.pGhostMarker = true;
+    setTimeout(() => { window.pGhostMarker = false; }, 400);
     pState[type].isPasting = true;
     
     const els = getElements(type);
