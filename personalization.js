@@ -22,7 +22,6 @@
         history.pushState(null, null, location.href);
         window.addEventListener('popstate', function (e) {
             history.pushState(null, null, location.href);
-            // 若面板開著，按實體返回鍵等同於「關閉面板」
             if (document.getElementById('dynamic-blank-overlay') && typeof window.closeBlankOverlay === 'function') {
                 window.closeBlankOverlay();
             }
@@ -44,6 +43,9 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
     window.openBlankOverlay = function (hexColor) {
         if (document.getElementById('dynamic-blank-overlay') || window.isFlipAnimating) return;
         window.isFlipAnimating = true;
+
+        // 🟢 暴力死鎖：卡片一準備開啟，立刻將整個網頁鎖成磚頭！
+        if (window.pScrollManager) window.pScrollManager.lock();
 
         const activeId = getActiveCardId(); 
 
@@ -101,13 +103,11 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             -webkit-user-select: none;
             user-select: none;
         }
-        /* 幽靈輸入框獨佔選取權 */
         #p-ghost-input {
             -webkit-touch-callout: default;
             -webkit-user-select: text;
             user-select: text;
         }
-        /* 🟢 動畫冷卻期間的微互動效果 (敷衍狂點專用) */
         .p-bump-active {
             transform: scale(0.92) !important;
             opacity: 0.8 !important;
@@ -253,7 +253,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         document.body.appendChild(overlay);
 
         overlay.addEventListener('click', (e) => {
-            if (window.pActiveEditType) return; // 編輯中強制封鎖背景點擊
+            if (window.pActiveEditType) return; 
             if (!e.target.closest('.detail-card-inner')) window.closeBlankOverlay();
         });
 
@@ -452,10 +452,9 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         if (window.isFlipAnimating) return;
         window.isFlipAnimating = true;
 
-        if (window.pScrollManager) {
-            window.pScrollManager.absoluteLockEndTime = 0;
-            window.pScrollManager.unlock(false);
-        }
+        const ghost = document.getElementById('p-ghost-input');
+        if (ghost) ghost.blur();
+        window.pActiveEditType = null;
 
         const overlay = document.getElementById('dynamic-blank-overlay');
         const blankCard = overlay ? overlay.querySelector('.detail-card-inner') : null;
@@ -514,6 +513,9 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             });
 
             setTimeout(() => {
+                // 🟢 卡片完全關閉後，才徹底解鎖網頁高度！
+                if (window.pScrollManager) window.pScrollManager.unlock();
+
                 if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
                 originalInner.classList.remove('flip-back-active');
                 originalContainer.classList.remove('perspective-container', 'is-flipping');
@@ -532,7 +534,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
 }
 
 // =========================================================
-// 🟢 幽靈輸入框核心邏輯與高度霸權守護
+// 🟢 幽靈輸入框核心邏輯與絕對高度霸權守護
 // =========================================================
 
 const pState = {
@@ -540,7 +542,7 @@ const pState = {
     color: { isCopying: false, isPasting: false }
 };
 
-window.pActiveEditType = null; // 當下正被幽靈附身的對象
+window.pActiveEditType = null; 
 window.pGlobalAnimating = false; // 0.5s 全域物理冷卻鎖
 
 function triggerBump(el) {
@@ -559,6 +561,59 @@ function getOffset(el, parent) {
     return { top, left };
 }
 
+// 🟢 暴力全生命週期高度鎖定 (卡片打開期間，永遠不解鎖！)
+window.pScrollManager = {
+    isLocked: false,
+    scrollY: 0,
+    lock: function() {
+        if (this.isLocked) return; 
+        
+        requestAnimationFrame(() => {
+            if (!this.isLocked) {
+                this.scrollY = window.scrollY; 
+                this.isLocked = true;
+
+                // 將 body 徹底設定為固定且滿版，完全封殺鍵盤自動推升的空間
+                document.body.style.setProperty('position', 'fixed', 'important');
+                document.body.style.setProperty('top', `-${this.scrollY}px`, 'important');
+                document.body.style.setProperty('left', '0', 'important');
+                document.body.style.setProperty('right', '0', 'important');
+                document.body.style.setProperty('width', '100%', 'important');
+                document.body.style.setProperty('height', '100%', 'important');
+                document.body.style.setProperty('overflow', 'hidden', 'important');
+                document.documentElement.style.setProperty('overflow', 'hidden', 'important');
+                document.documentElement.style.setProperty('height', '100%', 'important');
+                
+                document.addEventListener('touchmove', window._pLockScroll, { passive: false, capture: true });
+                document.addEventListener('touchstart', window._pPreventBlur, { passive: false, capture: true });
+                document.addEventListener('touchend', window._pPreventBlur, { passive: false, capture: true });
+                document.addEventListener('mousedown', window._pPreventBlur, { passive: false, capture: true });
+            }
+        });
+    },
+    unlock: function() {
+        if (!this.isLocked) return; 
+        this.isLocked = false;
+        
+        document.body.style.removeProperty('position');
+        document.body.style.removeProperty('top');
+        document.body.style.removeProperty('left');
+        document.body.style.removeProperty('right');
+        document.body.style.removeProperty('width');
+        document.body.style.removeProperty('height');
+        document.body.style.removeProperty('overflow');
+        document.documentElement.style.removeProperty('overflow');
+        document.documentElement.style.removeProperty('height');
+        
+        document.removeEventListener('touchmove', window._pLockScroll, { capture: true });
+        document.removeEventListener('touchstart', window._pPreventBlur, { capture: true });
+        document.removeEventListener('touchend', window._pPreventBlur, { capture: true });
+        document.removeEventListener('mousedown', window._pPreventBlur, { capture: true });
+
+        window.scrollTo(0, this.scrollY); 
+    }
+};
+
 window._pLockScroll = function (e) {
     if (e.target.id !== 'p-ghost-input') e.preventDefault();
 };
@@ -567,7 +622,7 @@ window._pPreventBlur = function(e) {
     if (!window.pActiveEditType) return;
     if (e.target.id === 'p-ghost-input') return;
 
-    // 焦點防護盾：強制攔截操作按鈕的點擊，並主動派發，讓系統焦點永遠出不去
+    // 焦點防護盾：攔截操作按鈕的點擊，不讓系統焦點被偷走
     const btn = e.target.closest('.interactive-btn');
     if (btn) {
         e.preventDefault(); 
@@ -575,7 +630,7 @@ window._pPreventBlur = function(e) {
         return;
     }
 
-    // 判斷是否點擊到卡片上方安全區 (放行讓鍵盤自然收起)
+    // 卡片上方安全區放行 (讓使用者能點擊黑屏或上方按鈕正常關閉鍵盤)
     let clientY = 0;
     if (e.touches && e.touches.length > 0) clientY = e.touches[0].clientY;
     else if (e.clientY) clientY = e.clientY;
@@ -586,74 +641,6 @@ window._pPreventBlur = function(e) {
     }
     
     e.preventDefault();
-};
-
-// 🟢 1秒絕對高度管理器 (Absolute Height Lock)
-window.pScrollManager = {
-    isLocked: false,
-    scrollY: 0,
-    unlockTimer: null,
-    absoluteLockEndTime: 0,
-
-    lock: function(forceDuration = 0) {
-        clearTimeout(this.unlockTimer);
-
-        if (forceDuration > 0) {
-            this.absoluteLockEndTime = Math.max(this.absoluteLockEndTime, Date.now() + forceDuration);
-        }
-
-        if (this.isLocked) return; 
-        
-        requestAnimationFrame(() => {
-            if (!this.isLocked) {
-                this.scrollY = window.scrollY; 
-                this.isLocked = true;
-
-                document.body.style.setProperty('position', 'fixed', 'important');
-                document.body.style.setProperty('top', `-${this.scrollY}px`, 'important');
-                document.body.style.setProperty('width', '100%', 'important');
-                document.body.style.setProperty('overflow', 'hidden', 'important');
-                document.documentElement.style.setProperty('overflow', 'hidden', 'important');
-                
-                document.addEventListener('touchmove', window._pLockScroll, { passive: false, capture: true });
-                document.addEventListener('touchstart', window._pPreventBlur, { passive: false, capture: true });
-                document.addEventListener('touchend', window._pPreventBlur, { passive: false, capture: true });
-                document.addEventListener('mousedown', window._pPreventBlur, { passive: false, capture: true });
-            }
-        });
-    },
-    unlock: function(instant = true) {
-        clearTimeout(this.unlockTimer);
-        if (!this.isLocked) return; 
-
-        const doUnlock = () => {
-            // 如果幽靈還在工作，絕對不解鎖
-            if (window.pActiveEditType) return;
-
-            // 🟢 如果還在 1 秒絕對防護期內，強制延後，保證切換時高度 1px 都不跳！
-            const remaining = this.absoluteLockEndTime - Date.now();
-            if (remaining > 0) {
-                this.unlockTimer = setTimeout(doUnlock, remaining);
-                return;
-            }
-
-            this.isLocked = false;
-            document.body.style.removeProperty('position');
-            document.body.style.removeProperty('top');
-            document.body.style.removeProperty('width');
-            document.body.style.removeProperty('overflow');
-            document.documentElement.style.removeProperty('overflow');
-            
-            document.removeEventListener('touchmove', window._pLockScroll, { capture: true });
-            document.removeEventListener('touchstart', window._pPreventBlur, { capture: true });
-            document.removeEventListener('touchend', window._pPreventBlur, { capture: true });
-            document.removeEventListener('mousedown', window._pPreventBlur, { capture: true });
-
-            window.scrollTo(0, this.scrollY); 
-        };
-
-        this.unlockTimer = setTimeout(doUnlock, instant ? 50 : 300);
-    }
 };
 
 const getElements = (type) => {
@@ -708,10 +695,9 @@ window.handleGhostInput = function(val) {
 // 🟢 鍵盤收起強制監視器
 window.handleGhostBlur = function(e) {
     setTimeout(() => {
-        if (window.pScrollManager.absoluteLockActive) return;
         if (!window.pActiveEditType) return;
         
-        // 由於已經防護了按鈕點擊失焦，若焦點不在幽靈身上，代表系統強制收起了鍵盤，無條件退場！
+        // 由於我們防護了按鈕點擊失焦，走到這裡代表系統強制收起了鍵盤，立刻無條件退場！
         if (document.activeElement && document.activeElement.id === 'p-ghost-input') return;
         window.closeGhostEditMode(true);
     }, 50);
@@ -737,16 +723,13 @@ window.toggleGhostEditMode = function(type, e, element) {
     window.pGlobalAnimating = true;
     setTimeout(() => { window.pGlobalAnimating = false; }, 500);
 
-    // 只要有動作，啟動 1 秒鐘絕對高度防護罩，杜絕一切亂跳
-    window.pScrollManager.lock(1000);
-
     if (window.pActiveEditType === type) return;
 
     const ghost = document.getElementById('p-ghost-input');
     const wrapper = document.getElementById('p-ghost-wrapper');
     const els = getElements(type);
 
-    // 若從 A 切到 B，先把 A 的殼原路關閉 (不呼叫 blur)
+    // 若從 A 切到 B，先把 A 的殼原路關閉
     if (window.pActiveEditType) {
         const oldEls = getElements(window.pActiveEditType);
         oldEls.row.dataset.editing = 'false';
@@ -790,11 +773,9 @@ window.toggleGhostEditMode = function(type, e, element) {
     els.circle2.style.marginLeft = '-8px';
     els.circle2.style.transform = 'translateX(30px)';
 
-    // 原文字柔和淡出，代替原本生硬的消失
     els.display.style.transition = 'opacity 0.2s ease';
     els.display.style.opacity = '0';
     
-    // 設定並投射幽靈，拔除過渡效果達成「瞬間無殘影瞬移」
     ghost.style.transition = 'none'; 
     ghost.value = els.display.textContent;
     ghost.maxLength = type === 'color' ? 7 : 10;
@@ -813,13 +794,11 @@ window.toggleGhostEditMode = function(type, e, element) {
     
     ghost.style.pointerEvents = 'auto';
     
-    // 聚焦！讓鍵盤無縫順滑開啟或保持不動
-    ghost.focus();
+    // 聚焦！加入 preventScroll: true 暴力禁止瀏覽器雞婆滾動
+    ghost.focus({ preventScroll: true });
 
-    // 強制重繪確立新座標，杜絕任何一絲殘影
     void ghost.offsetWidth;
 
-    // 定位完成後，重新掛上透明度過渡，並給予 50ms 的自然淡入延遲
     ghost.style.transition = 'opacity 0.25s ease';
     setTimeout(() => {
         if (window.pActiveEditType === type) {
@@ -878,10 +857,7 @@ window.closeGhostEditMode = function(forceImmediate = false, triggerElement = nu
     ghost.style.transition = 'opacity 0.15s ease';
     ghost.style.opacity = '0';
     ghost.style.pointerEvents = 'none';
-    ghost.blur(); // 真正收起鍵盤
-
-    if (!forceImmediate) window.pScrollManager.absoluteLockEndTime = 0;
-    window.pScrollManager.unlock(false);
+    ghost.blur(); 
 
     if (type === 'name') {
         const countElement = document.getElementById('p-char-count');
