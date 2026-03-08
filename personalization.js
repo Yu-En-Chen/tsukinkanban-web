@@ -1,7 +1,6 @@
 // personalization.js - 個性化設定 (Customize) 專用彈窗引擎
 
 export function initPersonalization(applyThemeToCard, getActiveCardId) {
-    // 🔧 【箭頭 SVG 旋轉角度設定】
     window.DISMISS_ICON_TARGET_ROTATION = 90;
 
     window.openBlankOverlay = function (hexColor) {
@@ -190,6 +189,11 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         document.body.appendChild(overlay);
 
         overlay.addEventListener('click', (e) => {
+            const row1 = document.getElementById('p-edit-row');
+            const row2 = document.getElementById('p-color-edit-row');
+            if ((row1 && row1.dataset.editing === 'true') || (row2 && row2.dataset.editing === 'true')) {
+                return; // 編輯中強制封鎖背景點擊關閉
+            }
             if (!e.target.closest('.detail-card-inner')) window.closeBlankOverlay();
         });
 
@@ -463,38 +467,94 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
 }
 
 // =========================================================
-// 🟢 統一互動引擎 (DRY 架構：共用表示名與 HEX 顏色的邏輯)
+// 🟢 統一互動引擎與高階狀態守護 (Spam & Focus Guardian)
 // =========================================================
 
-// 🟢 1. 狀態管理物件 (加入 isAnimating 動畫防護罩)
 const pState = {
-    name: { isCopying: false, isPasting: false, isAnimating: false },
-    color: { isCopying: false, isPasting: false, isAnimating: false }
+    name: { isCopying: false, isPasting: false },
+    color: { isCopying: false, isPasting: false }
 };
 
-// 🟢 2. 獨立封裝的「絕對滾動鎖定管理器」
-// 徹底解決超頻點擊導致的高度丟失與覆寫問題
+// 🟢 1. 防連點機制 (Spam Tracker)
+const pSpamTracker = {
+    clicks: [],
+    inputRevealTimer: null,
+    // 檢查是否處於「狂點狀態」(0.3秒內 >= 3次點擊)
+    checkSpam: function() {
+        const now = Date.now();
+        this.clicks.push(now);
+        this.clicks = this.clicks.filter(t => now - t < 300);
+        return this.clicks.length >= 3;
+    },
+    isSpamming: function() {
+        return this.clicks.length >= 3;
+    }
+};
+
+window._pLockScroll = function (e) {
+    if (e.target.tagName !== 'INPUT') e.preventDefault();
+};
+
+window._pPreventBlur = function(e) {
+    const isAnyEditing = document.querySelector('[data-editing="true"]');
+    if (!isAnyEditing) return;
+
+    if (e.target.tagName === 'INPUT' || e.target.closest('.interactive-btn')) return;
+    
+    e.preventDefault();
+    
+    requestAnimationFrame(() => {
+        const editingInput = document.querySelector('[data-editing="true"] input');
+        if (editingInput && document.activeElement !== editingInput) {
+            editingInput.focus();
+        }
+    });
+};
+
+// 🟢 2. 高度安全與延遲解鎖管理器
 const pScrollManager = {
     isLocked: false,
     scrollY: 0,
+    unlockTimer: null,
     lock: function() {
-        if (this.isLocked) return; // 已經鎖定時，絕對不覆寫高度
-        this.scrollY = window.scrollY; // 紀錄真正準確的原始高度
-        this.isLocked = true;
+        clearTimeout(this.unlockTimer);
+        if (this.isLocked) return; 
+        
+        // 使用 RAF 確保畫面靜止後才抓取高度，拒絕盲目鎖定
+        requestAnimationFrame(() => {
+            if (!this.isLocked) {
+                this.scrollY = window.scrollY; 
+                this.isLocked = true;
 
-        document.body.style.setProperty('position', 'fixed', 'important');
-        document.body.style.setProperty('top', `-${this.scrollY}px`, 'important');
-        document.body.style.setProperty('width', '100%', 'important');
-        document.body.style.setProperty('overscroll-behavior', 'none', 'important');
-        document.documentElement.style.setProperty('overscroll-behavior', 'none', 'important');
-        document.body.style.setProperty('overflow', 'hidden', 'important');
-        document.documentElement.style.setProperty('overflow', 'hidden', 'important');
-        document.addEventListener('touchmove', window._pLockScroll, { passive: false });
+                document.body.style.setProperty('position', 'fixed', 'important');
+                document.body.style.setProperty('top', `-${this.scrollY}px`, 'important');
+                document.body.style.setProperty('width', '100%', 'important');
+                document.body.style.setProperty('overscroll-behavior', 'none', 'important');
+                document.documentElement.style.setProperty('overscroll-behavior', 'none', 'important');
+                document.body.style.setProperty('overflow', 'hidden', 'important');
+                document.documentElement.style.setProperty('overflow', 'hidden', 'important');
+                
+                document.addEventListener('touchmove', window._pLockScroll, { passive: false });
+                document.addEventListener('touchstart', window._pPreventBlur, { passive: false });
+                document.addEventListener('touchend', window._pPreventBlur, { passive: false });
+                document.addEventListener('mousedown', window._pPreventBlur, { passive: false });
+            }
+        });
     },
-    unlock: function() {
-        if (!this.isLocked) return; // 沒有鎖定時，不執行多餘解鎖
-        this.isLocked = false;
+    // instant 決定是否要無條件瞬間解放
+    unlock: function(instant = true) {
+        clearTimeout(this.unlockTimer);
+        if (!this.isLocked) return; 
 
+        if (instant) {
+            this.executeUnlock();
+        } else {
+            // 在連點狂點狀態下，給予 0.3 秒冷卻後才解除版面鎖定
+            this.unlockTimer = setTimeout(() => this.executeUnlock(), 300);
+        }
+    },
+    executeUnlock: function() {
+        this.isLocked = false;
         document.body.style.removeProperty('position');
         document.body.style.removeProperty('top');
         document.body.style.removeProperty('width');
@@ -502,9 +562,13 @@ const pScrollManager = {
         document.documentElement.style.removeProperty('overscroll-behavior');
         document.body.style.removeProperty('overflow');
         document.documentElement.style.removeProperty('overflow');
+        
         document.removeEventListener('touchmove', window._pLockScroll);
+        document.removeEventListener('touchstart', window._pPreventBlur);
+        document.removeEventListener('touchend', window._pPreventBlur);
+        document.removeEventListener('mousedown', window._pPreventBlur);
 
-        window.scrollTo(0, this.scrollY); // 安全且精準地恢復高度
+        window.scrollTo(0, this.scrollY); 
     }
 };
 
@@ -529,18 +593,6 @@ const getElements = (type) => {
     };
 };
 
-window._pLockScroll = function (e) {
-    if (e.target.tagName !== 'INPUT') e.preventDefault();
-};
-
-// 🟢 新增：全域防失焦攔截器 (阻止點擊空白處關閉鍵盤)
-window._pPreventBlur = function(e) {
-    // 如果點擊的目標不是輸入框，也不是我們的任何操作按鈕 (.interactive-btn)
-    if (e.target.tagName !== 'INPUT' && !e.target.closest('.interactive-btn')) {
-        e.preventDefault(); // 暴力攔截！強制把焦點留在輸入框，鍵盤就不會縮回去
-    }
-};
-
 window.checkFontFamily = function(val) {
     const inputEl = document.getElementById('p-real-input');
     const displayEl = document.getElementById('p-display-name');
@@ -561,22 +613,25 @@ window.handleNameInput = function(val) {
     window.checkFontFamily(val);
 };
 
-// 🟢 3. 智慧型失去焦點監聽 (防呆升級)
+// 🟢 3. 鍵盤意外關閉強制監視器
 window.handleInputBlur = function(type) {
-    // 延遲 150ms 判斷：若是因為點擊「複製/貼上」而失去焦點，則忽略關閉動作
-    // 若是真的點擊了畫面空白處，或手機鍵盤意外收起，則安全執行退場動畫
     setTimeout(() => {
-        if (pState[type].isCopying || pState[type].isPasting) return;
         const els = getElements(type);
-        if (els.row && els.row.dataset.editing === 'true') {
-            window.closeEditMode(type);
-        }
-    }, 150);
+        if (!els.row || els.row.dataset.editing !== 'true') return;
+        
+        // 如果焦點跑到其他輸入框(例如上下切換)，不用關閉
+        if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+        
+        // 如果是因為按了複製貼上，不用關閉
+        if (pState[type].isCopying || pState[type].isPasting) return;
+
+        // 走到這步代表鍵盤真的被系統意外收起了，立刻強制執行關閉動畫！
+        window.closeEditMode(type);
+    }, 50); 
 };
 
 window.toggleEditMode = function (type) {
-    // 阻斷超頻連點
-    if (pState[type].isAnimating) return;
+    const isSpamming = pSpamTracker.checkSpam();
     
     const otherType = type === 'name' ? 'color' : 'name';
     const otherEls = getElements(otherType);
@@ -587,10 +642,8 @@ window.toggleEditMode = function (type) {
     const els = getElements(type);
     if (!els.row || els.row.dataset.editing === 'true') return;
     
-    // 啟動狀態與動畫鎖
     els.row.dataset.editing = 'true';
     pState[type].isCopying = true; 
-    pState[type].isAnimating = true;
 
     els.label.style.maxWidth = '0px';
     els.label.style.padding = '0px';
@@ -609,35 +662,47 @@ window.toggleEditMode = function (type) {
     els.input.value = '';
     if (type === 'name') window.handleNameInput('');
 
-    els.input.style.opacity = '1';
-    els.input.style.pointerEvents = 'auto';
-    els.input.style.transform = 'translateY(0)';
-    els.input.focus();
-
-    // 呼叫獨立管理器進行鎖定
+    // 上鎖高度防護
     pScrollManager.lock();
+
+    // 🟢 防連點：0.5秒輸入框延遲顯示機制
+    clearTimeout(pSpamTracker.inputRevealTimer);
+    if (isSpamming) {
+        // 連點狂暴狀態：膠囊變形，但輸入游標隱藏並倒數 0.5s
+        pSpamTracker.inputRevealTimer = setTimeout(() => {
+            if (els.row.dataset.editing === 'true') {
+                els.input.style.opacity = '1';
+                els.input.style.pointerEvents = 'auto';
+                els.input.style.transform = 'translateY(0)';
+                els.input.focus();
+            }
+        }, 500);
+    } else {
+        // 正常狀態：順暢瞬間顯示
+        els.input.style.opacity = '1';
+        els.input.style.pointerEvents = 'auto';
+        els.input.style.transform = 'translateY(0)';
+        els.input.focus();
+    }
 
     setTimeout(() => {
         if (els.row.dataset.editing !== 'true') return;
         els.clip.style.transform = 'translate(150%, -50%)';
         els.x.style.transform = 'translate(-50%, -50%)';
     }, 200);
-
-    // 解除動畫防護罩
-    setTimeout(() => { pState[type].isAnimating = false; }, 400);
 };
 
 window.closeEditMode = function (type, e) {
     if (e) e.stopPropagation();
     
-    // 阻斷超頻連點
-    if (pState[type].isAnimating) return;
-    
+    const isSpamming = pSpamTracker.checkSpam();
     const els = getElements(type);
     if (!els.row || els.row.dataset.editing !== 'true') return;
     
+    // 如果正在等待顯示輸入框，直接取消它
+    clearTimeout(pSpamTracker.inputRevealTimer);
+    
     els.row.dataset.editing = 'false';
-    pState[type].isAnimating = true;
 
     els.label.style.maxWidth = '120px';
     els.label.style.padding = '0 16px';
@@ -664,8 +729,8 @@ window.closeEditMode = function (type, e) {
     els.input.style.transform = 'translateX(-10px)';
     els.input.blur();
 
-    // 呼叫獨立管理器安全解鎖
-    pScrollManager.unlock();
+    // 🟢 瞬間解鎖判斷：沒狂點就瞬間解，狂點就稍微等待 0.3s
+    pScrollManager.unlock(!isSpamming);
 
     if (type === 'name') {
         const charCount = document.getElementById('p-char-count');
@@ -678,10 +743,8 @@ window.closeEditMode = function (type, e) {
         els.x.style.transform = 'translate(-250%, -50%)';
     }, 200);
 
-    // 解除動畫防護罩與複製鎖定狀態
     setTimeout(() => { 
         pState[type].isCopying = false; 
-        pState[type].isAnimating = false;
     }, 500);
 };
 
@@ -697,6 +760,7 @@ window.handleInputEnter = function (e, type) {
 };
 
 window.handleCopyAction = function(e, type) {
+    pSpamTracker.checkSpam(); // 加入連點監視
     const els = getElements(type);
     if (els.row && els.row.dataset.editing === 'true') {
         window.closeEditMode(type, e);
@@ -753,6 +817,7 @@ window.handleCopyAction = function(e, type) {
 
 window.handlePasteAction = function(e, type) {
     if (e) e.stopPropagation();
+    pSpamTracker.checkSpam(); // 加入連點監視
     
     const els = getElements(type);
     if (els.row && els.row.dataset.editing === 'true') return; 
