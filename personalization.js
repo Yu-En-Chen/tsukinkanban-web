@@ -60,6 +60,22 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
 </div>
 
 <div class="card-content">
+    <style>
+        @keyframes p-spin-ease {
+            0% { transform: rotate(0deg); animation-timing-function: ease-in-out; }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes p-shake-anim {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-4px); }
+            40% { transform: translateX(4px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+        .p-spin { animation: p-spin-ease 1.2s infinite; }
+        .p-shake-active { animation: p-shake-anim 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+    </style>
+
     <div id="p-edit-row" style="--btn-height: 44px; display: flex; gap: 8px; position: relative;
         width: calc(100% + 30px); margin-left: -15px; 
         padding: 20px 15px; margin-top: -20px; margin-bottom: -8px; 
@@ -77,56 +93,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
 
         <div id="p-btn-input-container" class="info-tag-item interactive-btn" style="
             cursor: pointer; height: var(--btn-height); border-radius: 100px;
-            display: flex; align-items: center; justify-content: flex-start;
-            white-space: nowrap; overflow: hidden; flex-grow: 1; position: relative; padding: 0 16px;
-            transition: all 0.4s var(--apple-spring);
-        " onclick="window.toggleEditNameMode()">
-            
-            <span id="p-display-name" style="
-                transition: opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1);
-                width: 100%; text-align: center; overflow: hidden; text-overflow: ellipsis;
-                font-size: 0.95rem; transform: translateX(0px);
-            ">${targetName}</span>
-
-            <span id="p-display-copied" style="
-                position: absolute; left: 16px; right: 16px; top: 0; bottom: 0; text-align: center;
-                display: flex; align-items: center; justify-content: center;
-                font-size: 0.95rem; font-weight: inherit; opacity: 0; pointer-events: none;
-                transition: opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1);
-                transform: translateX(-40px);
-            ">コピーしました</span>
-
-            <input id="p-real-input" type="text" placeholder="${targetName}" maxlength="10" 
-                       enterkeyhint="done"
-                       oninput="window.updateCharCount(this.value)" 
-                       onkeydown="window.handleInputEnter(event)"
-                       style="
-                position: absolute; left: 16px; right: 16px; top: 0; bottom: 0; margin: 0; padding: 0; height: 100%;
-                background: transparent; border: none; color: inherit; font-family: inherit;
-                font-size: 0.95rem; outline: none; opacity: 0; pointer-events: none;
-                transition: opacity 0.3s ease, transform 0.4s var(--apple-spring);
-                transform: translateY(15px);
-            ">
-        </div>
-
-        <style>
-            @keyframes p-spin-ease {
-                0% { transform: rotate(0deg); animation-timing-function: ease-in-out; }
-                100% { transform: rotate(360deg); }
-            }
-            @keyframes p-shake-anim {
-                0%, 100% { transform: translateX(0); }
-                20% { transform: translateX(-4px); }
-                40% { transform: translateX(4px); }
-                60% { transform: translateX(-4px); }
-                80% { transform: translateX(4px); }
-            }
-            .p-spin { animation: p-spin-ease 1.2s infinite; }
-            .p-shake-active { animation: p-shake-anim 0.4s cubic-bezier(.36,.07,.19,.97) both; }
-        </style>
-
-        <div id="p-btn-input-container" class="info-tag-item interactive-btn" style="
-            cursor: pointer; height: var(--btn-height); border-radius: 100px;
             display: flex; align-items: center; justify-content: center;
             white-space: nowrap; overflow: hidden; flex-grow: 1; position: relative; padding: 0 16px;
             transition: all 0.4s var(--apple-spring);
@@ -135,25 +101,16 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             <span id="p-display-name" style="
                 transition: opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1);
                 width: 100%; text-align: center; overflow: hidden; text-overflow: ellipsis;
-                font-size: 0.95rem; font-family: inherit; font-weight: inherit;
-                transform: translateX(0px);
+                font-size: 0.95rem; font-family: inherit; font-weight: inherit; transform: translateX(0px);
             ">${targetName}</span>
 
-            <span id="p-display-copied" style="
+            <span id="p-shared-status" style="
                 position: absolute; left: 16px; right: 16px; top: 0; bottom: 0;
                 display: flex; align-items: center; justify-content: center;
                 font-size: 0.95rem; font-family: inherit; font-weight: inherit; opacity: 0; pointer-events: none;
                 transition: opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1);
-                transform: translateX(-40px);
-            ">已複製</span>
-
-            <span id="p-display-paste-status" style="
-                position: absolute; left: 16px; right: 16px; top: 0; bottom: 0;
-                display: flex; align-items: center; justify-content: center;
-                font-size: 0.95rem; font-family: inherit; font-weight: inherit; opacity: 0; pointer-events: none;
-                transition: opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1);
-                transform: translateX(-40px);
-            "><span id="p-paste-text-inner" style="display:inline-block;">請同意許可</span></span>
+                transform: translateX(0px);
+            "><span id="p-shared-status-text" style="display:inline-block;"></span></span>
 
             <input id="p-real-input" type="text" placeholder="${targetName}" maxlength="10" 
                    enterkeyhint="done" oninput="window.updateCharCount(this.value)" onkeydown="window.handleInputEnter(event)" style="
@@ -196,37 +153,25 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             max-width: var(--btn-height);
         " onclick="window.handlePasteAction(event)">
             
-            <span id="p-icon-paste-default" style="
-                position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); 
-                display: flex; align-items: center; justify-content: center; width: 20px; height: 20px;">
+            <span id="p-icon-paste-default" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 20px; height: 20px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;">
                     <path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/>
                 </svg>
             </span>
 
-            <span id="p-icon-paste-loader" style="
-                position: absolute; top: 50%; left: 50%; transform: translate(calc(-50% - 40px), -50%); 
-                transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); 
-                display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
+            <span id="p-icon-paste-loader" style="position: absolute; top: 50%; left: 50%; transform: translate(calc(-50% - 40px), -50%); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
                 <svg class="p-spin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;">
                     <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                 </svg>
             </span>
 
-            <span id="p-icon-paste-error" style="
-                position: absolute; top: 50%; left: 50%; transform: translate(-50%, calc(-50% - 40px)); 
-                transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); 
-                display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
+            <span id="p-icon-paste-error" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, calc(-50% - 40px)); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2.5px;">
                     <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
                 </svg>
             </span>
 
-            <span id="p-icon-paste-check" style="
-                position: absolute; top: 50%; left: 50%; transform: translate(calc(-50% - 40px), -50%); 
-                transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); 
-                display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
+            <span id="p-icon-paste-check" style="position: absolute; top: 50%; left: 50%; transform: translate(calc(-50% - 40px), -50%); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;">
                     <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>
                 </svg>
@@ -745,110 +690,88 @@ window.handleInputEnter = function (e) {
     }
 };
 
-// 🟢 全域狀態鎖
+// 🟢 全域狀態互斥鎖
 let isCopyingLocked = false;
+let isPastingLocked = false;
 
-window.handleCopyAction = function (e) {
+window.handleCopyAction = function(e) {
     const row = document.getElementById('p-edit-row');
-
-    // 1. 如果正在編輯模式中，這顆按鈕是「關閉/取消」
     if (row && row.dataset.editing === 'true') {
         window.closeEditNameMode(e);
         return;
     }
+    if (isCopyingLocked || isPastingLocked) return;
 
-    // 2. 如果處於動畫或冷卻鎖定中，拒絕任何點擊
-    if (isCopyingLocked) return;
-
-    // 🟢 執行複製邏輯
     const displayName = document.getElementById('p-display-name');
     const textToCopy = displayName ? displayName.textContent : "";
 
     if (textToCopy) {
-        isCopyingLocked = true; // 立即上鎖，拔除點擊權限
-
+        isCopyingLocked = true; 
+        
         navigator.clipboard.writeText(textToCopy).then(() => {
             const iconClip = document.getElementById('p-icon-clipboard');
             const iconCheck = document.getElementById('p-icon-check');
-            const textCopied = document.getElementById('p-display-copied');
+            
+            const sharedStatus = document.getElementById('p-shared-status');
+            const sharedStatusText = document.getElementById('p-shared-status-text');
 
-            // 🟢 [階段 1] 0.0s：啟動向右切入動畫 (耗時 0.5s，帶慣性)
-            // SVG：同步向右推移 40px
-            if (iconClip) iconClip.style.transform = 'translate(calc(-50% + -40px), -50%)';
-            if (iconCheck) iconCheck.style.transform = 'translate(-50%, -50%)'; // 回到置中
+            // 【複製動畫：文字向左滑動】
+            if (sharedStatus) {
+                sharedStatus.style.transition = 'none';
+                sharedStatus.style.transform = 'translateX(40px)';
+                void sharedStatus.offsetWidth; 
+                sharedStatus.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+            }
+            if (sharedStatusText) sharedStatusText.textContent = '已複製';
 
-            // 文字：同步向右推移 40px，並在 0.3s 時提早線性淡出，完美防穿幫
+            if (iconClip) iconClip.style.transform = 'translate(calc(-50% + 40px), -50%)';
+            if (iconCheck) iconCheck.style.transform = 'translate(-50%, -50%)';
+            
             if (displayName) {
                 displayName.style.transform = 'translateX(-40px)';
                 displayName.style.opacity = '0';
             }
-            if (textCopied) {
-                textCopied.style.transform = 'translateX(0px)';
-                textCopied.style.opacity = '1';
+            if (sharedStatus) {
+                sharedStatus.style.transform = 'translateX(0px)';
+                sharedStatus.style.opacity = '1';
             }
 
-            // 🟢 [階段 2] 1.0s：停留 0.5s 後觸發原路退回 (0.5s 動畫 + 0.5s 停留 = 1.0s)
             setTimeout(() => {
-
-                // SVG 原路向左滑回
                 if (iconClip) iconClip.style.transform = 'translate(-50%, -50%)';
-                if (iconCheck) iconCheck.style.transform = 'translate(calc(-50% + 40px), -50%)';
-
-                // 文字原路向左滑回，線性淡入淡出
+                if (iconCheck) iconCheck.style.transform = 'translate(calc(-50% - 40px), -50%)';
+                
                 if (displayName) {
                     displayName.style.transform = 'translateX(0px)';
                     displayName.style.opacity = '1';
                 }
-                if (textCopied) {
-                    textCopied.style.transform = 'translateX(40px)';
-                    textCopied.style.opacity = '0';
+                if (sharedStatus) {
+                    sharedStatus.style.transform = 'translateX(40px)';
+                    sharedStatus.style.opacity = '0';
                 }
-
-                // 🟢 [階段 3] 1.6s：退出動畫完成 (0.5s) + 安全緩衝 (0.07s) 後解鎖
-                setTimeout(() => {
-                    isCopyingLocked = false;
-                }, 750);
-
-            }, 600);
+                setTimeout(() => isCopyingLocked = false, 600);
+            }, 1000);
 
         }).catch(err => {
             console.error('複製失敗:', err);
-            isCopyingLocked = false;
+            isCopyingLocked = false; 
         });
     }
 };
-
-// 確保點擊編輯框時也拔除複製權限
-const originalToggleEdit = window.toggleEditNameMode;
-window.toggleEditNameMode = function () {
-    isCopyingLocked = true;
-    originalToggleEdit();
-};
-
-const originalCloseEdit = window.closeEditNameMode;
-window.closeEditNameMode = function (e) {
-    originalCloseEdit(e);
-    setTimeout(() => {
-        isCopyingLocked = false;
-    }, 500);
-};
-
-// 🟢 全域貼上鎖定狀態
-let isPastingLocked = false;
 
 window.handlePasteAction = function(e) {
     if (e) e.stopPropagation();
     
     const row = document.getElementById('p-edit-row');
-    if (row && row.dataset.editing === 'true') return; // 編輯中無效
-    if (isPastingLocked) return;
+    if (row && row.dataset.editing === 'true') return; 
+    if (isCopyingLocked || isPastingLocked) return;
 
     isPastingLocked = true;
 
     const displayName = document.getElementById('p-display-name');
-    const pasteStatus = document.getElementById('p-display-paste-status');
-    const pasteTextInner = document.getElementById('p-paste-text-inner');
     const realInput = document.getElementById('p-real-input');
+    
+    const sharedStatus = document.getElementById('p-shared-status');
+    const sharedStatusText = document.getElementById('p-shared-status-text');
     
     const defIcon = document.getElementById('p-icon-paste-default');
     const loaderIcon = document.getElementById('p-icon-paste-loader');
@@ -856,28 +779,30 @@ window.handlePasteAction = function(e) {
     const checkIcon = document.getElementById('p-icon-paste-check');
     const errorSvg = errorIcon ? errorIcon.querySelector('svg') : null;
 
-    // 清除可能殘留的震動動畫
-    if (pasteTextInner) pasteTextInner.classList.remove('p-shake-active');
+    if (sharedStatusText) sharedStatusText.classList.remove('p-shake-active');
     if (errorSvg) errorSvg.classList.remove('p-shake-active');
 
-    // 🟢 [階段 1] 啟動等待權限動畫
-    if (pasteTextInner) pasteTextInner.textContent = "請同意許可";
+    // 【貼上動畫：文字向右滑動】
+    if (sharedStatus) {
+        sharedStatus.style.transition = 'none';
+        sharedStatus.style.transform = 'translateX(-40px)';
+        void sharedStatus.offsetWidth; 
+        sharedStatus.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+    }
+    if (sharedStatusText) sharedStatusText.textContent = "請同意許可";
 
-    // 文字：向右推移並淡出 / 隱藏狀態文字滑入淡入
     if (displayName) {
         displayName.style.transform = 'translateX(40px)';
         displayName.style.opacity = '0';
     }
-    if (pasteStatus) {
-        pasteStatus.style.transform = 'translateX(0px)';
-        pasteStatus.style.opacity = '1';
+    if (sharedStatus) {
+        sharedStatus.style.transform = 'translateX(0px)';
+        sharedStatus.style.opacity = '1';
     }
 
-    // SVG：預設圖往右退，加載圈圈從左進入
     if (defIcon) defIcon.style.transform = 'translate(calc(-50% + 40px), -50%)';
     if (loaderIcon) loaderIcon.style.transform = 'translate(-50%, -50%)';
 
-    // 呼叫系統剪貼簿 API (可能會跳出原生權限確認框)
     navigator.clipboard.readText().then(text => {
         const val = text.trim();
         if (!val) {
@@ -889,32 +814,38 @@ window.handlePasteAction = function(e) {
         handleResult('未同意權限', 'error');
     });
 
-    // 🟢 [階段 2] 處理回傳結果
     function handleResult(msg, type, val) {
-        if (pasteTextInner) pasteTextInner.textContent = msg;
+        if (sharedStatusText) sharedStatusText.textContent = msg;
 
         if (type === 'error') {
-            // 加載圈往下退出，X 號從上滑入
             if (loaderIcon) loaderIcon.style.transform = 'translate(-50%, calc(-50% + 40px))';
-            if (errorIcon) errorIcon.style.transform = 'translate(-50%, -50%)';
+            if (errorIcon) {
+                errorIcon.style.transition = 'none';
+                errorIcon.style.transform = 'translate(-50%, calc(-50% - 40px))';
+                void errorIcon.offsetWidth;
+                errorIcon.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+                errorIcon.style.transform = 'translate(-50%, -50%)';
+            }
 
-            // 加入震動提示
             setTimeout(() => {
-                if (pasteTextInner) pasteTextInner.classList.add('p-shake-active');
+                if (sharedStatusText) sharedStatusText.classList.add('p-shake-active');
                 if (errorSvg) errorSvg.classList.add('p-shake-active');
             }, 50);
 
-            // 停留 0.8s 供使用者閱讀，隨後反向復原
             setTimeout(() => revert('error'), 800);
 
         } else {
-            // 加載圈往右退出，打勾從左滑入
             if (loaderIcon) loaderIcon.style.transform = 'translate(calc(-50% + 40px), -50%)';
-            if (checkIcon) checkIcon.style.transform = 'translate(-50%, -50%)';
+            if (checkIcon) {
+                checkIcon.style.transition = 'none';
+                checkIcon.style.transform = 'translate(calc(-50% - 40px), -50%)';
+                void checkIcon.offsetWidth;
+                checkIcon.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+                checkIcon.style.transform = 'translate(-50%, -50%)';
+            }
 
-            // 寫入資料
             if (val) {
-                const finalVal = val.substring(0, 10); // 鎖定十文字內
+                const finalVal = val.substring(0, 10); 
                 if (displayName) displayName.textContent = finalVal;
                 if (realInput) realInput.value = finalVal;
                 window.updateCharCount(finalVal);
@@ -924,47 +855,39 @@ window.handlePasteAction = function(e) {
         }
     }
 
-    // 🟢 [階段 3] 各自反向切回預設狀態
     function revert(type) {
-        // 文字原路退回
         if (displayName) {
             displayName.style.transform = 'translateX(0px)';
             displayName.style.opacity = '1';
         }
-        if (pasteStatus) {
-            pasteStatus.style.transform = 'translateX(-40px)';
-            pasteStatus.style.opacity = '0';
+        if (sharedStatus) {
+            sharedStatus.style.transform = 'translateX(-40px)';
+            sharedStatus.style.opacity = '0';
         }
 
         if (type === 'error') {
-            // X 號往上退回
             if (errorIcon) errorIcon.style.transform = 'translate(-50%, calc(-50% - 40px))';
-            // 預設圖示從下方滑回 (默默定位到底部再滑入)
             if (defIcon) {
                 defIcon.style.transition = 'none';
                 defIcon.style.transform = 'translate(-50%, calc(-50% + 40px))';
-                void defIcon.offsetWidth; // 強制瀏覽器重繪
+                void defIcon.offsetWidth; 
                 defIcon.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
                 defIcon.style.transform = 'translate(-50%, -50%)';
             }
         } else {
-            // 打勾往左退回
-            if (checkIcon) checkIcon.style.transform = 'translate(calc(-50% - 40px), -50%)';
-            // 預設圖示從右方滑回 (本身就在右方待命)
-            if (defIcon) defIcon.style.transform = 'translate(-50%, -50%)';
+            if (checkIcon) checkIcon.style.transform = 'translate(calc(-50% + 40px), -50%)';
+            if (defIcon) {
+                defIcon.style.transition = 'none';
+                defIcon.style.transform = 'translate(calc(-50% - 40px), -50%)';
+                void defIcon.offsetWidth;
+                defIcon.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+                defIcon.style.transform = 'translate(-50%, -50%)';
+            }
         }
 
-        // 默默重置加載圈的位置，並解鎖所有狀態
         setTimeout(() => {
-            if (loaderIcon) {
-                loaderIcon.style.transition = 'none';
-                loaderIcon.style.transform = 'translate(calc(-50% - 40px), -50%)';
-                void loaderIcon.offsetWidth;
-                loaderIcon.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-            }
-            if (pasteTextInner) pasteTextInner.classList.remove('p-shake-active');
+            if (sharedStatusText) sharedStatusText.classList.remove('p-shake-active');
             if (errorSvg) errorSvg.classList.remove('p-shake-active');
-
             isPastingLocked = false;
         }, 600);
     }
