@@ -594,20 +594,20 @@ function triggerDescToggle(isActive) {
     // 等待 200ms 消失動畫完成後，切換文字
     setTimeout(() => {
         if (isActive) {
-            descName.textContent = '　-上測試 -';
-            descColor.textContent = '　-下測試 -';
+            descName.textContent = '上測試';
+            descColor.textContent = '下測試';
         } else {
             descName.textContent = '　- 十文字以內 -';
             descColor.textContent = '　- HEX形式で入力してください -';
         }
         
-        // 手動設定 1 秒 (100ms) 延遲後，再線性淡入
+        // 手動設定 1 秒 (1000ms) 延遲後，再線性淡入
         setTimeout(() => {
             descName.style.transition = 'opacity 0.2s linear';
             descColor.style.transition = 'opacity 0.2s linear';
             descName.style.opacity = '1';
             descColor.style.opacity = '1';
-        }, 100); 
+        }, 1000); 
     }, 200); 
 }
 
@@ -812,6 +812,12 @@ window.handleGhostKey = function(e) {
 };
 
 window.toggleGhostEditMode = function(type, e, element) {
+    // 🟢 阻擋邏輯：如果該列的複製或貼上動畫還在執行，拒絕進入編輯模式並觸發微互動
+    if (pState[type] && (pState[type].isCopying || pState[type].isPasting)) {
+        if (element) triggerBump(element);
+        return;
+    }
+
     if (window.pGhostMarker) {
         if (element) triggerBump(element);
         return;
