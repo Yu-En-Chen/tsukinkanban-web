@@ -125,13 +125,10 @@ body.searching .search-mask {
     width: var(--card-width);
     max-width: 420px;
     margin: 0 auto;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 10px;
-    padding: 0;
-    box-sizing: border-box;
+    /* 🟢 改為 95px 以容納兩排按鈕 */
+    height: 95px; 
+    /* 🟢 移除 flex 相關設定，純粹作為絕對定位的基準框 */
+    display: block; 
     position: relative;
     pointer-events: auto;
     transition: gap 0.4s var(--active-bounce);
@@ -146,12 +143,15 @@ body.searching .search-mask {
     -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
     color: var(--icon-color);
+    
+    /* 🟢 絕對定位：左下角 (與膠囊左側切齊) */
     position: absolute;
-
-    top: 3px;
-    /* 🟢 核心修復 1：明確鎖死 Y 軸座標，防止手機瀏覽器亂算！ */
-    left: -10px;
-
+    top: 51px;
+    right: 51px; 
+    
+    /* 🟢 清除原本釘在畫面左側的設定 */
+    left: auto; 
+    
     z-index: 5;
     display: flex;
     align-items: center;
@@ -188,15 +188,21 @@ body.searching .search-mask {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    margin-right: 65px; /* 🟢 配合膠囊拉寬，同步向左推 5px (原 60px) */
+    
+    /* 🟢 絕對定位：右下角 (與膠囊右側切齊) */
+    position: absolute;
+    right: 0px;
+    top: 51px;
+    
+    /* 🟢 移除上一階段的 margin-right */
+    margin-right: 0px; 
+    
     transition: all 0.5s var(--active-bounce), transform 0.5s var(--apple-spring), opacity 0.4s linear, scale 0.4s var(--apple-spring);
     border: 1px solid var(--search-border);
-    position: relative;
     overflow: hidden;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     z-index: 2;
 }
-
 .search-container.menu-open .search-trigger {
     transform: translate3d(-135px, 0, 0);
     opacity: 0;
@@ -257,7 +263,7 @@ body.searching .search-mask {
 
 .action-capsule {
     height: 44px;
-    width: 95px; /* 🟢 膠囊總寬度拉寬 5px (原 90px)，更好按 */
+    width: 95px;
     background: var(--search-bg);
     border: 1px solid var(--search-border);
     -webkit-backdrop-filter: blur(20px);
@@ -266,10 +272,14 @@ body.searching .search-mask {
     display: block;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     overflow: hidden;
+    
+    /* 🟢 絕對定位：右上角起點 */
     position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%) translateX(0px);
+    right: 0px;
+    top: 0px;
+    
+    /* 🟢 移除 translateY 的干擾 */
+    transform: none; 
     transform-origin: top right;
     z-index: 5600;
     flex-shrink: 0;
