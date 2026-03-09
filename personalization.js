@@ -1,5 +1,8 @@
 // personalization.js - 個性化設定 (Customize) 專用彈窗引擎
 
+// 🟢 引入 IndexedDB 儲存功能
+import { saveRoutePreference } from './db.js';
+
 // =========================================================
 // 🟢 網頁級別最優先寫死的系統導航防護 (全域封鎖)
 // =========================================================
@@ -58,6 +61,45 @@
 
 export function initPersonalization(applyThemeToCard, getActiveCardId) {
     window.DISMISS_ICON_TARGET_ROTATION = 90;
+
+    // 🟢 建立專屬的「儲存與同步引擎」(直通資料庫與記憶體，破解 iOS 防擋機制)
+    window.triggerSaveCustomization = function(editType, finalVal) {
+        const activeId = getActiveCardId();
+        if (!activeId || activeId === 'fixed-bottom') return;
+
+        // 1. 取出全域記憶體中的最新狀態
+        const routeData = window.appRailwayData.find(r => r.id === activeId);
+        if (!routeData) return;
+
+        // 2. 更新對應的數值 (直接操作記憶體，不讀 DOM)
+        if (editType === 'name') routeData.name = finalVal;
+        if (editType === 'color') routeData.hex = finalVal;
+
+        // 3. UI 即時連動 1：更新當前「自訂彈窗」自身的顏色
+        const customizeCard = document.querySelector('#dynamic-blank-overlay .detail-card-inner');
+        if (customizeCard) applyThemeToCard(customizeCard, routeData.hex);
+
+        // 4. UI 即時連動 2：更新背後的「詳細資訊卡片」顏色與名稱
+        const detailCard = document.querySelector('#detail-card-container .detail-card-inner');
+        if (detailCard) {
+            applyThemeToCard(detailCard, routeData.hex);
+            const detailNameNode = detailCard.querySelector('.line-name');
+            if (detailNameNode) detailNameNode.textContent = routeData.name;
+        }
+
+        // 5. UI 即時連動 3：更新首頁底層的「原版卡片」顏色與名稱
+        const mainCard = document.getElementById(`card-${activeId}`);
+        if (mainCard) {
+            applyThemeToCard(mainCard, routeData.hex);
+            const mainNameNode = mainCard.querySelector('.line-name');
+            if (mainNameNode) mainNameNode.textContent = routeData.name;
+        }
+
+        // 6. 背景寫入 IndexedDB (不再使用 await 阻塞，直接讓它在背景默默完成，防止 iOS 中斷)
+        saveRoutePreference(activeId, routeData.name, routeData.hex)
+            .then(() => console.log(`[DB] 成功儲存 ${activeId}: ${routeData.name} / ${routeData.hex}`))
+            .catch(err => console.error('[DB] 儲存失敗:', err));
+    };
 
     window.openBlankOverlay = function (hexColor) {
         if (document.getElementById('dynamic-blank-overlay') || window.isFlipAnimating) return;
@@ -585,13 +627,11 @@ function triggerDescToggle(isActive) {
     const descColor = document.getElementById('p-desc-color');
     if (!descName || !descColor) return;
 
-    // 先設定為線性消失
     descName.style.transition = 'opacity 0.2s linear';
     descColor.style.transition = 'opacity 0.2s linear';
     descName.style.opacity = '0';
     descColor.style.opacity = '0';
 
-    // 等待 200ms 消失動畫完成後，切換文字
     setTimeout(() => {
         if (isActive) {
             descName.textContent = '上測試';
@@ -601,7 +641,6 @@ function triggerDescToggle(isActive) {
             descColor.textContent = '　- HEX形式で入力してください -';
         }
         
-        // 手動設定 1 秒 (1000ms) 延遲後，再線性淡入
         setTimeout(() => {
             descName.style.transition = 'opacity 0.2s linear';
             descColor.style.transition = 'opacity 0.2s linear';
@@ -734,7 +773,6 @@ window.handleGhostInput = function(val) {
     
     const ghost = document.getElementById('p-ghost-input');
     
-    // 🟢 通用轉換：無論是名稱還是顏色，都將全形英數字轉換為半形
     let processedVal = val.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
         return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
     });
@@ -750,7 +788,6 @@ window.handleGhostInput = function(val) {
         if (countElement) countElement.textContent = processedVal.length + '/10';
         window.checkFontFamily(processedVal);
     } else {
-        // 自動轉換全形＃並強制轉大寫
         processedVal = processedVal.replace(/＃/g, '#').toUpperCase();
         if (val !== processedVal && ghost) {
             const start = ghost.selectionStart;
@@ -761,15 +798,35 @@ window.handleGhostInput = function(val) {
     }
 };
 
+// 🟢 強化手機端防呆儲存：拔除 setTimeout，確保 iOS 點擊旁邊或收起鍵盤時，資料庫絕對同步寫入！
 window.handleGhostBlur = function(e) {
-    setTimeout(() => {
-        if (!window.pActiveEditType) return;
-        if (document.activeElement && document.activeElement.id === 'p-ghost-input') return;
-        window.closeGhostEditMode(true);
-    }, 50);
+    if (!window.pActiveEditType) return;
+    if (document.activeElement && document.activeElement.id === 'p-ghost-input') return;
+    
+    const ghost = document.getElementById('p-ghost-input');
+    const type = window.pActiveEditType;
+    let val = ghost.value.trim();
+    let isValid = true;
+    
+    if (type === 'color') {
+        val = val.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
+            return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+        }).replace(/＃/g, '#').toUpperCase();
+        
+        const hexRegex = /^#?([A-F0-9]{3}|[A-F0-9]{6})$/;
+        if (!hexRegex.test(val)) {
+            isValid = false; 
+        } else {
+            if (!val.startsWith('#')) val = '#' + val;
+            ghost.value = val;
+        }
+    } else if (type === 'name') {
+        if (val.length === 0 || val.length > 10) isValid = false;
+    }
+    
+    window.closeGhostEditMode(true, null, isValid);
 };
 
-// 🟢 按下 Enter 時觸發「准許儲存 (shouldSave = true)」並加入嚴格驗證
 window.handleGhostKey = function(e) {
     if (e.key === 'Enter' || e.keyCode === 13) {
         e.preventDefault();
@@ -779,40 +836,29 @@ window.handleGhostKey = function(e) {
         let val = ghost.value.trim();
         
         if (window.pActiveEditType === 'color') {
-            // 保險起見再次轉換
             val = val.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
                 return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
             }).replace(/＃/g, '#').toUpperCase();
             
-            // 嚴格驗證：無論有沒有 #，必須恰好是 3 或 6 碼的 HEX
             const hexRegex = /^#?([A-F0-9]{3}|[A-F0-9]{6})$/;
-            
             if (!hexRegex.test(val)) {
-                // 不符合則觸發震動防呆動畫並拒絕儲存
                 ghost.classList.remove('p-shake-active');
                 void ghost.offsetWidth; 
                 ghost.classList.add('p-shake-active');
                 setTimeout(() => ghost.classList.remove('p-shake-active'), 400);
                 return; 
             }
-            
-            // 自動補齊 #
-            if (!val.startsWith('#')) {
-                val = '#' + val;
-            }
+            if (!val.startsWith('#')) val = '#' + val;
             ghost.value = val;
         } else {
-            const max = 10;
-            if (val.length > max) return;
+            if (val.length > 10) return;
         }
         
-        // 第三個參數 true 代表允許將 ghost.value 寫回顯示區
         window.closeGhostEditMode(false, null, true);
     }
 };
 
 window.toggleGhostEditMode = function(type, e, element) {
-    // 🟢 阻擋邏輯：如果該列的複製或貼上動畫還在執行，拒絕進入編輯模式並觸發微互動
     if (pState[type] && (pState[type].isCopying || pState[type].isPasting)) {
         if (element) triggerBump(element);
         return;
@@ -824,13 +870,11 @@ window.toggleGhostEditMode = function(type, e, element) {
     }
     
     window.pGhostMarker = true;
-    setTimeout(() => { window.pGhostMarker = false; }, 100);
+    setTimeout(() => { window.pGhostMarker = false; }, 400);
 
     if (window.pActiveEditType === type) return;
 
-    // 🟢 檢查是否為「首次」開啟輸入框
     const isFirstOpen = !window.pActiveEditType;
-
     const ghost = document.getElementById('p-ghost-input');
     const wrapper = document.getElementById('p-ghost-wrapper');
     const els = getElements(type);
@@ -847,7 +891,6 @@ window.toggleGhostEditMode = function(type, e, element) {
         oldEls.circle2.style.marginLeft = '0px';
         oldEls.circle2.style.transform = 'translate3d(0px, 0, 0)';
         
-        // 🟢 切換輸入框時，我們「不儲存」任何變更，直接還原顯示的透明度即可
         oldEls.display.style.transition = 'opacity 0.2s ease';
         oldEls.display.style.opacity = '1';
         
@@ -859,10 +902,7 @@ window.toggleGhostEditMode = function(type, e, element) {
         }, 200);
     }
 
-    // 🟢 觸發備註文字變更動畫（只有在從無到有時才執行，上下切換時不執行）
-    if (isFirstOpen) {
-        triggerDescToggle(true);
-    }
+    if (isFirstOpen) triggerDescToggle(true);
 
     window.pActiveEditType = type;
     els.row.dataset.editing = 'true';
@@ -905,9 +945,7 @@ window.toggleGhostEditMode = function(type, e, element) {
 
     ghost.style.transition = 'opacity 0.25s ease';
     setTimeout(() => {
-        if (window.pActiveEditType === type) {
-            ghost.style.opacity = '1';
-        }
+        if (window.pActiveEditType === type) ghost.style.opacity = '1';
     }, 50); 
 
     setTimeout(() => {
@@ -922,7 +960,6 @@ window.toggleGhostEditMode = function(type, e, element) {
     }, 200);
 };
 
-// 🟢 預設 shouldSave = false，除非明確允許，否則不儲存任何文字修改
 window.closeGhostEditMode = function(forceImmediate = false, triggerElement = null, shouldSave = false) {
     if (!window.pActiveEditType) return;
 
@@ -941,7 +978,6 @@ window.closeGhostEditMode = function(forceImmediate = false, triggerElement = nu
     window.pActiveEditType = null;
     els.row.dataset.editing = 'false';
 
-    // 🟢 觸發備註文字變更動畫（輸入框關閉時切換回原文字）
     triggerDescToggle(false);
 
     els.label.style.maxWidth = '120px';
@@ -954,11 +990,16 @@ window.closeGhostEditMode = function(forceImmediate = false, triggerElement = nu
     els.circle2.style.marginLeft = '0px';
     els.circle2.style.transform = 'translate3d(0px, 0, 0)';
 
-    // 🟢 只有當 shouldSave 為 true 時 (按下 Enter)，才把幽靈輸入框的值寫回畫面
+    // 🟢 取消了這裡的 setTimeout 延遲！強迫程式在當下週期立刻呼叫儲存 API，確保 iOS 不漏接
     if (shouldSave) {
         let finalVal = ghost.value.trim();
         if (finalVal !== '') {
-            els.display.textContent = type === 'color' ? finalVal.toUpperCase() : finalVal;
+            finalVal = type === 'color' ? finalVal.toUpperCase() : finalVal;
+            els.display.textContent = finalVal;
+            
+            if (window.triggerSaveCustomization) {
+                window.triggerSaveCustomization(type, finalVal);
+            }
         }
     }
 
@@ -986,7 +1027,6 @@ window.closeGhostEditMode = function(forceImmediate = false, triggerElement = nu
 window.handleCopyAction = function(e, type, element) {
     if (e) e.stopPropagation();
     if (window.pActiveEditType === type) {
-        // 點擊複製按鈕關閉時，不儲存內容
         window.closeGhostEditMode(false, element);
         return;
     }
@@ -1072,16 +1112,12 @@ window.handlePasteAction = function(e, type, element) {
             resType = 'error';
             errorMsg = '剪貼簿無內容';
         } else {
-            // 🟢 貼上時的通用轉換：先把所有的全形英數字轉成半形
             val = val.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
                 return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
             });
 
             if (type === 'color') {
-                // 自動轉換全形＃並強制轉大寫
                 let colorVal = val.replace(/＃/g, '#').toUpperCase();
-                
-                // 嚴格驗證 HEX 格式
                 if (/^#?([A-F0-9]{3}|[A-F0-9]{6})$/.test(colorVal)) {
                     finalVal = colorVal.startsWith('#') ? colorVal : '#' + colorVal;
                 } else {
@@ -1172,10 +1208,16 @@ window.handlePasteAction = function(e, type, element) {
                 els.pasteCheck.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
                 els.pasteCheck.style.transform = 'translate3d(-50%, -50%, 0)';
             }
-            // 🟢 貼上成功時，直接把值寫入顯示區塊 (等同於自動儲存)
+            
+            // 🟢 取消延遲！貼上成功後直接將處理好的變數拿去寫資料庫
             if (val) {
-                if (els.display) els.display.textContent = val;
+                let finalVal = type === 'color' ? val.toUpperCase() : val;
+                if (els.display) els.display.textContent = finalVal;
                 if (type === 'name') window.handleGhostInput(val); 
+                
+                if (window.triggerSaveCustomization) {
+                    window.triggerSaveCustomization(type, finalVal);
+                }
             }
             setTimeout(() => revert('success'), 800);
         }
@@ -1200,7 +1242,6 @@ window.handlePasteAction = function(e, type, element) {
 
         if (resType === 'error') {
             if (els.pasteError) els.pasteError.style.transform = 'translate3d(-50%, calc(-50% - 40px), 0)'; 
-            
             if (els.pasteDef) {
                 els.pasteDef.style.transition = 'none';
                 els.pasteDef.style.transform = 'translate3d(-50%, calc(-50% + 40px), 0)'; 
@@ -1210,7 +1251,6 @@ window.handlePasteAction = function(e, type, element) {
             }
         } else {
             if (els.pasteCheck) els.pasteCheck.style.transform = 'translate3d(calc(-50% - 40px), -50%, 0)'; 
-            
             if (els.pasteDef) {
                 els.pasteDef.style.transition = 'none';
                 els.pasteDef.style.transform = 'translate3d(calc(-50% + 40px), -50%, 0)'; 
