@@ -699,17 +699,31 @@ window.checkFontFamily = function(val) {
 
 window.handleGhostInput = function(val) {
     if (!window.pActiveEditType) return;
+    
+    const ghost = document.getElementById('p-ghost-input');
+    
+    // 🟢 通用轉換：無論是名稱還是顏色，都將全形英數字轉換為半形
+    let processedVal = val.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
+        return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+    });
+
     if (window.pActiveEditType === 'name') {
-        const countElement = document.getElementById('p-char-count');
-        if (countElement) countElement.textContent = val.length + '/10';
-        window.checkFontFamily(val);
-    } else {
-        const ghost = document.getElementById('p-ghost-input');
-        const upper = val.toUpperCase();
-        if (val !== upper && ghost) {
+        if (val !== processedVal && ghost) {
             const start = ghost.selectionStart;
             const end = ghost.selectionEnd;
-            ghost.value = upper;
+            ghost.value = processedVal;
+            ghost.setSelectionRange(start, end);
+        }
+        const countElement = document.getElementById('p-char-count');
+        if (countElement) countElement.textContent = processedVal.length + '/10';
+        window.checkFontFamily(processedVal);
+    } else {
+        // 自動轉換全形＃並強制轉大寫
+        processedVal = processedVal.replace(/＃/g, '#').toUpperCase();
+        if (val !== processedVal && ghost) {
+            const start = ghost.selectionStart;
+            const end = ghost.selectionEnd;
+            ghost.value = processedVal;
             ghost.setSelectionRange(start, end);
         }
     }
@@ -723,14 +737,43 @@ window.handleGhostBlur = function(e) {
     }, 50);
 };
 
-// 🟢 按下 Enter 時觸發「准許儲存 (shouldSave = true)」
+// 🟢 按下 Enter 時觸發「准許儲存 (shouldSave = true)」並加入嚴格驗證
 window.handleGhostKey = function(e) {
     if (e.key === 'Enter' || e.keyCode === 13) {
         e.preventDefault();
         if (e.isComposing) return;
-        const val = e.target.value.trim();
-        const max = window.pActiveEditType === 'color' ? 7 : 10;
-        if (val.length > max) return;
+        
+        const ghost = e.target;
+        let val = ghost.value.trim();
+        
+        if (window.pActiveEditType === 'color') {
+            // 保險起見再次轉換
+            val = val.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
+                return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+            }).replace(/＃/g, '#').toUpperCase();
+            
+            // 嚴格驗證：無論有沒有 #，必須恰好是 3 或 6 碼的 HEX
+            const hexRegex = /^#?([A-F0-9]{3}|[A-F0-9]{6})$/;
+            
+            if (!hexRegex.test(val)) {
+                // 不符合則觸發震動防呆動畫並拒絕儲存
+                ghost.classList.remove('p-shake-active');
+                void ghost.offsetWidth; 
+                ghost.classList.add('p-shake-active');
+                setTimeout(() => ghost.classList.remove('p-shake-active'), 400);
+                return; 
+            }
+            
+            // 自動補齊 #
+            if (!val.startsWith('#')) {
+                val = '#' + val;
+            }
+            ghost.value = val;
+        } else {
+            const max = 10;
+            if (val.length > max) return;
+        }
+        
         // 第三個參數 true 代表允許將 ghost.value 寫回顯示區
         window.closeGhostEditMode(false, null, true);
     }
@@ -979,15 +1022,25 @@ window.handlePasteAction = function(e, type, element) {
         if (!val) {
             resType = 'error';
             errorMsg = '剪貼簿無內容';
-        } else if (type === 'color') {
-            let colorVal = val.replace(/＃/g, '#');
-            if (/^#[A-Fa-f0-9]{6}$/.test(colorVal)) {
-                finalVal = colorVal.toUpperCase();
-            } else if (/^[A-Fa-f0-9]{6}$/.test(colorVal)) {
-                finalVal = '#' + colorVal.toUpperCase();
-            } else {
-                resType = 'error';
-                errorMsg = '格式錯誤';
+        } else {
+            // 🟢 貼上時的通用轉換：先把所有的全形英數字轉成半形
+            val = val.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
+                return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+            });
+
+            if (type === 'color') {
+                // 自動轉換全形＃並強制轉大寫
+                let colorVal = val.replace(/＃/g, '#').toUpperCase();
+                
+                // 嚴格驗證 HEX 格式
+                if (/^#?([A-F0-9]{3}|[A-F0-9]{6})$/.test(colorVal)) {
+                    finalVal = colorVal.startsWith('#') ? colorVal : '#' + colorVal;
+                } else {
+                    resType = 'error';
+                    errorMsg = '格式錯誤';
+                }
+            } else if (type === 'name') {
+                finalVal = val;
             }
         }
 
