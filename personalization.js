@@ -329,7 +329,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         const triggerThreshold = window.innerWidth / 3;
 
         overlay.addEventListener('touchstart', (e) => {
-            if (window.pSyncing) return; // 🟢 阻擋手勢關閉
+            if (window.pSyncing) return;
             if (e.touches.length > 1 || window.isFlipAnimating) return;
             swipeStartX = e.touches[0].clientX;
             swipeStartY = e.touches[0].clientY;
@@ -338,7 +338,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         }, { passive: true });
 
         overlay.addEventListener('touchmove', (e) => {
-            if (window.pSyncing) return; // 🟢 阻擋手勢關閉
+            if (window.pSyncing) return;
             if (window.isFlipAnimating || swipeStartX === 0) return;
 
             const currentX = e.touches[0].clientX;
@@ -412,7 +412,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         }, { passive: false });
 
         overlay.addEventListener('touchend', (e) => {
-            if (window.pSyncing) return; // 🟢 阻擋手勢關閉
+            if (window.pSyncing) return;
             if (!isSwiping) {
                 swipeStartX = 0;
                 return;
@@ -509,7 +509,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
     };
 
     window.closeBlankOverlay = function (isFromGesture = false) {
-        if (window.pSyncing && !isFromGesture) return; // 🟢 阻擋直接關閉
+        if (window.pSyncing && !isFromGesture) return;
         if (window.isFlipAnimating) return;
         window.isFlipAnimating = true;
 
@@ -621,7 +621,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             return;
         }
 
-        // 鎖定全域，阻擋任何其他點擊與滑動
         window.pSyncing = true;
 
         if (window.pActiveEditType) {
@@ -634,23 +633,14 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             return;
         }
 
-        // 🟢 替右邊按鈕設定 relative，保證其下的 absolute wrapper 絕對鎖死正中央不位移
         rightBtn.style.position = 'relative';
 
         const svgSync = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cloud-sync-icon lucide-cloud-sync"><path d="m17 18-1.535 1.605a5 5 0 0 1-8-1.5"/><path d="M17 22v-4h-4"/><path d="M20.996 15.251A4.5 4.5 0 0 0 17.495 8h-1.79a7 7 0 1 0-12.709 5.607"/><path d="M7 10v4h4"/><path d="m7 14 1.535-1.605a5 5 0 0 1 8 1.5"/></svg>`;
         const svgCheck = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cloud-check-icon lucide-cloud-check"><path d="m17 15-5.5 5.5L9 18"/><path d="M5.516 16.07A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 3.501 7.327"/></svg>`;
 
-        // 獲取右上角原始下載圖示
-        let originalSvg = null;
-        rightBtn.querySelectorAll('svg').forEach(s => {
-            if (s.classList.contains('icon-blank-mode')) originalSvg = s;
-        });
+        // 🟢 精準抓取原有的唯一的 SVG，避免抓到新增的 wrappers
+        let originalSvg = Array.from(rightBtn.children).find(el => el.tagName.toLowerCase() === 'svg');
 
-        if (originalSvg) {
-            originalSvg.style.transition = 'transform 0.55s var(--spring-release), opacity 0.4s ease';
-        }
-
-        // 🟢 建立防抽搐的全尺寸絕對置中容器
         const createWrapper = (svgStr) => {
             const wrapper = document.createElement('div');
             wrapper.style.position = 'absolute';
@@ -659,9 +649,8 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             wrapper.style.alignItems = 'center';
             wrapper.style.justifyContent = 'center';
             wrapper.style.pointerEvents = 'none'; 
-            wrapper.style.transform = 'translate3d(0, -40px, 0)'; // 初始從上方準備
+            wrapper.style.transform = 'translate3d(0, -40px, 0)'; 
             wrapper.style.opacity = '0';
-            wrapper.style.transition = 'transform 0.55s var(--spring-release), opacity 0.4s ease';
             wrapper.innerHTML = svgStr;
             return wrapper;
         };
@@ -675,7 +664,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         const nameEls = getElements('name');
         const colorEls = getElements('color');
 
-        // 在文字膠囊中建立同步顯示的 SVG 容器
         function setupStatusSvg(els) {
             if (!els.sharedStatus) return null;
             if (els.sharedText) els.sharedText.style.display = 'none';
@@ -693,7 +681,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                 el.style.position = 'absolute';
                 el.style.transform = 'translate3d(0, -40px, 0)';
                 el.style.opacity = '0';
-                el.style.transition = 'transform 0.55s var(--spring-release), opacity 0.4s ease';
                 el.style.width = '20px';
                 el.style.height = '20px';
                 const innerSvg = el.firstElementChild;
@@ -719,13 +706,12 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
 
         // --- 動畫開始 ---
         setTimeout(() => {
-            // 原下載圖示往下退場
             if (originalSvg) {
+                originalSvg.style.transition = 'transform 0.55s var(--spring-release), opacity 0.4s ease';
                 originalSvg.style.transform = 'translate3d(0, 40px, 0)';
                 originalSvg.style.opacity = '0';
             }
 
-            // 兩組卡片文字往下退場
             [nameEls, colorEls].forEach(els => {
                 if (els.display) {
                     els.display.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
@@ -739,12 +725,13 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                 }
             });
 
-            // 第 1 張 SVG (Sync) 從上落下
+            syncWrapper.style.transition = 'transform 0.55s var(--spring-release), opacity 0.4s ease';
             syncWrapper.style.transform = 'translate3d(0, 0, 0)';
             syncWrapper.style.opacity = '1';
 
             [nameSvgs, colorSvgs].forEach(svgs => {
                 if (svgs) {
+                    svgs.s1Svg.style.transition = 'transform 0.55s var(--spring-release), opacity 0.4s ease';
                     svgs.s1Svg.style.transform = 'translate3d(0, 0, 0)';
                     svgs.s1Svg.style.opacity = '1';
                 }
@@ -752,7 +739,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         }, 50);
 
         setTimeout(() => {
-            // 第 1 張 SVG 繼續往下退場
             syncWrapper.style.transform = 'translate3d(0, 40px, 0)';
             syncWrapper.style.opacity = '0';
             
@@ -763,20 +749,20 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                 }
             });
 
-            // 第 2 張 SVG (Check) 從上落下
+            checkWrapper.style.transition = 'transform 0.55s var(--spring-release), opacity 0.4s ease';
             checkWrapper.style.transform = 'translate3d(0, 0, 0)';
             checkWrapper.style.opacity = '1';
 
             [nameSvgs, colorSvgs].forEach(svgs => {
                 if (svgs) {
+                    svgs.s2Svg.style.transition = 'transform 0.55s var(--spring-release), opacity 0.4s ease';
                     svgs.s2Svg.style.transform = 'translate3d(0, 0, 0)';
                     svgs.s2Svg.style.opacity = '1';
                 }
             });
-        }, 900); // 縮短節奏，讓動畫更緊湊
+        }, 900);
 
         setTimeout(() => {
-            // 第 2 張 SVG 繼續往下退場
             checkWrapper.style.transform = 'translate3d(0, 40px, 0)';
             checkWrapper.style.opacity = '0';
 
@@ -787,20 +773,19 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                 }
             });
 
-            // 原下載圖示從下往上浮出 (40px -> 0px)
             if (originalSvg) {
                 originalSvg.style.transition = 'none';
-                originalSvg.style.transform = 'translate3d(0, 40px, 0)';
+                originalSvg.style.transform = 'translate3d(0, -40px, 0)';
                 void originalSvg.offsetWidth;
                 originalSvg.style.transition = 'transform 0.55s var(--spring-release), opacity 0.4s ease';
                 originalSvg.style.transform = 'translate3d(0, 0, 0)';
                 originalSvg.style.opacity = '1';
             }
 
-            // 🟢 文字從上方落下 (-40px -> 0px)
             [nameEls, colorEls].forEach(els => {
                 if (els.display) {
                     els.display.style.transition = 'none';
+                    // 🟢 文字從上方落下復原 (-40px -> 0px)
                     els.display.style.transform = 'translate3d(0, -40px, 0)';
                     void els.display.offsetWidth;
                     els.display.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
@@ -814,7 +799,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             });
         }, 1800);
 
-        // 清理並解除全域鎖定
         setTimeout(() => {
             syncWrapper.remove();
             checkWrapper.remove();
@@ -856,7 +840,6 @@ window.pActiveEditType = null;
 window.pGhostMarker = false; 
 window.pSyncing = false; 
 
-// 改為掛載在 window 上，以利全域呼叫
 window.triggerBump = function(el) {
     if (!el) return;
     el.classList.add('p-bump-active');

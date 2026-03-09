@@ -45,6 +45,29 @@ export function initHeader(onSearchCallback, getActiveCardId) {
     const searchContainer = document.getElementById('search-container');
     let isComposing = false;
 
+    // 🟢 強制展開膠囊內按鈕的點擊熱區，讓右側按鈕和左側一樣好按
+    const expandClickArea = () => {
+        const lBtn = document.getElementById('capsule-main-btn');
+        const rBtn = document.getElementById('capsule-secondary-btn');
+        if (lBtn) {
+            lBtn.style.flex = '1';
+            lBtn.style.display = 'flex';
+            lBtn.style.alignItems = 'center';
+            lBtn.style.justifyContent = 'center';
+            lBtn.style.height = '100%';
+            lBtn.style.cursor = 'pointer';
+        }
+        if (rBtn) {
+            rBtn.style.flex = '1';
+            rBtn.style.display = 'flex';
+            rBtn.style.alignItems = 'center';
+            rBtn.style.justifyContent = 'center';
+            rBtn.style.height = '100%';
+            rBtn.style.cursor = 'pointer';
+        }
+    };
+    expandClickArea();
+
     window.slideCapsuleMode = function(toBlankMode) {
         const capsule = document.getElementById('action-capsule');
         const leftBtn = document.getElementById('capsule-main-btn');
@@ -186,7 +209,6 @@ export function initHeader(onSearchCallback, getActiveCardId) {
     };
 
     window.handleCapsuleMainClick = function() {
-        // 🟢 阻擋動畫期間的點擊
         if (window.pSyncing) {
             const btn = document.getElementById('capsule-main-btn');
             if (btn && typeof window.triggerBump === 'function') window.triggerBump(btn);
@@ -212,7 +234,6 @@ export function initHeader(onSearchCallback, getActiveCardId) {
     };
 
     window.handleCapsuleSecondaryClick = function() {
-        // 🟢 阻擋動畫期間的點擊
         if (window.pSyncing) {
             const btn = document.getElementById('capsule-secondary-btn');
             if (btn && typeof window.triggerBump === 'function') window.triggerBump(btn);
@@ -229,7 +250,6 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                 window.toggleCapsuleMenu();
             }
         } else if (mode === 'blank') {
-            // 🟢 觸發由上往下的同步動畫 (不再被 pGhostMarker 誤擋！)
             if (typeof window.triggerCloudSync === 'function') window.triggerCloudSync();
         } else if (mode === 'info') {
             console.log('Info Details Triggered');
