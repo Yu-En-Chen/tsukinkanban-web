@@ -824,7 +824,7 @@ window.toggleGhostEditMode = function(type, e, element) {
     }
     
     window.pGhostMarker = true;
-    setTimeout(() => { window.pGhostMarker = false; }, 400);
+    setTimeout(() => { window.pGhostMarker = false; }, 100);
 
     if (window.pActiveEditType === type) return;
 
