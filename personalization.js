@@ -36,28 +36,6 @@
     };
     applyOverscroll();
     window.addEventListener('DOMContentLoaded', applyOverscroll);
-
-    // 4. 🟢 終極視窗歸位系統 (修復退到桌面再回來時，高度跑掉的 Bug)
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-            // 退到背景時：強制關閉輸入框並拔除鍵盤焦點，防止 Safari 把鍵盤高度鎖死在背景
-            if (window.pActiveEditType && typeof window.closeGhostEditMode === 'function') {
-                window.closeGhostEditMode(true);
-            }
-        } else {
-            // 回到前景時：如果卡片還開著，強制將視窗頂回原位，消滅鍵盤抬升殘影
-            if (window.pScrollManager && window.pScrollManager.isLocked) {
-                const forceResetScroll = () => {
-                    window.scrollTo(0, 0);
-                    document.body.scrollTop = 0;
-                    document.documentElement.scrollTop = 0;
-                };
-                // 雙重打擊，對抗 iOS 動畫延遲
-                setTimeout(forceResetScroll, 50);
-                setTimeout(forceResetScroll, 300);
-            }
-        }
-    });
 })();
 
 export function initPersonalization(applyThemeToCard, getActiveCardId) {
@@ -143,12 +121,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             transition: transform 0.15s cubic-bezier(0.34, 1.6, 0.64, 1), opacity 0.15s ease !important;
         }
 
-        /* 🟢 客製化等待加載動畫：0.7秒線性 + 0.1秒減速緩衝 */
-        @keyframes p-spin-ease {
-            0% { transform: rotate(0deg) translate3d(0,0,0); animation-timing-function: linear; }
-            87.5% { transform: rotate(315deg) translate3d(0,0,0); animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1); }
-            100% { transform: rotate(360deg) translate3d(0,0,0); }
-        }
         @keyframes p-shake-anim {
             0%, 100% { transform: translate3d(0, 0, 0); }
             20% { transform: translate3d(-4px, 0, 0); }
@@ -156,7 +128,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             60% { transform: translate3d(-4px, 0, 0); }
             80% { transform: translate3d(4px, 0, 0); }
         }
-        .p-spin { animation: p-spin-ease 0.8s infinite; }
         .p-shake-active { animation: p-shake-anim 0.4s cubic-bezier(.36,.07,.19,.97) both; }
     </style>
 
@@ -195,9 +166,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             cursor: pointer; height: var(--btn-height); width: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block; flex-shrink: 0; transition: transform 0.4s var(--apple-spring), max-width 0.4s var(--apple-spring), margin 0.4s var(--apple-spring), padding 0.4s var(--apple-spring); max-width: var(--btn-height);">
             <span id="p-icon-paste-default" style="position: absolute; top: 50%; left: 50%; transform: translate3d(-50%, -50%, 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 20px; height: 20px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
-            </span>
-            <span id="p-icon-paste-loader" style="position: absolute; top: 50%; left: 50%; transform: translate3d(calc(-50% - 40px), -50%, 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
-                <svg class="p-spin lucide lucide-loader-circle" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
             </span>
             <span id="p-icon-paste-error" style="position: absolute; top: 50%; left: 50%; transform: translate3d(-50%, calc(-50% - 40px), 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2.5px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -248,9 +216,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             cursor: pointer; height: var(--btn-height); width: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block; flex-shrink: 0; transition: transform 0.4s var(--apple-spring), max-width 0.4s var(--apple-spring), margin 0.4s var(--apple-spring), padding 0.4s var(--apple-spring); max-width: var(--btn-height);">
             <span id="p-color-icon-paste-default" style="position: absolute; top: 50%; left: 50%; transform: translate3d(-50%, -50%, 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 20px; height: 20px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
-            </span>
-            <span id="p-color-icon-paste-loader" style="position: absolute; top: 50%; left: 50%; transform: translate3d(calc(-50% - 40px), -50%, 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
-                <svg class="p-spin lucide lucide-loader-circle" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
             </span>
             <span id="p-color-icon-paste-error" style="position: absolute; top: 50%; left: 50%; transform: translate3d(-50%, calc(-50% - 40px), 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2.5px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -687,7 +652,6 @@ const getElements = (type) => {
         check: document.getElementById(isColor ? 'p-color-icon-check' : 'p-icon-check'),
         x: document.getElementById(isColor ? 'p-color-icon-x' : 'p-icon-x'),
         pasteDef: document.getElementById(isColor ? 'p-color-icon-paste-default' : 'p-icon-paste-default'),
-        pasteLoader: document.getElementById(isColor ? 'p-color-icon-paste-loader' : 'p-icon-paste-loader'),
         pasteError: document.getElementById(isColor ? 'p-color-icon-paste-error' : 'p-icon-paste-error'),
         pasteCheck: document.getElementById(isColor ? 'p-color-icon-paste-check' : 'p-icon-paste-check'),
         sharedStatus: document.getElementById(isColor ? 'p-color-shared-status' : 'p-shared-status'),
@@ -704,6 +668,7 @@ window.checkFontFamily = function(val) {
     if (nameDisplay) nameDisplay.style.fontFamily = family;
 };
 
+// 🟢 動態攔截並過濾字元
 window.handleGhostInput = function(val) {
     if (!window.pActiveEditType) return;
     if (window.pActiveEditType === 'name') {
@@ -712,12 +677,36 @@ window.handleGhostInput = function(val) {
         window.checkFontFamily(val);
     } else {
         const ghost = document.getElementById('p-ghost-input');
-        const upper = val.toUpperCase();
-        if (val !== upper && ghost) {
+        if (!ghost) return;
+
+        let originalVal = val;
+        // 自動把全角 ＃ 轉半角 #
+        let newVal = originalVal.replace(/＃/g, '#');
+
+        // 嚴格攔截非 A-F, a-f, 0-9, # 的字元
+        if (/[^A-Fa-f0-9#]/.test(newVal)) {
+            // 觸發膠囊與文字的左右震盪防呆
+            const container = document.getElementById('p-btn-color-input-container');
+            if (container) {
+                container.classList.remove('p-shake-active');
+                void container.offsetWidth;
+                container.classList.add('p-shake-active');
+            }
+            ghost.classList.remove('p-shake-active');
+            void ghost.offsetWidth;
+            ghost.classList.add('p-shake-active');
+            
+            newVal = newVal.replace(/[^A-Fa-f0-9#]/g, '');
+        }
+
+        newVal = newVal.toUpperCase();
+
+        if (originalVal !== newVal) {
             const start = ghost.selectionStart;
             const end = ghost.selectionEnd;
-            ghost.value = upper;
-            ghost.setSelectionRange(start, end);
+            const diff = originalVal.length - newVal.length;
+            ghost.value = newVal;
+            ghost.setSelectionRange(Math.max(0, start - diff), Math.max(0, end - diff));
         }
     }
 };
@@ -803,9 +792,17 @@ window.toggleGhostEditMode = function(type, e, element) {
     
     ghost.style.transition = 'none'; 
     ghost.value = els.display.textContent;
-    ghost.maxLength = type === 'color' ? 7 : 10;
-    if (type === 'name') window.handleGhostInput(ghost.value);
-    else ghost.style.fontFamily = 'monospace';
+    
+    // 🟢 依據類型動態賦予鍵盤屬性
+    if (type === 'color') {
+        ghost.maxLength = 7;
+        ghost.style.fontFamily = 'monospace';
+        ghost.setAttribute('inputmode', 'email'); // 強制切換為英文數字鍵盤
+    } else {
+        ghost.maxLength = 10;
+        ghost.setAttribute('inputmode', 'text');
+        window.handleGhostInput(ghost.value);
+    }
 
     if (type !== 'name') {
         const countElement = document.getElementById('p-char-count');
@@ -870,8 +867,18 @@ window.closeGhostEditMode = function(forceImmediate = false, triggerElement = nu
     els.circle2.style.transform = 'translate3d(0px, 0, 0)';
 
     let finalVal = ghost.value.trim();
+
+    // 🟢 關閉時智慧補全格式 (6位英數字自動補 #)
+    if (type === 'color' && finalVal !== '') {
+        if (/^[A-F0-9]{6}$/i.test(finalVal)) {
+            finalVal = '#' + finalVal.toUpperCase();
+        } else {
+            finalVal = finalVal.toUpperCase();
+        }
+    }
+
     if (finalVal !== '') {
-        els.display.textContent = type === 'color' ? finalVal.toUpperCase() : finalVal;
+        els.display.textContent = finalVal;
     }
 
     els.display.style.transition = 'opacity 0.2s ease';
@@ -973,9 +980,9 @@ window.handlePasteAction = function(e, type, element) {
     if (els.sharedText) els.sharedText.classList.remove('p-shake-active');
     if (errorSvg) errorSvg.classList.remove('p-shake-active');
 
-    // 瞬間同步呼叫 API，不再使用 CSS Loader 繞過
+    // 瞬間同步呼叫 API，無延遲，完美符合 Safari 規範
     navigator.clipboard.readText().then(text => {
-        const val = text.trim();
+        let val = text.trim();
         
         if (els.sharedStatus) {
             els.sharedStatus.style.transition = 'none';
@@ -995,8 +1002,21 @@ window.handlePasteAction = function(e, type, element) {
             els.sharedStatus.style.opacity = '1';
         }
 
-        if (!val) handleResult('剪貼簿無內容', 'error');
-        else handleResult('已貼上', 'success', val);
+        // 🟢 貼上時的格式嚴格驗證
+        if (!val) {
+            handleResult('剪貼簿無內容', 'error');
+        } else if (type === 'color') {
+            let colorVal = val.replace(/＃/g, '#');
+            if (/^#[A-Fa-f0-9]{6}$/.test(colorVal)) {
+                handleResult('已貼上', 'success', colorVal.toUpperCase());
+            } else if (/^[A-Fa-f0-9]{6}$/.test(colorVal)) {
+                handleResult('已貼上', 'success', '#' + colorVal.toUpperCase());
+            } else {
+                handleResult('格式錯誤', 'error');
+            }
+        } else {
+            handleResult('已貼上', 'success', val);
+        }
     }).catch(err => {
         if (els.sharedStatus) {
             els.sharedStatus.style.transition = 'none';
