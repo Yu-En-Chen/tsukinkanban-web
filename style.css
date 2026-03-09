@@ -187,6 +187,65 @@ body.searching .search-mask {
     transform: translate(-10px, 10px); 
 }
 
+/* =========================================
+   🟢 矩陣外框底板 (中心錨點鎖死版)
+   ========================================= */
+   .search-container::before {
+    content: '';
+    position: absolute;
+    
+    /* 1. 鎖定「四顆按鈕矩陣」的絕對圓心座標 */
+    /* (膠囊寬 95px / 總高 95px，所以矩陣圓心在 47.5px) */
+    top: 47.5px;
+    right: 47.5px;
+    
+    /* 2. 核心校正：把底板的「中心點」釘在上面的座標 */
+    transform: translate(50%, -50%);
+    
+    /* =====================================
+       📐 尺寸調整區：請直接在這裡改數字！
+       因為中心點已經鎖死，改大改小都會完美從中心向外延伸。
+       圓角公式：22px (內圓角) + 7.5px (單邊向外擴張距離)
+       ===================================== */
+    width: 110px;
+    height: 110px;
+    border-radius: 29.5px;
+    
+    /* =====================================
+       🎨 底色與邊框開關區 (教學)
+       目前是「雙層底色疊加效果」。
+       👉 只想保留外框，不要底板顏色，請把下面這 3 行改為：
+       background: transparent;
+       -webkit-backdrop-filter: none;
+       backdrop-filter: none;
+         「雙層底色疊加效果」，請把下面這 3 行改為：
+        background: var(--search-bg);
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+       ===================================== */
+    background: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    
+    /* 與按鈕一致的邊框 */
+    border: 1px solid var(--search-border);
+    
+    /* 防干擾與陰影 */
+    z-index: 0;
+    pointer-events: none; /* 關閉所有微互動與點擊，讓它只是一張純畫布 */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.5s var(--apple-spring), opacity 0.3s ease;
+}
+
+/* 🟢 當「搜尋框」或「左側選單」展開時的縮小淡出防穿幫 */
+.search-container.active::before,
+.search-container.menu-open::before {
+    opacity: 0;
+    /* 展開時縮小。注意：這裡必須保留 translate(50%, -50%) 否則縮小時圓心會跑掉！ */
+    transform: translate(50%, -50%) scale(0.8);
+    transition: all 0.4s var(--apple-spring), opacity 0.3s ease;
+}
+
 .search-trigger {
     width: 44px;
     height: 44px;
