@@ -22,7 +22,6 @@
         history.pushState(null, null, location.href);
         window.addEventListener('popstate', function (e) {
             history.pushState(null, null, location.href);
-            // 若面板開著，按實體返回鍵等同於「關閉面板」
             if (document.getElementById('dynamic-blank-overlay') && typeof window.closeBlankOverlay === 'function') {
                 window.closeBlankOverlay();
             }
@@ -36,6 +35,25 @@
     };
     applyOverscroll();
     window.addEventListener('DOMContentLoaded', applyOverscroll);
+
+    // 4. 🟢 終極視窗歸位系統 (修復退到桌面再回來時，高度跑掉的 Bug)
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            if (window.pActiveEditType && typeof window.closeGhostEditMode === 'function') {
+                window.closeGhostEditMode(true);
+            }
+        } else {
+            if (window.pScrollManager && window.pScrollManager.isLocked) {
+                const forceResetScroll = () => {
+                    window.scrollTo(0, 0);
+                    document.body.scrollTop = 0;
+                    document.documentElement.scrollTop = 0;
+                };
+                setTimeout(forceResetScroll, 50);
+                setTimeout(forceResetScroll, 300);
+            }
+        }
+    });
 })();
 
 export function initPersonalization(applyThemeToCard, getActiveCardId) {
@@ -107,7 +125,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             user-select: text;
         }
         
-        /* 🚀 終極 GPU 硬體加速：徹底消除初次點擊卡頓 */
         .info-tag-item, #p-ghost-input, #p-shared-status, svg {
             will-change: transform, max-width, opacity;
             -webkit-backface-visibility: hidden;
@@ -121,6 +138,11 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             transition: transform 0.15s cubic-bezier(0.34, 1.6, 0.64, 1), opacity 0.15s ease !important;
         }
 
+        @keyframes p-spin-ease {
+            0% { transform: rotate(0deg) translate3d(0,0,0); animation-timing-function: linear; }
+            87.5% { transform: rotate(315deg) translate3d(0,0,0); animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1); }
+            100% { transform: rotate(360deg) translate3d(0,0,0); }
+        }
         @keyframes p-shake-anim {
             0%, 100% { transform: translate3d(0, 0, 0); }
             20% { transform: translate3d(-4px, 0, 0); }
@@ -128,6 +150,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             60% { transform: translate3d(-4px, 0, 0); }
             80% { transform: translate3d(4px, 0, 0); }
         }
+        .p-spin { animation: p-spin-ease 0.8s infinite; }
         .p-shake-active { animation: p-shake-anim 0.4s cubic-bezier(.36,.07,.19,.97) both; }
     </style>
 
@@ -166,6 +189,9 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             cursor: pointer; height: var(--btn-height); width: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block; flex-shrink: 0; transition: transform 0.4s var(--apple-spring), max-width 0.4s var(--apple-spring), margin 0.4s var(--apple-spring), padding 0.4s var(--apple-spring); max-width: var(--btn-height);">
             <span id="p-icon-paste-default" style="position: absolute; top: 50%; left: 50%; transform: translate3d(-50%, -50%, 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 20px; height: 20px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+            </span>
+            <span id="p-icon-paste-loader" style="position: absolute; top: 50%; left: 50%; transform: translate3d(calc(-50% - 40px), -50%, 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
+                <svg class="p-spin lucide lucide-loader-circle" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
             </span>
             <span id="p-icon-paste-error" style="position: absolute; top: 50%; left: 50%; transform: translate3d(-50%, calc(-50% - 40px), 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2.5px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -216,6 +242,9 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             cursor: pointer; height: var(--btn-height); width: var(--btn-height); padding: 0; border-radius: 50%; position: relative; overflow: hidden; display: block; flex-shrink: 0; transition: transform 0.4s var(--apple-spring), max-width 0.4s var(--apple-spring), margin 0.4s var(--apple-spring), padding 0.4s var(--apple-spring); max-width: var(--btn-height);">
             <span id="p-color-icon-paste-default" style="position: absolute; top: 50%; left: 50%; transform: translate3d(-50%, -50%, 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 20px; height: 20px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+            </span>
+            <span id="p-color-icon-paste-loader" style="position: absolute; top: 50%; left: 50%; transform: translate3d(calc(-50% - 40px), -50%, 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
+                <svg class="p-spin lucide lucide-loader-circle" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2px;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
             </span>
             <span id="p-color-icon-paste-error" style="position: absolute; top: 50%; left: 50%; transform: translate3d(-50%, calc(-50% - 40px), 0); transition: transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; width: 100%; height: 100%; stroke-width: 2.5px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -434,7 +463,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             card.classList.remove('flip-in-start');
             card.classList.add('flip-in-active');
 
-            // 全域高度強制鎖定
             if (window.pScrollManager) window.pScrollManager.lock();
 
             setTimeout(() => {
@@ -652,6 +680,7 @@ const getElements = (type) => {
         check: document.getElementById(isColor ? 'p-color-icon-check' : 'p-icon-check'),
         x: document.getElementById(isColor ? 'p-color-icon-x' : 'p-icon-x'),
         pasteDef: document.getElementById(isColor ? 'p-color-icon-paste-default' : 'p-icon-paste-default'),
+        pasteLoader: document.getElementById(isColor ? 'p-color-icon-paste-loader' : 'p-icon-paste-loader'),
         pasteError: document.getElementById(isColor ? 'p-color-icon-paste-error' : 'p-icon-paste-error'),
         pasteCheck: document.getElementById(isColor ? 'p-color-icon-paste-check' : 'p-icon-paste-check'),
         sharedStatus: document.getElementById(isColor ? 'p-color-shared-status' : 'p-shared-status'),
@@ -668,7 +697,6 @@ window.checkFontFamily = function(val) {
     if (nameDisplay) nameDisplay.style.fontFamily = family;
 };
 
-// 🟢 動態攔截並過濾字元
 window.handleGhostInput = function(val) {
     if (!window.pActiveEditType) return;
     if (window.pActiveEditType === 'name') {
@@ -677,36 +705,12 @@ window.handleGhostInput = function(val) {
         window.checkFontFamily(val);
     } else {
         const ghost = document.getElementById('p-ghost-input');
-        if (!ghost) return;
-
-        let originalVal = val;
-        // 自動把全角 ＃ 轉半角 #
-        let newVal = originalVal.replace(/＃/g, '#');
-
-        // 嚴格攔截非 A-F, a-f, 0-9, # 的字元
-        if (/[^A-Fa-f0-9#]/.test(newVal)) {
-            // 觸發膠囊與文字的左右震盪防呆
-            const container = document.getElementById('p-btn-color-input-container');
-            if (container) {
-                container.classList.remove('p-shake-active');
-                void container.offsetWidth;
-                container.classList.add('p-shake-active');
-            }
-            ghost.classList.remove('p-shake-active');
-            void ghost.offsetWidth;
-            ghost.classList.add('p-shake-active');
-            
-            newVal = newVal.replace(/[^A-Fa-f0-9#]/g, '');
-        }
-
-        newVal = newVal.toUpperCase();
-
-        if (originalVal !== newVal) {
+        const upper = val.toUpperCase();
+        if (val !== upper && ghost) {
             const start = ghost.selectionStart;
             const end = ghost.selectionEnd;
-            const diff = originalVal.length - newVal.length;
-            ghost.value = newVal;
-            ghost.setSelectionRange(Math.max(0, start - diff), Math.max(0, end - diff));
+            ghost.value = upper;
+            ghost.setSelectionRange(start, end);
         }
     }
 };
@@ -719,6 +723,7 @@ window.handleGhostBlur = function(e) {
     }, 50);
 };
 
+// 🟢 按下 Enter 時觸發「准許儲存 (shouldSave = true)」
 window.handleGhostKey = function(e) {
     if (e.key === 'Enter' || e.keyCode === 13) {
         e.preventDefault();
@@ -726,7 +731,8 @@ window.handleGhostKey = function(e) {
         const val = e.target.value.trim();
         const max = window.pActiveEditType === 'color' ? 7 : 10;
         if (val.length > max) return;
-        window.closeGhostEditMode();
+        // 第三個參數 true 代表允許將 ghost.value 寫回顯示區
+        window.closeGhostEditMode(false, null, true);
     }
 };
 
@@ -757,10 +763,7 @@ window.toggleGhostEditMode = function(type, e, element) {
         oldEls.circle2.style.marginLeft = '0px';
         oldEls.circle2.style.transform = 'translate3d(0px, 0, 0)';
         
-        let finalVal = ghost.value.trim();
-        if (finalVal !== '') {
-            oldEls.display.textContent = window.pActiveEditType === 'color' ? finalVal.toUpperCase() : finalVal;
-        }
+        // 🟢 切換輸入框時，我們「不儲存」任何變更，直接還原顯示的透明度即可
         oldEls.display.style.transition = 'opacity 0.2s ease';
         oldEls.display.style.opacity = '1';
         
@@ -792,17 +795,9 @@ window.toggleGhostEditMode = function(type, e, element) {
     
     ghost.style.transition = 'none'; 
     ghost.value = els.display.textContent;
-    
-    // 🟢 依據類型動態賦予鍵盤屬性
-    if (type === 'color') {
-        ghost.maxLength = 7;
-        ghost.style.fontFamily = 'monospace';
-        ghost.setAttribute('inputmode', 'email'); // 強制切換為英文數字鍵盤
-    } else {
-        ghost.maxLength = 10;
-        ghost.setAttribute('inputmode', 'text');
-        window.handleGhostInput(ghost.value);
-    }
+    ghost.maxLength = type === 'color' ? 7 : 10;
+    if (type === 'name') window.handleGhostInput(ghost.value);
+    else ghost.style.fontFamily = 'monospace';
 
     if (type !== 'name') {
         const countElement = document.getElementById('p-char-count');
@@ -838,7 +833,8 @@ window.toggleGhostEditMode = function(type, e, element) {
     }, 200);
 };
 
-window.closeGhostEditMode = function(forceImmediate = false, triggerElement = null) {
+// 🟢 預設 shouldSave = false，除非明確允許，否則不儲存任何文字修改
+window.closeGhostEditMode = function(forceImmediate = false, triggerElement = null, shouldSave = false) {
     if (!window.pActiveEditType) return;
 
     if (window.pGhostMarker && !forceImmediate) {
@@ -866,19 +862,12 @@ window.closeGhostEditMode = function(forceImmediate = false, triggerElement = nu
     els.circle2.style.marginLeft = '0px';
     els.circle2.style.transform = 'translate3d(0px, 0, 0)';
 
-    let finalVal = ghost.value.trim();
-
-    // 🟢 關閉時智慧補全格式 (6位英數字自動補 #)
-    if (type === 'color' && finalVal !== '') {
-        if (/^[A-F0-9]{6}$/i.test(finalVal)) {
-            finalVal = '#' + finalVal.toUpperCase();
-        } else {
-            finalVal = finalVal.toUpperCase();
+    // 🟢 只有當 shouldSave 為 true 時 (按下 Enter)，才把幽靈輸入框的值寫回畫面
+    if (shouldSave) {
+        let finalVal = ghost.value.trim();
+        if (finalVal !== '') {
+            els.display.textContent = type === 'color' ? finalVal.toUpperCase() : finalVal;
         }
-    }
-
-    if (finalVal !== '') {
-        els.display.textContent = finalVal;
     }
 
     els.display.style.transition = 'opacity 0.2s ease';
@@ -905,6 +894,7 @@ window.closeGhostEditMode = function(forceImmediate = false, triggerElement = nu
 window.handleCopyAction = function(e, type, element) {
     if (e) e.stopPropagation();
     if (window.pActiveEditType === type) {
+        // 點擊複製按鈕關閉時，不儲存內容
         window.closeGhostEditMode(false, element);
         return;
     }
@@ -980,55 +970,51 @@ window.handlePasteAction = function(e, type, element) {
     if (els.sharedText) els.sharedText.classList.remove('p-shake-active');
     if (errorSvg) errorSvg.classList.remove('p-shake-active');
 
-// 瞬間同步呼叫 API，無延遲，完美符合 Safari 規範
-navigator.clipboard.readText().then(text => {
-    let val = text.trim();
-    let resType = 'success';
-    let finalVal = val;
-    let errorMsg = '';
+    navigator.clipboard.readText().then(text => {
+        let val = text.trim();
+        let resType = 'success';
+        let finalVal = val;
+        let errorMsg = '';
 
-    // 🟢 1. 先進行格式嚴格驗證，決定結果類型
-    if (!val) {
-        resType = 'error';
-        errorMsg = '剪貼簿無內容';
-    } else if (type === 'color') {
-        let colorVal = val.replace(/＃/g, '#');
-        if (/^#[A-Fa-f0-9]{6}$/.test(colorVal)) {
-            finalVal = colorVal.toUpperCase();
-        } else if (/^[A-Fa-f0-9]{6}$/.test(colorVal)) {
-            finalVal = '#' + colorVal.toUpperCase();
-        } else {
+        if (!val) {
             resType = 'error';
-            errorMsg = '格式錯誤';
+            errorMsg = '剪貼簿無內容';
+        } else if (type === 'color') {
+            let colorVal = val.replace(/＃/g, '#');
+            if (/^#[A-Fa-f0-9]{6}$/.test(colorVal)) {
+                finalVal = colorVal.toUpperCase();
+            } else if (/^[A-Fa-f0-9]{6}$/.test(colorVal)) {
+                finalVal = '#' + colorVal.toUpperCase();
+            } else {
+                resType = 'error';
+                errorMsg = '格式錯誤';
+            }
         }
-    }
 
-    // 🟢 2. 根據驗證結果，決定文字的起始滑動方向 (成功：左右，失敗：上下)
-    if (els.sharedStatus) {
-        els.sharedStatus.style.transition = 'none';
-        els.sharedStatus.style.transform = resType === 'error' ? 'translate3d(0, -40px, 0)' : 'translate3d(-40px, 0, 0)';
-        void els.sharedStatus.offsetWidth; 
-        els.sharedStatus.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-    }
-    
-    if (els.display) {
-        els.display.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-        els.display.style.transform = resType === 'error' ? 'translate3d(0, 40px, 0)' : 'translate3d(40px, 0, 0)';
-        els.display.style.opacity = '0';
-    }
-    
-    if (els.sharedStatus) {
-        els.sharedStatus.style.transform = 'translate3d(0px, 0, 0)';
-        els.sharedStatus.style.opacity = '1';
-    }
+        if (els.sharedStatus) {
+            els.sharedStatus.style.transition = 'none';
+            els.sharedStatus.style.transform = resType === 'error' ? 'translate3d(0, -40px, 0)' : 'translate3d(-40px, 0, 0)';
+            void els.sharedStatus.offsetWidth; 
+            els.sharedStatus.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+        }
+        
+        if (els.display) {
+            els.display.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+            els.display.style.transform = resType === 'error' ? 'translate3d(0, 40px, 0)' : 'translate3d(40px, 0, 0)';
+            els.display.style.opacity = '0';
+        }
+        
+        if (els.sharedStatus) {
+            els.sharedStatus.style.transform = 'translate3d(0px, 0, 0)';
+            els.sharedStatus.style.opacity = '1';
+        }
 
-    // 🟢 3. 呼叫後續的 SVG 動畫
-    if (resType === 'error') {
-        handleResult(errorMsg, 'error');
-    } else {
-        handleResult('已貼上', 'success', finalVal);
-    }
-}).catch(err => {
+        if (resType === 'error') {
+            handleResult(errorMsg, 'error');
+        } else {
+            handleResult('已貼上', 'success', finalVal);
+        }
+    }).catch(err => {
         if (els.sharedStatus) {
             els.sharedStatus.style.transition = 'none';
             els.sharedStatus.style.transform = 'translate3d(0, -40px, 0)';
@@ -1084,10 +1070,10 @@ navigator.clipboard.readText().then(text => {
                 els.pasteCheck.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
                 els.pasteCheck.style.transform = 'translate3d(-50%, -50%, 0)';
             }
+            // 🟢 貼上成功時，直接把值寫入顯示區塊 (等同於自動儲存)
             if (val) {
-                const finalVal = type === 'color' ? val.substring(0, 7).toUpperCase() : val.substring(0, 10); 
-                if (els.display) els.display.textContent = finalVal;
-                if (type === 'name') window.handleGhostInput(finalVal); 
+                if (els.display) els.display.textContent = val;
+                if (type === 'name') window.handleGhostInput(val); 
             }
             setTimeout(() => revert('success'), 800);
         }
