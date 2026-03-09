@@ -707,9 +707,9 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         // --- 動畫開始 ---
         setTimeout(() => {
             if (originalSvg) {
-                originalSvg.style.transition = 'transform 0.55s var(--spring-release), opacity 0.4s ease';
-                originalSvg.style.transform = 'translate3d(0, 40px, 0)';
-                originalSvg.style.opacity = '0';
+                originalSvg.style.setProperty('transition', 'transform 0.55s var(--spring-release), opacity 0.4s ease', 'important');
+                originalSvg.style.setProperty('transform', 'translate3d(0, 40px, 0)', 'important');
+                originalSvg.style.setProperty('opacity', '0', 'important');
             }
 
             [nameEls, colorEls].forEach(els => {
@@ -774,14 +774,14 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             });
 
             if (originalSvg) {
-                originalSvg.style.transition = 'none';
-                originalSvg.style.transform = 'translate3d(0, -40px, 0)';
+                originalSvg.style.setProperty('transition', 'none', 'important');
+                originalSvg.style.setProperty('transform', 'translate3d(0, -40px, 0)', 'important');
                 void originalSvg.offsetWidth;
-                originalSvg.style.transition = 'transform 0.55s var(--spring-release), opacity 0.4s ease';
-                originalSvg.style.transform = 'translate3d(0, 0, 0)';
-                originalSvg.style.opacity = '1';
+                originalSvg.style.setProperty('transition', 'opacity 0.4s ease, transform 0.55s var(--spring-release)', 'important');
+                originalSvg.style.setProperty('transform', 'translate3d(0, 0, 0)', 'important');
+                originalSvg.style.setProperty('opacity', '1', 'important');
             }
-
+            
             [nameEls, colorEls].forEach(els => {
                 if (els.display) {
                     els.display.style.transition = 'none';
@@ -803,9 +803,9 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             syncWrapper.remove();
             checkWrapper.remove();
             if (originalSvg) {
-                originalSvg.style.transition = '';
-                originalSvg.style.transform = '';
-                originalSvg.style.opacity = '';
+                originalSvg.style.removeProperty('transition');
+                originalSvg.style.removeProperty('transform');
+                originalSvg.style.removeProperty('opacity');
             }
 
             [nameEls, colorEls].forEach((els, index) => {

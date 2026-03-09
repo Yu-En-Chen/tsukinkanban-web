@@ -404,6 +404,7 @@ body.searching .search-mask {
     z-index: 5700;
     transition: width 0.4s var(--active-bounce), opacity 0.3s ease, transform 0.4s var(--active-bounce), scale 0.4s var(--apple-spring);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    pointer-events: none;
 }
 
 .cancel-circle-btn svg {
@@ -425,6 +426,7 @@ body.searching .search-mask {
     width: 44px;
     opacity: 1;
     transform: scale(1);
+    pointer-events: auto;
 }
 
 /* =========================================
