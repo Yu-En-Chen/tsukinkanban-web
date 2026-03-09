@@ -601,7 +601,7 @@ function triggerDescToggle(isActive) {
             descColor.textContent = '　- HEX形式で入力してください -';
         }
         
-        // 手動設定 1 秒 (1000ms) 延遲後，再線性淡入
+        // 手動設定 1 秒 (100ms) 延遲後，再線性淡入
         setTimeout(() => {
             descName.style.transition = 'opacity 0.2s linear';
             descColor.style.transition = 'opacity 0.2s linear';
