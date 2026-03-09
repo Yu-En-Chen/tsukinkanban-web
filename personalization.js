@@ -652,9 +652,17 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             wrapper.style.transform = 'translate3d(0, -40px, 0)'; 
             wrapper.style.opacity = '0';
             wrapper.innerHTML = svgStr;
+            
+            // 🟢 修復：強制覆蓋膠囊的 CSS 霸王條款，使其與下方輸入框的 SVG 完美一致
+            const innerSvg = wrapper.querySelector('svg');
+            if (innerSvg) {
+                innerSvg.style.setProperty('width', '20px', 'important');
+                innerSvg.style.setProperty('height', '20px', 'important');
+                innerSvg.style.setProperty('stroke-width', '1.7px', 'important');
+                innerSvg.style.setProperty('opacity', '0.8', 'important');
+            }
             return wrapper;
         };
-
         const syncWrapper = createWrapper(svgSync);
         const checkWrapper = createWrapper(svgCheck);
         
@@ -774,12 +782,17 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             });
 
             if (originalSvg) {
+                // 🟢 修復：確保 -40px 的狀態被瀏覽器確實繪製，恢復由上往下的掉落感
                 originalSvg.style.setProperty('transition', 'none', 'important');
                 originalSvg.style.setProperty('transform', 'translate3d(0, -40px, 0)', 'important');
-                void originalSvg.offsetWidth;
-                originalSvg.style.setProperty('transition', 'opacity 0.4s ease, transform 0.55s var(--spring-release)', 'important');
-                originalSvg.style.setProperty('transform', 'translate3d(0, 0, 0)', 'important');
-                originalSvg.style.setProperty('opacity', '1', 'important');
+                
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        originalSvg.style.setProperty('transition', 'opacity 0.4s ease, transform 0.55s var(--spring-release)', 'important');
+                        originalSvg.style.setProperty('transform', 'translate3d(0, 0, 0)', 'important');
+                        originalSvg.style.setProperty('opacity', '1', 'important');
+                    });
+                });
             }
             
             [nameEls, colorEls].forEach(els => {
