@@ -1503,3 +1503,33 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
         height: 10px;
     }
 }
+
+/* =========================================
+   🟢 深色模式專屬：白灰微光陰影 (Dark Mode Glow)
+   ========================================= */
+   @media (prefers-color-scheme: dark) {
+    
+    /* 1. 外層大底板的微光 (稍微擴散一點，營造氛圍) */
+    .search-container::before {
+        /* rgb(220, 220, 230) 是一種非常有質感的高級冷白灰色 */
+        box-shadow: 0 8px 30px rgba(220, 220, 230, 0.15) !important;
+        /* 🟢 新增：深色模式專屬的白灰微光邊框 */
+        border: 1px solid rgba(220, 220, 230, 0.15) !important;
+    }
+
+    /* 2. 內部三個實體按鈕的微光 (稍微集中一點，凸顯按鈕輪廓) */
+    .action-capsule,
+    .search-trigger,
+    .left-circle-btn {
+        box-shadow: 0 4px 15px rgba(220, 220, 230, 0.12) !important;
+    }
+
+    /* 3. 當手指按壓或滑鼠懸浮 (Hover) 時，微光會稍微變亮並擴大 */
+    @media (any-hover: hover) {
+        .left-circle-btn:not(.is-expanded):hover,
+        .search-container:not(.active) .search-trigger:hover,
+        .action-capsule:not(.menu-expanded):hover {
+            box-shadow: 0 8px 25px rgba(220, 220, 230, 0.18) !important;
+        }
+    }
+}
