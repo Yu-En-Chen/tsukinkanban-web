@@ -1,6 +1,6 @@
 // personalization.js - 個性化設定 (Customize) 專用彈窗引擎
 
-// 🟢 引入 IndexedDB 儲存功能
+// 🟢 確保正確引入 db.js 的儲存功能
 import { saveRoutePreference } from './db.js';
 
 // =========================================================
@@ -67,11 +67,11 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         const activeId = getActiveCardId();
         if (!activeId || activeId === 'fixed-bottom') return;
 
-        // 1. 取出全域記憶體中的最新狀態
+        // 1. 取出全域記憶體中的最新狀態，避免讀取不穩定的 DOM
         const routeData = window.appRailwayData.find(r => r.id === activeId);
         if (!routeData) return;
 
-        // 2. 更新對應的數值 (直接操作記憶體，不讀 DOM)
+        // 2. 更新對應的數值 (直接操作記憶體陣列)
         if (editType === 'name') routeData.name = finalVal;
         if (editType === 'color') routeData.hex = finalVal;
 
@@ -95,10 +95,10 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             if (mainNameNode) mainNameNode.textContent = routeData.name;
         }
 
-        // 6. 背景寫入 IndexedDB (不再使用 await 阻塞，直接讓它在背景默默完成，防止 iOS 中斷)
+        // 6. 絕對同步觸發背景寫入 IndexedDB (不使用 async/await 阻塞 UI)
         saveRoutePreference(activeId, routeData.name, routeData.hex)
-            .then(() => console.log(`[DB] 成功儲存 ${activeId}: ${routeData.name} / ${routeData.hex}`))
-            .catch(err => console.error('[DB] 儲存失敗:', err));
+            .then(() => console.log(`[DB] 成功寫入永久儲存 -> ${activeId}: ${routeData.name} / ${routeData.hex}`))
+            .catch(err => console.error('[DB] 寫入 IndexedDB 失敗:', err));
     };
 
     window.openBlankOverlay = function (hexColor) {
@@ -525,9 +525,30 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             window.pScrollManager.unlock();
         }
 
-        const ghost = document.getElementById('p-ghost-input');
-        if (ghost) ghost.blur();
-        window.pActiveEditType = null;
+        // 🛑 核心防護 1：在彈窗背景被摧毀前，強制結算並寫入當前活動中的輸入框資料
+        if (window.pActiveEditType) {
+            const ghost = document.getElementById('p-ghost-input');
+            if (ghost) {
+                let val = ghost.value.trim();
+                let type = window.pActiveEditType;
+                let isValid = true;
+                
+                if (type === 'color') {
+                    val = val.replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/＃/g, '#').toUpperCase();
+                    if (!/^#?([A-F0-9]{3}|[A-F0-9]{6})$/.test(val)) isValid = false;
+                    else val = val.startsWith('#') ? val : '#' + val;
+                } else if (type === 'name') {
+                    if (val.length === 0 || val.length > 10) isValid = false;
+                }
+                
+                // 無條件同步攔截儲存
+                if (isValid && window.triggerSaveCustomization) {
+                    window.triggerSaveCustomization(type, val);
+                }
+            }
+            ghost.blur();
+            window.pActiveEditType = null;
+        }
 
         const overlay = document.getElementById('dynamic-blank-overlay');
         const blankCard = overlay ? overlay.querySelector('.detail-card-inner') : null;
@@ -621,7 +642,6 @@ function triggerBump(el) {
     setTimeout(() => el.classList.remove('p-bump-active'), 150);
 }
 
-// 🟢 替換備註文字的動畫系統
 function triggerDescToggle(isActive) {
     const descName = document.getElementById('p-desc-name');
     const descColor = document.getElementById('p-desc-color');
@@ -798,10 +818,9 @@ window.handleGhostInput = function(val) {
     }
 };
 
-// 🟢 強化手機端防呆儲存：拔除 setTimeout，確保 iOS 點擊旁邊或收起鍵盤時，資料庫絕對同步寫入！
+// 🛑 核心防護 2：完全無延遲的 Blur 事件，保證鍵盤收回時立即連線 IndexedDB
 window.handleGhostBlur = function(e) {
     if (!window.pActiveEditType) return;
-    if (document.activeElement && document.activeElement.id === 'p-ghost-input') return;
     
     const ghost = document.getElementById('p-ghost-input');
     const type = window.pActiveEditType;
@@ -809,22 +828,25 @@ window.handleGhostBlur = function(e) {
     let isValid = true;
     
     if (type === 'color') {
-        val = val.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
-            return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
-        }).replace(/＃/g, '#').toUpperCase();
-        
+        val = val.replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/＃/g, '#').toUpperCase();
         const hexRegex = /^#?([A-F0-9]{3}|[A-F0-9]{6})$/;
         if (!hexRegex.test(val)) {
             isValid = false; 
         } else {
-            if (!val.startsWith('#')) val = '#' + val;
+            val = val.startsWith('#') ? val : '#' + val;
             ghost.value = val;
         }
     } else if (type === 'name') {
         if (val.length === 0 || val.length > 10) isValid = false;
     }
     
-    window.closeGhostEditMode(true, null, isValid);
+    if (isValid && window.triggerSaveCustomization) {
+        window.triggerSaveCustomization(type, val);
+        const els = getElements(type);
+        if (els && els.display) els.display.textContent = val;
+    }
+    
+    window.closeGhostEditMode(true, null, false);
 };
 
 window.handleGhostKey = function(e) {
@@ -880,7 +902,28 @@ window.toggleGhostEditMode = function(type, e, element) {
     const els = getElements(type);
 
     if (window.pActiveEditType) {
-        const oldEls = getElements(window.pActiveEditType);
+        // 🛑 核心防護 3：跨欄位切換時，強制先將前一個欄位的修改存檔 (Cross-Pollination Save)
+        const oldType = window.pActiveEditType;
+        const oldEls = getElements(oldType);
+        
+        if (ghost) {
+            let valOld = ghost.value.trim();
+            let isOldValid = true;
+            
+            if (oldType === 'color') {
+                valOld = valOld.replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/＃/g, '#').toUpperCase();
+                if (!/^#?([A-F0-9]{3}|[A-F0-9]{6})$/.test(valOld)) isOldValid = false;
+                else valOld = valOld.startsWith('#') ? valOld : '#' + valOld;
+            } else if (oldType === 'name') {
+                if (valOld.length === 0 || valOld.length > 10) isOldValid = false;
+            }
+
+            if (isOldValid && window.triggerSaveCustomization) {
+                window.triggerSaveCustomization(oldType, valOld);
+                if (oldEls.display) oldEls.display.textContent = valOld;
+            }
+        }
+
         oldEls.row.dataset.editing = 'false';
         oldEls.label.style.maxWidth = '120px';
         oldEls.label.style.padding = '0 16px';
@@ -990,7 +1033,6 @@ window.closeGhostEditMode = function(forceImmediate = false, triggerElement = nu
     els.circle2.style.marginLeft = '0px';
     els.circle2.style.transform = 'translate3d(0px, 0, 0)';
 
-    // 🟢 取消了這裡的 setTimeout 延遲！強迫程式在當下週期立刻呼叫儲存 API，確保 iOS 不漏接
     if (shouldSave) {
         let finalVal = ghost.value.trim();
         if (finalVal !== '') {
@@ -1209,7 +1251,6 @@ window.handlePasteAction = function(e, type, element) {
                 els.pasteCheck.style.transform = 'translate3d(-50%, -50%, 0)';
             }
             
-            // 🟢 取消延遲！貼上成功後直接將處理好的變數拿去寫資料庫
             if (val) {
                 let finalVal = type === 'color' ? val.toUpperCase() : val;
                 if (els.display) els.display.textContent = finalVal;
