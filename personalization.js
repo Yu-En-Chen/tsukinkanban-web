@@ -980,44 +980,55 @@ window.handlePasteAction = function(e, type, element) {
     if (els.sharedText) els.sharedText.classList.remove('p-shake-active');
     if (errorSvg) errorSvg.classList.remove('p-shake-active');
 
-    // 瞬間同步呼叫 API，無延遲，完美符合 Safari 規範
-    navigator.clipboard.readText().then(text => {
-        let val = text.trim();
-        
-        if (els.sharedStatus) {
-            els.sharedStatus.style.transition = 'none';
-            els.sharedStatus.style.transform = 'translate3d(-40px, 0, 0)';
-            void els.sharedStatus.offsetWidth; 
-            els.sharedStatus.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-        }
-        
-        if (els.display) {
-            els.display.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
-            els.display.style.transform = 'translate3d(40px, 0, 0)';
-            els.display.style.opacity = '0';
-        }
-        
-        if (els.sharedStatus) {
-            els.sharedStatus.style.transform = 'translate3d(0px, 0, 0)';
-            els.sharedStatus.style.opacity = '1';
-        }
+// 瞬間同步呼叫 API，無延遲，完美符合 Safari 規範
+navigator.clipboard.readText().then(text => {
+    let val = text.trim();
+    let resType = 'success';
+    let finalVal = val;
+    let errorMsg = '';
 
-        // 🟢 貼上時的格式嚴格驗證
-        if (!val) {
-            handleResult('剪貼簿無內容', 'error');
-        } else if (type === 'color') {
-            let colorVal = val.replace(/＃/g, '#');
-            if (/^#[A-Fa-f0-9]{6}$/.test(colorVal)) {
-                handleResult('已貼上', 'success', colorVal.toUpperCase());
-            } else if (/^[A-Fa-f0-9]{6}$/.test(colorVal)) {
-                handleResult('已貼上', 'success', '#' + colorVal.toUpperCase());
-            } else {
-                handleResult('格式錯誤', 'error');
-            }
+    // 🟢 1. 先進行格式嚴格驗證，決定結果類型
+    if (!val) {
+        resType = 'error';
+        errorMsg = '剪貼簿無內容';
+    } else if (type === 'color') {
+        let colorVal = val.replace(/＃/g, '#');
+        if (/^#[A-Fa-f0-9]{6}$/.test(colorVal)) {
+            finalVal = colorVal.toUpperCase();
+        } else if (/^[A-Fa-f0-9]{6}$/.test(colorVal)) {
+            finalVal = '#' + colorVal.toUpperCase();
         } else {
-            handleResult('已貼上', 'success', val);
+            resType = 'error';
+            errorMsg = '格式錯誤';
         }
-    }).catch(err => {
+    }
+
+    // 🟢 2. 根據驗證結果，決定文字的起始滑動方向 (成功：左右，失敗：上下)
+    if (els.sharedStatus) {
+        els.sharedStatus.style.transition = 'none';
+        els.sharedStatus.style.transform = resType === 'error' ? 'translate3d(0, -40px, 0)' : 'translate3d(-40px, 0, 0)';
+        void els.sharedStatus.offsetWidth; 
+        els.sharedStatus.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+    }
+    
+    if (els.display) {
+        els.display.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
+        els.display.style.transform = resType === 'error' ? 'translate3d(0, 40px, 0)' : 'translate3d(40px, 0, 0)';
+        els.display.style.opacity = '0';
+    }
+    
+    if (els.sharedStatus) {
+        els.sharedStatus.style.transform = 'translate3d(0px, 0, 0)';
+        els.sharedStatus.style.opacity = '1';
+    }
+
+    // 🟢 3. 呼叫後續的 SVG 動畫
+    if (resType === 'error') {
+        handleResult(errorMsg, 'error');
+    } else {
+        handleResult('已貼上', 'success', finalVal);
+    }
+}).catch(err => {
         if (els.sharedStatus) {
             els.sharedStatus.style.transition = 'none';
             els.sharedStatus.style.transform = 'translate3d(0, -40px, 0)';
