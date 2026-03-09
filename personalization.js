@@ -1,6 +1,7 @@
 // personalization.js - 個性化設定 (Customize) 專用彈窗引擎
 
-import { saveRoutePreference } from './db.js';
+import { saveRoutePreference, resetRoutePreference } from './db.js';
+import { railwayData } from './data.js';
 
 // =========================================================
 // 🟢 網頁級別最優先寫死的系統導航防護 (全域封鎖)
@@ -768,6 +769,47 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                     svgs.s2Svg.style.opacity = '1';
                 }
             });
+            // 🟢 【新增】：在這裡加入資料重置與 DOM 更新邏輯！
+            // 趁文字飛到空中隱藏時 (900ms) 偷偷換掉，等 1800ms 降落時就會是全新預設狀態
+            const activeId = getActiveCardId();
+            if (activeId && activeId !== 'fixed-bottom') {
+                resetRoutePreference(activeId).then(() => {
+                    console.log(`[DB] 已清除 ${activeId} 的客製化設定，恢復預設值`);
+                    
+                    // 1. 找出 data.js 中的原始預設值
+                    const defaultData = railwayData.find(r => r.id === activeId);
+                    if (defaultData) {
+                        // 2. 更新當前的全域記憶體資料
+                        const currentData = window.appRailwayData.find(r => r.id === activeId);
+                        if (currentData) {
+                            currentData.name = defaultData.name;
+                            currentData.hex = defaultData.hex;
+                        }
+                        
+                        // 3. 即時更新畫面上的三張卡片顏色與標題
+                        const customizeCard = document.querySelector('#dynamic-blank-overlay .detail-card-inner');
+                        if (customizeCard) applyThemeToCard(customizeCard, defaultData.hex);
+
+                        const detailCard = document.querySelector('#detail-card-container .detail-card-inner');
+                        if (detailCard) {
+                            applyThemeToCard(detailCard, defaultData.hex);
+                            const detailNameNode = detailCard.querySelector('.line-name');
+                            if (detailNameNode) detailNameNode.textContent = defaultData.name;
+                        }
+
+                        const mainCard = document.getElementById(`card-${activeId}`);
+                        if (mainCard) {
+                            applyThemeToCard(mainCard, defaultData.hex);
+                            const mainNameNode = mainCard.querySelector('.line-name');
+                            if (mainNameNode) mainNameNode.textContent = defaultData.name;
+                        }
+
+                        // 4. 更新準備降落的文字框內容
+                        if (nameEls.display) nameEls.display.textContent = defaultData.name;
+                        if (colorEls.display) colorEls.display.textContent = defaultData.hex.toUpperCase();
+                    }
+                });
+            }
         }, 900);
 
         setTimeout(() => {
