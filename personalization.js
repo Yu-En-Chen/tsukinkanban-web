@@ -203,7 +203,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
     </div>
     
     <p class="description" style="font-size: clamp(0.85rem, 3vw, 0.95rem); margin-bottom: 12px; display: flex; justify-content: space-between; padding: 0 4px;">
-        <span>　- 十文字以內 -</span>
+        <span id="p-desc-name" style="transition: opacity 0.2s ease;">　- 十文字以內 -</span>
         <span id="p-char-count" style="opacity: 0; transition: opacity 0.4s var(--apple-spring); font-family: monospace; font-size: 0.9em; margin-right: 4px;">0/10</span>
     </p>
 
@@ -255,7 +255,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         </button>
     </div>
     
-    <p class="description" style="font-size: clamp(0.85rem, 3vw, 0.95rem); margin-bottom: 12px;">　- HEX形式で入力してください -</p>
+    <p id="p-desc-color" class="description" style="font-size: clamp(0.85rem, 3vw, 0.95rem); margin-bottom: 12px; transition: opacity 0.2s ease;">　- HEX形式で入力してください -</p>
 
     <input id="p-ghost-input" type="text" enterkeyhint="done" autocomplete="off" spellcheck="false"
         oninput="window.handleGhostInput(this.value)" 
@@ -579,6 +579,38 @@ function triggerBump(el) {
     setTimeout(() => el.classList.remove('p-bump-active'), 150);
 }
 
+// 🟢 替換備註文字的動畫系統
+function triggerDescToggle(isActive) {
+    const descName = document.getElementById('p-desc-name');
+    const descColor = document.getElementById('p-desc-color');
+    if (!descName || !descColor) return;
+
+    // 先設定為線性消失
+    descName.style.transition = 'opacity 0.2s linear';
+    descColor.style.transition = 'opacity 0.2s linear';
+    descName.style.opacity = '0';
+    descColor.style.opacity = '0';
+
+    // 等待 200ms 消失動畫完成後，切換文字
+    setTimeout(() => {
+        if (isActive) {
+            descName.textContent = '　-上測試 -';
+            descColor.textContent = '　-下測試 -';
+        } else {
+            descName.textContent = '　- 十文字以內 -';
+            descColor.textContent = '　- HEX形式で入力してください -';
+        }
+        
+        // 手動設定 1 秒 (1000ms) 延遲後，再線性淡入
+        setTimeout(() => {
+            descName.style.transition = 'opacity 0.2s linear';
+            descColor.style.transition = 'opacity 0.2s linear';
+            descName.style.opacity = '1';
+            descColor.style.opacity = '1';
+        }, 100); 
+    }, 200); 
+}
+
 function getOffset(el, parent) {
     let top = 0, left = 0;
     while (el && el !== parent) {
@@ -790,6 +822,9 @@ window.toggleGhostEditMode = function(type, e, element) {
 
     if (window.pActiveEditType === type) return;
 
+    // 🟢 檢查是否為「首次」開啟輸入框
+    const isFirstOpen = !window.pActiveEditType;
+
     const ghost = document.getElementById('p-ghost-input');
     const wrapper = document.getElementById('p-ghost-wrapper');
     const els = getElements(type);
@@ -816,6 +851,11 @@ window.toggleGhostEditMode = function(type, e, element) {
                 oldEls.x.style.transform = 'translate3d(-250%, -50%, 0)';
             }
         }, 200);
+    }
+
+    // 🟢 觸發備註文字變更動畫（只有在從無到有時才執行，上下切換時不執行）
+    if (isFirstOpen) {
+        triggerDescToggle(true);
     }
 
     window.pActiveEditType = type;
@@ -894,6 +934,9 @@ window.closeGhostEditMode = function(forceImmediate = false, triggerElement = nu
 
     window.pActiveEditType = null;
     els.row.dataset.editing = 'false';
+
+    // 🟢 觸發備註文字變更動畫（輸入框關閉時切換回原文字）
+    triggerDescToggle(false);
 
     els.label.style.maxWidth = '120px';
     els.label.style.padding = '0 16px';
