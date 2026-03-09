@@ -1,6 +1,5 @@
 // personalization.js - 個性化設定 (Customize) 專用彈窗引擎
 
-// 🟢 確保正確引入 db.js 的儲存功能
 import { saveRoutePreference } from './db.js';
 
 // =========================================================
@@ -10,7 +9,6 @@ import { saveRoutePreference } from './db.js';
     if (window._pGlobalNavBlockerActive) return;
     window._pGlobalNavBlockerActive = true;
 
-    // 1. 絕對封鎖邊緣右滑 (iOS 返回手勢) - 使用 capture 搶奪最高優先級
     const blockEdgeSwipe = (e) => {
         if (e.touches && e.touches.length > 0 && e.touches[0].clientX < 30) {
             e.preventDefault();
@@ -20,7 +18,6 @@ import { saveRoutePreference } from './db.js';
     window.addEventListener('touchstart', blockEdgeSwipe, { passive: false, capture: true });
     window.addEventListener('touchmove', blockEdgeSwipe, { passive: false, capture: true });
 
-    // 2. 歷史紀錄陷阱 (封鎖 Android 實體返回與瀏覽器上一頁)
     try {
         history.pushState(null, null, location.href);
         window.addEventListener('popstate', function (e) {
@@ -31,7 +28,6 @@ import { saveRoutePreference } from './db.js';
         }, { capture: true });
     } catch(err) {}
 
-    // 3. 全域頁面彈性封鎖 (Overscroll) - 保證永不橡皮筋
     const applyOverscroll = () => {
         document.documentElement.style.setProperty('overscroll-behavior', 'none', 'important');
         document.body.style.setProperty('overscroll-behavior', 'none', 'important');
@@ -39,7 +35,6 @@ import { saveRoutePreference } from './db.js';
     applyOverscroll();
     window.addEventListener('DOMContentLoaded', applyOverscroll);
 
-    // 4. 🟢 終極視窗歸位系統 (修復退到桌面再回來時，高度跑掉的 Bug)
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
             if (window.pActiveEditType && typeof window.closeGhostEditMode === 'function') {
@@ -62,24 +57,19 @@ import { saveRoutePreference } from './db.js';
 export function initPersonalization(applyThemeToCard, getActiveCardId) {
     window.DISMISS_ICON_TARGET_ROTATION = 90;
 
-    // 🟢 建立專屬的「儲存與同步引擎」(直通資料庫與記憶體，破解 iOS 防擋機制)
     window.triggerSaveCustomization = function(editType, finalVal) {
         const activeId = getActiveCardId();
         if (!activeId || activeId === 'fixed-bottom') return;
 
-        // 1. 取出全域記憶體中的最新狀態，避免讀取不穩定的 DOM
         const routeData = window.appRailwayData.find(r => r.id === activeId);
         if (!routeData) return;
 
-        // 2. 更新對應的數值 (直接操作記憶體陣列)
         if (editType === 'name') routeData.name = finalVal;
         if (editType === 'color') routeData.hex = finalVal;
 
-        // 3. UI 即時連動 1：更新當前「自訂彈窗」自身的顏色
         const customizeCard = document.querySelector('#dynamic-blank-overlay .detail-card-inner');
         if (customizeCard) applyThemeToCard(customizeCard, routeData.hex);
 
-        // 4. UI 即時連動 2：更新背後的「詳細資訊卡片」顏色與名稱
         const detailCard = document.querySelector('#detail-card-container .detail-card-inner');
         if (detailCard) {
             applyThemeToCard(detailCard, routeData.hex);
@@ -87,7 +77,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             if (detailNameNode) detailNameNode.textContent = routeData.name;
         }
 
-        // 5. UI 即時連動 3：更新首頁底層的「原版卡片」顏色與名稱
         const mainCard = document.getElementById(`card-${activeId}`);
         if (mainCard) {
             applyThemeToCard(mainCard, routeData.hex);
@@ -95,7 +84,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             if (mainNameNode) mainNameNode.textContent = routeData.name;
         }
 
-        // 6. 絕對同步觸發背景寫入 IndexedDB (不使用 async/await 阻塞 UI)
         saveRoutePreference(activeId, routeData.name, routeData.hex)
             .then(() => console.log(`[DB] 成功寫入永久儲存 -> ${activeId}: ${routeData.name} / ${routeData.hex}`))
             .catch(err => console.error('[DB] 寫入 IndexedDB 失敗:', err));
@@ -341,6 +329,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         const triggerThreshold = window.innerWidth / 3;
 
         overlay.addEventListener('touchstart', (e) => {
+            if (window.pSyncing) return; // 🟢 阻擋手勢關閉
             if (e.touches.length > 1 || window.isFlipAnimating) return;
             swipeStartX = e.touches[0].clientX;
             swipeStartY = e.touches[0].clientY;
@@ -349,6 +338,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         }, { passive: true });
 
         overlay.addEventListener('touchmove', (e) => {
+            if (window.pSyncing) return; // 🟢 阻擋手勢關閉
             if (window.isFlipAnimating || swipeStartX === 0) return;
 
             const currentX = e.touches[0].clientX;
@@ -422,6 +412,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         }, { passive: false });
 
         overlay.addEventListener('touchend', (e) => {
+            if (window.pSyncing) return; // 🟢 阻擋手勢關閉
             if (!isSwiping) {
                 swipeStartX = 0;
                 return;
@@ -518,6 +509,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
     };
 
     window.closeBlankOverlay = function (isFromGesture = false) {
+        if (window.pSyncing && !isFromGesture) return; // 🟢 阻擋直接關閉
         if (window.isFlipAnimating) return;
         window.isFlipAnimating = true;
 
@@ -525,7 +517,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             window.pScrollManager.unlock();
         }
 
-        // 🛑 核心防護 1：在彈窗背景被摧毀前，強制結算並寫入當前活動中的輸入框資料
         if (window.pActiveEditType) {
             const ghost = document.getElementById('p-ghost-input');
             if (ghost) {
@@ -541,7 +532,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                     if (val.length === 0 || val.length > 10) isValid = false;
                 }
                 
-                // 無條件同步攔截儲存
                 if (isValid && window.triggerSaveCustomization) {
                     window.triggerSaveCustomization(type, val);
                 }
@@ -622,6 +612,235 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             }, 450);
         }, 300);
     };
+
+    // 🟢 實作雲端同步的三段式 SVG 下落切換動畫，徹底解決抽搐與文字起落方向
+    window.triggerCloudSync = function() {
+        if (window.pSyncing) {
+            const btn = document.getElementById('capsule-secondary-btn');
+            if (btn) window.triggerBump(btn);
+            return;
+        }
+
+        // 鎖定全域，阻擋任何其他點擊與滑動
+        window.pSyncing = true;
+
+        if (window.pActiveEditType) {
+            window.closeGhostEditMode(true, null, true);
+        }
+
+        const rightBtn = document.getElementById('capsule-secondary-btn');
+        if (!rightBtn) {
+            window.pSyncing = false;
+            return;
+        }
+
+        // 🟢 替右邊按鈕設定 relative，保證其下的 absolute wrapper 絕對鎖死正中央不位移
+        rightBtn.style.position = 'relative';
+
+        const svgSync = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cloud-sync-icon lucide-cloud-sync"><path d="m17 18-1.535 1.605a5 5 0 0 1-8-1.5"/><path d="M17 22v-4h-4"/><path d="M20.996 15.251A4.5 4.5 0 0 0 17.495 8h-1.79a7 7 0 1 0-12.709 5.607"/><path d="M7 10v4h4"/><path d="m7 14 1.535-1.605a5 5 0 0 1 8 1.5"/></svg>`;
+        const svgCheck = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cloud-check-icon lucide-cloud-check"><path d="m17 15-5.5 5.5L9 18"/><path d="M5.516 16.07A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 3.501 7.327"/></svg>`;
+
+        // 獲取右上角原始下載圖示
+        let originalSvg = null;
+        rightBtn.querySelectorAll('svg').forEach(s => {
+            if (s.classList.contains('icon-blank-mode')) originalSvg = s;
+        });
+
+        if (originalSvg) {
+            originalSvg.style.transition = 'transform 0.55s var(--spring-release), opacity 0.4s ease';
+        }
+
+        // 🟢 建立防抽搐的全尺寸絕對置中容器
+        const createWrapper = (svgStr) => {
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'absolute';
+            wrapper.style.inset = '0';
+            wrapper.style.display = 'flex';
+            wrapper.style.alignItems = 'center';
+            wrapper.style.justifyContent = 'center';
+            wrapper.style.pointerEvents = 'none'; 
+            wrapper.style.transform = 'translate3d(0, -40px, 0)'; // 初始從上方準備
+            wrapper.style.opacity = '0';
+            wrapper.style.transition = 'transform 0.55s var(--spring-release), opacity 0.4s ease';
+            wrapper.innerHTML = svgStr;
+            return wrapper;
+        };
+
+        const syncWrapper = createWrapper(svgSync);
+        const checkWrapper = createWrapper(svgCheck);
+        
+        rightBtn.appendChild(syncWrapper);
+        rightBtn.appendChild(checkWrapper);
+
+        const nameEls = getElements('name');
+        const colorEls = getElements('color');
+
+        // 在文字膠囊中建立同步顯示的 SVG 容器
+        function setupStatusSvg(els) {
+            if (!els.sharedStatus) return null;
+            if (els.sharedText) els.sharedText.style.display = 'none';
+
+            const container = document.createElement('div');
+            container.style.position = 'absolute';
+            container.style.inset = '0';
+            container.style.display = 'flex';
+            container.style.justifyContent = 'center';
+            container.style.alignItems = 'center';
+
+            const createIcon = (svgStr) => {
+                const el = document.createElement('div');
+                el.innerHTML = svgStr;
+                el.style.position = 'absolute';
+                el.style.transform = 'translate3d(0, -40px, 0)';
+                el.style.opacity = '0';
+                el.style.transition = 'transform 0.55s var(--spring-release), opacity 0.4s ease';
+                el.style.width = '20px';
+                el.style.height = '20px';
+                const innerSvg = el.firstElementChild;
+                if (innerSvg) {
+                    innerSvg.style.width = '100%';
+                    innerSvg.style.height = '100%';
+                }
+                return el;
+            };
+
+            const s1Svg = createIcon(svgSync);
+            const s2Svg = createIcon(svgCheck);
+
+            container.appendChild(s1Svg);
+            container.appendChild(s2Svg);
+            els.sharedStatus.appendChild(container);
+
+            return { s1Svg, s2Svg, container };
+        }
+
+        const nameSvgs = setupStatusSvg(nameEls);
+        const colorSvgs = setupStatusSvg(colorEls);
+
+        // --- 動畫開始 ---
+        setTimeout(() => {
+            // 原下載圖示往下退場
+            if (originalSvg) {
+                originalSvg.style.transform = 'translate3d(0, 40px, 0)';
+                originalSvg.style.opacity = '0';
+            }
+
+            // 兩組卡片文字往下退場
+            [nameEls, colorEls].forEach(els => {
+                if (els.display) {
+                    els.display.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
+                    els.display.style.transform = 'translate3d(0, 40px, 0)';
+                    els.display.style.opacity = '0';
+                }
+                if (els.sharedStatus) {
+                    els.sharedStatus.style.transition = 'opacity 0.3s ease';
+                    els.sharedStatus.style.transform = 'translate3d(0, 0, 0)';
+                    els.sharedStatus.style.opacity = '1';
+                }
+            });
+
+            // 第 1 張 SVG (Sync) 從上落下
+            syncWrapper.style.transform = 'translate3d(0, 0, 0)';
+            syncWrapper.style.opacity = '1';
+
+            [nameSvgs, colorSvgs].forEach(svgs => {
+                if (svgs) {
+                    svgs.s1Svg.style.transform = 'translate3d(0, 0, 0)';
+                    svgs.s1Svg.style.opacity = '1';
+                }
+            });
+        }, 50);
+
+        setTimeout(() => {
+            // 第 1 張 SVG 繼續往下退場
+            syncWrapper.style.transform = 'translate3d(0, 40px, 0)';
+            syncWrapper.style.opacity = '0';
+            
+            [nameSvgs, colorSvgs].forEach(svgs => {
+                if (svgs) {
+                    svgs.s1Svg.style.transform = 'translate3d(0, 40px, 0)';
+                    svgs.s1Svg.style.opacity = '0';
+                }
+            });
+
+            // 第 2 張 SVG (Check) 從上落下
+            checkWrapper.style.transform = 'translate3d(0, 0, 0)';
+            checkWrapper.style.opacity = '1';
+
+            [nameSvgs, colorSvgs].forEach(svgs => {
+                if (svgs) {
+                    svgs.s2Svg.style.transform = 'translate3d(0, 0, 0)';
+                    svgs.s2Svg.style.opacity = '1';
+                }
+            });
+        }, 900); // 縮短節奏，讓動畫更緊湊
+
+        setTimeout(() => {
+            // 第 2 張 SVG 繼續往下退場
+            checkWrapper.style.transform = 'translate3d(0, 40px, 0)';
+            checkWrapper.style.opacity = '0';
+
+            [nameSvgs, colorSvgs].forEach(svgs => {
+                if (svgs) {
+                    svgs.s2Svg.style.transform = 'translate3d(0, 40px, 0)';
+                    svgs.s2Svg.style.opacity = '0';
+                }
+            });
+
+            // 原下載圖示從下往上浮出 (40px -> 0px)
+            if (originalSvg) {
+                originalSvg.style.transition = 'none';
+                originalSvg.style.transform = 'translate3d(0, 40px, 0)';
+                void originalSvg.offsetWidth;
+                originalSvg.style.transition = 'transform 0.55s var(--spring-release), opacity 0.4s ease';
+                originalSvg.style.transform = 'translate3d(0, 0, 0)';
+                originalSvg.style.opacity = '1';
+            }
+
+            // 🟢 文字從上方落下 (-40px -> 0px)
+            [nameEls, colorEls].forEach(els => {
+                if (els.display) {
+                    els.display.style.transition = 'none';
+                    els.display.style.transform = 'translate3d(0, -40px, 0)';
+                    void els.display.offsetWidth;
+                    els.display.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
+                    els.display.style.transform = 'translate3d(0, 0, 0)';
+                    els.display.style.opacity = '1';
+                }
+                if (els.sharedStatus) {
+                    els.sharedStatus.style.transition = 'opacity 0.3s ease';
+                    els.sharedStatus.style.opacity = '0';
+                }
+            });
+        }, 1800);
+
+        // 清理並解除全域鎖定
+        setTimeout(() => {
+            syncWrapper.remove();
+            checkWrapper.remove();
+            if (originalSvg) {
+                originalSvg.style.transition = '';
+                originalSvg.style.transform = '';
+                originalSvg.style.opacity = '';
+            }
+
+            [nameEls, colorEls].forEach((els, index) => {
+                if (els.sharedText) els.sharedText.style.display = '';
+                const svgs = index === 0 ? nameSvgs : colorSvgs;
+                if (svgs && svgs.container) svgs.container.remove();
+                if (els.sharedStatus) {
+                    els.sharedStatus.style.transform = '';
+                    els.sharedStatus.style.opacity = '';
+                }
+                if (els.display) {
+                    els.display.style.transition = '';
+                    els.display.style.transform = '';
+                }
+            });
+
+            window.pSyncing = false;
+        }, 2500);
+    };
 }
 
 // =========================================================
@@ -635,12 +854,14 @@ const pState = {
 
 window.pActiveEditType = null; 
 window.pGhostMarker = false; 
+window.pSyncing = false; 
 
-function triggerBump(el) {
+// 改為掛載在 window 上，以利全域呼叫
+window.triggerBump = function(el) {
     if (!el) return;
     el.classList.add('p-bump-active');
     setTimeout(() => el.classList.remove('p-bump-active'), 150);
-}
+};
 
 function triggerDescToggle(isActive) {
     const descName = document.getElementById('p-desc-name');
@@ -818,9 +1039,9 @@ window.handleGhostInput = function(val) {
     }
 };
 
-// 🛑 核心防護 2：完全無延遲的 Blur 事件，保證鍵盤收回時立即連線 IndexedDB
 window.handleGhostBlur = function(e) {
     if (!window.pActiveEditType) return;
+    if (document.activeElement && document.activeElement.id === 'p-ghost-input') return;
     
     const ghost = document.getElementById('p-ghost-input');
     const type = window.pActiveEditType;
@@ -840,13 +1061,7 @@ window.handleGhostBlur = function(e) {
         if (val.length === 0 || val.length > 10) isValid = false;
     }
     
-    if (isValid && window.triggerSaveCustomization) {
-        window.triggerSaveCustomization(type, val);
-        const els = getElements(type);
-        if (els && els.display) els.display.textContent = val;
-    }
-    
-    window.closeGhostEditMode(true, null, false);
+    window.closeGhostEditMode(true, null, isValid);
 };
 
 window.handleGhostKey = function(e) {
@@ -881,13 +1096,18 @@ window.handleGhostKey = function(e) {
 };
 
 window.toggleGhostEditMode = function(type, e, element) {
+    if (window.pSyncing) { 
+        if (element) window.triggerBump(element);
+        return;
+    }
+
     if (pState[type] && (pState[type].isCopying || pState[type].isPasting)) {
-        if (element) triggerBump(element);
+        if (element) window.triggerBump(element);
         return;
     }
 
     if (window.pGhostMarker) {
-        if (element) triggerBump(element);
+        if (element) window.triggerBump(element);
         return;
     }
     
@@ -902,7 +1122,6 @@ window.toggleGhostEditMode = function(type, e, element) {
     const els = getElements(type);
 
     if (window.pActiveEditType) {
-        // 🛑 核心防護 3：跨欄位切換時，強制先將前一個欄位的修改存檔 (Cross-Pollination Save)
         const oldType = window.pActiveEditType;
         const oldEls = getElements(oldType);
         
@@ -1007,7 +1226,7 @@ window.closeGhostEditMode = function(forceImmediate = false, triggerElement = nu
     if (!window.pActiveEditType) return;
 
     if (window.pGhostMarker && !forceImmediate) {
-        if (triggerElement) triggerBump(triggerElement);
+        if (triggerElement) window.triggerBump(triggerElement);
         return;
     }
 
@@ -1068,13 +1287,17 @@ window.closeGhostEditMode = function(forceImmediate = false, triggerElement = nu
 
 window.handleCopyAction = function(e, type, element) {
     if (e) e.stopPropagation();
+    if (window.pSyncing) {
+        if (element) window.triggerBump(element);
+        return;
+    }
     if (window.pActiveEditType === type) {
         window.closeGhostEditMode(false, element);
         return;
     }
     
     if (window.pGhostMarker || pState[type].isCopying || pState[type].isPasting) {
-        if (element) triggerBump(element);
+        if (element) window.triggerBump(element);
         return;
     }
 
@@ -1127,10 +1350,14 @@ window.handleCopyAction = function(e, type, element) {
 
 window.handlePasteAction = function(e, type, element) {
     if (e) e.stopPropagation();
+    if (window.pSyncing) {
+        if (element) window.triggerBump(element);
+        return;
+    }
     if (window.pActiveEditType === type) return; 
 
     if (window.pGhostMarker || pState[type].isCopying || pState[type].isPasting) {
-        if (element) triggerBump(element);
+        if (element) window.triggerBump(element);
         return;
     }
 

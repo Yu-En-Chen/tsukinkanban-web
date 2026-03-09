@@ -28,7 +28,6 @@ const CAPSULE_SVGS = {
             <path d="M12 13v8l-4-4"/><path d="m12 21 4-4"/><path d="M4.393 15.269A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.436 8.284"/>
         </svg>
     `,
-    // 🟢 資訊卡片狀態專用的新 SVG
     infoLeft: `
         <svg class="icon-info-mode lucide lucide-chevron-left-icon lucide-chevron-left" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="m15 18-6-6 6-6"/>
@@ -95,7 +94,6 @@ export function initHeader(onSearchCallback, getActiveCardId) {
         }
     };
 
-    // 🟢 資訊卡片專用的膠囊滑動切換
     window.slideInfoCapsuleMode = function(toInfoMode) {
         const capsule = document.getElementById('action-capsule');
         const leftBtn = document.getElementById('capsule-main-btn');
@@ -188,6 +186,13 @@ export function initHeader(onSearchCallback, getActiveCardId) {
     };
 
     window.handleCapsuleMainClick = function() {
+        // 🟢 阻擋動畫期間的點擊
+        if (window.pSyncing) {
+            const btn = document.getElementById('capsule-main-btn');
+            if (btn && typeof window.triggerBump === 'function') window.triggerBump(btn);
+            return;
+        }
+
         const capsule = document.getElementById('action-capsule');
         const mode = capsule ? (capsule.dataset.mode || 'native') : 'native';
 
@@ -207,6 +212,13 @@ export function initHeader(onSearchCallback, getActiveCardId) {
     };
 
     window.handleCapsuleSecondaryClick = function() {
+        // 🟢 阻擋動畫期間的點擊
+        if (window.pSyncing) {
+            const btn = document.getElementById('capsule-secondary-btn');
+            if (btn && typeof window.triggerBump === 'function') window.triggerBump(btn);
+            return;
+        }
+
         const capsule = document.getElementById('action-capsule');
         const mode = capsule ? (capsule.dataset.mode || 'native') : 'native';
 
@@ -217,7 +229,8 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                 window.toggleCapsuleMenu();
             }
         } else if (mode === 'blank') {
-            console.log('Cloud Download Action Triggered');
+            // 🟢 觸發由上往下的同步動畫 (不再被 pGhostMarker 誤擋！)
+            if (typeof window.triggerCloudSync === 'function') window.triggerCloudSync();
         } else if (mode === 'info') {
             console.log('Info Details Triggered');
         }
