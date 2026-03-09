@@ -170,11 +170,21 @@ body.searching .search-mask {
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-.search-container.active .left-circle-btn,
-.search-container.menu-open .left-circle-btn {
-    transform: translate3d(-50px, 0, 0) scale(0.8);
-    opacity: 0;
-    pointer-events: none;
+    /*  右上互動方塊（右上膠囊、通知、搜尋）  */
+.search-container {
+    width: var(--card-width);
+    max-width: 420px;
+    margin: 0 auto;
+    height: 95px; 
+    display: block; 
+    position: relative;
+    pointer-events: auto;
+    transition: gap 0.4s var(--active-bounce);
+    
+    /* 🟢 新增：使用 transform 來平移整組母艦 (矩陣) */
+    /* translate(X軸左右, Y軸上下) */
+    /* 例如：往左移px，往下移px */
+    transform: translate(-10px, 10px); 
 }
 
 .search-trigger {
