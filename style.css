@@ -1717,44 +1717,19 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
    ⏱️ Keyframes 動畫時間軸精確定義 (總時長 2.0s)
    ========================================= */
 
-@keyframes search-bar-hero-move {
-    0% {
-        top: 51px;
-        right: 0px;
-        width: 44px;
-        opacity: 1;
-        transform: translate3d(0, 0, 0);
-        background: var(--search-bg);
-        border: 1px solid var(--search-border);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    25% {
-        top: 51px;
-        right: 0px;
-        width: 44px;
-        opacity: 0;
-        /* 🟢 修正這裡：把 100px 改為 0，讓搜尋按鈕原地淡出，不要往右飛 */
-        transform: translate3d(0, 0, 0);
-        background: var(--search-bg);
-        border: 1px solid var(--search-border);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    /* ⚡️ 極限硬切斷：確保接手瞬間擁有與膠囊 100% 相同的毛玻璃與背景 */
-    25.001%,
-    100% {
-        top: 0px;
-        right: 0px;
-        width: 95px;
-        opacity: 1;
-        transform: translate3d(0, 0, 0);
-        background: var(--search-bg);
-        border: 1px solid var(--search-border);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        -webkit-backdrop-filter: blur(20px);
-        backdrop-filter: blur(20px);
+   @keyframes search-bar-hero-move {
+    /* 🟢 外框不動：0% 到 100% 直接鎖死在上方與 95px 寬度，徹底消滅所有閃爍與殘影 */
+    0%, 100% { 
+        top: 0px; 
+        right: 0px; 
+        width: 95px; 
+        opacity: 1; 
+        transform: translate3d(0, 0, 0); 
+        background: var(--search-bg); 
+        border: 1px solid var(--search-border); 
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); 
+        -webkit-backdrop-filter: blur(20px); 
+        backdrop-filter: blur(20px); 
     }
 }
 
@@ -1777,21 +1752,14 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 }
 
 @keyframes search-svg-sequence {
-    0% {
-        transform: translateY(0);
-        opacity: 1;
-        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    /* 🟢 物理推擠效應：與膠囊左移的距離 (100px) 和速度 (cubic-bezier) 達到 100% 絕對同步 */
+    0% { 
+        transform: translate3d(100px, 0, 0); 
+        opacity: 1; 
+        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); 
     }
-
-    25% {
-        transform: translateY(0);
-        opacity: 0;
-    }
-
-    /* ⚡️ 極限硬切斷 */
-    25.001%,
-    100% {
-        transform: translateY(0);
-        opacity: 1;
+    25%, 100% { 
+        transform: translate3d(0, 0, 0); 
+        opacity: 1; 
     }
 }
