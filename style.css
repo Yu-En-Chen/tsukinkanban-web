@@ -951,23 +951,11 @@ body.searching #dynamic-info-overlay > .perspective-container {
 }
 
 /* =========================================
-   🟢 頂部按鈕與圖示同步淡出 (Fade Out - 徹底修復衝突版)
+   🟢 頂部按鈕與圖示同步淡出 (徹底修復衝突版)
    ========================================= */
 /* 只讓通用視窗 (universal-window) 隱藏這些按鈕，放過漢堡選單！ */
-body:has(.universal-window.is-active) .search-trigger {
-    transform: scale(0.90) translateY(15px) !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease !important;
-}
-
-body:has(.universal-window.is-active) .action-capsule {
-    transform: translateY(-50%) scale(0.90) translateY(15px) !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease !important;
-}
-
+body:has(.universal-window.is-active) .search-trigger,
+body:has(.universal-window.is-active) .action-capsule,
 body:has(.universal-window.is-active) .left-circle-btn {
     transform: scale(0.90) translateY(15px) !important;
     opacity: 0 !important;
