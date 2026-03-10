@@ -315,11 +315,38 @@ body.searching .search-mask {
    🟢 膠囊替身推擠系統 (替換舊有的膠囊飛出動畫)
    ========================================= */
 
-/* 1. 膠囊外框 (保持原位不動，當替身推到位時 25.1% 隱藏，把畫面交接給搜尋框) */
-.search-container.active .action-capsule {
-    transition: none !important;
-    animation: capsule-stay-then-hide 2s forwards !important;
-    pointer-events: none !important;
+/* =========================================
+   🟢 獨立防 Bug 版：搜尋 SVG 替身 (直接綁定在膠囊外框)
+   ========================================= */
+   .action-capsule::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 100px; /* 一開始精準藏在膠囊右側外 */
+    width: 47px; 
+    height: 100%;
+    background-color: var(--icon-color);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21 21-4.34-4.34'/%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3C/svg%3E") no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21 21-4.34-4.34'/%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3C/svg%3E") no-repeat;
+    -webkit-mask-size: 23px 23px;
+    mask-size: 23px 23px;
+    -webkit-mask-position: calc(50% - 1.5px) center;
+    mask-position: calc(50% - 1.5px) center;
+    opacity: 0.8;
+    pointer-events: none;
+    z-index: 10;
+    will-change: transform; /* 強制開啟 GPU 硬體加速，確保滑動絕對順暢不閃現 */
+}
+
+/* 啟動時，替身獨立往左滑動 100px 進入膠囊 */
+.search-container.active .action-capsule::after {
+    animation: replica-slide-in 2s forwards !important;
+}
+
+@keyframes replica-slide-in {
+    /* 速度與其他元件 100% 同步，完美滑入定位 */
+    0% { transform: translate3d(0, 0, 0); animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+    25%, 100% { transform: translate3d(-100px, 0, 0); }
 }
 
 @keyframes capsule-stay-then-hide {
@@ -342,19 +369,7 @@ body.searching .search-mask {
    🟢 膠囊替身推擠系統 (替換舊有的膠囊飛出動畫)
    ========================================= */
 
-/* 5. 膠囊左側 SVG (被推出) */
-.search-container.active .action-capsule .capsule-btn-item:first-of-type svg {
-    transition: none !important;
-    animation: capsule-left-svg-push 2s forwards !important;
-    will-change: transform, opacity;
-}
 
-/* 6. 膠囊右側 SVG (與搜尋同步出竅) */
-.search-container.active .action-capsule .capsule-btn-item:last-of-type svg {
-    transition: none !important;
-    animation: capsule-right-svg-fly 2s forwards !important;
-    will-change: transform, opacity;
-}
 
 /* 7. 取消按鈕 */
 .search-container.active .cancel-circle-btn {
@@ -1644,12 +1659,23 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
    ========================================= */
 
    @keyframes search-bar-hero-move {
-    /* 0~25%: 底下原本的搜尋按鈕照樣往右退場 100px */
+    /* 0~25%: 底下原本的搜尋按鈕照樣往右退場 */
     0% { top: 51px; right: 0px; width: 44px; opacity: 1; transform: translate3d(0, 0, 0); background: var(--search-bg); border: 1px solid var(--search-border); box-shadow: 0 4px 15px rgba(0,0,0,0.1); animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
     25% { top: 51px; right: 0px; width: 44px; opacity: 0; transform: translate3d(100px, 0, 0); background: var(--search-bg); border: 1px solid var(--search-border); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     
-    /* 🚀 25.1% ~ 100%: 空間傳送！寬度切換為 95px 接手畫面，然後就停在這裡不動了 */
-    25.1%, 100% { top: 0px; right: 0px; width: 95px; opacity: 1; transform: translate3d(0, 0, 0); background: transparent; border: none; box-shadow: none; }
+    /* 🚀 25.1% ~ 100%: 接手畫面！補回毛玻璃背景與邊框，解決交接時的「閃爍」 */
+    25.1%, 100% { 
+        top: 0px; 
+        right: 0px; 
+        width: 95px; 
+        opacity: 1; 
+        transform: translate3d(0, 0, 0); 
+        background: var(--search-bg); 
+        border: 1px solid var(--search-border); 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+    }
 }
     /* 🚀 25.1% 空間傳送！拔除實體，transform 歸零，準備變形為長條搜尋框 
     25.1% { top: 0px; right: 0px; width: 44px; opacity: 1; transform: translate3d(0, 0, 0); background: transparent; border: none; box-shadow: none; }
@@ -1674,11 +1700,10 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 }
 
 @keyframes search-svg-sequence {
-    /* 0~25%: 跟隨母體平移即可，只需處理淡出 */
+    /* 0~25%: 底下按鈕退場時，圖示跟著淡出 */
     0% { transform: translateY(0); opacity: 1; animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
     25% { transform: translateY(0); opacity: 0; }
     
-    /* 25.1~50%: 傳送到上層，從底部淡入浮現 */
-    25.1% { transform: translateY(15px); opacity: 0; }
-    50%, 100% { transform: translateY(0); opacity: 1; }
+    /* 🚀 修復閃爍關鍵：25.1% 瞬間直接 opacity: 1 亮起，完美接手剛剛滑進來的替身，並一路保持到 100% */
+    25.1%, 100% { transform: translateY(0); opacity: 1; }
 }
