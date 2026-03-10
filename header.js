@@ -178,12 +178,20 @@ export function initHeader(onSearchCallback, getActiveCardId) {
             searchContainer.classList.add('active');
             document.body.classList.add('searching'); 
             if (dismissIcon) dismissIcon.style.opacity = '0';
-            setTimeout(() => { searchInput.focus(); }, 300);
+            
+            // 🟢 救命關鍵：拔掉 setTimeout！必須在點擊瞬間同步聚焦，手機才會放行小鍵盤。
+            // 加入 preventScroll: true 防止瀏覽器因為聚焦隱藏物件而亂捲動畫面
+            if (searchInput) {
+                searchInput.focus({ preventScroll: true });
+            }
+            
         } else {
             searchContainer.classList.remove('active');
             document.body.classList.remove('searching'); 
-            searchInput.value = '';
-            searchInput.blur();
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.blur(); // 確保關閉搜尋時必定收起鍵盤
+            }
             onSearchCallback('');
             if (dismissIcon && getActiveCardId()) {
                 dismissIcon.style.opacity = '1';
@@ -276,3 +284,16 @@ export function initHeader(onSearchCallback, getActiveCardId) {
         });
     }
 }
+
+// 🟢 鍵盤防護機制：偵測到切換 App、回桌面、或點開其他分頁時，強制關閉鍵盤
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden && searchInput) {
+        searchInput.blur();
+    }
+});
+
+window.addEventListener('blur', () => {
+    if (searchInput) {
+        searchInput.blur();
+    }
+});

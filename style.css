@@ -908,6 +908,13 @@ body:has(.detail-overlay.active) .card-stack,
 body.searching .card-stack {
     transform: scale(0.90) translateY(15px) !important;
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    pointer-events: none !important; /* 鎖死卡片堆，禁止觸控 */
+}
+
+/* 🟢 強制鎖死螢幕，禁止 iOS/Android 橡皮筋回彈與滾動 */
+body.searching {
+    touch-action: none !important;
+    overflow: hidden !important;
 }
 
 body:has(.detail-overlay.active).menu-active .card-stack,
@@ -1494,4 +1501,142 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
             box-shadow: 0 8px 25px rgba(220, 220, 230, 0.18) !important;
         }
     }
+}
+
+/* =========================================
+   🔍 全新搜尋列進場動畫 (動態時長控制版、上排展開)
+   ========================================= */
+
+   :root {
+    /* 🟢 搜尋動畫總時長控制中心 (請直接在這裡修改秒數，例如 0.5s, 1s, 2s) */
+    --search-hero-time: 0.7s;
+    
+    /* --- 以下為系統自動依比例計算，請勿更改 --- */
+    --t-bg-fade: calc(var(--search-hero-time) * 0.6);   /* 背景淡出時間 (60%) */
+    --t-item-out: calc(var(--search-hero-time) * 0.4);  /* 舊元件退場時間 (40%) */
+    --t-item-in: calc(var(--search-hero-time) * 0.4);   /* 新元件進場時間 (40%) */
+    
+    --delay-out-1: 0s;
+    --delay-out-2: calc(var(--search-hero-time) * 0.1); /* 第二元件延遲 (10%) */
+    --delay-out-3: calc(var(--search-hero-time) * 0.2); /* 第三元件延遲 (20%) */
+    
+    --delay-in: calc(var(--search-hero-time) * 0.6);    /* 新元件等待舊元件淨空的延遲 (60%) */
+}
+
+/* 🟢 大外框背景：依比例時間線性降到完全透明 */
+.search-container.active::before {
+    opacity: 0;
+    transform: translate(50%, -50%) scale(0.8);
+    transition: opacity var(--t-bg-fade) linear, transform var(--search-hero-time) var(--apple-spring) !important;
+}
+
+/* 1. 消失動畫：彈起 -> 縮小 -> 消失 */
+@keyframes popOutShrink {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    40% { transform: translateY(-6px) scale(1.05); opacity: 1; }
+    100% { transform: translateY(10px) scale(0.5); opacity: 0; }
+}
+
+/* 2. 復原動畫：原路彈回 */
+@keyframes popBackIn {
+    0% { transform: translateY(10px) scale(0.5); opacity: 0; }
+    60% { transform: translateY(-4px) scale(1.05); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* 3. 彈出震動動畫 (輸入框與取消按鈕專用) */
+@keyframes popInBounce {
+    0% { transform: scale(0.3); opacity: 0; }
+    60% { transform: scale(1.08); opacity: 1; }
+    80% { transform: scale(0.96); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* --- 預設狀態 (取消搜尋時的接力復原) --- */
+.search-container:not(.active) .search-trigger {
+    animation: popBackIn var(--t-item-in) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards var(--delay-out-1);
+}
+.search-container:not(.active) .left-circle-btn {
+    animation: popBackIn var(--t-item-in) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards var(--delay-out-2);
+}
+.search-container:not(.active) .action-capsule {
+    animation: popBackIn var(--t-item-in) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards var(--delay-out-3);
+}
+.search-container:not(.active) .search-input-box,
+.search-container:not(.active) .cancel-circle-btn {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+/* --- 觸發搜尋狀態 (.active)：舊元件退場 --- */
+.search-container.active .search-trigger {
+    animation: popOutShrink var(--t-item-out) ease-in forwards var(--delay-out-1) !important;
+    pointer-events: none;
+}
+.search-container.active .left-circle-btn {
+    animation: popOutShrink var(--t-item-out) ease-in forwards var(--delay-out-2) !important;
+    pointer-events: none;
+}
+.search-container.active .action-capsule {
+    animation: popOutShrink var(--t-item-out) ease-in forwards var(--delay-out-3) !important;
+    pointer-events: none;
+}
+
+/* --- 獨立輸入框樣式 (固定於上排) --- */
+.search-input-box {
+    position: absolute;
+    top: 0px; 
+    left: 0;
+    right: 54px; 
+    height: 44px;
+    background: var(--search-bg);
+    border: 1px solid var(--search-border);
+    border-radius: 22px; 
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.5);
+    transform-origin: right center; 
+}
+
+.search-input-box input {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    font-size: 16px;
+    outline: none;
+    margin-left: 10px;
+}
+
+/* --- 取消按鈕 (固定於上排最右側) --- */
+.cancel-circle-btn {
+    position: absolute !important;
+    top: 0px !important; 
+    right: 0 !important;
+    width: 44px !important;
+    height: 44px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.5);
+    transform-origin: center center;
+    transition: none !important; 
+}
+
+/* --- 新元件接力進場 --- */
+.search-container.active .search-input-box,
+.search-container.active .cancel-circle-btn {
+    pointer-events: auto;
+    animation: popInBounce var(--t-item-in) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards var(--delay-in) !important;
 }
