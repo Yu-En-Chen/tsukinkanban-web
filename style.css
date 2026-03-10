@@ -330,37 +330,8 @@ body.searching .search-mask {
 /* =========================================
    🟢 膠囊替身推擠系統 (替換舊有的膠囊飛出動畫)
    ========================================= */
-.action-capsule::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 100px;
-    width: 47px;
-    height: 100%;
-    background-color: var(--icon-color);
 
-    /* 🔴 嚴格使用獨立屬性 (Longhand)，絕對禁止使用 mask 簡寫，防止尺寸跑掉與灰影閃爍 */
-    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21 21-4.34-4.34'/%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3C/svg%3E");
-    -webkit-mask-repeat: no-repeat;
-    -webkit-mask-size: 23px 23px;
-    -webkit-mask-position: calc(50% - 1.5px) center;
 
-    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21 21-4.34-4.34'/%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3C/svg%3E");
-    mask-repeat: no-repeat;
-    mask-size: 23px 23px;
-    mask-position: calc(50% - 1.5px) center;
-
-    opacity: 0.8;
-    pointer-events: none;
-    z-index: 10;
-    will-change: transform;
-}
-
-/* 4. 膠囊替身 */
-.search-container.active .action-capsule::after {
-    animation: replica-slide-in 2s forwards !important;
-    transform: translate3d(-100px, 0, 0) !important;
-}
 
 @keyframes replica-slide-in {
 
@@ -1764,13 +1735,14 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
         right: 0px;
         width: 44px;
         opacity: 0;
-        transform: translate3d(100px, 0, 0);
+        /* 🟢 修正這裡：把 100px 改為 0，讓搜尋按鈕原地淡出，不要往右飛 */
+        transform: translate3d(0, 0, 0);
         background: var(--search-bg);
         border: 1px solid var(--search-border);
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     }
 
-    /* ⚡️ 極限硬切斷：確保接手瞬間擁有與膠囊 100% 相同的毛玻璃與背景，徹底解決閃爍 */
+    /* ⚡️ 極限硬切斷：確保接手瞬間擁有與膠囊 100% 相同的毛玻璃與背景 */
     25.001%,
     100% {
         top: 0px;
@@ -1785,22 +1757,6 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
         backdrop-filter: blur(20px);
     }
 }
-
-/* 🚀 25.1% 空間傳送！拔除實體，transform 歸零，準備變形為長條搜尋框 
-    25.1% { top: 0px; right: 0px; width: 44px; opacity: 1; transform: translate3d(0, 0, 0); background: transparent; border: none; box-shadow: none; }
-    
-     [上層] 25.1~50%: 往左無猶豫移動，抵達膠囊左側 
-    50% { top: 0px; right: 0px; width: 95px; opacity: 1; transform: translate3d(0, 0, 0); background: transparent; border: none; box-shadow: none; animation-timing-function: linear; }
-    
-     [上層] 50~70%: 線性加速，拉長撞擊左側壁 
-    70% { top: 0px; right: 0px; width: calc(100% - 54px); opacity: 1; background: transparent; border: none; box-shadow: none; transform: translateX(0); animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1); }
-    
-     [上層] 70~85%: 慣性反彈 
-    85% { top: 0px; right: 0px; width: calc(100% - 54px); opacity: 1; background: transparent; border: none; box-shadow: none; transform: translateX(44px); animation-timing-function: ease-in-out; }
-    
-     [上層] 85~100%: 定桿 
-    100% { top: 0px; right: 0px; width: calc(100% - 54px); opacity: 1; background: transparent; border: none; box-shadow: none; transform: translateX(0); }
-    */
 
 @keyframes hamburger-push-out {
 
