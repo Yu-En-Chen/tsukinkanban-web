@@ -126,9 +126,9 @@ body.searching .search-mask {
     max-width: 420px;
     margin: 0 auto;
     /* 🟢 改為 95px 以容納兩排按鈕 */
-    height: 95px;
+    height: 95px; 
     /* 🟢 移除 flex 相關設定，純粹作為絕對定位的基準框 */
-    display: block;
+    display: block; 
     position: relative;
     pointer-events: auto;
     transition: gap 0.4s var(--active-bounce);
@@ -143,15 +143,15 @@ body.searching .search-mask {
     -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
     color: var(--icon-color);
-
+    
     /* 🟢 絕對定位：左下角 (與膠囊左側切齊) */
     position: absolute;
     top: 51px;
-    right: 51px;
-
+    right: 51px; 
+    
     /* 🟢 清除原本釘在畫面左側的設定 */
-    left: auto;
-
+    left: auto; 
+    
     z-index: 5;
     display: flex;
     align-items: center;
@@ -159,9 +159,7 @@ body.searching .search-mask {
     cursor: pointer;
     overflow: hidden;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-
-    /* 關閉時的滑順過渡 */
-    transition: right 0.4s var(--apple-spring) 0.1s, opacity 0.3s ease 0.1s;
+    transition: transform 0.5s var(--apple-spring), opacity 0.35s ease, scale 0.4s var(--apple-spring);
 }
 
 .left-circle-btn svg {
@@ -172,38 +170,38 @@ body.searching .search-mask {
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-/*  右上互動方塊（右上膠囊、通知、搜尋）  */
+    /*  右上互動方塊（右上膠囊、通知、搜尋）  */
 .search-container {
     width: var(--card-width);
     max-width: 420px;
     margin: 0 auto;
-    height: 95px;
-    display: block;
+    height: 95px; 
+    display: block; 
     position: relative;
     pointer-events: auto;
     transition: gap 0.4s var(--active-bounce);
-
+    
     /* 🟢 新增：使用 transform 來平移整組母艦 (矩陣) */
     /* translate(X軸左右, Y軸上下) */
     /* 例如：往左移px，往下移px */
-    transform: translate(-10px, 10px);
+    transform: translate(-10px, 10px); 
 }
 
 /* =========================================
    🟢 矩陣外框底板 (中心錨點鎖死版)
    ========================================= */
-.search-container::before {
+   .search-container::before {
     content: '';
     position: absolute;
-
+    
     /* 1. 鎖定「四顆按鈕矩陣」的絕對圓心座標 */
     /* (膠囊寬 95px / 總高 95px，所以矩陣圓心在 47.5px) */
     top: 47.5px;
     right: 47.5px;
-
+    
     /* 2. 核心校正：把底板的「中心點」釘在上面的座標 */
     transform: translate(50%, -50%);
-
+    
     /* =====================================
        📐 尺寸調整區：請直接在這裡改數字！
        因為中心點已經鎖死，改大改小都會完美從中心向外延伸。
@@ -212,7 +210,7 @@ body.searching .search-mask {
     width: 110px;
     height: 110px;
     border-radius: 29.5px;
-
+    
     /* =====================================
        🎨 底色與邊框開關區 (教學)
        目前是「雙層底色疊加效果」。
@@ -228,25 +226,15 @@ body.searching .search-mask {
     background: transparent;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
-
+    
     /* 與按鈕一致的邊框 */
     border: 1px solid var(--search-border);
-
+    
     /* 防干擾與陰影 */
     z-index: 0;
-    pointer-events: none;
-    /* 關閉所有微互動與點擊，讓它只是一張純畫布 */
+    pointer-events: none; /* 關閉所有微互動與點擊，讓它只是一張純畫布 */
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     transition: all 0.5s var(--apple-spring), opacity 0.3s ease;
-}
-
-/* 🟢 當「搜尋框」或「左側選單」展開時的縮小淡出防穿幫 */
-.search-container.active::before,
-.search-container.menu-open::before {
-    opacity: 0;
-    /* 展開時縮小。注意：這裡必須保留 translate(50%, -50%) 否則縮小時圓心會跑掉！ */
-    transform: translate(50%, -50%) scale(0.8);
-    transition: all 0.4s var(--apple-spring), opacity 0.3s ease;
 }
 
 .search-trigger {
@@ -260,153 +248,28 @@ body.searching .search-mask {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-
+    
     /* 🟢 絕對定位：右下角 (與膠囊右側切齊) */
     position: absolute;
     right: 0px;
     top: 51px;
-
+    
     /* 🟢 移除上一階段的 margin-right */
-    margin-right: 0px;
-
-    /* 關閉時的滑順過渡 */
-    transition: width 0.4s var(--apple-spring) 0s, top 0.4s var(--apple-spring) 0s, right 0.4s var(--apple-spring) 0s, transform 0.4s var(--apple-spring) 0s, opacity 0.3s ease 0s;
+    margin-right: 0px; 
+    
+    transition: all 0.5s var(--active-bounce), transform 0.5s var(--apple-spring), opacity 0.4s linear, scale 0.4s var(--apple-spring);
     border: 1px solid var(--search-border);
     overflow: hidden;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     z-index: 2;
 }
-
 .search-container.menu-open .search-trigger {
     transform: translate3d(-135px, 0, 0);
     opacity: 0;
     pointer-events: none;
 }
 
-/* =========================================
-   🟢 啟動狀態：硬體加速與動畫綁定
-   ========================================= */
 
-/* =========================================
-   🚀 終極清理：啟動類別 (移除所有破壞動畫的 !important)
-   ========================================= */
-
-/* 1. 搜尋外框本體 */
-.search-container.active .search-trigger {
-    transition: none !important;
-    animation: search-bar-hero-move 0.8s forwards !important; /* 🟢 總時長 0.8s */
-    will-change: right, width, transform, opacity, background;
-    
-    justify-content: flex-start;
-    padding-left: 12px;
-    z-index: 5700 !important;
-
-    /* 🚨 這裡放置動畫結束的「最終靜止狀態」。絕對不能加 !important 否則會覆蓋動畫！ */
-    top: 0px;
-    right: 0px;
-    width: calc(100% - 54px);
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-    background: var(--search-bg);
-    border: 1px solid var(--search-border);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    -webkit-backdrop-filter: blur(20px);
-    backdrop-filter: blur(20px);
-}
-
-/* 2. 搜尋放大鏡 SVG */
-.search-container.active .search-trigger .search-icon svg {
-    transition: none !important;
-    animation: search-svg-sequence 0.8s forwards !important; /* 🟢 總時長 0.8s */
-    
-    /* 最終靜止狀態 */
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-}
-
-/* 3. 膠囊內部網格 (被推出去的舊圖示) */
-.search-container.active .capsule-grid-layout {
-    animation: capsule-content-push-left 0.8s forwards !important; /* 🟢 總時長 0.8s */
-    transform: translate3d(-100px, 0, 0);
-}
-
-/* 3. 漢堡按鈕 */
-.search-container.active .left-circle-btn {
-    transition: none !important;
-    animation: hamburger-push-out 2s forwards !important;
-    will-change: right, opacity;
-    pointer-events: none;
-}
-
-/* =========================================
-   🟢 膠囊替身推擠系統 (替換舊有的膠囊飛出動畫)
-   ========================================= */
-
-
-
-@keyframes replica-slide-in {
-
-    /* 速度與其他元件 100% 同步，完美滑入定位 */
-    0% {
-        transform: translate3d(0, 0, 0);
-        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    25%,
-    100% {
-        transform: translate3d(-100px, 0, 0);
-    }
-}
-
-@keyframes capsule-stay-then-hide {
-
-    0%,
-    25% {
-        opacity: 1;
-        width: 95px;
-    }
-
-    /* ⚡️ 極限硬切斷，防止補間殘影 */
-    25.001%,
-    100% {
-        opacity: 0;
-        width: 0px;
-        visibility: hidden;
-    }
-}
-
-/* 2. 膠囊內部網格 (帶著替身向左推 100px，速度曲線與搜尋按鈕完全一致) */
-.search-container.active .capsule-grid-layout {
-    animation: capsule-content-push-left 2s forwards !important;
-}
-
-@keyframes capsule-content-push-left {
-
-    /* 與底下搜尋按鈕的 cubic-bezier 保持絕對一致 */
-    0% {
-        transform: translate3d(0, 0, 0);
-        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    25%,
-    100% {
-        transform: translate3d(-100px, 0, 0);
-    }
-}
-
-/* =========================================
-   🟢 膠囊替身推擠系統 (替換舊有的膠囊飛出動畫)
-   ========================================= */
-
-
-
-/* 7. 取消按鈕 */
-.search-container.active .cancel-circle-btn {
-    transition: none !important;
-    animation: cancel-pop-in 2s forwards !important;
-    will-change: transform, width, opacity;
-    pointer-events: auto;
-}
 
 .search-icon {
     width: 20px;
@@ -461,14 +324,14 @@ body.searching .search-mask {
     display: block;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     overflow: hidden;
-
+    
     /* 🟢 絕對定位：右上角起點 */
     position: absolute;
     right: 0px;
     top: 0px;
-
+    
     /* 🟢 移除 translateY 的干擾 */
-    transform: none;
+    transform: none; 
     transform-origin: top right;
     z-index: 5600;
     flex-shrink: 0;
@@ -502,13 +365,12 @@ body.searching .search-mask {
 }
 
 /* 🟢 物理對齊魔法：抵銷 95px 均分後導致的 1.5px 偏移，讓 SVG 完美鎖死在 22px 半徑圓心！ */
-.capsule-btn-item:first-of-type>svg,
-.capsule-btn-item:first-of-type>div {
+.capsule-btn-item:first-of-type > svg,
+.capsule-btn-item:first-of-type > div {
     margin-right: 3px !important;
 }
-
-.capsule-btn-item:last-of-type>svg,
-.capsule-btn-item:last-of-type>div {
+.capsule-btn-item:last-of-type > svg,
+.capsule-btn-item:last-of-type > div {
     margin-left: 3px !important;
 }
 
@@ -558,31 +420,15 @@ body.searching .search-mask {
 }
 
 @keyframes capsulePop {
-    0% {
-        scale: 1;
-    }
-
-    40% {
-        scale: var(--capsule-pop-scale);
-    }
-
-    100% {
-        scale: 1;
-    }
+    0% { scale: 1; }
+    40% { scale: var(--capsule-pop-scale); }
+    100% { scale: 1; }
 }
 
 @keyframes iconPop {
-    0% {
-        scale: 1;
-    }
-
-    40% {
-        scale: var(--icon-pop-scale);
-    }
-
-    100% {
-        scale: 1;
-    }
+    0% { scale: 1; }
+    40% { scale: var(--icon-pop-scale); }
+    100% { scale: 1; }
 }
 
 .action-capsule.trigger-pop {
@@ -622,11 +468,6 @@ body.searching .search-mask {
     display: block;
     flex-shrink: 0;
     opacity: 0.8;
-}
-
-.search-container.active .input-wrapper {
-    width: calc(100% - 44px);
-    opacity: 1;
 }
 
 /* =========================================
@@ -678,7 +519,7 @@ body.searching .search-mask {
    ========================================= */
 .capsule-btn-item svg.icon-blank-mode,
 .capsule-btn-item svg.icon-info-mode {
-    position: relative !important;
+    position: relative !important; 
     opacity: 0.8 !important;
     transform: scale(1) !important;
     pointer-events: auto !important;
@@ -784,11 +625,9 @@ body.searching .search-mask {
     .card-stack.allow-hover:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull) {
         transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
     }
-
     .card-stack.allow-hover.just-awoke:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull) {
         transition: transform 1.5s cubic-bezier(0.4, 0, 0.1, 1) !important;
     }
-
     .card-stack.allow-hover:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover {
         transform: translate3d(0, -8px, 0);
     }
@@ -1032,21 +871,17 @@ body.searching .search-mask {
 }
 
 @media (prefers-color-scheme: dark) {
-
     .card,
     .fixed-bottom-card,
     .detail-card-inner {
         filter: saturate(1.3) brightness(1.15);
     }
-
     body.searching .fixed-bottom-card {
         filter: blur(var(--bg-content-blur)) saturate(1.3) brightness(1.15);
     }
-
     .card-stack.has-active~.fixed-bottom-card {
         filter: blur(10px) saturate(1.3) brightness(1.15);
     }
-
     .card::after,
     .fixed-bottom-card::after,
     .detail-card-inner::after {
@@ -1088,22 +923,22 @@ body.menu-active #detail-card-container,
 body:has(.left-circle-btn.is-expanded) #detail-card-container,
 body:has(.universal-window.is-active) #detail-card-container,
 body.searching #detail-card-container,
-body.menu-active #dynamic-blank-overlay>.perspective-container,
-body:has(.left-circle-btn.is-expanded) #dynamic-blank-overlay>.perspective-container,
-body:has(.universal-window.is-active) #dynamic-blank-overlay>.perspective-container,
-body.searching #dynamic-blank-overlay>.perspective-container,
-body.menu-active #dynamic-info-overlay>.perspective-container,
-body:has(.left-circle-btn.is-expanded) #dynamic-info-overlay>.perspective-container,
-body:has(.universal-window.is-active) #dynamic-info-overlay>.perspective-container,
-body.searching #dynamic-info-overlay>.perspective-container {
+body.menu-active #dynamic-blank-overlay > .perspective-container,
+body:has(.left-circle-btn.is-expanded) #dynamic-blank-overlay > .perspective-container,
+body:has(.universal-window.is-active) #dynamic-blank-overlay > .perspective-container,
+body.searching #dynamic-blank-overlay > .perspective-container,
+body.menu-active #dynamic-info-overlay > .perspective-container,
+body:has(.left-circle-btn.is-expanded) #dynamic-info-overlay > .perspective-container,
+body:has(.universal-window.is-active) #dynamic-info-overlay > .perspective-container,
+body.searching #dynamic-info-overlay > .perspective-container {
     transform: scale(0.90) translateY(15px) !important;
     pointer-events: none !important;
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-#detail-card-container,
-#dynamic-blank-overlay>.perspective-container,
-#dynamic-info-overlay>.perspective-container {
+#detail-card-container, 
+#dynamic-blank-overlay > .perspective-container,
+#dynamic-info-overlay > .perspective-container {
     transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1440,7 +1275,6 @@ body.searching .dismiss-icon {
 }
 
 @media (any-hover: hover) {
-
     .left-circle-btn:not(.is-expanded):hover,
     .menu-close-btn:hover,
     .search-container:not(.active) .search-trigger:hover,
@@ -1564,17 +1398,9 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 }
 
 @keyframes rotatePhone {
-    0% {
-        transform: rotate(-90deg);
-    }
-
-    50% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(-90deg);
-    }
+    0% { transform: rotate(-90deg); }
+    50% { transform: rotate(0deg); }
+    100% { transform: rotate(-90deg); }
 }
 
 @media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
@@ -1607,7 +1433,6 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
    高級反差色動態游標 (Custom Difference Cursor)
    ========================================================================== */
 @media (pointer: fine) {
-
     *,
     *::before,
     *::after,
@@ -1644,8 +1469,8 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 /* =========================================
    🟢 深色模式專屬：白灰微光陰影 (Dark Mode Glow)
    ========================================= */
-@media (prefers-color-scheme: dark) {
-
+   @media (prefers-color-scheme: dark) {
+    
     /* 1. 外層大底板的微光 (稍微擴散一點，營造氛圍) */
     .search-container::before {
         /* rgb(220, 220, 230) 是一種非常有質感的高級冷白灰色 */
@@ -1663,92 +1488,10 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 
     /* 3. 當手指按壓或滑鼠懸浮 (Hover) 時，微光會稍微變亮並擴大 */
     @media (any-hover: hover) {
-
         .left-circle-btn:not(.is-expanded):hover,
         .search-container:not(.active) .search-trigger:hover,
         .action-capsule:not(.menu-expanded):hover {
             box-shadow: 0 8px 25px rgba(220, 220, 230, 0.18) !important;
         }
     }
-}
-
-/* =========================================
-   🎬 終極 Hero Sequence 英雄進場序列 (2.0s 雙層軌道無縫交接版)
-   ========================================= */
-
-
-
-
-
-/* 3. 漢堡按鈕 (向右推出) */
-.search-container.active .left-circle-btn {
-    transition: none !important;
-    animation: hamburger-push-out 2s forwards !important;
-    pointer-events: none;
-    /* 寫死終點 */
-    right: 51px !important;
-    opacity: 0 !important;
-    transform: translate3d(100px, 0, 0) !important;
-}
-
-/* 6. 取消按鈕 (趁右側反彈時從左側彈入) */
-.search-container.active .cancel-circle-btn {
-    transition: none !important;
-    animation: cancel-pop-in 2s forwards !important;
-    pointer-events: auto;
-    position: absolute !important;
-    top: 0px !important;
-    /* 確保與膠囊同一層 */
-    left: 0px !important;
-    margin: 0 !important;
-}
-
-/* 7. 輸入框文字區 (延遲淡入) */
-.search-container.active .input-wrapper {
-    transition: none !important;
-    animation: input-fade-in 2s forwards !important;
-}
-
-/* =========================================
-   🎬 三軌同步 Keyframes (30% 推擠期，70% 延展期)
-   ========================================= */
-
-   @keyframes search-bar-hero-move {
-    /* 🟢 階段一 (0% ~ 30%)：維持透明空殼與 95px，這是專屬的推擠舞台 */
-    0%, 30% { 
-        top: 0px; right: 0px; width: 95px; opacity: 1; transform: translate3d(0, 0, 0); 
-        background: transparent; border-color: transparent; box-shadow: none; 
-        -webkit-backdrop-filter: none; backdrop-filter: none; 
-        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    /* ⚡️ 瞬間接管 (30.001%)：推擠結束，瞬間變回實體玻璃 */
-    30.001% {
-        width: 95px;
-        background: var(--search-bg); border: 1px solid var(--search-border); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); 
-        -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); 
-        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    /* 🟢 階段二 (30.001% ~ 100%)：實體向左滑順拉伸 */
-    100% { 
-        top: 0px; right: 0px; width: calc(100% - 54px); opacity: 1; transform: translate3d(0, 0, 0); 
-        background: var(--search-bg); border: 1px solid var(--search-border); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); 
-        -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); 
-    }
-}
-
-@keyframes search-svg-sequence {
-    /* 🟢 階段一：從右邊界外 100px 狠狠衝進來 */
-    0% { transform: translate3d(100px, 0, 0); opacity: 1; animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
-    30% { transform: translate3d(0, 0, 0); opacity: 1; }
-    
-    /* 🟢 階段二：維持在相對 0 的位置，跟著父元素的拉伸一起向左衝浪 */
-    100% { transform: translate3d(0, 0, 0); opacity: 1; }
-}
-
-@keyframes capsule-content-push-left {
-    /* 🟢 階段一：被放大鏡撞飛到左邊界外 -100px */
-    0% { transform: translate3d(0, 0, 0); animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
-    30%, 100% { transform: translate3d(-100px, 0, 0); }
 }
