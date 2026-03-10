@@ -1644,10 +1644,13 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
    ========================================= */
 
    @keyframes search-bar-hero-move {
-    /* [下層] 0~25% (0~500ms): 棄用 right，改用 transform 與漢堡按鈕完美綁定同步平移 100px */
+    /* 0~25%: 底下原本的搜尋按鈕照樣往右退場 100px */
     0% { top: 51px; right: 0px; width: 44px; opacity: 1; transform: translate3d(0, 0, 0); background: var(--search-bg); border: 1px solid var(--search-border); box-shadow: 0 4px 15px rgba(0,0,0,0.1); animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
     25% { top: 51px; right: 0px; width: 44px; opacity: 0; transform: translate3d(100px, 0, 0); background: var(--search-bg); border: 1px solid var(--search-border); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     
+    /* 🚀 25.1% ~ 100%: 空間傳送！寬度切換為 95px 接手畫面，然後就停在這裡不動了 */
+    25.1%, 100% { top: 0px; right: 0px; width: 95px; opacity: 1; transform: translate3d(0, 0, 0); background: transparent; border: none; box-shadow: none; }
+}
     /* 🚀 25.1% 空間傳送！拔除實體，transform 歸零，準備變形為長條搜尋框 
     25.1% { top: 0px; right: 0px; width: 44px; opacity: 1; transform: translate3d(0, 0, 0); background: transparent; border: none; box-shadow: none; }
     
@@ -1663,7 +1666,6 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
      [上層] 85~100%: 定桿 
     100% { top: 0px; right: 0px; width: calc(100% - 54px); opacity: 1; background: transparent; border: none; box-shadow: none; transform: translateX(0); }
     */
-}
 
 @keyframes hamburger-push-out {
     /* 與搜尋按鈕使用完全一模一樣的 transform 軌跡與時間曲線 (cubic-bezier) */
