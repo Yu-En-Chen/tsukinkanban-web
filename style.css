@@ -126,9 +126,9 @@ body.searching .search-mask {
     max-width: 420px;
     margin: 0 auto;
     /* 🟢 改為 95px 以容納兩排按鈕 */
-    height: 95px; 
+    height: 95px;
     /* 🟢 移除 flex 相關設定，純粹作為絕對定位的基準框 */
-    display: block; 
+    display: block;
     position: relative;
     pointer-events: auto;
     transition: gap 0.4s var(--active-bounce);
@@ -143,15 +143,15 @@ body.searching .search-mask {
     -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
     color: var(--icon-color);
-    
+
     /* 🟢 絕對定位：左下角 (與膠囊左側切齊) */
     position: absolute;
     top: 51px;
-    right: 51px; 
-    
+    right: 51px;
+
     /* 🟢 清除原本釘在畫面左側的設定 */
-    left: auto; 
-    
+    left: auto;
+
     z-index: 5;
     display: flex;
     align-items: center;
@@ -159,7 +159,7 @@ body.searching .search-mask {
     cursor: pointer;
     overflow: hidden;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    
+
     /* 關閉時的滑順過渡 */
     transition: right 0.4s var(--apple-spring) 0.1s, opacity 0.3s ease 0.1s;
 }
@@ -172,38 +172,38 @@ body.searching .search-mask {
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-    /*  右上互動方塊（右上膠囊、通知、搜尋）  */
+/*  右上互動方塊（右上膠囊、通知、搜尋）  */
 .search-container {
     width: var(--card-width);
     max-width: 420px;
     margin: 0 auto;
-    height: 95px; 
-    display: block; 
+    height: 95px;
+    display: block;
     position: relative;
     pointer-events: auto;
     transition: gap 0.4s var(--active-bounce);
-    
+
     /* 🟢 新增：使用 transform 來平移整組母艦 (矩陣) */
     /* translate(X軸左右, Y軸上下) */
     /* 例如：往左移px，往下移px */
-    transform: translate(-10px, 10px); 
+    transform: translate(-10px, 10px);
 }
 
 /* =========================================
    🟢 矩陣外框底板 (中心錨點鎖死版)
    ========================================= */
-   .search-container::before {
+.search-container::before {
     content: '';
     position: absolute;
-    
+
     /* 1. 鎖定「四顆按鈕矩陣」的絕對圓心座標 */
     /* (膠囊寬 95px / 總高 95px，所以矩陣圓心在 47.5px) */
     top: 47.5px;
     right: 47.5px;
-    
+
     /* 2. 核心校正：把底板的「中心點」釘在上面的座標 */
     transform: translate(50%, -50%);
-    
+
     /* =====================================
        📐 尺寸調整區：請直接在這裡改數字！
        因為中心點已經鎖死，改大改小都會完美從中心向外延伸。
@@ -212,7 +212,7 @@ body.searching .search-mask {
     width: 110px;
     height: 110px;
     border-radius: 29.5px;
-    
+
     /* =====================================
        🎨 底色與邊框開關區 (教學)
        目前是「雙層底色疊加效果」。
@@ -228,13 +228,14 @@ body.searching .search-mask {
     background: transparent;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
-    
+
     /* 與按鈕一致的邊框 */
     border: 1px solid var(--search-border);
-    
+
     /* 防干擾與陰影 */
     z-index: 0;
-    pointer-events: none; /* 關閉所有微互動與點擊，讓它只是一張純畫布 */
+    pointer-events: none;
+    /* 關閉所有微互動與點擊，讓它只是一張純畫布 */
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     transition: all 0.5s var(--apple-spring), opacity 0.3s ease;
 }
@@ -259,15 +260,15 @@ body.searching .search-mask {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    
+
     /* 🟢 絕對定位：右下角 (與膠囊右側切齊) */
     position: absolute;
     right: 0px;
     top: 51px;
-    
+
     /* 🟢 移除上一階段的 margin-right */
-    margin-right: 0px; 
-    
+    margin-right: 0px;
+
     /* 關閉時的滑順過渡 */
     transition: width 0.4s var(--apple-spring) 0s, top 0.4s var(--apple-spring) 0s, right 0.4s var(--apple-spring) 0s, transform 0.4s var(--apple-spring) 0s, opacity 0.3s ease 0s;
     border: 1px solid var(--search-border);
@@ -275,6 +276,7 @@ body.searching .search-mask {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     z-index: 2;
 }
+
 .search-container.menu-open .search-trigger {
     transform: translate3d(-135px, 0, 0);
     opacity: 0;
@@ -287,11 +289,22 @@ body.searching .search-mask {
 
 /* 1. 搜尋按鈕本體 */
 .search-container.active .search-trigger {
-    transition: none !important; 
-    animation: search-bar-hero-move 2s forwards !important;
-    will-change: right, width, transform, opacity; /* 強制 GPU 硬體加速 */
-    background: var(--search-bg);
-    border: 1px solid var(--search-border);
+    transition: none !important;
+    animation: search-bar-hero-move 0.5s forwards !important;
+    /* 🟢 改為 0.5s */
+    will-change: right, width, transform, opacity;
+
+    /* 🟢 救命關鍵：把 100% 的狀態直接寫死在這裡，承接 GPU 卸載後的狀態 */
+    top: 0px !important;
+    right: 0px !important;
+    width: 95px !important;
+    opacity: 1 !important;
+    transform: translate3d(0, 0, 0) !important;
+    background: var(--search-bg) !important;
+    border: 1px solid var(--search-border) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    backdrop-filter: blur(20px) !important;
+
     justify-content: flex-start;
     padding-left: 12px;
 }
@@ -299,8 +312,11 @@ body.searching .search-mask {
 /* 2. 搜尋 SVG 圖示 */
 .search-container.active .search-trigger .search-icon svg {
     transition: none !important;
-    animation: search-svg-sequence 2s forwards !important;
-    will-change: transform, opacity;
+    animation: search-svg-sequence 0.5s forwards !important;
+    /* 🟢 改為 0.5s */
+    opacity: 1 !important;
+    /* 寫死終點 */
+    transform: translateY(0) !important;
 }
 
 /* 3. 漢堡按鈕 */
@@ -314,51 +330,67 @@ body.searching .search-mask {
 /* =========================================
    🟢 膠囊替身推擠系統 (替換舊有的膠囊飛出動畫)
    ========================================= */
-
-/* =========================================
-   🟢 獨立防 Bug 版：搜尋 SVG 替身 (直接綁定在膠囊外框)
-   ========================================= */
-   .action-capsule::after {
+.action-capsule::after {
     content: '';
     position: absolute;
     top: 0;
     left: 100px;
-    width: 47px; 
+    width: 47px;
     height: 100%;
     background-color: var(--icon-color);
-    
+
     /* 🔴 嚴格使用獨立屬性 (Longhand)，絕對禁止使用 mask 簡寫，防止尺寸跑掉與灰影閃爍 */
     -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21 21-4.34-4.34'/%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3C/svg%3E");
     -webkit-mask-repeat: no-repeat;
     -webkit-mask-size: 23px 23px;
     -webkit-mask-position: calc(50% - 1.5px) center;
-    
+
     mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21 21-4.34-4.34'/%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3C/svg%3E");
     mask-repeat: no-repeat;
     mask-size: 23px 23px;
     mask-position: calc(50% - 1.5px) center;
-    
+
     opacity: 0.8;
     pointer-events: none;
     z-index: 10;
     will-change: transform;
 }
 
-/* 啟動時，替身獨立往左滑動 100px 進入膠囊 */
+/* 4. 膠囊替身 */
 .search-container.active .action-capsule::after {
     animation: replica-slide-in 2s forwards !important;
+    transform: translate3d(-100px, 0, 0) !important;
 }
 
 @keyframes replica-slide-in {
+
     /* 速度與其他元件 100% 同步，完美滑入定位 */
-    0% { transform: translate3d(0, 0, 0); animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
-    25%, 100% { transform: translate3d(-100px, 0, 0); }
+    0% {
+        transform: translate3d(0, 0, 0);
+        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    25%,
+    100% {
+        transform: translate3d(-100px, 0, 0);
+    }
 }
 
 @keyframes capsule-stay-then-hide {
-    0%, 25% { opacity: 1; width: 95px; }
+
+    0%,
+    25% {
+        opacity: 1;
+        width: 95px;
+    }
+
     /* ⚡️ 極限硬切斷，防止補間殘影 */
-    25.001%, 100% { opacity: 0; width: 0px; visibility: hidden; }
+    25.001%,
+    100% {
+        opacity: 0;
+        width: 0px;
+        visibility: hidden;
+    }
 }
 
 /* 2. 膠囊內部網格 (帶著替身向左推 100px，速度曲線與搜尋按鈕完全一致) */
@@ -367,9 +399,17 @@ body.searching .search-mask {
 }
 
 @keyframes capsule-content-push-left {
+
     /* 與底下搜尋按鈕的 cubic-bezier 保持絕對一致 */
-    0% { transform: translate3d(0, 0, 0); animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
-    25%, 100% { transform: translate3d(-100px, 0, 0); }
+    0% {
+        transform: translate3d(0, 0, 0);
+        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    25%,
+    100% {
+        transform: translate3d(-100px, 0, 0);
+    }
 }
 
 /* =========================================
@@ -439,14 +479,14 @@ body.searching .search-mask {
     display: block;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     overflow: hidden;
-    
+
     /* 🟢 絕對定位：右上角起點 */
     position: absolute;
     right: 0px;
     top: 0px;
-    
+
     /* 🟢 移除 translateY 的干擾 */
-    transform: none; 
+    transform: none;
     transform-origin: top right;
     z-index: 5600;
     flex-shrink: 0;
@@ -480,12 +520,13 @@ body.searching .search-mask {
 }
 
 /* 🟢 物理對齊魔法：抵銷 95px 均分後導致的 1.5px 偏移，讓 SVG 完美鎖死在 22px 半徑圓心！ */
-.capsule-btn-item:first-of-type > svg,
-.capsule-btn-item:first-of-type > div {
+.capsule-btn-item:first-of-type>svg,
+.capsule-btn-item:first-of-type>div {
     margin-right: 3px !important;
 }
-.capsule-btn-item:last-of-type > svg,
-.capsule-btn-item:last-of-type > div {
+
+.capsule-btn-item:last-of-type>svg,
+.capsule-btn-item:last-of-type>div {
     margin-left: 3px !important;
 }
 
@@ -535,15 +576,31 @@ body.searching .search-mask {
 }
 
 @keyframes capsulePop {
-    0% { scale: 1; }
-    40% { scale: var(--capsule-pop-scale); }
-    100% { scale: 1; }
+    0% {
+        scale: 1;
+    }
+
+    40% {
+        scale: var(--capsule-pop-scale);
+    }
+
+    100% {
+        scale: 1;
+    }
 }
 
 @keyframes iconPop {
-    0% { scale: 1; }
-    40% { scale: var(--icon-pop-scale); }
-    100% { scale: 1; }
+    0% {
+        scale: 1;
+    }
+
+    40% {
+        scale: var(--icon-pop-scale);
+    }
+
+    100% {
+        scale: 1;
+    }
 }
 
 .action-capsule.trigger-pop {
@@ -639,7 +696,7 @@ body.searching .search-mask {
    ========================================= */
 .capsule-btn-item svg.icon-blank-mode,
 .capsule-btn-item svg.icon-info-mode {
-    position: relative !important; 
+    position: relative !important;
     opacity: 0.8 !important;
     transform: scale(1) !important;
     pointer-events: auto !important;
@@ -745,9 +802,11 @@ body.searching .search-mask {
     .card-stack.allow-hover:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull) {
         transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
     }
+
     .card-stack.allow-hover.just-awoke:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull) {
         transition: transform 1.5s cubic-bezier(0.4, 0, 0.1, 1) !important;
     }
+
     .card-stack.allow-hover:not(.dragging):not(.has-active) .card:not(.returning):not(.piano-ripple):not(.opening-pull):hover {
         transform: translate3d(0, -8px, 0);
     }
@@ -991,17 +1050,21 @@ body.searching .search-mask {
 }
 
 @media (prefers-color-scheme: dark) {
+
     .card,
     .fixed-bottom-card,
     .detail-card-inner {
         filter: saturate(1.3) brightness(1.15);
     }
+
     body.searching .fixed-bottom-card {
         filter: blur(var(--bg-content-blur)) saturate(1.3) brightness(1.15);
     }
+
     .card-stack.has-active~.fixed-bottom-card {
         filter: blur(10px) saturate(1.3) brightness(1.15);
     }
+
     .card::after,
     .fixed-bottom-card::after,
     .detail-card-inner::after {
@@ -1043,22 +1106,22 @@ body.menu-active #detail-card-container,
 body:has(.left-circle-btn.is-expanded) #detail-card-container,
 body:has(.universal-window.is-active) #detail-card-container,
 body.searching #detail-card-container,
-body.menu-active #dynamic-blank-overlay > .perspective-container,
-body:has(.left-circle-btn.is-expanded) #dynamic-blank-overlay > .perspective-container,
-body:has(.universal-window.is-active) #dynamic-blank-overlay > .perspective-container,
-body.searching #dynamic-blank-overlay > .perspective-container,
-body.menu-active #dynamic-info-overlay > .perspective-container,
-body:has(.left-circle-btn.is-expanded) #dynamic-info-overlay > .perspective-container,
-body:has(.universal-window.is-active) #dynamic-info-overlay > .perspective-container,
-body.searching #dynamic-info-overlay > .perspective-container {
+body.menu-active #dynamic-blank-overlay>.perspective-container,
+body:has(.left-circle-btn.is-expanded) #dynamic-blank-overlay>.perspective-container,
+body:has(.universal-window.is-active) #dynamic-blank-overlay>.perspective-container,
+body.searching #dynamic-blank-overlay>.perspective-container,
+body.menu-active #dynamic-info-overlay>.perspective-container,
+body:has(.left-circle-btn.is-expanded) #dynamic-info-overlay>.perspective-container,
+body:has(.universal-window.is-active) #dynamic-info-overlay>.perspective-container,
+body.searching #dynamic-info-overlay>.perspective-container {
     transform: scale(0.90) translateY(15px) !important;
     pointer-events: none !important;
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-#detail-card-container, 
-#dynamic-blank-overlay > .perspective-container,
-#dynamic-info-overlay > .perspective-container {
+#detail-card-container,
+#dynamic-blank-overlay>.perspective-container,
+#dynamic-info-overlay>.perspective-container {
     transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1395,6 +1458,7 @@ body.searching .dismiss-icon {
 }
 
 @media (any-hover: hover) {
+
     .left-circle-btn:not(.is-expanded):hover,
     .menu-close-btn:hover,
     .search-container:not(.active) .search-trigger:hover,
@@ -1518,9 +1582,17 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 }
 
 @keyframes rotatePhone {
-    0% { transform: rotate(-90deg); }
-    50% { transform: rotate(0deg); }
-    100% { transform: rotate(-90deg); }
+    0% {
+        transform: rotate(-90deg);
+    }
+
+    50% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(-90deg);
+    }
 }
 
 @media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
@@ -1553,6 +1625,7 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
    高級反差色動態游標 (Custom Difference Cursor)
    ========================================================================== */
 @media (pointer: fine) {
+
     *,
     *::before,
     *::after,
@@ -1589,8 +1662,8 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 /* =========================================
    🟢 深色模式專屬：白灰微光陰影 (Dark Mode Glow)
    ========================================= */
-   @media (prefers-color-scheme: dark) {
-    
+@media (prefers-color-scheme: dark) {
+
     /* 1. 外層大底板的微光 (稍微擴散一點，營造氛圍) */
     .search-container::before {
         /* rgb(220, 220, 230) 是一種非常有質感的高級冷白灰色 */
@@ -1608,6 +1681,7 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 
     /* 3. 當手指按壓或滑鼠懸浮 (Hover) 時，微光會稍微變亮並擴大 */
     @media (any-hover: hover) {
+
         .left-circle-btn:not(.is-expanded):hover,
         .search-container:not(.active) .search-trigger:hover,
         .action-capsule:not(.menu-expanded):hover {
@@ -1626,8 +1700,10 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
     animation: search-bar-hero-move 2s forwards !important;
     justify-content: flex-start;
     padding-left: 12px;
-    z-index: 5700 !important; /* 確保在上層，蓋過膠囊 */
-    background: transparent !important; /* 覆蓋預設，由 animation 接管 */
+    z-index: 5700 !important;
+    /* 確保在上層，蓋過膠囊 */
+    background: transparent !important;
+    /* 覆蓋預設，由 animation 接管 */
     border-color: transparent !important;
 }
 
@@ -1642,6 +1718,10 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
     transition: none !important;
     animation: hamburger-push-out 2s forwards !important;
     pointer-events: none;
+    /* 寫死終點 */
+    right: 51px !important;
+    opacity: 0 !important;
+    transform: translate3d(100px, 0, 0) !important;
 }
 
 /* 6. 取消按鈕 (趁右側反彈時從左側彈入) */
@@ -1650,7 +1730,8 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
     animation: cancel-pop-in 2s forwards !important;
     pointer-events: auto;
     position: absolute !important;
-    top: 0px !important; /* 確保與膠囊同一層 */
+    top: 0px !important;
+    /* 確保與膠囊同一層 */
     left: 0px !important;
     margin: 0 !important;
 }
@@ -1665,25 +1746,47 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
    ⏱️ Keyframes 動畫時間軸精確定義 (總時長 2.0s)
    ========================================= */
 
-   @keyframes search-bar-hero-move {
-    0% { top: 51px; right: 0px; width: 44px; opacity: 1; transform: translate3d(0, 0, 0); background: var(--search-bg); border: 1px solid var(--search-border); box-shadow: 0 4px 15px rgba(0,0,0,0.1); animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
-    25% { top: 51px; right: 0px; width: 44px; opacity: 0; transform: translate3d(100px, 0, 0); background: var(--search-bg); border: 1px solid var(--search-border); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-    
+@keyframes search-bar-hero-move {
+    0% {
+        top: 51px;
+        right: 0px;
+        width: 44px;
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+        background: var(--search-bg);
+        border: 1px solid var(--search-border);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    25% {
+        top: 51px;
+        right: 0px;
+        width: 44px;
+        opacity: 0;
+        transform: translate3d(100px, 0, 0);
+        background: var(--search-bg);
+        border: 1px solid var(--search-border);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
     /* ⚡️ 極限硬切斷：確保接手瞬間擁有與膠囊 100% 相同的毛玻璃與背景，徹底解決閃爍 */
-    25.001%, 100% { 
-        top: 0px; 
-        right: 0px; 
-        width: 95px; 
-        opacity: 1; 
-        transform: translate3d(0, 0, 0); 
-        background: var(--search-bg); 
-        border: 1px solid var(--search-border); 
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+    25.001%,
+    100% {
+        top: 0px;
+        right: 0px;
+        width: 95px;
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+        background: var(--search-bg);
+        border: 1px solid var(--search-border);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         -webkit-backdrop-filter: blur(20px);
         backdrop-filter: blur(20px);
     }
 }
-    /* 🚀 25.1% 空間傳送！拔除實體，transform 歸零，準備變形為長條搜尋框 
+
+/* 🚀 25.1% 空間傳送！拔除實體，transform 歸零，準備變形為長條搜尋框 
     25.1% { top: 0px; right: 0px; width: 44px; opacity: 1; transform: translate3d(0, 0, 0); background: transparent; border: none; box-shadow: none; }
     
      [上層] 25.1~50%: 往左無猶豫移動，抵達膠囊左側 
@@ -1700,14 +1803,39 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
     */
 
 @keyframes hamburger-push-out {
+
     /* 與搜尋按鈕使用完全一模一樣的 transform 軌跡與時間曲線 (cubic-bezier) */
-    0% { right: 51px; opacity: 1; transform: translate3d(0, 0, 0); animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
-    25%, 100% { right: 51px; opacity: 0; transform: translate3d(100px, 0, 0); }
+    0% {
+        right: 51px;
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    25%,
+    100% {
+        right: 51px;
+        opacity: 0;
+        transform: translate3d(100px, 0, 0);
+    }
 }
 
 @keyframes search-svg-sequence {
-    0% { transform: translateY(0); opacity: 1; animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
-    25% { transform: translateY(0); opacity: 0; }
+    0% {
+        transform: translateY(0);
+        opacity: 1;
+        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    25% {
+        transform: translateY(0);
+        opacity: 0;
+    }
+
     /* ⚡️ 極限硬切斷 */
-    25.001%, 100% { transform: translateY(0); opacity: 1; }
+    25.001%,
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
