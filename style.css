@@ -1588,16 +1588,18 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
    🎬 終極 Hero Sequence 英雄進場序列 (2.0s 雙層軌道無縫交接版)
    ========================================= */
 
-/* 1. 搜尋按鈕本體 (負責空間傳送與延伸) */
+/* 1. 搜尋按鈕本體 (負責向上移動、背景透明化並向左延伸) */
 .search-container.active .search-trigger {
     transition: none !important;
     animation: search-bar-hero-move 2s forwards !important;
     justify-content: flex-start;
     padding-left: 12px;
     z-index: 5700 !important; /* 確保在上層，蓋過膠囊 */
+    background: transparent !important; /* 覆蓋預設，由 animation 接管 */
+    border-color: transparent !important;
 }
 
-/* 2. 搜尋 SVG 圖示 (淡出與淡入) */
+/* 2. 搜尋 SVG 圖示 (只需保持顯示，跟隨外框移動) */
 .search-container.active .search-trigger .search-icon svg {
     transition: none !important;
     animation: search-svg-sequence 2s forwards !important;
@@ -1610,26 +1612,22 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
     pointer-events: none;
 }
 
-/* 4. 膠囊右側 SVG (與搜尋 SVG 同步上升) */
-.search-container.active .action-capsule #capsule-secondary-btn svg {
+/* 4. 膠囊左右 SVG (同步被搜尋圖示往上推出去) */
+.search-container.active .action-capsule .capsule-btn-item svg {
     transition: none !important;
-    animation: capsule-right-fly 2s forwards !important;
+    animation: capsule-svg-push-up 2s forwards !important;
 }
 
-/* 5. 膠囊左側 SVG (被放大鏡向左推出) */
-.search-container.active .action-capsule #capsule-main-btn svg {
-    transition: none !important;
-    animation: capsule-left-push 2s forwards !important;
-}
-
-/* 6. 膠囊本體 (作為背景軌道被拉長並反彈) */
+/* 5. 膠囊本體 (不淡化！作為實體背景被拉長並反彈) */
 .search-container.active .action-capsule {
     transition: none !important;
     animation: capsule-body-stretch 2s forwards !important;
     pointer-events: none !important; /* 將點擊權限交給搜尋框 */
+    opacity: 1 !important; /* 確保膠囊不淡出 */
+    width: auto !important; /* 解除舊的 width 限制，讓 animation 接管 */
 }
 
-/* 7. 取消按鈕 (趁右側反彈時從左側彈入) */
+/* 6. 取消按鈕 (趁右側反彈時從左側彈入) */
 .search-container.active .cancel-circle-btn {
     transition: none !important;
     animation: cancel-pop-in 2s forwards !important;
@@ -1640,7 +1638,7 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
     margin: 0 !important;
 }
 
-/* 8. 輸入框文字區 (淡入) */
+/* 7. 輸入框文字區 (延遲淡入) */
 .search-container.active .input-wrapper {
     transition: none !important;
     animation: input-fade-in 2s forwards !important;
@@ -1650,79 +1648,39 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
    ⏱️ Keyframes 動畫時間軸精確定義 (總時長 2.0s)
    ========================================= */
 
-@keyframes search-bar-hero-move {
-    /* [下層] 0~15%: 等待 SVG 上升 */
-    0%, 15% { top: 51px; right: 0px; width: 44px; opacity: 1; background: var(--search-bg); border: 1px solid var(--search-border); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-    /* [下層] 15~35%: 被漢堡按鈕推出畫面外 */
-    35% { top: 51px; right: -51px; width: 44px; opacity: 0; background: var(--search-bg); border: 1px solid var(--search-border); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+   @keyframes search-bar-hero-move {
+    /* [下層] 0~25% (0~500ms): 棄用 right，改用 transform 與漢堡按鈕完美綁定同步平移 100px */
+    0% { top: 51px; right: 0px; width: 44px; opacity: 1; transform: translate3d(0, 0, 0); background: var(--search-bg); border: 1px solid var(--search-border); box-shadow: 0 4px 15px rgba(0,0,0,0.1); animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+    25% { top: 51px; right: 0px; width: 44px; opacity: 0; transform: translate3d(100px, 0, 0); background: var(--search-bg); border: 1px solid var(--search-border); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     
-    /* 🚀 35.1% 空間傳送！拔除自身背景，交由底下的膠囊作為實體 */
-    35.1% { top: 0px; right: 0px; width: 44px; opacity: 1; background: transparent; border: none; box-shadow: none; }
+    /* 🚀 25.1% 空間傳送！拔除實體，transform 歸零，準備變形為長條搜尋框 */
+    25.1% { top: 0px; right: 0px; width: 44px; opacity: 1; transform: translate3d(0, 0, 0); background: transparent; border: none; box-shadow: none; }
     
-    /* [上層] 35.1~50%: 往左無猶豫移動，抵達膠囊左側 (95px) */
-    50% { top: 0px; right: 0px; width: 95px; opacity: 1; background: transparent; border: none; box-shadow: none; animation-timing-function: linear; }
+    /* [上層] 25.1~50%: 往左無猶豫移動，抵達膠囊左側 */
+    50% { top: 0px; right: 0px; width: 95px; opacity: 1; transform: translate3d(0, 0, 0); background: transparent; border: none; box-shadow: none; animation-timing-function: linear; }
     
     /* [上層] 50~70%: 線性加速，拉長撞擊左側壁 */
     70% { top: 0px; right: 0px; width: calc(100% - 54px); opacity: 1; background: transparent; border: none; box-shadow: none; transform: translateX(0); animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1); }
     
-    /* [上層] 70~85%: 慣性反彈 (一個按鈕的距離 44px) */
+    /* [上層] 70~85%: 慣性反彈 */
     85% { top: 0px; right: 0px; width: calc(100% - 54px); opacity: 1; background: transparent; border: none; box-shadow: none; transform: translateX(44px); animation-timing-function: ease-in-out; }
     
-    /* [上層] 85~100%: 能量吸收定桿 */
+    /* [上層] 85~100%: 定桿 */
     100% { top: 0px; right: 0px; width: calc(100% - 54px); opacity: 1; background: transparent; border: none; box-shadow: none; transform: translateX(0); }
 }
 
 @keyframes hamburger-push-out {
-    /* 0~15%: 待命 */
-    0%, 15% { right: 51px; opacity: 1; }
-    /* 15~35%: 向右推，剛好抵達原搜尋按鈕起點 (移動距離 51px) */
-    35% { right: 0px; opacity: 1; }
-    /* 35~50%: 繼續向右移動至畫面外並淡出 (移動距離同步 51px) */
-    50%, 100% { right: -51px; opacity: 0; }
+    /* 與搜尋按鈕使用完全一模一樣的 transform 軌跡與時間曲線 (cubic-bezier) */
+    0% { right: 51px; opacity: 1; transform: translate3d(0, 0, 0); animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+    25%, 100% { right: 51px; opacity: 0; transform: translate3d(100px, 0, 0); }
 }
 
 @keyframes search-svg-sequence {
-    /* 0~15%: 經過邊際線淡出升空 */
-    0% { transform: translateY(0); opacity: 1; }
-    15%, 35% { transform: translateY(-30px); opacity: 0; }
-    /* 35.1~50%: 傳送到上層，從底部淡入浮現 */
-    35.1% { transform: translateY(15px); opacity: 0; }
+    /* 0~25%: 跟隨母體平移即可，只需處理淡出 */
+    0% { transform: translateY(0); opacity: 1; animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+    25% { transform: translateY(0); opacity: 0; }
+    
+    /* 25.1~50%: 傳送到上層，從底部淡入浮現 */
+    25.1% { transform: translateY(15px); opacity: 0; }
     50%, 100% { transform: translateY(0); opacity: 1; }
-}
-
-@keyframes capsule-right-fly {
-    0% { transform: translateY(0); opacity: 0.8; }
-    /* 完美同步原搜尋 SVG 的升空節奏 */
-    15%, 100% { transform: translateY(-30px); opacity: 0; }
-}
-
-@keyframes capsule-left-push {
-    0%, 35% { transform: translateX(0); opacity: 0.8; }
-    /* 35~50%: 被抵達的放大鏡無情向左推出 */
-    50%, 100% { transform: translateX(-30px); opacity: 0; }
-}
-
-@keyframes capsule-body-stretch {
-    /* 0~50%: 保持原樣，作為背景軌道 */
-    0%, 50% { width: 95px; transform: translateX(0); animation-timing-function: linear; }
-    /* 50~70%: 被搜尋框強制拉長，撞擊左側壁 */
-    70% { width: calc(100% - 54px); transform: translateX(0); animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1); }
-    /* 70~85%: 整個膠囊同步參與慣性反彈 */
-    85% { width: calc(100% - 54px); transform: translateX(44px); animation-timing-function: ease-in-out; }
-    /* 85~100%: 歸位 */
-    100% { width: calc(100% - 54px); transform: translateX(0); }
-}
-
-@keyframes cancel-pop-in {
-    /* 0~70%: 隱藏於左側壁外待命 */
-    0%, 70% { width: 0; opacity: 0; transform: scale(0.5) translateX(-20px); }
-    /* 70~85%: 趁右側反彈拉出空隙時，瞬間彈入 */
-    85% { width: 44px; opacity: 1; transform: scale(1.1) translateX(5px); animation-timing-function: ease-in-out; }
-    100% { width: 44px; opacity: 1; transform: scale(1) translateX(0); }
-}
-
-@keyframes input-fade-in {
-    /* 50% 後才開始淡入，避免干擾前期佈局 */
-    0%, 50% { width: 0; opacity: 0; }
-    70%, 100% { width: calc(100% - 44px); opacity: 1; }
 }
