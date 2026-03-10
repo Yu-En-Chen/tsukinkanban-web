@@ -46,16 +46,8 @@
 /* 取消圖標 (初始隱藏與縮小狀態) */
 .left-circle-btn .icon-close {
     visibility: hidden;
-    /* 只保留縮小效果，刪除 rotate，其餘交給 style.css */
     transform: scale(0.5) !important; 
     transition: opacity 0.3s ease, transform 0.4s ease, visibility 0s 0.3s;
-}
-
-/* 取消圖標 (選單展開後的顯示狀態) */
-.left-circle-btn.is-expanded .icon-close {
-    visibility: visible;
-    transform: scale(1) !important; 
-    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0s 0s;
 }
 
 /* 3. 按鈕本體 */
@@ -82,48 +74,51 @@
 }
 
 /* =========================================
-   🟢 展開狀態 (Active State)
+   🟢 展開狀態 (絕對定位到極限，完美防護圓角被切)
    ========================================= */
 
 .left-circle-btn.is-expanded {
     position: fixed !important;
     
-    /* 🟢 核心修復 1：鎖定頂部位置 */
-    /* 使用安全區域 + 12px，確保頂部永遠對齊原本按鈕的位置，絕不往上跑 */
-    top: calc(env(safe-area-inset-top) + 12px) !important;
+    /* 使用 max() 函數：推到螢幕極限邊緣，但強制保留最少 12px 的防護距，
+       確保不管什麼型號的手機，實體硬體圓角都不會吃掉我們的 border-radius */
+    top: max(env(safe-area-inset-top), 12px) !important;
+    bottom: max(env(safe-area-inset-bottom), 12px) !important;
+    left: max(env(safe-area-inset-left), 12px) !important;
+    right: max(env(safe-area-inset-right), 12px) !important;
     
-    /* 寬度與置中 */
-    width: var(--card-width) !important;
-    max-width: 420px !important;
-    left: 0 !important;
-    right: 0 !important;
-    margin: 0 auto !important;
+    width: auto !important; /* 讓 left 和 right 自動撐滿寬度 */
+    max-width: none !important; /* 解除限制，真正貼到左右極限 */
+    height: auto !important;
+    margin: 0 !important;
     
-    /* 🟢 核心修復 2：取消底部錨定，改用固定高度 */
-    bottom: auto !important;
+    /* 圓角稍微加大到 36px，搭配邊緣間距非常有質感 */
+    border-radius: 36px !important;
     
-    /* 🟢 核心修復 3：計算並鎖定高度 (100svh) */
-    /* 100svh = 網址列未收起時的螢幕高度 (固定值) */
-    /* 減去頂部距離與底部安全區，算出精確高度，徹底防止選單隨網址列伸縮 */
-    height: calc(100svh - (env(safe-area-inset-top) + 12px) - var(--bottom-anchor)) !important;
+    /* 繼承高級毛玻璃背景與景深虛化 */
+    background: var(--search-bg) !important;
+    -webkit-backdrop-filter: blur(25px) !important;
+    backdrop-filter: blur(25px) !important;
+    box-shadow: inset 0 0 80px 20px rgba(var(--menu-shadow-dark, 174, 174, 178), 0.15), 0 10px 40px rgba(0,0,0,0.2) !important;
     
-    border-radius: 32px !important;
+    /* 從中心彈跳進場 */
+    transform-origin: center center !important;
+    transform: scale(0.8) !important; 
+    animation: menuPopInBounce var(--t-item-in, 0.4s) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
     
-    transform: none !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    
-    /* 絲滑展開動畫 */
-    animation: shrinkAndExpand 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    z-index: 6000 !important;
 }
 
-/* 圖標鎖定 (展開時 100% 吻合原始漢堡按鈕的物理位置) */
+/* 🟢 叉叉按鈕對齊：透過 calc() 反向計算，精準釘回原本漢堡按鈕的絕對座標 */
 .left-circle-btn.is-expanded .menu-icon-wrapper {
     position: absolute !important;
-    /* 補償原按鈕在容器內的 3px 頂部間距與 -10px 向左突出 */
-    top: 3px !important;
-    left: -10px !important;
+    
+    /* 原本按鈕在 top: 51px, left: 16px。
+       我們減去外框的極限邊距，就能讓叉叉精準覆蓋在原本漢堡的位置上，完全不會偏移！ */
+    top: calc(51px - max(env(safe-area-inset-top), 12px)) !important;
+    left: calc(16px - max(env(safe-area-inset-left), 12px)) !important;
+    right: auto !important; /* 確保不被之前的 right 設定干擾 */
+    
     width: 44px !important;
     height: 44px !important;
     place-items: center !important;
@@ -146,8 +141,10 @@
     transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0s 0s;
 }
 
-/* 單向展開，無回彈 */
-@keyframes shrinkAndExpand {
-    0% { transform: scale(0.92); opacity: 0; }
+/* 🟢 選單專屬彈跳動畫 */
+@keyframes menuPopInBounce {
+    0% { transform: scale(0.8); opacity: 0; }
+    60% { transform: scale(1.02); opacity: 1; }
+    80% { transform: scale(0.98); opacity: 1; }
     100% { transform: scale(1); opacity: 1; }
 }
