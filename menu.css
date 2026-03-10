@@ -1,4 +1,4 @@
-/* menu.css - 左側選單按鈕專用 (PWA 安全區域適配版) */
+/* menu.css - 左側選單按鈕專用 (PWA 安全區域適配與極致彈跳版) */
 
 /* 1. 顏色變數 */
 :root {
@@ -46,6 +46,7 @@
 /* 取消圖標 (初始隱藏與縮小狀態) */
 .left-circle-btn .icon-close {
     visibility: hidden;
+    /* 只保留縮小效果，刪除 rotate，其餘交給 style.css */
     transform: scale(0.5) !important; 
     transition: opacity 0.3s ease, transform 0.4s ease, visibility 0s 0.3s;
 }
@@ -88,11 +89,11 @@
     right: max(env(safe-area-inset-right), 12px) !important;
     
     width: auto !important; /* 讓 left 和 right 自動撐滿寬度 */
-    max-width: none !important; /* 解除限制，真正貼到左右極限 */
+    max-width: none !important; /* 解除原本的 480px 限制，真正貼到左右極限 */
     height: auto !important;
     margin: 0 !important;
     
-    /* 圓角稍微加大到 36px，搭配邊緣間距非常有質感 */
+    /* 圓角稍微加大到 36px，搭配邊緣間距會非常有質感 */
     border-radius: 36px !important;
     
     /* 繼承高級毛玻璃背景與景深虛化 */
@@ -107,6 +108,14 @@
     animation: menuPopInBounce var(--t-item-in, 0.4s) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
     
     z-index: 6000 !important;
+}
+
+/* 🟢 選單專屬彈跳動畫 */
+@keyframes menuPopInBounce {
+    0% { transform: scale(0.8); opacity: 0; }
+    60% { transform: scale(1.02); opacity: 1; }
+    80% { transform: scale(0.98); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 /* 🟢 叉叉按鈕對齊：透過 calc() 反向計算，精準釘回原本漢堡按鈕的絕對座標 */
@@ -139,12 +148,4 @@
     visibility: visible !important;
     transform: scale(1) !important;
     transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0s 0s;
-}
-
-/* 🟢 選單專屬彈跳動畫 */
-@keyframes menuPopInBounce {
-    0% { transform: scale(0.8); opacity: 0; }
-    60% { transform: scale(1.02); opacity: 1; }
-    80% { transform: scale(0.98); opacity: 1; }
-    100% { transform: scale(1); opacity: 1; }
 }

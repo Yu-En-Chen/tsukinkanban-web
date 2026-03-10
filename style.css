@@ -184,7 +184,8 @@ body.searching .search-mask {
     /* 🟢 新增：使用 transform 來平移整組母艦 (矩陣) */
     /* translate(X軸左右, Y軸上下) */
     /* 例如：往左移px，往下移px */
-    transform: translate(-10px, 10px); 
+    top: 10px; 
+    left: -10px; 
 }
 
 /* =========================================
@@ -1644,16 +1645,12 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 /* =========================================
    🟢 漢堡選單展開時：膠囊與搜尋按鈕浮出於背景之上
    ========================================= */
-   body.menu-active .search-trigger,
-   body.menu-active .action-capsule {
+   body:has(.left-circle-btn.is-expanded) .search-trigger,
+   body:has(.left-circle-btn.is-expanded) .action-capsule {
        /* 覆蓋原本會往下掉並消失的設定 */
        transform: none !important;
-       opacity: 0 !important; /* 先隱藏，交給動畫進場 */
+       opacity: 0 !important; 
        pointer-events: auto !important;
-       
-       /* 確保層級高於漢堡選單背景 (6000) */
        z-index: 6005 !important; 
-       
-       /* 使用與搜尋框完全相同的 popInBounce 動畫，延遲 0.1s 讓背景先渲染出來 */
        animation: popInBounce var(--t-item-in, 0.4s) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards 0.1s !important;
    }
