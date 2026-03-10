@@ -1643,14 +1643,27 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 }
 
 /* =========================================
-   🟢 漢堡選單展開時：膠囊與搜尋按鈕浮出於背景之上
+   🟢 漢堡選單展開時：膠囊與搜尋按鈕浮出於背景之上 (效能修復版)
    ========================================= */
-   body:has(.left-circle-btn.is-expanded) .search-trigger,
-   body:has(.left-circle-btn.is-expanded) .action-capsule {
-       /* 覆蓋原本會往下掉並消失的設定 */
-       transform: none !important;
-       opacity: 0 !important; 
-       pointer-events: auto !important;
-       z-index: 6005 !important; 
-       animation: popInBounce var(--t-item-in, 0.4s) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards 0.1s !important;
-   }
+/* 徹底棄用 :has()，改用 JS 賦予的 hamburger-active，解決 GPU 當機與毛玻璃失效 */
+body.hamburger-active .search-trigger,
+body.hamburger-active .action-capsule {
+    transform: none !important;
+    opacity: 0 !important; 
+    pointer-events: auto !important;
+    z-index: 6005 !important; 
+    animation: popInBounce var(--t-item-in, 0.4s) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards 0.1s !important;
+}
+
+/* 🟢 母艦邊框同步隱藏與彈跳復原 */
+.search-container::before {
+    /* 關閉時：加入 0.1s 延遲，與小按鈕「完全同步」彈出復原 */
+    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s, opacity 0.4s ease 0.1s !important;
+}
+.search-container.active::before,
+body.hamburger-active .search-container::before {
+    /* 展開搜尋或漢堡選單時：同步縮小並隱藏母艦底板 */
+    opacity: 0 !important;
+    transform: translate(50%, -50%) scale(0.8) !important;
+    transition: opacity 0.3s linear, transform 0.4s var(--apple-spring) !important;
+}

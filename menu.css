@@ -102,20 +102,20 @@
     backdrop-filter: blur(25px) !important;
     box-shadow: inset 0 0 80px 20px rgba(var(--menu-shadow-dark, 174, 174, 178), 0.15), 0 10px 40px rgba(0,0,0,0.2) !important;
     
-    /* 從中心彈跳進場 */
-    transform-origin: center center !important;
-    transform: scale(0.8) !important; 
-    animation: menuPopInBounce var(--t-item-in, 0.4s) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
-    
-    z-index: 6000 !important;
+   /* 從中心彈跳進場 (🟢 延長時間為 0.5 秒，讓動畫更從容不急躁) */
+   transform-origin: center center !important;
+   transform: scale(0.8) !important; 
+   animation: menuPopInBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+   
+   z-index: 6000 !important;
 }
 
-/* 🟢 選單專屬彈跳動畫 */
+/* 🟢 選單專屬彈跳動畫 (起點微調為 0.92，解決過度暴衝的抽搐感) */
 @keyframes menuPopInBounce {
-    0% { transform: scale(0.8); opacity: 0; }
-    60% { transform: scale(1.02); opacity: 1; }
-    80% { transform: scale(0.98); opacity: 1; }
-    100% { transform: scale(1); opacity: 1; }
+   0% { transform: scale(0.92); opacity: 0; }
+   50% { transform: scale(1.02); opacity: 1; }
+   75% { transform: scale(0.98); opacity: 1; }
+   100% { transform: scale(1); opacity: 1; }
 }
 
 /* 🟢 叉叉按鈕對齊：透過 calc() 反向計算，精準釘回原本漢堡按鈕的絕對座標 */

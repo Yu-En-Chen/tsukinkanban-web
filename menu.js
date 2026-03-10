@@ -14,30 +14,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 3. 綁定點擊事件
     menuBtn.addEventListener('click', (e) => {
-        // 防止事件穿透到下層 (如 header 或 search-mask)
         e.stopPropagation();
         e.preventDefault();
 
-        // 切換展開/收縮 Class
         const isExpanded = menuBtn.classList.toggle('is-expanded');
-        
-        // 🟢 核心修復 1：加入 body 狀態，強制 WebKit 引擎重新計算渲染，解決重新載入後景深失效的問題
-        document.body.classList.toggle('menu-active', isExpanded);
 
-        // Log 狀態方便確認是否成功觸發
+        document.body.classList.toggle('menu-active', isExpanded);
+        // 🟢 新增：賦予專屬類別，徹底避免 CSS :has() 導致的當機
+        document.body.classList.toggle('hamburger-active', isExpanded);
+
         if (isExpanded) {
             console.log('Menu: Expanded (Open)');
         } else {
             console.log('Menu: Collapsed (Close)');
         }
     });
-    
-    // 4. 點擊 Esc 鍵關閉 (桌面版友善功能)
+
+    // 4. 點擊 Esc 鍵關閉
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && menuBtn.classList.contains('is-expanded')) {
             menuBtn.classList.remove('is-expanded');
-            document.body.classList.remove('menu-active'); // 同步移除
+            document.body.classList.remove('menu-active');
+            // 🟢 新增：同步移除專屬類別
+            document.body.classList.remove('hamburger-active');
             console.log('Menu: Closed by ESC');
         }
     });
-});
+}
