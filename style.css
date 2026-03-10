@@ -311,12 +311,36 @@ body.searching .search-mask {
     pointer-events: none;
 }
 
-/* 4. 膠囊本體 (默默讓位) */
+/* =========================================
+   🟢 膠囊替身推擠系統 (替換舊有的膠囊飛出動畫)
+   ========================================= */
+
+/* 1. 膠囊外框 (保持原位不動，當替身推到位時 25.1% 隱藏，把畫面交接給搜尋框) */
 .search-container.active .action-capsule {
     transition: none !important;
-    animation: capsule-body-fade 2s forwards !important;
+    animation: capsule-stay-then-hide 2s forwards !important;
     pointer-events: none !important;
 }
+
+@keyframes capsule-stay-then-hide {
+    0%, 25% { opacity: 1; width: 95px; }
+    25.1%, 100% { opacity: 0; width: 0px; visibility: hidden; }
+}
+
+/* 2. 膠囊內部網格 (帶著替身向左推 100px，速度曲線與搜尋按鈕完全一致) */
+.search-container.active .capsule-grid-layout {
+    animation: capsule-content-push-left 2s forwards !important;
+}
+
+@keyframes capsule-content-push-left {
+    /* 與底下搜尋按鈕的 cubic-bezier 保持絕對一致 */
+    0% { transform: translate3d(0, 0, 0); animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+    25%, 100% { transform: translate3d(-100px, 0, 0); }
+}
+
+/* =========================================
+   🟢 膠囊替身推擠系統 (替換舊有的膠囊飛出動畫)
+   ========================================= */
 
 /* 5. 膠囊左側 SVG (被推出) */
 .search-container.active .action-capsule .capsule-btn-item:first-of-type svg {
@@ -506,20 +530,6 @@ body.searching .search-mask {
 
 .action-capsule.trigger-pop .capsule-btn-item svg.icon-hidden {
     animation: iconPop var(--pop-duration) var(--apple-spring) forwards !important;
-}
-
-/* 4. 膠囊本體 (在搜尋列傳送過來時默默消失讓位) */
-.search-container.active .action-capsule {
-    transition: opacity 0.2s ease 0.35s, width 0.2s ease 0.35s !important;
-    opacity: 0 !important;
-    width: 0 !important;
-    pointer-events: none !important;
-}
-
-/* 5. 膠囊 SVG (往上飛出) */
-.search-container.active .action-capsule .capsule-btn-item svg {
-    transition: none !important;
-    animation: capsule-svg-fly 0.85s ease forwards !important;
 }
 
 .cancel-circle-btn {
@@ -1612,21 +1622,6 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
     pointer-events: none;
 }
 
-/* 4. 膠囊左右 SVG (同步被搜尋圖示往上推出去) */
-.search-container.active .action-capsule .capsule-btn-item svg {
-    transition: none !important;
-    animation: capsule-svg-push-up 2s forwards !important;
-}
-
-/* 5. 膠囊本體 (不淡化！作為實體背景被拉長並反彈) */
-.search-container.active .action-capsule {
-    transition: none !important;
-    animation: capsule-body-stretch 2s forwards !important;
-    pointer-events: none !important; /* 將點擊權限交給搜尋框 */
-    opacity: 1 !important; /* 確保膠囊不淡出 */
-    width: auto !important; /* 解除舊的 width 限制，讓 animation 接管 */
-}
-
 /* 6. 取消按鈕 (趁右側反彈時從左側彈入) */
 .search-container.active .cancel-circle-btn {
     transition: none !important;
@@ -1653,20 +1648,21 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
     0% { top: 51px; right: 0px; width: 44px; opacity: 1; transform: translate3d(0, 0, 0); background: var(--search-bg); border: 1px solid var(--search-border); box-shadow: 0 4px 15px rgba(0,0,0,0.1); animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
     25% { top: 51px; right: 0px; width: 44px; opacity: 0; transform: translate3d(100px, 0, 0); background: var(--search-bg); border: 1px solid var(--search-border); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     
-    /* 🚀 25.1% 空間傳送！拔除實體，transform 歸零，準備變形為長條搜尋框 */
+    /* 🚀 25.1% 空間傳送！拔除實體，transform 歸零，準備變形為長條搜尋框 
     25.1% { top: 0px; right: 0px; width: 44px; opacity: 1; transform: translate3d(0, 0, 0); background: transparent; border: none; box-shadow: none; }
     
-    /* [上層] 25.1~50%: 往左無猶豫移動，抵達膠囊左側 */
+     [上層] 25.1~50%: 往左無猶豫移動，抵達膠囊左側 
     50% { top: 0px; right: 0px; width: 95px; opacity: 1; transform: translate3d(0, 0, 0); background: transparent; border: none; box-shadow: none; animation-timing-function: linear; }
     
-    /* [上層] 50~70%: 線性加速，拉長撞擊左側壁 */
+     [上層] 50~70%: 線性加速，拉長撞擊左側壁 
     70% { top: 0px; right: 0px; width: calc(100% - 54px); opacity: 1; background: transparent; border: none; box-shadow: none; transform: translateX(0); animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1); }
     
-    /* [上層] 70~85%: 慣性反彈 */
+     [上層] 70~85%: 慣性反彈 
     85% { top: 0px; right: 0px; width: calc(100% - 54px); opacity: 1; background: transparent; border: none; box-shadow: none; transform: translateX(44px); animation-timing-function: ease-in-out; }
     
-    /* [上層] 85~100%: 定桿 */
+     [上層] 85~100%: 定桿 
     100% { top: 0px; right: 0px; width: calc(100% - 54px); opacity: 1; background: transparent; border: none; box-shadow: none; transform: translateX(0); }
+    */
 }
 
 @keyframes hamburger-push-out {
