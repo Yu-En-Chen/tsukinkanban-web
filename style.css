@@ -287,36 +287,47 @@ body.searching .search-mask {
    🟢 啟動狀態：硬體加速與動畫綁定
    ========================================= */
 
-/* 1. 搜尋按鈕本體 */
+/* =========================================
+   🚀 終極清理：啟動類別 (移除所有破壞動畫的 !important)
+   ========================================= */
+
+/* 1. 搜尋外框本體 */
 .search-container.active .search-trigger {
     transition: none !important;
-    animation: search-bar-hero-move 0.5s forwards !important;
-    /* 🟢 改為 0.5s */
-    will-change: right, width, transform, opacity;
-
-    /* 🟢 救命關鍵：把 100% 的狀態直接寫死在這裡，承接 GPU 卸載後的狀態 */
-    top: 0px !important;
-    right: 0px !important;
-    width: 95px !important;
-    opacity: 1 !important;
-    transform: translate3d(0, 0, 0) !important;
-    background: var(--search-bg) !important;
-    border: 1px solid var(--search-border) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
-    backdrop-filter: blur(20px) !important;
-
+    animation: search-bar-hero-move 0.8s forwards !important; /* 🟢 總時長 0.8s */
+    will-change: right, width, transform, opacity, background;
+    
     justify-content: flex-start;
     padding-left: 12px;
+    z-index: 5700 !important;
+
+    /* 🚨 這裡放置動畫結束的「最終靜止狀態」。絕對不能加 !important 否則會覆蓋動畫！ */
+    top: 0px;
+    right: 0px;
+    width: calc(100% - 54px);
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    background: var(--search-bg);
+    border: 1px solid var(--search-border);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
 }
 
-/* 2. 搜尋 SVG 圖示 */
+/* 2. 搜尋放大鏡 SVG */
 .search-container.active .search-trigger .search-icon svg {
     transition: none !important;
-    animation: search-svg-sequence 0.5s forwards !important;
-    /* 🟢 改為 0.5s */
-    opacity: 1 !important;
-    /* 寫死終點 */
-    transform: translateY(0) !important;
+    animation: search-svg-sequence 0.8s forwards !important; /* 🟢 總時長 0.8s */
+    
+    /* 最終靜止狀態 */
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+}
+
+/* 3. 膠囊內部網格 (被推出去的舊圖示) */
+.search-container.active .capsule-grid-layout {
+    animation: capsule-content-push-left 0.8s forwards !important; /* 🟢 總時長 0.8s */
+    transform: translate3d(-100px, 0, 0);
 }
 
 /* 3. 漢堡按鈕 */
@@ -1665,24 +1676,9 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
    🎬 終極 Hero Sequence 英雄進場序列 (2.0s 雙層軌道無縫交接版)
    ========================================= */
 
-/* 1. 搜尋按鈕本體 (負責向上移動、背景透明化並向左延伸) */
-.search-container.active .search-trigger {
-    transition: none !important;
-    animation: search-bar-hero-move 2s forwards !important;
-    justify-content: flex-start;
-    padding-left: 12px;
-    z-index: 5700 !important;
-    /* 確保在上層，蓋過膠囊 */
-    background: transparent !important;
-    /* 覆蓋預設，由 animation 接管 */
-    border-color: transparent !important;
-}
 
-/* 2. 搜尋 SVG 圖示 (只需保持顯示，跟隨外框移動) */
-.search-container.active .search-trigger .search-icon svg {
-    transition: none !important;
-    animation: search-svg-sequence 2s forwards !important;
-}
+
+
 
 /* 3. 漢堡按鈕 (向右推出) */
 .search-container.active .left-circle-btn {
@@ -1714,73 +1710,45 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 }
 
 /* =========================================
-   ⏱️ Keyframes 動畫時間軸精確定義 (總時長 2.0s)
+   🎬 三軌同步 Keyframes (30% 推擠期，70% 延展期)
    ========================================= */
 
    @keyframes search-bar-hero-move {
-    /* 🟢 動畫期間 (0% ~ 99%)：外框與背景完全透明！
-       這就像是一塊「透明玻璃」，讓我們能看透它，直接看到底下 .action-capsule 的殼。
-       這樣搜尋 SVG 和底下原有的膠囊 SVG 就能在這個殼裡面互相推擠，像火車車廂一樣。 */
-    0%, 99% { 
-        top: 0px; 
-        right: 0px; 
-        width: 95px; 
-        opacity: 1; 
-        transform: translate3d(0, 0, 0); 
-        
-        /* 🚨 關鍵魔法：把背景、邊框、陰影、毛玻璃全部關掉 */
-        background: transparent; 
-        border-color: transparent; 
-        box-shadow: none; 
-        -webkit-backdrop-filter: none; 
-        backdrop-filter: none; 
-    }
-
-    /* 🟢 動畫結束 (100%)：動畫跑完的瞬間，底下的 SVG 也推乾淨了。
-       此時背景瞬間實體化，無縫接管成為真正的搜尋輸入框底板！ */
-    100% { 
-        top: 0px; 
-        right: 0px; 
-        width: 95px; 
-        opacity: 1; 
-        transform: translate3d(0, 0, 0); 
-        
-        /* 恢復原本的實體背景 */
-        background: var(--search-bg); 
-        border: 1px solid var(--search-border); 
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); 
-        -webkit-backdrop-filter: blur(20px); 
-        backdrop-filter: blur(20px); 
-    }
-}
-
-@keyframes hamburger-push-out {
-
-    /* 與搜尋按鈕使用完全一模一樣的 transform 軌跡與時間曲線 (cubic-bezier) */
-    0% {
-        right: 51px;
-        opacity: 1;
-        transform: translate3d(0, 0, 0);
+    /* 🟢 階段一 (0% ~ 30%)：維持透明空殼與 95px，這是專屬的推擠舞台 */
+    0%, 30% { 
+        top: 0px; right: 0px; width: 95px; opacity: 1; transform: translate3d(0, 0, 0); 
+        background: transparent; border-color: transparent; box-shadow: none; 
+        -webkit-backdrop-filter: none; backdrop-filter: none; 
         animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     }
-
-    25%,
-    100% {
-        right: 51px;
-        opacity: 0;
-        transform: translate3d(100px, 0, 0);
+    
+    /* ⚡️ 瞬間接管 (30.001%)：推擠結束，瞬間變回實體玻璃 */
+    30.001% {
+        width: 95px;
+        background: var(--search-bg); border: 1px solid var(--search-border); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); 
+        -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); 
+        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* 🟢 階段二 (30.001% ~ 100%)：實體向左滑順拉伸 */
+    100% { 
+        top: 0px; right: 0px; width: calc(100% - 54px); opacity: 1; transform: translate3d(0, 0, 0); 
+        background: var(--search-bg); border: 1px solid var(--search-border); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); 
+        -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); 
     }
 }
 
 @keyframes search-svg-sequence {
-    /* 🟢 物理推擠效應：與膠囊左移的距離 (100px) 和速度 (cubic-bezier) 達到 100% 絕對同步 */
-    0% { 
-        transform: translate3d(100px, 0, 0); 
-        opacity: 1; 
-        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); 
-    }
-    25%, 100% { 
-        transform: translate3d(0, 0, 0); 
-        opacity: 1; 
-    }
+    /* 🟢 階段一：從右邊界外 100px 狠狠衝進來 */
+    0% { transform: translate3d(100px, 0, 0); opacity: 1; animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+    30% { transform: translate3d(0, 0, 0); opacity: 1; }
+    
+    /* 🟢 階段二：維持在相對 0 的位置，跟著父元素的拉伸一起向左衝浪 */
+    100% { transform: translate3d(0, 0, 0); opacity: 1; }
+}
+
+@keyframes capsule-content-push-left {
+    /* 🟢 階段一：被放大鏡撞飛到左邊界外 -100px */
+    0% { transform: translate3d(0, 0, 0); animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+    30%, 100% { transform: translate3d(-100px, 0, 0); }
 }
