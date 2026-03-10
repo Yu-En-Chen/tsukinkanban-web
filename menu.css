@@ -75,61 +75,23 @@
 }
 
 /* =========================================
-   🟢 展開狀態 (絕對定位到極限，完美防護圓角被切)
+   🟢 展開狀態 (按鈕本體解放：維持原位，僅切換圖示與層級)
    ========================================= */
 
-.left-circle-btn.is-expanded {
-    position: fixed !important;
-    
-    /* 使用 max() 函數：推到螢幕極限邊緣，但強制保留最少 12px 的防護距，
-       確保不管什麼型號的手機，實體硬體圓角都不會吃掉我們的 border-radius */
-    top: max(env(safe-area-inset-top), 12px) !important;
-    bottom: max(env(safe-area-inset-bottom), 12px) !important;
-    left: max(env(safe-area-inset-left), 12px) !important;
-    right: max(env(safe-area-inset-right), 12px) !important;
-    
-    width: auto !important; /* 讓 left 和 right 自動撐滿寬度 */
-    max-width: none !important; /* 解除原本的 480px 限制，真正貼到左右極限 */
-    height: auto !important;
-    margin: 0 !important;
-    
-    /* 圓角稍微加大到 36px，搭配邊緣間距會非常有質感 */
-    border-radius: 36px !important;
-    
-    /* 繼承高級毛玻璃背景與景深虛化 */
-    background: var(--search-bg) !important;
-    -webkit-backdrop-filter: blur(25px) !important;
-    backdrop-filter: blur(25px) !important;
-    box-shadow: inset 0 0 80px 20px rgba(var(--menu-shadow-dark, 174, 174, 178), 0.15), 0 10px 40px rgba(0,0,0,0.2) !important;
-    
-   /* 從中心彈跳進場 (🟢 延長時間為 0.5 秒，讓動畫更從容不急躁) */
-   transform-origin: center center !important;
-   transform: scale(0.8) !important; 
-   animation: menuPopInBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
-   
-   z-index: 6000 !important;
+   .left-circle-btn.is-expanded {
+    z-index: 6010 !important;
+    /* 移除所有 position: fixed 與全螢幕的設定，讓它乖乖待在原本的位置 */
 }
 
-/* 🟢 選單專屬彈跳動畫 (起點微調為 0.92，解決過度暴衝的抽搐感) */
-@keyframes menuPopInBounce {
-   0% { transform: scale(0.92); opacity: 0; }
-   50% { transform: scale(1.02); opacity: 1; }
-   75% { transform: scale(0.98); opacity: 1; }
-   100% { transform: scale(1); opacity: 1; }
-}
-
-/* 🟢 叉叉按鈕對齊：透過 calc() 反向計算，精準釘回原本漢堡按鈕的絕對座標 */
+/* 🟢 確保圖標在 44px 的按鈕內完美置中 */
 .left-circle-btn.is-expanded .menu-icon-wrapper {
-    position: absolute !important;
-    
-    /* 原本按鈕在 top: 51px, left: 16px。
-       我們減去外框的極限邊距，就能讓叉叉精準覆蓋在原本漢堡的位置上，完全不會偏移！ */
-    top: calc(51px - max(env(safe-area-inset-top), 12px)) !important;
-    left: calc(16px - max(env(safe-area-inset-left), 12px)) !important;
-    right: auto !important; /* 確保不被之前的 right 設定干擾 */
-    
-    width: 44px !important;
-    height: 44px !important;
+    position: relative !important;
+    width: 100% !important;
+    height: 100% !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
     place-items: center !important;
 }
 
@@ -141,11 +103,11 @@
     transform: translateX(60px) !important;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s ease, transform 0.4s ease, visibility 0s 0.3s;
+    transition: opacity 0.2s ease, transform 0.3s ease, visibility 0s 0.2s;
 }
 
 .left-circle-btn.is-expanded .icon-close {
     visibility: visible !important;
     transform: scale(1) !important;
-    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0s 0s;
+    transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s, visibility 0s 0s;
 }

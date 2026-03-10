@@ -1643,26 +1643,89 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 }
 
 /* =========================================
-   🟢 漢堡選單展開時：膠囊與搜尋按鈕浮出於背景之上 (效能修復版)
+   🟢 通知選單展開：獨立灰色介面與元件依次彈出
    ========================================= */
-/* 徹底棄用 :has()，改用 JS 賦予的 hamburger-active，解決 GPU 當機與毛玻璃失效 */
-body.hamburger-active .search-trigger,
-body.hamburger-active .action-capsule {
-    transform: none !important;
-    opacity: 0 !important; 
-    pointer-events: auto !important;
-    z-index: 6005 !important; 
-    animation: popInBounce var(--t-item-in, 0.4s) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards 0.1s !important;
+
+/* 1. 全螢幕灰色圓角方形背景 (獨立於按鈕之外) */
+.search-container::after {
+    content: '';
+    position: fixed;
+    /* 完美覆蓋螢幕，保留 12px 邊緣防護實體圓角 */
+    top: max(env(safe-area-inset-top), 12px);
+    bottom: max(env(safe-area-inset-bottom), 12px);
+    left: max(env(safe-area-inset-left), 12px);
+    right: max(env(safe-area-inset-right), 12px);
+    border-radius: 36px;
+    
+    /* 🟢 質感灰色玻璃介面 */
+    background: rgba(142, 142, 147, 0.25);
+    -webkit-backdrop-filter: blur(25px);
+    backdrop-filter: blur(25px);
+    box-shadow: inset 0 0 80px 20px rgba(174, 174, 178, 0.15), 0 10px 40px rgba(0,0,0,0.15);
+    
+    z-index: 5990; /* 墊在所有按鈕下方 */
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.92);
+    transition: opacity 0.3s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* 🟢 母艦邊框同步隱藏與彈跳復原 */
-.search-container::before {
-    /* 關閉時：加入 0.1s 延遲，與小按鈕「完全同步」彈出復原 */
-    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s, opacity 0.4s ease 0.1s !important;
+@media (prefers-color-scheme: dark) {
+    .search-container::after {
+        background: rgba(90, 90, 95, 0.35);
+        box-shadow: inset 0 0 80px 20px rgba(100, 100, 110, 0.2), 0 10px 40px rgba(0,0,0,0.4);
+    }
 }
-.search-container.active::before,
+
+body.hamburger-active .search-container::after {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+}
+
+/* 2. 縮小下沉 -> 等待灰色介面展開 -> 瞬間彈出動畫 */
+@keyframes diveWaitPop {
+    0% { transform: scale(1) translateY(0); opacity: 1; }
+    25% { transform: scale(0.8) translateY(15px); opacity: 0; } /* 縮小下沉並消失 */
+    50% { transform: scale(0.8) translateY(15px); opacity: 0; } /* 在水下等待灰色背景展開 */
+    75% { transform: scale(1.08) translateY(-4px); opacity: 1; } /* 破水而出 */
+    100% { transform: scale(1) translateY(0); opacity: 1; } /* 完美定位 */
+}
+
+/* 母艦邊框專用 (必須保留 translate(50%,-50%) 的絕對居中錨點) */
+@keyframes diveWaitPopMatrix {
+    0% { transform: translate(50%, -50%) scale(1) translateY(0); opacity: 1; }
+    25% { transform: translate(50%, -50%) scale(0.8) translateY(15px); opacity: 0; }
+    50% { transform: translate(50%, -50%) scale(0.8) translateY(15px); opacity: 0; }
+    75% { transform: translate(50%, -50%) scale(1.08) translateY(-4px); opacity: 1; }
+    100% { transform: translate(50%, -50%) scale(1) translateY(0); opacity: 1; }
+}
+
+/* 3. 將動畫套用到四個元件，並加入依次的 Delay */
+body.hamburger-active .left-circle-btn,
+body.hamburger-active .search-trigger,
+body.hamburger-active .action-capsule {
+    opacity: 1 !important; 
+    pointer-events: auto !important;
+    animation: diveWaitPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+}
+
 body.hamburger-active .search-container::before {
-    /* 展開搜尋或漢堡選單時：同步縮小並隱藏母艦底板 */
+    opacity: 1 !important;
+    animation: diveWaitPopMatrix 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+}
+
+/* 🟢 波浪般依次起伏的時間差 (Delay) */
+body.hamburger-active .left-circle-btn { animation-delay: 0s !important; }
+body.hamburger-active .search-trigger { animation-delay: 0.05s !important; }
+body.hamburger-active .action-capsule { animation-delay: 0.1s !important; }
+body.hamburger-active .search-container::before { animation-delay: 0.15s !important; }
+
+/* 4. 關閉時的防護與母艦邊框歸位 */
+.search-container::before {
+    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease !important;
+}
+.search-container.active::before {
     opacity: 0 !important;
     transform: translate(50%, -50%) scale(0.8) !important;
     transition: opacity 0.3s linear, transform 0.4s var(--apple-spring) !important;
