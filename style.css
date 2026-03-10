@@ -322,20 +322,26 @@ body.searching .search-mask {
     content: '';
     position: absolute;
     top: 0;
-    left: 100px; /* 一開始精準藏在膠囊右側外 */
+    left: 100px;
     width: 47px; 
     height: 100%;
     background-color: var(--icon-color);
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21 21-4.34-4.34'/%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3C/svg%3E") no-repeat;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21 21-4.34-4.34'/%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3C/svg%3E") no-repeat;
+    
+    /* 🔴 嚴格使用獨立屬性 (Longhand)，絕對禁止使用 mask 簡寫，防止尺寸跑掉與灰影閃爍 */
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21 21-4.34-4.34'/%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3C/svg%3E");
+    -webkit-mask-repeat: no-repeat;
     -webkit-mask-size: 23px 23px;
-    mask-size: 23px 23px;
     -webkit-mask-position: calc(50% - 1.5px) center;
+    
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21 21-4.34-4.34'/%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3C/svg%3E");
+    mask-repeat: no-repeat;
+    mask-size: 23px 23px;
     mask-position: calc(50% - 1.5px) center;
+    
     opacity: 0.8;
     pointer-events: none;
     z-index: 10;
-    will-change: transform; /* 強制開啟 GPU 硬體加速，確保滑動絕對順暢不閃現 */
+    will-change: transform;
 }
 
 /* 啟動時，替身獨立往左滑動 100px 進入膠囊 */
@@ -351,7 +357,8 @@ body.searching .search-mask {
 
 @keyframes capsule-stay-then-hide {
     0%, 25% { opacity: 1; width: 95px; }
-    25.1%, 100% { opacity: 0; width: 0px; visibility: hidden; }
+    /* ⚡️ 極限硬切斷，防止補間殘影 */
+    25.001%, 100% { opacity: 0; width: 0px; visibility: hidden; }
 }
 
 /* 2. 膠囊內部網格 (帶著替身向左推 100px，速度曲線與搜尋按鈕完全一致) */
@@ -1659,12 +1666,11 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
    ========================================= */
 
    @keyframes search-bar-hero-move {
-    /* 0~25%: 底下原本的搜尋按鈕照樣往右退場 */
     0% { top: 51px; right: 0px; width: 44px; opacity: 1; transform: translate3d(0, 0, 0); background: var(--search-bg); border: 1px solid var(--search-border); box-shadow: 0 4px 15px rgba(0,0,0,0.1); animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
     25% { top: 51px; right: 0px; width: 44px; opacity: 0; transform: translate3d(100px, 0, 0); background: var(--search-bg); border: 1px solid var(--search-border); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     
-    /* 🚀 25.1% ~ 100%: 接手畫面！補回毛玻璃背景與邊框，解決交接時的「閃爍」 */
-    25.1%, 100% { 
+    /* ⚡️ 極限硬切斷：確保接手瞬間擁有與膠囊 100% 相同的毛玻璃與背景，徹底解決閃爍 */
+    25.001%, 100% { 
         top: 0px; 
         right: 0px; 
         width: 95px; 
@@ -1700,10 +1706,8 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 }
 
 @keyframes search-svg-sequence {
-    /* 0~25%: 底下按鈕退場時，圖示跟著淡出 */
     0% { transform: translateY(0); opacity: 1; animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
     25% { transform: translateY(0); opacity: 0; }
-    
-    /* 🚀 修復閃爍關鍵：25.1% 瞬間直接 opacity: 1 亮起，完美接手剛剛滑進來的替身，並一路保持到 100% */
-    25.1%, 100% { transform: translateY(0); opacity: 1; }
+    /* ⚡️ 極限硬切斷 */
+    25.001%, 100% { transform: translateY(0); opacity: 1; }
 }
