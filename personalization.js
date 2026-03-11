@@ -913,8 +913,8 @@ function triggerDescToggle(isActive) {
 
     setTimeout(() => {
         if (isActive) {
-            descName.textContent = '上測試';
-            descColor.textContent = '下測試';
+            descName.textContent = '　- Enterキーで入力 -';
+            descColor.textContent = '　- # 省略可 -';
         } else {
             descName.textContent = '　- 十文字以內 -';
             descColor.textContent = '　- HEX形式で入力してください -';

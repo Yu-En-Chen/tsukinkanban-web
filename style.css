@@ -1631,28 +1631,50 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
    🟢 通知選單展開：獨立灰色介面與元件依次彈出
    ========================================= */
 
-/* 1. 全螢幕灰色圓角方形背景 (獨立於按鈕之外) */
-.search-container::after {
+/* =========================================
+   1. 灰色背景：預設為手機版 (滿版彈性撐開，左右保留安全距離)
+   ========================================= */
+   .search-container::after {
     content: '';
     position: fixed;
-    /* 完美覆蓋螢幕，保留 12px 邊緣防護實體圓角 */
-    top: max(env(safe-area-inset-top), 0px);
-    bottom: max(env(safe-area-inset-bottom), 12px);
-    left: max(env(safe-area-inset-left), 12px);
-    right: max(env(safe-area-inset-right), 12px);
-    border-radius: 36px;
+    top: 0 !important;
+    bottom: 0 !important;
+    border-radius: 36px !important; 
     
-    /* 🟢 質感灰色玻璃介面 */
+    /* 🟢 手機版專屬魔法：依靠 left 和 right 撐開寬度，完美貼齊邊緣 12px */
+    left: max(env(safe-area-inset-left), 12px) !important;
+    right: max(env(safe-area-inset-right), 12px) !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    
+    /* 🟢 高級質感灰色玻璃介面 */
     background: rgba(142, 142, 147, 0.25);
     -webkit-backdrop-filter: blur(25px);
     backdrop-filter: blur(25px);
     box-shadow: inset 0 0 80px 20px rgba(174, 174, 178, 0.15), 0 10px 40px rgba(0,0,0,0.15);
     
-    z-index: 4000; /* 墊在所有按鈕下方 */
+    z-index: 4000;
     opacity: 0;
     pointer-events: none;
     transform: scale(0.92);
     transition: opacity 0.3s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* =========================================
+   💻 電腦/平板版防護罩：螢幕寬度大於 500px 時觸發
+   ========================================= */
+@media (min-width: 500px) {
+    .search-container::after {
+        /* 🟢 解除手機版的左右拉伸，改為絕對置中 */
+        left: 0 !important;
+        right: 0 !important;
+        margin: 0 auto !important;
+        
+        /* 🟢 電腦版專屬寬度：鎖死在卡片最大寬度 420px，並左右各扣除 12px (總共扣 24px) */
+        width: calc(420px + 24px) !important; 
+        max-width: calc(420px + 24px) !important;
+    }
 }
 
 @media (prefers-color-scheme: dark) {
