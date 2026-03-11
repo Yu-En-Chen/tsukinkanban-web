@@ -70,47 +70,111 @@ export function initHeader(onSearchCallback, getActiveCardId) {
 
     window.slideCapsuleMode = function(toBlankMode) {
         const capsule = document.getElementById('action-capsule');
+        const searchTrigger = document.getElementById('search-trigger'); // 🟢 綁定搜尋按鈕
         const leftBtn = document.getElementById('capsule-main-btn');
         const rightBtn = document.getElementById('capsule-secondary-btn');
+        const searchIcon = searchTrigger ? searchTrigger.querySelector('.search-icon') : null; // 🟢 抓取 SVG 容器
+    
         if (!capsule || !leftBtn || !rightBtn) return;
-
+    
         if (toBlankMode) {
             capsule.classList.remove('slide-in-active');
             capsule.classList.add('slide-out-right');
-
+            
+            // 🟢 同步向右滑出
+            if (searchTrigger) {
+                searchTrigger.classList.remove('slide-in-active');
+                searchTrigger.classList.add('slide-out-right');
+            }
+    
             setTimeout(() => {
                 leftBtn.innerHTML = CAPSULE_SVGS.blankLeft;
                 rightBtn.innerHTML = CAPSULE_SVGS.blankRight;
                 capsule.dataset.mode = 'blank';
-
+                
+                // 🟢 替換為歷史紀錄 SVG
+                if (searchIcon) {
+                    searchIcon.innerHTML = `
+                        <svg class="icon-blank-mode lucide lucide-history-icon lucide-history" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                            <path d="M3 3v5h5"/>
+                            <path d="M12 7v5l4 2"/>
+                        </svg>
+                    `;
+                }
+    
                 capsule.classList.remove('slide-out-right');
                 capsule.classList.add('slide-in-left-start');
-
+                
+                // 🟢 就位準備從左側滑入
+                if (searchTrigger) {
+                    searchTrigger.classList.remove('slide-out-right');
+                    searchTrigger.classList.add('slide-in-left-start');
+                }
+    
                 requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
                         capsule.classList.remove('slide-in-left-start');
                         capsule.classList.add('slide-in-active');
+                        
+                        // 🟢 正式滑入
+                        if (searchTrigger) {
+                            searchTrigger.classList.remove('slide-in-left-start');
+                            searchTrigger.classList.add('slide-in-active');
+                        }
                     });
                 });
             }, 300); 
-
+    
         } else {
             capsule.classList.remove('slide-in-active');
             capsule.classList.add('slide-out-left');
-
+            
+            // 🟢 同步反向向左滑出
+            if (searchTrigger) {
+                searchTrigger.classList.remove('slide-in-active');
+                searchTrigger.classList.add('slide-out-left');
+            }
+    
             setTimeout(() => {
                 leftBtn.innerHTML = CAPSULE_SVGS.nativeLeft;
                 rightBtn.innerHTML = CAPSULE_SVGS.nativeRight;
                 capsule.dataset.mode = 'native';
-
+                
+                // 🟢 替換回原生的放大鏡 SVG
+                if (searchIcon) {
+                    searchIcon.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m21 21-4.34-4.34"/>
+                            <circle cx="11" cy="11" r="8"/>
+                        </svg>
+                    `;
+                }
+    
                 capsule.classList.remove('slide-out-left');
                 capsule.classList.add('slide-in-right-start');
-
+                
+                // 🟢 就位準備從右側反向滑入
+                if (searchTrigger) {
+                    searchTrigger.classList.remove('slide-out-left');
+                    searchTrigger.classList.add('slide-in-right-start');
+                }
+    
                 requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
                         capsule.classList.remove('slide-in-right-start');
                         capsule.classList.add('slide-in-active');
-                        setTimeout(() => { capsule.classList.remove('slide-in-active'); }, 300);
+                        
+                        // 🟢 正式反向滑入
+                        if (searchTrigger) {
+                            searchTrigger.classList.remove('slide-in-right-start');
+                            searchTrigger.classList.add('slide-in-active');
+                        }
+                        
+                        setTimeout(() => { 
+                            capsule.classList.remove('slide-in-active'); 
+                            if (searchTrigger) searchTrigger.classList.remove('slide-in-active');
+                        }, 300);
                     });
                 });
             }, 300);
