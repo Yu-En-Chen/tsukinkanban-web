@@ -758,32 +758,37 @@ body.searching .search-mask {
 #detail-card-container {
     width: 100%;
     display: flex;
-    flex-direction: column; /* 🟢 改為垂直排列 */
-    align-items: center;    /* 🟢 水平置中 */
-    flex-grow: 1;           /* 🟢 讓容器向下撐滿剩餘空間 */
+    flex-direction: column;
+    align-items: center;
     margin-top: calc(env(safe-area-inset-top) + 160px);
-    margin-bottom: -50px;   /* 🟢 突破畫面底線，確保邊框確實延伸到螢幕外 */
+    position: relative; /* 🟢 關鍵修復：加入相對定位，作為透明卡片的對齊基準點 */
 }
 
 /* ==========================================================================
-   🟢 詳情卡片：全透明延伸區塊
+   🟢 詳情卡片：全透明延伸區塊 (絕對定位修復版)
    ========================================================================== */
    .detail-extension-card {
+    position: absolute; /* 🟢 脫離排版限制，解決高度被壓扁成一條線的問題 */
+    top: 100%; /* 🟢 讓起點永遠緊貼主卡片的正下方邊緣 */
+    left: 0;
+    right: 0;
+    margin: 0 auto; /* 🟢 完美水平置中，防止滑動時偏移 */
+    
     width: var(--card-width);
     max-width: 420px;
+    height: 100vh; /* 🟢 暴力美學：直接給予一整個螢幕的高度，保證長度絕對穿透螢幕底部 */
     
-    /* 👇 這裡可以手動調整「距離」與「邊框」 */
+    /* 👇 這裡一樣可以手動調整「距離」與「邊框」 */
     margin-top: 30px; 
-    border: 1.5px solid rgba(255,255,255,0.9); /* 若要固定顏色可改為 rgba(255,255,255,0.2) */
-    
+    border: 1.5px solid rgba(0, 0, 0, 0.2); 
     border-radius: var(--card-radius);
+    
     background: transparent;
-    flex-grow: 1; /* 自動往下延伸填滿 */
+    pointer-events: none; /* 讓點擊穿透，不會干擾底下的東西 */
     
     /* 繼承主卡片的進出場動畫 */
     transform: translate3d(0, 100vh, 0);
     transition: transform 0.55s var(--spring-release), opacity 0.3s ease;
-    pointer-events: none; /* 讓點擊穿透，不會干擾底下的東西 */
 }
 
 /* 隨主卡片一起升起 */
@@ -843,6 +848,10 @@ body.searching .search-mask {
 @media (prefers-color-scheme: dark) {
     .dismiss-icon {
         fill: rgba(174, 174, 178, 0.6);
+    }
+    .detail-extension-card {
+        /* 👇 深色模式：用 15% 透明度的純白，創造金屬/玻璃的高光反射邊緣 */
+        border: 1px solid rgba(255, 255, 255, 0.5); 
     }
 }
 
