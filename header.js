@@ -68,35 +68,35 @@ export function initHeader(onSearchCallback, getActiveCardId) {
     };
     expandClickArea();
 
-    window.slideCapsuleMode = function(toBlankMode) {
+    window.slideCapsuleMode = function (toBlankMode) {
         const capsule = document.getElementById('action-capsule');
         const searchTrigger = document.getElementById('search-trigger');
         const leftBtn = document.getElementById('capsule-main-btn');
         const rightBtn = document.getElementById('capsule-secondary-btn');
         const searchIcon = searchTrigger ? searchTrigger.querySelector('.search-icon') : null;
-    
+
         if (!capsule || !leftBtn || !rightBtn) return;
-    
+
         if (toBlankMode) {
             // 🛑 切換時：封殺按鈕原本的點擊功能
             if (searchTrigger) {
                 searchTrigger.onclick = null;
                 searchTrigger.style.pointerEvents = 'none';
             }
-    
+
             capsule.classList.remove('slide-in-active');
             capsule.classList.add('slide-out-right');
-            
+
             if (searchTrigger) {
                 searchTrigger.classList.remove('slide-in-active');
                 searchTrigger.classList.add('slide-out-right');
             }
-    
+
             setTimeout(() => {
                 leftBtn.innerHTML = CAPSULE_SVGS.blankLeft;
                 rightBtn.innerHTML = CAPSULE_SVGS.blankRight;
                 capsule.dataset.mode = 'blank';
-                
+
                 if (searchIcon) {
                     // 🟢 一次性注入三個 SVG：歷史、同步(無指針)、打勾
                     searchIcon.innerHTML = `
@@ -114,84 +114,103 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                         </svg>
                     `;
                 }
-    
+
                 capsule.classList.remove('slide-out-right');
                 capsule.classList.add('slide-in-left-start');
-                
+
                 if (searchTrigger) {
                     searchTrigger.classList.remove('slide-out-right');
                     searchTrigger.classList.add('slide-in-left-start');
                 }
-    
+
                 requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
                         capsule.classList.remove('slide-in-left-start');
                         capsule.classList.add('slide-in-active');
-                        
+
                         if (searchTrigger) {
                             searchTrigger.classList.remove('slide-in-left-start');
                             searchTrigger.classList.add('slide-in-active');
                         }
-    
-                        // 🟢 滑入動畫 (300ms) 結束後，綁定連鎖點擊事件
+
+                        // 🟢 滑入動畫 (300ms) 結束後，綁定連鎖點擊事件與 DB 還原邏輯
                         setTimeout(() => {
                             if (searchTrigger) {
                                 searchTrigger.onclick = () => {
-                                    // 避免狂點打斷動畫
-                                    if (searchTrigger.classList.contains('action-spinning') || 
-                                        searchTrigger.classList.contains('action-success') || 
+                                    // 避免狂點打斷動畫或造成資料庫連續存取衝突
+                                    if (searchTrigger.classList.contains('action-spinning') ||
+                                        searchTrigger.classList.contains('action-success') ||
                                         searchTrigger.classList.contains('action-resetting')) return;
-    
-                                    // 1. 開始旋轉
+
+                                    // 1. 啟動視覺回饋：開始旋轉
                                     searchTrigger.classList.add('action-spinning');
-                                    if (navigator.vibrate) navigator.vibrate(20); // 輕微觸覺回饋
-    
-                                    // 2. 1秒後 (轉完一圈)，掉下並顯示打勾
+                                    if (navigator.vibrate) navigator.vibrate(20); // 輕微觸覺回饋，模擬按下實體鍵
+
+                                    // ✨ [核心連動區] 2. 轉到一半 (500ms) 時：正式觸發資料庫還原與畫面渲染
+                                    // 將資料處理隱藏在視覺動態最劇烈的瞬間，創造無縫切換的錯覺
+                                    setTimeout(async () => {
+                                        try {
+                                            // 呼叫 db.js 提供的還原功能
+                                            // (註：根據你的架構，若函數是掛在 window 下則直接呼叫，若是 module 請對應調整)
+                                            if (typeof undoLastBackgroundDelete === 'function') {
+                                                await undoLastBackgroundDelete();
+                                            } else if (window.undoLastBackgroundDelete) {
+                                                await window.undoLastBackgroundDelete();
+                                            } else {
+                                                console.warn("尚未找到 undoLastBackgroundDelete 函數，請確認 db.js 已正確載入");
+                                            }
+                                        } catch (error) {
+                                            console.error("背景還原過程中發生錯誤:", error);
+                                            // 未來可以在這裡加入錯誤處理的 UI 狀態
+                                        }
+                                    }, 500); // 精準卡在 1 秒旋轉動畫的絕對中點
+
+                                    // 3. 1秒後 (轉完一圈)，動畫進入成功狀態：掉下並顯示打勾
                                     setTimeout(() => {
                                         searchTrigger.classList.remove('action-spinning');
                                         searchTrigger.classList.add('action-success');
-                                        if (navigator.vibrate) navigator.vibrate([30, 50, 30]); // 成功震動
-    
-                                        // 3. 停留 0.5 秒，開始 Reset
+                                        if (navigator.vibrate) navigator.vibrate([30, 50, 30]); // 成功震動，傳達任務完成的明確信號
+
+                                        // 4. 停留 0.5 秒，讓大腦接收打勾的視覺資訊後，開始 Reset 歸位
                                         setTimeout(() => {
                                             searchTrigger.classList.remove('action-success');
                                             searchTrigger.classList.add('action-resetting');
-    
-                                            // 給予 1 幀的時間讓歷史圖示瞬間定位到下方
+
+                                            // 給予瀏覽器 1 到 2 幀的時間，讓歷史圖示瞬間定位到下方預備
                                             requestAnimationFrame(() => {
                                                 requestAnimationFrame(() => {
                                                     searchTrigger.classList.add('action-resetting-active');
-    
-                                                    // 4. 動畫全部結束，清除所有狀態
+
+                                                    // 5. 動畫全部結束，清除所有動態狀態類別，恢復可點擊狀態
                                                     setTimeout(() => {
                                                         searchTrigger.classList.remove('action-resetting', 'action-resetting-active');
-                                                    }, 400); // 浮上來的時間
+                                                    }, 400); // 配合 CSS 中歷史圖示浮上來的轉場時間
                                                 });
                                             });
-                                        }, 500); // 停留0.5秒
-                                    }, 1000); // 1秒轉一圈
+                                        }, 500); // 成功圖示的停留觀賞期
+                                    }, 1000); // 完美對齊 CSS 中的 1s 線性旋轉時間
                                 };
                                 searchTrigger.style.pointerEvents = 'auto';
                             }
                         }, 300);
                     });
                 });
-            }, 300); 
-    
+            }, 300);
+
         } else {
             capsule.classList.remove('slide-in-active');
             capsule.classList.add('slide-out-left');
-            
+
             if (searchTrigger) {
                 searchTrigger.classList.remove('slide-in-active');
                 searchTrigger.classList.add('slide-out-left');
             }
-    
+
             setTimeout(() => {
                 leftBtn.innerHTML = CAPSULE_SVGS.nativeLeft;
                 rightBtn.innerHTML = CAPSULE_SVGS.nativeRight;
                 capsule.dataset.mode = 'native';
-                
+
                 if (searchIcon) {
                     searchIcon.innerHTML = `
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
@@ -200,27 +219,27 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                         </svg>
                     `;
                 }
-    
+
                 capsule.classList.remove('slide-out-left');
                 capsule.classList.add('slide-in-right-start');
-                
+
                 if (searchTrigger) {
                     searchTrigger.classList.remove('slide-out-left');
                     searchTrigger.classList.add('slide-in-right-start');
                 }
-    
+
                 requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
                         capsule.classList.remove('slide-in-right-start');
                         capsule.classList.add('slide-in-active');
-                        
+
                         if (searchTrigger) {
                             searchTrigger.classList.remove('slide-in-right-start');
                             searchTrigger.classList.add('slide-in-active');
                         }
-                        
-                        setTimeout(() => { 
-                            capsule.classList.remove('slide-in-active'); 
+
+                        setTimeout(() => {
+                            capsule.classList.remove('slide-in-active');
                             if (searchTrigger) {
                                 searchTrigger.classList.remove('slide-in-active');
                                 // 強制清除所有可能殘留的狀態
@@ -236,7 +255,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
         }
     };
 
-    window.slideInfoCapsuleMode = function(toInfoMode) {
+    window.slideInfoCapsuleMode = function (toInfoMode) {
         const capsule = document.getElementById('action-capsule');
         const leftBtn = document.getElementById('capsule-main-btn');
         const rightBtn = document.getElementById('capsule-secondary-btn');
@@ -260,7 +279,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                         capsule.classList.add('slide-in-active');
                     });
                 });
-            }, 300); 
+            }, 300);
 
         } else {
             capsule.classList.remove('slide-in-active');
@@ -285,28 +304,28 @@ export function initHeader(onSearchCallback, getActiveCardId) {
         }
     };
 
-    window.toggleSearch = function(show) {
+    window.toggleSearch = function (show) {
         const dismissIcon = document.getElementById('dismiss-icon');
         if (show) {
             const capsule = document.getElementById('action-capsule');
             if (capsule && capsule.classList.contains('menu-expanded')) {
                 capsule.classList.remove('menu-expanded');
-                searchContainer.classList.remove('menu-open'); 
+                searchContainer.classList.remove('menu-open');
                 document.body.classList.remove('menu-active');
             }
             searchContainer.classList.add('active');
-            document.body.classList.add('searching'); 
+            document.body.classList.add('searching');
             if (dismissIcon) dismissIcon.style.opacity = '0';
-            
+
             // 🟢 救命關鍵：拔掉 setTimeout！必須在點擊瞬間同步聚焦，手機才會放行小鍵盤。
             // 加入 preventScroll: true 防止瀏覽器因為聚焦隱藏物件而亂捲動畫面
             if (searchInput) {
                 searchInput.focus({ preventScroll: true });
             }
-            
+
         } else {
             searchContainer.classList.remove('active');
-            document.body.classList.remove('searching'); 
+            document.body.classList.remove('searching');
             if (searchInput) {
                 searchInput.value = '';
                 searchInput.blur(); // 確保關閉搜尋時必定收起鍵盤
@@ -318,24 +337,24 @@ export function initHeader(onSearchCallback, getActiveCardId) {
         }
     };
 
-    window.toggleCapsuleMenu = function() {
+    window.toggleCapsuleMenu = function () {
         const capsule = document.getElementById('action-capsule');
         if (capsule.classList.contains('menu-expanded')) {
             capsule.classList.remove('menu-expanded');
-            searchContainer.classList.remove('menu-open'); 
+            searchContainer.classList.remove('menu-open');
             document.body.classList.remove('menu-active');
         } else {
             capsule.classList.add('animating-shrink');
             setTimeout(() => {
                 capsule.classList.remove('animating-shrink');
                 capsule.classList.add('menu-expanded');
-                searchContainer.classList.add('menu-open'); 
+                searchContainer.classList.add('menu-open');
                 document.body.classList.add('menu-active');
             }, 150);
         }
     };
 
-    window.handleCapsuleMainClick = function() {
+    window.handleCapsuleMainClick = function () {
         if (window.pSyncing) {
             const btn = document.getElementById('capsule-main-btn');
             if (btn && typeof window.triggerBump === 'function') window.triggerBump(btn);
@@ -360,7 +379,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
         }
     };
 
-    window.handleCapsuleSecondaryClick = function() {
+    window.handleCapsuleSecondaryClick = function () {
         if (window.pSyncing) {
             const btn = document.getElementById('capsule-secondary-btn');
             if (btn && typeof window.triggerBump === 'function') window.triggerBump(btn);
@@ -394,12 +413,12 @@ export function initHeader(onSearchCallback, getActiveCardId) {
 
     if (searchInput) {
         searchInput.addEventListener('compositionstart', () => { isComposing = true; });
-        searchInput.addEventListener('compositionend', (e) => { 
-            isComposing = false; 
-            onSearchCallback(e.target.value); 
+        searchInput.addEventListener('compositionend', (e) => {
+            isComposing = false;
+            onSearchCallback(e.target.value);
         });
-        searchInput.addEventListener('input', (e) => { 
-            if (!isComposing) onSearchCallback(e.target.value); 
+        searchInput.addEventListener('input', (e) => {
+            if (!isComposing) onSearchCallback(e.target.value);
         });
     }
 }
