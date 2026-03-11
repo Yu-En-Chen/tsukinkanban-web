@@ -516,43 +516,68 @@ body.searching .search-mask {
 }
 
 /* =========================================
-   🟢 搜尋按鈕 SVG 同步膠囊滑動 (Blank Mode 專用)
+   🟢 搜尋按鈕 SVG 同步膠囊滑動 (完美修復版)
    ========================================= */
-   .search-trigger .search-icon svg {
+   .search-trigger .search-icon {
     position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
 }
 
-/* 1. 向右滑出消失 (進入 Blank 模式) */
+.search-trigger .search-icon svg {
+    position: absolute !important;
+    margin: 0 !important;
+    
+    /* 👇 如果想調整原本放大鏡的大小，改這裡 */
+    width: 20px !important;
+    height: 20px !important;
+    
+    /* 🟢 徹底解決抽搐與下移：強制鎖死正中心點 */
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate3d(-50%, -50%, 0) !important;
+}
+
+/* 👇 歷史紀錄圖示專屬大小微調區 (回答你的問題 2) */
+.search-trigger .search-icon svg.lucide-history {
+    width: 22px !important; /* 想要多大就在這裡調 */
+    height: 22px !important;
+}
+
+/* 1. 向右滑出消失 (🟢 距離改為 95px，與膠囊移動速度 100% 同步) */
 .search-trigger.slide-out-right .search-icon svg {
-    transform: translate3d(44px, 0, 0) !important;
+    transform: translate3d(calc(-50% + 95px), -50%, 0) !important;
     opacity: 0 !important;
     transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), opacity 0.2s 0.1s linear !important;
 }
 
-/* 2. 從左側準備滑入 (歷史紀錄圖示就位) */
+/* 2. 從左側準備滑入 */
 .search-trigger.slide-in-left-start .search-icon svg {
-    transform: translate3d(-44px, 0, 0) !important;
+    transform: translate3d(calc(-50% - 95px), -50%, 0) !important;
     opacity: 0 !important;
     transition: none !important;
 }
 
-/* 3. 從左側滑入定位 */
+/* 3. 從左側滑入定位 (歸位鎖死中心) */
 .search-trigger.slide-in-active .search-icon svg {
-    transform: translate3d(0, 0, 0) !important;
+    transform: translate3d(-50%, -50%, 0) !important;
     opacity: 0.8 !important;
     transition: transform 0.3s cubic-bezier(0.0, 0.0, 0.2, 1), opacity 0.3s ease-out !important;
 }
 
-/* 4. 反向：向左滑出消失 (離開 Blank 模式) */
+/* 4. 反向：向左滑出消失 */
 .search-trigger.slide-out-left .search-icon svg {
-    transform: translate3d(-44px, 0, 0) !important;
+    transform: translate3d(calc(-50% - 95px), -50%, 0) !important;
     opacity: 0 !important;
     transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), opacity 0.2s 0.1s linear !important;
 }
 
-/* 5. 反向：從右側準備滑入 (原生放大鏡就位) */
+/* 5. 反向：從右側準備滑入 */
 .search-trigger.slide-in-right-start .search-icon svg {
-    transform: translate3d(44px, 0, 0) !important;
+    transform: translate3d(calc(-50% + 95px), -50%, 0) !important;
     opacity: 0 !important;
     transition: none !important;
 }

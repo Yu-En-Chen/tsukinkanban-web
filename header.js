@@ -70,18 +70,23 @@ export function initHeader(onSearchCallback, getActiveCardId) {
 
     window.slideCapsuleMode = function(toBlankMode) {
         const capsule = document.getElementById('action-capsule');
-        const searchTrigger = document.getElementById('search-trigger'); // 🟢 綁定搜尋按鈕
+        const searchTrigger = document.getElementById('search-trigger'); // 綁定搜尋按鈕
         const leftBtn = document.getElementById('capsule-main-btn');
         const rightBtn = document.getElementById('capsule-secondary-btn');
-        const searchIcon = searchTrigger ? searchTrigger.querySelector('.search-icon') : null; // 🟢 抓取 SVG 容器
+        const searchIcon = searchTrigger ? searchTrigger.querySelector('.search-icon') : null;
     
         if (!capsule || !leftBtn || !rightBtn) return;
     
         if (toBlankMode) {
+            // 🛑 切換時：封殺搜尋按鈕原本的點擊功能，並禁止 Hover 放大的微互動
+            if (searchTrigger) {
+                searchTrigger.onclick = null;
+                searchTrigger.style.pointerEvents = 'none';
+            }
+    
             capsule.classList.remove('slide-in-active');
             capsule.classList.add('slide-out-right');
             
-            // 🟢 同步向右滑出
             if (searchTrigger) {
                 searchTrigger.classList.remove('slide-in-active');
                 searchTrigger.classList.add('slide-out-right');
@@ -92,10 +97,9 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                 rightBtn.innerHTML = CAPSULE_SVGS.blankRight;
                 capsule.dataset.mode = 'blank';
                 
-                // 🟢 替換為歷史紀錄 SVG
                 if (searchIcon) {
                     searchIcon.innerHTML = `
-                        <svg class="icon-blank-mode lucide lucide-history-icon lucide-history" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="icon-blank-mode lucide lucide-history-icon lucide-history" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
                             <path d="M3 3v5h5"/>
                             <path d="M12 7v5l4 2"/>
@@ -106,7 +110,6 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                 capsule.classList.remove('slide-out-right');
                 capsule.classList.add('slide-in-left-start');
                 
-                // 🟢 就位準備從左側滑入
                 if (searchTrigger) {
                     searchTrigger.classList.remove('slide-out-right');
                     searchTrigger.classList.add('slide-in-left-start');
@@ -117,7 +120,6 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                         capsule.classList.remove('slide-in-left-start');
                         capsule.classList.add('slide-in-active');
                         
-                        // 🟢 正式滑入
                         if (searchTrigger) {
                             searchTrigger.classList.remove('slide-in-left-start');
                             searchTrigger.classList.add('slide-in-active');
@@ -130,7 +132,6 @@ export function initHeader(onSearchCallback, getActiveCardId) {
             capsule.classList.remove('slide-in-active');
             capsule.classList.add('slide-out-left');
             
-            // 🟢 同步反向向左滑出
             if (searchTrigger) {
                 searchTrigger.classList.remove('slide-in-active');
                 searchTrigger.classList.add('slide-out-left');
@@ -141,7 +142,6 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                 rightBtn.innerHTML = CAPSULE_SVGS.nativeRight;
                 capsule.dataset.mode = 'native';
                 
-                // 🟢 替換回原生的放大鏡 SVG
                 if (searchIcon) {
                     searchIcon.innerHTML = `
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
@@ -154,7 +154,6 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                 capsule.classList.remove('slide-out-left');
                 capsule.classList.add('slide-in-right-start');
                 
-                // 🟢 就位準備從右側反向滑入
                 if (searchTrigger) {
                     searchTrigger.classList.remove('slide-out-left');
                     searchTrigger.classList.add('slide-in-right-start');
@@ -165,7 +164,6 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                         capsule.classList.remove('slide-in-right-start');
                         capsule.classList.add('slide-in-active');
                         
-                        // 🟢 正式反向滑入
                         if (searchTrigger) {
                             searchTrigger.classList.remove('slide-in-right-start');
                             searchTrigger.classList.add('slide-in-active');
@@ -173,7 +171,12 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                         
                         setTimeout(() => { 
                             capsule.classList.remove('slide-in-active'); 
-                            if (searchTrigger) searchTrigger.classList.remove('slide-in-active');
+                            if (searchTrigger) {
+                                searchTrigger.classList.remove('slide-in-active');
+                                // 🟢 動畫完全結束後：恢復搜尋按鈕功能與互動熱區
+                                searchTrigger.onclick = () => window.toggleSearch(true);
+                                searchTrigger.style.pointerEvents = 'auto';
+                            }
                         }, 300);
                     });
                 });
