@@ -789,6 +789,8 @@ body.searching .search-mask {
     /* 繼承主卡片的進出場動畫 */
     transform: translate3d(0, 100vh, 0);
     transition: transform 0.55s var(--spring-release), opacity 0.3s ease;
+    will-change: transform;
+    -webkit-backface-visibility: hidden;
 }
 
 /* 隨主卡片一起升起 */
@@ -796,10 +798,33 @@ body.searching .search-mask {
     transform: translate3d(0, 0, 0);
 }
 
-/* 當進入個性化設定 (3D 翻轉) 時，延伸卡片自動淡出隱藏 */
-.perspective-container.is-flipping .detail-extension-card {
+/* ==========================================================================
+   🟢 延伸卡片 3D 翻轉聯動：無縫過衝引擎 (Overshoot Transition)
+   ========================================================================== */
+
+/* 1. 向下抽離 (去程)：與主卡片 3D 翻轉速度完全一致 */
+.detail-card-inner.flip-out ~ .detail-extension-card {
+    transform: translate3d(0, 100vh, 0) !important;
     opacity: 0 !important;
-    transition: opacity 0.2s ease !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), opacity 0.2s 0.1s linear !important; 
+}
+
+/* 2. 準備回彈 (底部待命準備發射) */
+.detail-card-inner.flip-back-start ~ .detail-extension-card {
+    transform: translate3d(0, 100vh, 0) !important;
+    opacity: 1 !important;
+    transition: none !important;
+}
+
+/* 3. 向上彈出 (回程)：微距過衝交接 (防撞版) */
+.detail-card-inner.flip-back-active ~ .detail-extension-card {
+    transform: translate3d(0, 0, 0) !important;
+    opacity: 1 !important;
+    
+    /* 👇 關鍵修改：將 1.5 降為 1.025 (只允許衝過頭 2.5%)
+       這樣它最多只會往上彈約 15~20px，會完美停留在 30px 的安全距離內，
+       既保留了 Q 彈的物理慣性，又絕對不會撞到上面的卡片！ */
+    transition: transform 0.65s cubic-bezier(0.2, 1.025, 0.4, 1) !important; 
 }
 
 .detail-card-inner {
