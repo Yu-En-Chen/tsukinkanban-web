@@ -40,4 +40,4 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Menu: Closed by ESC');
         }
     });
-}
+});

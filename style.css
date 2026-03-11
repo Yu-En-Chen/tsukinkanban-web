@@ -1636,8 +1636,8 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
     content: '';
     position: fixed;
     /* 完美覆蓋螢幕，保留 12px 邊緣防護實體圓角 */
-    top: max(env(safe-area-inset-top), 12px);
-    bottom: max(env(safe-area-inset-bottom), 12px);
+    top: max(env(safe-area-inset-top), 3px);
+    bottom: max(env(safe-area-inset-bottom), 3px);
     left: max(env(safe-area-inset-left), 12px);
     right: max(env(safe-area-inset-right), 12px);
     border-radius: 36px;
@@ -1648,7 +1648,7 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
     backdrop-filter: blur(25px);
     box-shadow: inset 0 0 80px 20px rgba(174, 174, 178, 0.15), 0 10px 40px rgba(0,0,0,0.15);
     
-    z-index: 5990; /* 墊在所有按鈕下方 */
+    z-index: 1500; /* 墊在所有按鈕下方 */
     opacity: 0;
     pointer-events: none;
     transform: scale(0.92);
@@ -1716,3 +1716,18 @@ body.hamburger-active .search-container::before { animation-delay: 0.15s !import
     transform: translate(50%, -50%) scale(0.8) !important;
     transition: opacity 0.3s linear, transform 0.4s var(--apple-spring) !important;
 }
+
+/* =========================================
+   🟢 通知選單展開時：隱藏搜尋與膠囊的 SVG 並鎖死點擊
+   ========================================= */
+   body.hamburger-active .search-container .search-trigger,
+   body.hamburger-active .search-container .action-capsule {
+       /* 1. 鎖死點擊功能，確保它只是個純視覺的彈出方塊 */
+       pointer-events: none !important;
+   }
+   
+   body.hamburger-active .search-container .search-trigger svg,
+   body.hamburger-active .search-container .action-capsule svg {
+       /* 2. 隱藏內部的 SVG 圖示 */
+       opacity: 0 !important; 
+   }
