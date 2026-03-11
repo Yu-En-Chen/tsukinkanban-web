@@ -82,6 +82,18 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         const routeData = window.appRailwayData.find(r => r.id === activeId);
         if (!routeData) return;
 
+        // 🟢 終極防護網：攔截「未改變」的幽靈存檔！
+        // 防止使用者點開輸入框但沒修改就關閉時，把歷史紀錄 (previousState) 覆蓋成一模一樣的廢資料
+        if (editType === 'name' && routeData.name === finalVal) {
+            console.log("[攔截] 名稱未變更，拒絕污染歷史紀錄");
+            return;
+        }
+        if (editType === 'color' && routeData.hex.toLowerCase() === finalVal.toLowerCase()) {
+            console.log("[攔截] 顏色未變更，拒絕污染歷史紀錄");
+            return;
+        }
+
+        // ✨ 在確認數值真的有變後，才將修改前的狀態打包成救生圈
         const oldState = {
             customName: routeData.name,
             customHex: routeData.hex
@@ -90,9 +102,11 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         if (editType === 'name') routeData.name = finalVal;
         if (editType === 'color') routeData.hex = finalVal;
 
+        // 同步更新：個性化卡片 (Blank Overlay)
         const customizeCard = document.querySelector('#dynamic-blank-overlay .detail-card-inner');
         if (customizeCard) applyThemeToCard(customizeCard, routeData.hex);
 
+        // 同步更新：中層的詳情卡片 (Detail Card)
         const detailCard = document.querySelector('#detail-card-container .detail-card-inner');
         if (detailCard) {
             applyThemeToCard(detailCard, routeData.hex);
@@ -100,6 +114,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             if (detailNameNode) detailNameNode.textContent = routeData.name;
         }
 
+        // 同步更新：底層的主列表卡片 (Main Card)
         const mainCard = document.getElementById(`card-${activeId}`);
         if (mainCard) {
             applyThemeToCard(mainCard, routeData.hex);
@@ -107,6 +122,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             if (mainNameNode) mainNameNode.textContent = routeData.name;
         }
 
+        // 呼叫 DB，並把救生圈 (oldState) 丟過去當備份
         saveRoutePreference(activeId, routeData.name, routeData.hex, oldState)
             .then(() => console.log(`[DB] 成功寫入永久儲存 -> ${activeId}: ${routeData.name} / ${routeData.hex}`))
             .catch(err => console.error('[DB] 寫入 IndexedDB 失敗:', err));
