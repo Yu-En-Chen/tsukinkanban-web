@@ -18,6 +18,23 @@ import { railwayData } from './data.js';
     };
     window.addEventListener('touchstart', blockEdgeSwipe, { passive: false, capture: true });
     window.addEventListener('touchmove', blockEdgeSwipe, { passive: false, capture: true });
+    // 👇 全域動畫鎖與微互動攔截器 👇
+    document.addEventListener('click', (e) => {
+        // 檢查是否正在播放下載同步動畫
+        if (window.pSyncing) {
+            // 偵測點擊是否發生在 通知(左)、搜尋(右)、調色盤(左上) 按鈕上
+            const protectedBtn = e.target.closest('.left-circle-btn, .search-trigger, #capsule-main-btn');
+            if (protectedBtn) {
+                e.preventDefault();
+                e.stopPropagation(); // ⛔ 霸王色霸氣：在點擊事件抵達原本的 onclick 前，強制斬斷！
+                
+                // 🥊 呼叫系統內建的微互動引擎，讓按鈕「扣」的震動一下，暗示使用者目前鎖定中
+                if (typeof window.triggerBump === 'function') {
+                    window.triggerBump(protectedBtn);
+                }
+            }
+        }
+    }, { capture: true }); // 開啟 capture 捕獲階段，保證我們是全站第一個拿到點擊事件的！ // 👆
 
     try {
         history.pushState(null, null, location.href);
