@@ -1730,16 +1730,20 @@ body.hamburger-active .search-container .search-trigger {
     z-index: 5993 !important;
 }
 
-/* 3. 拔除 SVG 圖示與點擊功能 (保留彈出動畫，方便未來擴充) */
-body.hamburger-active .search-container .action-capsule,
-body.hamburger-active .search-container .search-trigger {
-    pointer-events: none !important; /* 鎖死點擊，防止誤觸 */
+/* 3. 終極拔除 SVG 與點擊功能 (利用 ID 權重，強制鎮壓詳情與設定介面的衝突) */
+body.hamburger-active #action-capsule,
+body.hamburger-active #search-trigger,
+body.hamburger-active #action-capsule *,
+body.hamburger-active #search-trigger * {
+    /* 🟢 加上星號 (*)，能把膠囊裡面所有的按鈕、SVG、甚至是 path 的點擊事件全部封殺，防止點擊穿透 */
+    pointer-events: none !important; 
 }
 
-body.hamburger-active .search-container .action-capsule svg,
-body.hamburger-active .search-container .search-trigger svg {
-    opacity: 0 !important; /* 隱藏所有圖示 */
-    transition: opacity 0.2s ease !important; /* 滑順淡出 */
+body.hamburger-active #action-capsule svg,
+body.hamburger-active #search-trigger svg {
+    /* 🟢 改用 #action-capsule 等 ID 選擇器，它的權重 (1,0,0) 能無條件輾壓任何深層的 class 設定 */
+    opacity: 0 !important; 
+    transition: opacity 0.2s ease !important;
 }
 
 /* =========================================
