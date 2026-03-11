@@ -1096,7 +1096,7 @@ async function initApp() {
                 hex: pref.customHex || route.hex
             };
         }
-        return route;
+        return { ...route };
     });
 
     // 3. 用「合併後的資料」來生成畫面

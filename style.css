@@ -692,13 +692,13 @@ body.searching .search-mask {
     transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), opacity 0.2s linear !important;
 }
 
-/* 專屬搖頭動畫引擎 (繼承原本的 -50% 置中定位以防抽搐) */
+/* 專屬搖頭動畫引擎 (改用 margin 避開 transform !important 衝突) */
 @keyframes search-error-shake {
-    0%, 100% { transform: translate3d(-50%, -50%, 0); }
-    20% { transform: translate3d(calc(-50% - 4px), -50%, 0); }
-    40% { transform: translate3d(calc(-50% + 4px), -50%, 0); }
-    60% { transform: translate3d(calc(-50% - 4px), -50%, 0); }
-    80% { transform: translate3d(calc(-50% + 4px), -50%, 0); }
+    0%, 100% { margin-left: 0; }
+    20% { margin-left: -4px; }
+    40% { margin-left: 4px; }
+    60% { margin-left: -4px; }
+    80% { margin-left: 4px; }
 }
 
 /* ==========================================================================

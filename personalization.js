@@ -82,6 +82,11 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         const routeData = window.appRailwayData.find(r => r.id === activeId);
         if (!routeData) return;
 
+        const oldState = {
+            customName: routeData.name,
+            customHex: routeData.hex
+        };
+
         if (editType === 'name') routeData.name = finalVal;
         if (editType === 'color') routeData.hex = finalVal;
 
@@ -102,7 +107,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             if (mainNameNode) mainNameNode.textContent = routeData.name;
         }
 
-        saveRoutePreference(activeId, routeData.name, routeData.hex)
+        saveRoutePreference(activeId, routeData.name, routeData.hex, oldState)
             .then(() => console.log(`[DB] 成功寫入永久儲存 -> ${activeId}: ${routeData.name} / ${routeData.hex}`))
             .catch(err => console.error('[DB] 寫入 IndexedDB 失敗:', err));
     };
