@@ -120,44 +120,83 @@ export async function getAllUserPreferences() {
     }
 }
 
-// 3. 儲存或更新單一路線的自訂設定
+// 3. 儲存或更新單一路線的自訂設定 (自動備份上一筆)
 export async function saveRoutePreference(id, customName, customHex) {
     const db = await initDB();
-    const data = { 
-        id: id, 
-        customName: customName, 
-        customHex: customHex, 
-        updatedAt: Date.now() 
-    };
 
-    // 如果已經是備用模式，直接寫入 LocalStorage
+    // 🟢 備用模式 (LocalStorage) 的讀取與備份邏輯
     if (useFallback || !db) {
+        const map = getFallbackData();
+        const currentData = map[id];
+        let previousState = null;
+
+        if (currentData) {
+            previousState = {
+                customName: currentData.customName,
+                customHex: currentData.customHex
+            };
+        }
+
+        const data = { 
+            id: id, 
+            customName: customName, 
+            customHex: customHex, 
+            updatedAt: Date.now(),
+            previousState: previousState // 將舊資料封裝進去
+        };
         saveFallbackData(data);
         return Promise.resolve();
     }
 
+    // 🟢 IndexedDB 模式的讀取與備份邏輯
     return new Promise((resolve) => {
         try {
             const transaction = db.transaction(STORE_NAME, 'readwrite');
             const store = transaction.objectStore(STORE_NAME);
-            const request = store.put(data);
             
-            request.onsuccess = () => {
-                console.log(`[DB] 路線 ${id} 的自訂設定已儲存 (IndexedDB)`);
-                resolve();
+            // 先取得當前資料做備份
+            const getRequest = store.get(id);
+            
+            getRequest.onsuccess = () => {
+                const currentData = getRequest.result;
+                let previousState = null;
+                
+                if (currentData) {
+                    previousState = {
+                        customName: currentData.customName,
+                        customHex: currentData.customHex
+                    };
+                }
+
+                const data = { 
+                    id: id, 
+                    customName: customName, 
+                    customHex: customHex, 
+                    updatedAt: Date.now(),
+                    previousState: previousState // 將舊資料封裝進去
+                };
+
+                const putRequest = store.put(data);
+                putRequest.onsuccess = () => {
+                    console.log(`[DB] 路線 ${id} 的自訂設定已儲存 (含上一筆備份)`);
+                    resolve();
+                };
+                putRequest.onerror = () => {
+                    useFallback = true;
+                    saveFallbackData(data);
+                    resolve();
+                };
             };
             
-            // 🟢 寫入時發生 iOS 阻擋，自動把這筆資料轉存 LocalStorage
-            request.onerror = () => {
-                console.warn('[DB] IndexedDB 寫入失敗，轉交備援機制處理');
+            getRequest.onerror = () => {
+                // 讀取失敗時跳過備份，直接儲存新資料
+                const data = { id, customName, customHex, updatedAt: Date.now(), previousState: null };
                 useFallback = true;
                 saveFallbackData(data);
                 resolve();
             };
         } catch (err) {
-            console.warn('[DB] 建立寫入事務失敗，轉交備援機制處理');
             useFallback = true;
-            saveFallbackData(data);
             resolve();
         }
     });
@@ -188,6 +227,78 @@ export async function resetRoutePreference(id) {
             useFallback = true;
             removeFallbackData(id);
             resolve();
+        }
+    });
+}
+
+// 5. 🟢 新增：恢復上一筆設定 (Undo)
+export async function restorePreviousPreference(id) {
+    const db = await initDB();
+
+    // 處理備用模式 (LocalStorage)
+    if (useFallback || !db) {
+        const map = getFallbackData();
+        const currentData = map[id];
+        
+        if (currentData && currentData.previousState) {
+            // 將當前狀態與備份狀態互換 (這樣再次呼叫就會變成 Redo)
+            const tempName = currentData.customName;
+            const tempHex = currentData.customHex;
+            
+            currentData.customName = currentData.previousState.customName;
+            currentData.customHex = currentData.previousState.customHex;
+            
+            currentData.previousState = {
+                customName: tempName,
+                customHex: tempHex
+            };
+            currentData.updatedAt = Date.now();
+            
+            saveFallbackData(currentData);
+            return Promise.resolve(currentData); // 回傳恢復後的資料
+        }
+        return Promise.resolve(null); // 沒有備份可供恢復
+    }
+
+    // 處理 IndexedDB 模式
+    return new Promise((resolve) => {
+        try {
+            const transaction = db.transaction(STORE_NAME, 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const getRequest = store.get(id);
+
+            getRequest.onsuccess = () => {
+                const currentData = getRequest.result;
+                
+                // 檢查是否有備份資料
+                if (currentData && currentData.previousState) {
+                    // 將當前狀態與備份狀態互換
+                    const tempName = currentData.customName;
+                    const tempHex = currentData.customHex;
+                    
+                    currentData.customName = currentData.previousState.customName;
+                    currentData.customHex = currentData.previousState.customHex;
+                    
+                    currentData.previousState = {
+                        customName: tempName,
+                        customHex: tempHex
+                    };
+                    currentData.updatedAt = Date.now();
+
+                    const putRequest = store.put(currentData);
+                    putRequest.onsuccess = () => {
+                        console.log(`[DB] 路線 ${id} 已成功恢復為上一筆紀錄`);
+                        resolve(currentData); // 回傳恢復後的資料讓前端 UI 更新
+                    };
+                    putRequest.onerror = () => resolve(null);
+                } else {
+                    resolve(null); // 沒有備份可供恢復
+                }
+            };
+            getRequest.onerror = () => resolve(null);
+        } catch (err) {
+            useFallback = true;
+            resolve(null);
         }
     });
 }
