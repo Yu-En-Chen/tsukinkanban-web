@@ -145,44 +145,43 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
 
 <div class="card-content" id="p-ghost-wrapper" style="position: relative;">
     <style>
-        #p-edit-row, #p-color-edit-row {
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-        #p-ghost-input {
-            -webkit-touch-callout: default;
-            -webkit-user-select: text;
-            user-select: text;
-        }
+        /* =========================================
+           🟢 終極色彩校正：解決亮黃色 (#FFD306) 對比度問題
+           ========================================= */
         
-        .info-tag-item, #p-ghost-input, #p-shared-status, svg {
-            will-change: transform, max-width, opacity;
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-            transform: translate3d(0, 0, 0); 
+        /* 1. 智慧適應：文字、備註與 SVG 圖示顏色 */
+        #p-display-name, #p-shared-status-text, #p-char-count, 
+        #p-display-color, #p-color-shared-status-text, 
+        #p-desc-name, #p-desc-color,
+        #p-ghost-wrapper .info-tag-item {
+            /* 繼承詳情卡片的動態文字色，確保在亮色背景自動轉深 */
+            color: var(--text-secondary) !important;
+            fill: var(--text-secondary) !important;
         }
 
-        .p-bump-active {
-            transform: scale(0.92) translate3d(0,0,0) !important;
-            opacity: 0.8 !important;
-            transition: transform 0.15s cubic-bezier(0.34, 1.6, 0.64, 1), opacity 0.15s ease !important;
+        /* 2. 動態按鈕底色：解決亮色系下的「灰霧感」 */
+        #p-ghost-wrapper .info-tag-item {
+            /* 強制讓按鈕底色使用色彩引擎算出的 tagBg (在亮色系會變深，增加對比) */
+            background: var(--tag-bg) !important;
+            /* 增加邊框權重：讓按鈕輪廓在亮色背景下更清晰 */
+            border: 1px solid var(--border-color) !important;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
 
-        @keyframes p-spin-ease {
-            0% { transform: rotate(0deg) translate3d(0,0,0); animation-timing-function: linear; }
-            87.5% { transform: rotate(315deg) translate3d(0,0,0); animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1); }
-            100% { transform: rotate(360deg) translate3d(0,0,0); }
+        /* 3. 漸層切割效果：僅套用於文字部分，提升立體感 */
+        #p-display-name, #p-char-count, #p-display-color, #p-desc-name, #p-desc-color {
+            background-image: var(--text-bg-gradient-secondary, none) !important;
+            -webkit-background-clip: var(--text-clip, border-box) !important;
+            background-clip: var(--text-clip, border-box) !important;
+            -webkit-text-fill-color: var(--text-fill, var(--text-secondary)) !important;
         }
-        @keyframes p-shake-anim {
-            0%, 100% { transform: translate3d(0, 0, 0); }
-            20% { transform: translate3d(-4px, 0, 0); }
-            40% { transform: translate3d(4px, 0, 0); }
-            60% { transform: translate3d(-4px, 0, 0); }
-            80% { transform: translate3d(4px, 0, 0); }
+
+        /* 4. 幽靈輸入框：保持純色防止游標消失 */
+        #p-ghost-input {
+            color: var(--text-secondary) !important;
+            caret-color: var(--text-secondary) !important;
         }
-        .p-spin { animation: p-spin-ease 0.8s infinite; }
-        .p-shake-active { animation: p-shake-anim 0.4s cubic-bezier(.36,.07,.19,.97) both; }
     </style>
 
     <div id="p-edit-row" style="--btn-height: 44px; display: flex; gap: 8px; position: relative;
