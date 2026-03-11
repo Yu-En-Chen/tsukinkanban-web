@@ -593,6 +593,70 @@ body.searching .search-mask {
     pointer-events: auto !important;
 }
 
+/* =========================================
+   🟢 搜尋按鈕：點擊歷史紀錄的連鎖動畫 (Sync -> Check)
+   ========================================= */
+
+/* 1. 隔離非主動圖示，防止滑動動畫干擾 */
+.search-trigger .search-icon svg.sync-icon {
+    opacity: 0 !important;
+    transform: translate3d(-50%, -50%, 0) rotate(0deg) !important;
+}
+.search-trigger .search-icon svg.check-icon {
+    opacity: 0 !important;
+    transform: translate3d(-50%, calc(-50% - 24px), 0) !important; /* 預設藏在上方 */
+}
+
+/* 2. 階段一：點擊後切換 Sync 並旋轉 (1秒線性轉減速) */
+.search-trigger.slide-in-active.action-spinning .search-icon svg.history-icon {
+    opacity: 0 !important;
+    transition: none !important; /* 瞬間切換 */
+}
+.search-trigger.slide-in-active.action-spinning .search-icon svg.sync-icon {
+    opacity: 0.8 !important;
+    /* 一秒線性轉一圈，接近 360 度時平滑減速 */
+    transform: translate3d(-50%, -50%, 0) rotate(-360deg) !important;
+    transition: transform 1s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.1s !important;
+}
+
+/* 3. 階段二：完成打勾 (向下掉出) */
+.search-trigger.slide-in-active.action-success .search-icon svg.history-icon {
+    opacity: 0 !important;
+    transition: none !important;
+}
+.search-trigger.slide-in-active.action-success .search-icon svg.sync-icon {
+    /* Sync 圖示轉完後直接向下掉 */
+    transform: translate3d(-50%, calc(-50% + 24px), 0) rotate(-360deg) !important;
+    opacity: 0 !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), opacity 0.2s linear !important;
+}
+.search-trigger.slide-in-active.action-success .search-icon svg.check-icon {
+    /* 打勾圖示從上方掉入，帶彈跳節奏 (對齊下載按鈕) */
+    transform: translate3d(-50%, -50%, 0) !important;
+    opacity: 1 !important;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease-out !important;
+}
+
+/* 4. 階段三：Reset (打勾往上消失，歷史從下往上浮出) */
+.search-trigger.slide-in-active.action-resetting .search-icon svg.check-icon {
+    /* 打勾圖示往上飛走 */
+    transform: translate3d(-50%, calc(-50% - 24px), 0) !important;
+    opacity: 0 !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), opacity 0.2s linear !important;
+}
+.search-trigger.slide-in-active.action-resetting .search-icon svg.history-icon {
+    /* 第一步：先把歷史圖示瞬間定位在下方預備 */
+    transform: translate3d(-50%, calc(-50% + 24px), 0) !important;
+    opacity: 0 !important;
+    transition: none !important;
+}
+.search-trigger.slide-in-active.action-resetting-active .search-icon svg.history-icon {
+    /* 第二步：浮上來回到正中央 */
+    transform: translate3d(-50%, -50%, 0) !important;
+    opacity: 0.8 !important;
+    transition: transform 0.4s cubic-bezier(0.0, 0.0, 0.2, 1), opacity 0.3s ease-out !important;
+}
+
 /* ==========================================================================
    卡片堆疊與物理邏輯
    ========================================================================== */

@@ -70,7 +70,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
 
     window.slideCapsuleMode = function(toBlankMode) {
         const capsule = document.getElementById('action-capsule');
-        const searchTrigger = document.getElementById('search-trigger'); // 綁定搜尋按鈕
+        const searchTrigger = document.getElementById('search-trigger');
         const leftBtn = document.getElementById('capsule-main-btn');
         const rightBtn = document.getElementById('capsule-secondary-btn');
         const searchIcon = searchTrigger ? searchTrigger.querySelector('.search-icon') : null;
@@ -78,7 +78,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
         if (!capsule || !leftBtn || !rightBtn) return;
     
         if (toBlankMode) {
-            // 🛑 切換時：封殺搜尋按鈕原本的點擊功能，並禁止 Hover 放大的微互動
+            // 🛑 切換時：封殺按鈕原本的點擊功能
             if (searchTrigger) {
                 searchTrigger.onclick = null;
                 searchTrigger.style.pointerEvents = 'none';
@@ -98,11 +98,19 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                 capsule.dataset.mode = 'blank';
                 
                 if (searchIcon) {
+                    // 🟢 一次性注入三個 SVG：歷史、同步(無指針)、打勾
                     searchIcon.innerHTML = `
-                        <svg class="icon-blank-mode lucide lucide-history-icon lucide-history" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="icon-blank-mode history-icon lucide lucide-history" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
                             <path d="M3 3v5h5"/>
                             <path d="M12 7v5l4 2"/>
+                        </svg>
+                        <svg class="icon-blank-mode sync-icon lucide lucide-rotate-ccw" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                            <path d="M3 3v5h5"/>
+                        </svg>
+                        <svg class="icon-blank-mode check-icon lucide lucide-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 6 9 17l-5-5"/>
                         </svg>
                     `;
                 }
@@ -124,6 +132,48 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                             searchTrigger.classList.remove('slide-in-left-start');
                             searchTrigger.classList.add('slide-in-active');
                         }
+    
+                        // 🟢 滑入動畫 (300ms) 結束後，綁定連鎖點擊事件
+                        setTimeout(() => {
+                            if (searchTrigger) {
+                                searchTrigger.onclick = () => {
+                                    // 避免狂點打斷動畫
+                                    if (searchTrigger.classList.contains('action-spinning') || 
+                                        searchTrigger.classList.contains('action-success') || 
+                                        searchTrigger.classList.contains('action-resetting')) return;
+    
+                                    // 1. 開始旋轉
+                                    searchTrigger.classList.add('action-spinning');
+                                    if (navigator.vibrate) navigator.vibrate(20); // 輕微觸覺回饋
+    
+                                    // 2. 1秒後 (轉完一圈)，掉下並顯示打勾
+                                    setTimeout(() => {
+                                        searchTrigger.classList.remove('action-spinning');
+                                        searchTrigger.classList.add('action-success');
+                                        if (navigator.vibrate) navigator.vibrate([30, 50, 30]); // 成功震動
+    
+                                        // 3. 停留 0.5 秒，開始 Reset
+                                        setTimeout(() => {
+                                            searchTrigger.classList.remove('action-success');
+                                            searchTrigger.classList.add('action-resetting');
+    
+                                            // 給予 1 幀的時間讓歷史圖示瞬間定位到下方
+                                            requestAnimationFrame(() => {
+                                                requestAnimationFrame(() => {
+                                                    searchTrigger.classList.add('action-resetting-active');
+    
+                                                    // 4. 動畫全部結束，清除所有狀態
+                                                    setTimeout(() => {
+                                                        searchTrigger.classList.remove('action-resetting', 'action-resetting-active');
+                                                    }, 400); // 浮上來的時間
+                                                });
+                                            });
+                                        }, 500); // 停留0.5秒
+                                    }, 1000); // 1秒轉一圈
+                                };
+                                searchTrigger.style.pointerEvents = 'auto';
+                            }
+                        }, 300);
                     });
                 });
             }, 300); 
@@ -173,7 +223,9 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                             capsule.classList.remove('slide-in-active'); 
                             if (searchTrigger) {
                                 searchTrigger.classList.remove('slide-in-active');
-                                // 🟢 動畫完全結束後：恢復搜尋按鈕功能與互動熱區
+                                // 強制清除所有可能殘留的狀態
+                                searchTrigger.classList.remove('action-spinning', 'action-success', 'action-resetting', 'action-resetting-active');
+                                // 🟢 恢復原生搜尋功能
                                 searchTrigger.onclick = () => window.toggleSearch(true);
                                 searchTrigger.style.pointerEvents = 'auto';
                             }
