@@ -1741,3 +1741,17 @@ body.hamburger-active .search-container .search-trigger svg {
     opacity: 0 !important; /* 隱藏所有圖示 */
     transition: opacity 0.2s ease !important; /* 滑順淡出 */
 }
+
+/* =========================================
+   🟢 搜尋框 SVG 精準對齊左側半圓中心 (Pixel Perfect)
+   ========================================= */
+
+/* 1. 重新配置搜尋框的內距 (上 右 下 左) */
+.search-input-box {
+    padding: 0 16px 0 12px !important; /* 將左側 padding 精準設為 12px */
+}
+
+/* 2. 強制抵銷 index.html 中寫死的 style="margin-left: 4px;" */
+.search-input-box .search-icon {
+    margin-left: 0 !important; 
+}

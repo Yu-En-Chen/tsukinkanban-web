@@ -1454,3 +1454,75 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// =========================================
+// 🟢 搜尋框「智慧寬容輸入與自動分段」引擎 (Smart Forgiving Input)
+// =========================================
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('search-input');
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', function(e) {
+        // 紀錄目前的游標位置，避免替換字串後游標亂跳
+        const originalStart = this.selectionStart;
+        const originalLength = this.value.length;
+        
+        let val = this.value;
+
+        // 1. 全形轉半形、英文轉大寫
+        val = val.replace(/[\uff10-\uff19\uff21-\uff3a\uff41-\uff5a]/g, function(c) {
+            return String.fromCharCode(c.charCodeAt(0) - 0xfee0);
+        }).toUpperCase();
+
+        // 2. 特殊符號統一轉為 、
+        val = val.replace(/[，。\/／,\.]/g, '、');
+
+        // 3. 空白與各種底線、全形連字號轉為 -
+        val = val.replace(/[ _＿－　]/g, '-');
+
+        // 4. 剔除非法字元 (僅保留英數、日文、- 與 、)
+        val = val.replace(/[^A-Z0-9\u3005\u3040-\u30FF\u4E00-\u9FAF\u3400-\u4DBF\uFF65-\uFF9F\-\、]/g, '');
+
+        // 5. 符號防呆處理 (處理連續按空白鍵或打錯的情況)
+        val = val.replace(/-+/g, '-');        // 連續的 ---- 縮減成單一個 -
+        val = val.replace(/、+/g, '、');        // 連續的 、、、、 縮減成單一個 、
+        val = val.replace(/-、/g, '、');        // 如果 - 和 、 撞在一起，保留分段用的 、
+        val = val.replace(/、-/g, '、');        
+        val = val.replace(/^[、-]+/, '');     // 🟢 確保最前面沒有字元時，無法輸入符號/空白
+
+        // 6. 🟢 核心智慧分段邏輯：「兩個 - 之間一定有 、 分開」
+        let finalVal = '';
+        let hasDash = false; // 用來追蹤目前區段是否已經出現過 -
+        
+        for (let char of val) {
+            if (char === '、') {
+                hasDash = false; // 遇到 、 代表進入新區段，重置記號
+                finalVal += char;
+            } else if (char === '-') {
+                if (!hasDash) {
+                    hasDash = true; // 區段內第一次出現 -，放行
+                    finalVal += char;
+                } else {
+                    // 區段內已經有 - 了 (例如出現 xxx-xxx-)
+                    // 強制將這個 - 轉換成 、，並重置記號開啟下一個新區段
+                    hasDash = false; 
+                    finalVal += '、';
+                }
+            } else {
+                finalVal += char;
+            }
+        }
+        val = finalVal;
+
+        // 7. 如果數值有變更，才進行替換與游標精準校正
+        if (this.value !== val) {
+            this.value = val;
+            
+            // 計算長度差異，讓游標能準確留在使用者剛剛打字的地方
+            const lengthDiff = val.length - originalLength;
+            const newCursorPos = Math.max(0, originalStart + lengthDiff);
+            
+            this.setSelectionRange(newCursorPos, newCursorPos);
+        }
+    });
+});
