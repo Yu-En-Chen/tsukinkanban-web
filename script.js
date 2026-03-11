@@ -3,7 +3,7 @@
 import { bottomCardConfig, railwayData } from './data.js';
 import { initPhysics } from './physics.js';
 import { initHeader } from './header.js';
-import { getAllUserPreferences } from './db.js';
+import { getAllUserPreferences, restorePreviousPreference } from './db.js';
 import { initPersonalization } from './personalization.js';
 
 // 🟢 宣告全域變數，作為整個 App 實際渲染、搜尋、點擊的唯一資料來源
@@ -1010,6 +1010,61 @@ window.addEventListener('popstate', (e) => {
         closeAllCards(true);
     }
 });
+
+// ============================================================================
+// 🟢 全域歷史紀錄還原引擎 (與 DB 連動並更新 UI)
+// ============================================================================
+window.undoCardPreference = async function() {
+    if (!activeCardId || activeCardId === 'fixed-bottom') return false;
+
+    try {
+        // 1. 呼叫 db.js 進行還原
+        const restoredData = await restorePreviousPreference(activeCardId);
+        
+        if (restoredData) {
+            // 2. 更新全域記憶體中的資料
+            const routeData = window.appRailwayData.find(r => r.id === activeCardId);
+            if (routeData) {
+                routeData.name = restoredData.customName;
+                routeData.hex = restoredData.customHex;
+            }
+
+            // 3. ✨ 畫面瞬間重新渲染 (套用全新光影)
+            
+            // A. 更新個性化面板 (如果目前打開的話)
+            const customizeCard = document.querySelector('#dynamic-blank-overlay .detail-card-inner');
+            if (customizeCard) applyThemeToCard(customizeCard, restoredData.customHex);
+
+            // B. 更新詳情卡片
+            const detailCard = document.querySelector('#detail-card-container .detail-card-inner');
+            if (detailCard) {
+                applyThemeToCard(detailCard, restoredData.customHex);
+                const detailNameNode = detailCard.querySelector('.line-name');
+                if (detailNameNode) detailNameNode.textContent = restoredData.customName;
+            }
+
+            // C. 更新底層的主列表卡片
+            const mainCard = document.getElementById(`card-${activeCardId}`);
+            if (mainCard) {
+                applyThemeToCard(mainCard, restoredData.customHex);
+                const mainNameNode = mainCard.querySelector('.line-name');
+                if (mainNameNode) mainNameNode.textContent = restoredData.customName;
+            }
+
+            // D. 如果是在個性化模式下觸發，同步更新顯示的文字
+            const pDisplayName = document.getElementById('p-display-name');
+            const pDisplayColor = document.getElementById('p-display-color');
+            if (pDisplayName) pDisplayName.textContent = restoredData.customName;
+            if (pDisplayColor) pDisplayColor.textContent = restoredData.customHex.toUpperCase();
+
+            return true; // 成功還原
+        }
+        return false; // 沒有上一筆紀錄
+    } catch (error) {
+        console.error("[Undo Engine] 還原失敗:", error);
+        return false;
+    }
+};
 
 // 🟢 系統啟動引擎 (非同步合併資料)
 async function initApp() {

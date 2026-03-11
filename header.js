@@ -150,18 +150,16 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                                     // 將資料處理隱藏在視覺動態最劇烈的瞬間，創造無縫切換的錯覺
                                     setTimeout(async () => {
                                         try {
-                                            // 呼叫 db.js 提供的還原功能
-                                            // (註：根據你的架構，若函數是掛在 window 下則直接呼叫，若是 module 請對應調整)
-                                            if (typeof undoLastBackgroundDelete === 'function') {
-                                                await undoLastBackgroundDelete();
-                                            } else if (window.undoLastBackgroundDelete) {
-                                                await window.undoLastBackgroundDelete();
-                                            } else {
-                                                console.warn("尚未找到 undoLastBackgroundDelete 函數，請確認 db.js 已正確載入");
+                                            if (window.undoCardPreference) {
+                                                const success = await window.undoCardPreference();
+                                                if (!success) {
+                                                    // 如果回傳 false 代表沒有上一筆資料
+                                                    console.log("[歷史紀錄] 沒有上一筆資料可供還原");
+                                                    // (未來我們可以在這裡觸發「按鈕搖頭拒絕」的錯誤動畫)
+                                                }
                                             }
                                         } catch (error) {
                                             console.error("背景還原過程中發生錯誤:", error);
-                                            // 未來可以在這裡加入錯誤處理的 UI 狀態
                                         }
                                     }, 500); // 精準卡在 1 秒旋轉動畫的絕對中點
 
