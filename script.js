@@ -3,7 +3,7 @@
 import { bottomCardConfig, railwayData } from './data.js';
 import { initPhysics } from './physics.js';
 import { initHeader } from './header.js';
-import { getAllUserPreferences } from './db.js'; 
+import { getAllUserPreferences } from './db.js';
 import { initPersonalization } from './personalization.js';
 
 // 🟢 宣告全域變數，作為整個 App 實際渲染、搜尋、點擊的唯一資料來源
@@ -711,12 +711,20 @@ function closeAllCards(isPopState = false) {
 
     activeCardId = null;
     const inner = detailContainer.querySelector('.detail-card-inner');
+    const extension = detailContainer.querySelector('.detail-extension-card');
     if (inner) {
         // 🟢 救命關鍵：把滑動時鎖住的 transition 拔掉，恢復原本 CSS 寫好的彈簧動畫！
         // 這樣卡片就不會瞬間瞬移，而是從你放手的地方滑順飛走
         inner.style.transition = '';
 
         inner.style.transform = '';
+    }
+
+
+    // 👇 加入這段清理延伸卡片樣式
+    if (extension) {
+        extension.style.transition = '';
+        extension.style.transform = '';
     }
 
     setTimeout(() => {
@@ -747,6 +755,7 @@ let overlayStartY = 0;
 
 function initOverlayGestures() {
     const inner = detailContainer.querySelector('.detail-card-inner');
+    const extension = detailContainer.querySelector('.detail-extension-card');
     if (!inner) return;
 
     const dismissIcon = document.getElementById('dismiss-icon');
@@ -758,6 +767,7 @@ function initOverlayGestures() {
     detailOverlay.ontouchstart = e => {
         overlayStartY = e.touches[0].pageY;
         inner.style.transition = 'none';
+        if (extension) extension.style.transition = 'none'; // 👇 2. 拔除過渡
 
         if (dismissIcon) {
             dismissIcon.style.transition = 'none';
@@ -783,6 +793,7 @@ function initOverlayGestures() {
             if (rawMoveY > 10 && e.cancelable) e.preventDefault();
             const resistedY = rawMoveY * 0.5;
             inner.style.transform = `translate3d(0, ${resistedY}px, 0)`;
+            if (extension) extension.style.transform = `translate3d(0, ${resistedY}px, 0)`;
 
             if (dismissIcon) dismissIcon.style.opacity = Math.max(0, 1 - (rawMoveY / 150));
 
@@ -831,6 +842,11 @@ function initOverlayGestures() {
         inner.style.transition = 'transform 0.55s var(--spring-release)';
         inner.style.transform = 'translate3d(0, 0, 0)';
 
+        if (extension) { 
+            extension.style.transition = 'transform 0.55s var(--spring-release)';
+            extension.style.transform = 'translate3d(0, 0, 0)';
+        }
+
         // 2. 恢復打叉圖示的淡入動畫與不透明度
         if (dismissIcon) {
             dismissIcon.style.transition = 'opacity 0.3s ease';
@@ -865,6 +881,11 @@ function initOverlayGestures() {
         const resistedY = overlayWheelSum * 0.2;
         inner.style.transition = 'none';
         inner.style.transform = `translate3d(0, ${resistedY}px, 0)`;
+
+        if (extension) {
+            extension.style.transition = 'none';
+            extension.style.transform = `translate3d(0, ${resistedY}px, 0)`;
+        }
 
         extraElements.forEach(el => el.style.transition = 'none');
 
@@ -901,6 +922,11 @@ function initOverlayGestures() {
             if (activeCardId && overlayWheelSum <= 200) {
                 inner.style.transition = 'transform 0.6s var(--active-bounce)';
                 inner.style.transform = 'translate3d(0, 0, 0)';
+
+                if (extension) {
+                    extension.style.transition = 'transform 0.6s var(--active-bounce)';
+                    extension.style.transform = 'translate3d(0, 0, 0)';
+                }
 
                 extraElements.forEach(el => {
                     el.style.transition = 'opacity 0.3s ease';
@@ -1462,15 +1488,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('search-input');
     if (!searchInput) return;
 
-    searchInput.addEventListener('input', function(e) {
+    searchInput.addEventListener('input', function (e) {
         // 紀錄目前的游標位置，避免替換字串後游標亂跳
         const originalStart = this.selectionStart;
         const originalLength = this.value.length;
-        
+
         let val = this.value;
 
         // 1. 全形轉半形、英文轉大寫
-        val = val.replace(/[\uff10-\uff19\uff21-\uff3a\uff41-\uff5a]/g, function(c) {
+        val = val.replace(/[\uff10-\uff19\uff21-\uff3a\uff41-\uff5a]/g, function (c) {
             return String.fromCharCode(c.charCodeAt(0) - 0xfee0);
         }).toUpperCase();
 
@@ -1487,13 +1513,13 @@ document.addEventListener('DOMContentLoaded', () => {
         val = val.replace(/-+/g, '-');        // 連續的 ---- 縮減成單一個 -
         val = val.replace(/、+/g, '、');        // 連續的 、、、、 縮減成單一個 、
         val = val.replace(/-、/g, '、');        // 如果 - 和 、 撞在一起，保留分段用的 、
-        val = val.replace(/、-/g, '、');        
+        val = val.replace(/、-/g, '、');
         val = val.replace(/^[、-]+/, '');     // 🟢 確保最前面沒有字元時，無法輸入符號/空白
 
         // 6. 🟢 核心智慧分段邏輯：「兩個 - 之間一定有 、 分開」
         let finalVal = '';
         let hasDash = false; // 用來追蹤目前區段是否已經出現過 -
-        
+
         for (let char of val) {
             if (char === '、') {
                 hasDash = false; // 遇到 、 代表進入新區段，重置記號
@@ -1505,7 +1531,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     // 區段內已經有 - 了 (例如出現 xxx-xxx-)
                     // 強制將這個 - 轉換成 、，並重置記號開啟下一個新區段
-                    hasDash = false; 
+                    hasDash = false;
                     finalVal += '、';
                 }
             } else {
@@ -1517,11 +1543,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // 7. 如果數值有變更，才進行替換與游標精準校正
         if (this.value !== val) {
             this.value = val;
-            
+
             // 計算長度差異，讓游標能準確留在使用者剛剛打字的地方
             const lengthDiff = val.length - originalLength;
             const newCursorPos = Math.max(0, originalStart + lengthDiff);
-            
+
             this.setSelectionRange(newCursorPos, newCursorPos);
         }
     });
