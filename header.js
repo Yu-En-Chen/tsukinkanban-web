@@ -100,18 +100,21 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                 if (searchIcon) {
                     // 🟢 一次性注入三個 SVG：歷史、同步(無指針)、打勾
                     searchIcon.innerHTML = `
-                        <svg class="icon-blank-mode history-icon lucide lucide-history" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                            <path d="M3 3v5h5"/>
-                            <path d="M12 7v5l4 2"/>
-                        </svg>
-                        <svg class="icon-blank-mode sync-icon lucide lucide-rotate-ccw" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                            <path d="M3 3v5h5"/>
-                        </svg>
-                        <svg class="icon-blank-mode check-icon lucide lucide-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 6 9 17l-5-5"/>
-                        </svg>
+                      <svg class="icon-blank-mode history-icon lucide lucide-history" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                          <path d="M3 3v5h5"/>
+                          <path d="M12 7v5l4 2"/>
+                      </svg>
+                      <svg class="icon-blank-mode sync-icon lucide lucide-rotate-ccw" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                          <path d="M3 3v5h5"/>
+                      </svg>
+                      <svg class="icon-blank-mode check-icon lucide lucide-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M20 6 9 17l-5-5"/>
+                      </svg>
+                      <svg class="icon-blank-mode x-icon lucide lucide-x-icon lucide-x" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                      </svg>
                     `;
                 }
 
@@ -137,56 +140,63 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                         setTimeout(() => {
                             if (searchTrigger) {
                                 searchTrigger.onclick = () => {
-                                    // 避免狂點打斷動畫或造成資料庫連續存取衝突
-                                    if (searchTrigger.classList.contains('action-spinning') ||
-                                        searchTrigger.classList.contains('action-success') ||
+                                    // 避免狂點打斷動畫 (加入 action-error 的防禦)
+                                    if (searchTrigger.classList.contains('action-spinning') || 
+                                        searchTrigger.classList.contains('action-success') || 
+                                        searchTrigger.classList.contains('action-error') || 
                                         searchTrigger.classList.contains('action-resetting')) return;
-
+    
                                     // 1. 啟動視覺回饋：開始旋轉
                                     searchTrigger.classList.add('action-spinning');
-                                    if (navigator.vibrate) navigator.vibrate(20); // 輕微觸覺回饋，模擬按下實體鍵
-
-                                    // ✨ [核心連動區] 2. 轉到一半 (500ms) 時：正式觸發資料庫還原與畫面渲染
-                                    // 將資料處理隱藏在視覺動態最劇烈的瞬間，創造無縫切換的錯覺
+                                    if (navigator.vibrate) navigator.vibrate(20);
+    
+                                    // ✨ 新增：用來追蹤還原是否成功的狀態變數
+                                    let isRestoreSuccess = false;
+    
+                                    // 2. 轉到一半 (500ms) 時：正式觸發資料庫還原
                                     setTimeout(async () => {
                                         try {
                                             if (window.undoCardPreference) {
-                                                const success = await window.undoCardPreference();
-                                                if (!success) {
-                                                    // 如果回傳 false 代表沒有上一筆資料
-                                                    console.log("[歷史紀錄] 沒有上一筆資料可供還原");
-                                                    // (未來我們可以在這裡觸發「按鈕搖頭拒絕」的錯誤動畫)
-                                                }
+                                                isRestoreSuccess = await window.undoCardPreference();
                                             }
                                         } catch (error) {
                                             console.error("背景還原過程中發生錯誤:", error);
+                                            isRestoreSuccess = false;
                                         }
-                                    }, 500); // 精準卡在 1 秒旋轉動畫的絕對中點
-
-                                    // 3. 1秒後 (轉完一圈)，動畫進入成功狀態：掉下並顯示打勾
+                                    }, 500);
+    
+                                    // 3. 1秒後 (轉完一圈)，根據結果給予不同動畫
                                     setTimeout(() => {
                                         searchTrigger.classList.remove('action-spinning');
-                                        searchTrigger.classList.add('action-success');
-                                        if (navigator.vibrate) navigator.vibrate([30, 50, 30]); // 成功震動，傳達任務完成的明確信號
-
-                                        // 4. 停留 0.5 秒，讓大腦接收打勾的視覺資訊後，開始 Reset 歸位
+                                        
+                                        if (isRestoreSuccess) {
+                                            searchTrigger.classList.add('action-success');
+                                            if (navigator.vibrate) navigator.vibrate([30, 50, 30]); // 成功雙次震動
+                                        } else {
+                                            searchTrigger.classList.add('action-error');
+                                            if (navigator.vibrate) navigator.vibrate([20, 30, 20, 30]); // 錯誤短促連續震動 (觸覺警告)
+                                        }
+    
+                                        // 4. 停留，讓大腦接收視覺資訊後開始 Reset
+                                        // ✨ 由於搖頭動畫本身比較長，我們讓失敗狀態多停留 0.1 秒，視覺更從容
+                                        const holdTime = isRestoreSuccess ? 500 : 600;
+    
                                         setTimeout(() => {
-                                            searchTrigger.classList.remove('action-success');
+                                            searchTrigger.classList.remove('action-success', 'action-error');
                                             searchTrigger.classList.add('action-resetting');
-
-                                            // 給予瀏覽器 1 到 2 幀的時間，讓歷史圖示瞬間定位到下方預備
+    
                                             requestAnimationFrame(() => {
                                                 requestAnimationFrame(() => {
                                                     searchTrigger.classList.add('action-resetting-active');
-
-                                                    // 5. 動畫全部結束，清除所有動態狀態類別，恢復可點擊狀態
+    
+                                                    // 5. 動畫全部結束，清除狀態
                                                     setTimeout(() => {
                                                         searchTrigger.classList.remove('action-resetting', 'action-resetting-active');
-                                                    }, 400); // 配合 CSS 中歷史圖示浮上來的轉場時間
+                                                    }, 400); 
                                                 });
                                             });
-                                        }, 500); // 成功圖示的停留觀賞期
-                                    }, 1000); // 完美對齊 CSS 中的 1s 線性旋轉時間
+                                        }, holdTime); 
+                                    }, 1000); 
                                 };
                                 searchTrigger.style.pointerEvents = 'auto';
                             }
@@ -241,7 +251,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                             if (searchTrigger) {
                                 searchTrigger.classList.remove('slide-in-active');
                                 // 強制清除所有可能殘留的狀態
-                                searchTrigger.classList.remove('action-spinning', 'action-success', 'action-resetting', 'action-resetting-active');
+                                searchTrigger.classList.remove('action-spinning', 'action-success', 'action-error', 'action-resetting', 'action-resetting-active');
                                 // 🟢 恢復原生搜尋功能
                                 searchTrigger.onclick = () => window.toggleSearch(true);
                                 searchTrigger.style.pointerEvents = 'auto';

@@ -657,6 +657,50 @@ body.searching .search-mask {
     transition: transform 0.4s cubic-bezier(0.0, 0.0, 0.2, 1), opacity 0.3s ease-out !important;
 }
 
+/* =========================================
+   🟢 搜尋按鈕：無資料時的錯誤防呆連鎖動畫 (X 圖示與搖頭震盪)
+   ========================================= */
+
+/* 1. 隔離 X 圖示，預設藏在上方 */
+.search-trigger .search-icon svg.x-icon {
+    opacity: 0 !important;
+    transform: translate3d(-50%, calc(-50% - 24px), 0) !important;
+}
+
+/* 2. 階段二分支 (失敗)：向下掉出 Sync，X 掉入並觸發搖頭 */
+.search-trigger.slide-in-active.action-error .search-icon svg.history-icon {
+    opacity: 0 !important;
+    transition: none !important;
+}
+.search-trigger.slide-in-active.action-error .search-icon svg.sync-icon {
+    transform: translate3d(-50%, calc(-50% + 24px), 0) rotate(-360deg) !important;
+    opacity: 0 !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), opacity 0.2s linear !important;
+}
+.search-trigger.slide-in-active.action-error .search-icon svg.x-icon {
+    transform: translate3d(-50%, -50%, 0) !important;
+    opacity: 1 !important;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s ease-out !important;
+    /* 延遲 0.15s 等它掉下來後，開始 0.4s 的劇烈搖晃 */
+    animation: search-error-shake 0.4s cubic-bezier(.36,.07,.19,.97) 0.15s both !important;
+}
+
+/* 3. 階段三：Reset (X 圖示往上消失) */
+.search-trigger.slide-in-active.action-resetting .search-icon svg.x-icon {
+    transform: translate3d(-50%, calc(-50% - 24px), 0) !important;
+    opacity: 0 !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), opacity 0.2s linear !important;
+}
+
+/* 專屬搖頭動畫引擎 (繼承原本的 -50% 置中定位以防抽搐) */
+@keyframes search-error-shake {
+    0%, 100% { transform: translate3d(-50%, -50%, 0); }
+    20% { transform: translate3d(calc(-50% - 4px), -50%, 0); }
+    40% { transform: translate3d(calc(-50% + 4px), -50%, 0); }
+    60% { transform: translate3d(calc(-50% - 4px), -50%, 0); }
+    80% { transform: translate3d(calc(-50% + 4px), -50%, 0); }
+}
+
 /* ==========================================================================
    卡片堆疊與物理邏輯
    ========================================================================== */

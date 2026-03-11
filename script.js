@@ -1012,24 +1012,39 @@ window.addEventListener('popstate', (e) => {
 });
 
 // ============================================================================
-// 🟢 全域歷史紀錄還原引擎 (與 DB 連動並更新 UI)
+// 🟢 全域歷史紀錄還原引擎 (具備前後狀態深度比對防呆)
 // ============================================================================
 window.undoCardPreference = async function() {
     if (!activeCardId || activeCardId === 'fixed-bottom') return false;
 
     try {
-        // 1. 呼叫 db.js 進行還原
+        // 1. 先抓出「還原前」的當前狀態
+        const routeData = window.appRailwayData.find(r => r.id === activeCardId);
+        if (!routeData) return false;
+
+        const currentName = routeData.name;
+        const currentHex = routeData.hex;
+
+        // 2. 呼叫 db.js 進行還原 (DB 內部會進行上一筆與這一筆的互換)
         const restoredData = await restorePreviousPreference(activeCardId);
         
         if (restoredData) {
-            // 2. 更新全域記憶體中的資料
-            const routeData = window.appRailwayData.find(r => r.id === activeCardId);
-            if (routeData) {
-                routeData.name = restoredData.customName;
-                routeData.hex = restoredData.customHex;
+            // ✨ 3. 核心防呆比對：檢查是否真的有改變？
+            const isNameSame = restoredData.customName === currentName;
+            // 色碼比對統一轉小寫，避免 #FFFFFF 與 #ffffff 被誤判為不同
+            const isHexSame = restoredData.customHex.toLowerCase() === currentHex.toLowerCase();
+
+            // 如果名字與顏色「完全相同」，視為無效操作
+            if (isNameSame && isHexSame) {
+                console.log("[歷史紀錄] 上一筆資料與目前完全相同，忽略渲染並觸發錯誤提示");
+                return false; // 回傳 false，直接觸發 X 搖頭動畫
             }
 
-            // 3. ✨ 畫面瞬間重新渲染 (套用全新光影)
+            // 4. 確實有差異，更新全域記憶體中的資料
+            routeData.name = restoredData.customName;
+            routeData.hex = restoredData.customHex;
+
+            // 5. 畫面瞬間重新渲染 (套用全新光影)
             
             // A. 更新個性化面板 (如果目前打開的話)
             const customizeCard = document.querySelector('#dynamic-blank-overlay .detail-card-inner');
@@ -1057,7 +1072,7 @@ window.undoCardPreference = async function() {
             if (pDisplayName) pDisplayName.textContent = restoredData.customName;
             if (pDisplayColor) pDisplayColor.textContent = restoredData.customHex.toUpperCase();
 
-            return true; // 成功還原
+            return true; // 成功還原，回傳 true 觸發打勾動畫
         }
         return false; // 沒有上一筆紀錄
     } catch (error) {
