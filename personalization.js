@@ -918,6 +918,7 @@ function triggerDescToggle(isActive) {
         } else {
             descName.textContent = '　- 十文字以內 -';
             descColor.textContent = '　- HEX形式で入力してください -';
+            /*需更改原始提示才不會出現bug*/
         }
         
         setTimeout(() => {
