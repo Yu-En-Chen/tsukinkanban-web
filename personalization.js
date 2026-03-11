@@ -809,22 +809,35 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             });
             // 🟢 【新增】：在這裡加入資料重置與 DOM 更新邏輯！
             // 趁文字飛到空中隱藏時 (900ms) 偷偷換掉，等 1800ms 降落時就會是全新預設狀態
+            // 🟢 【升級版】：非破壞性重置！將恢復預設視為一次「編輯」，並把當前狀態存入歷史紀錄
             const activeId = getActiveCardId();
             if (activeId && activeId !== 'fixed-bottom') {
-                resetRoutePreference(activeId).then(() => {
-                    console.log(`[DB] 已清除 ${activeId} 的客製化設定，恢復預設值`);
-                    
-                    // 1. 找出 data.js 中的原始預設值
-                    const defaultData = railwayData.find(r => r.id === activeId);
-                    if (defaultData) {
-                        // 2. 更新當前的全域記憶體資料
-                        const currentData = window.appRailwayData.find(r => r.id === activeId);
-                        if (currentData) {
+                // 1. 找出 data.js 中的原始預設值
+                const defaultData = railwayData.find(r => r.id === activeId);
+                if (defaultData) {
+                    const currentData = window.appRailwayData.find(r => r.id === activeId);
+                    if (currentData) {
+                        // 2. 防呆：檢查是否已經是預設狀態，避免無意義的存檔
+                        if (currentData.name === defaultData.name && currentData.hex.toLowerCase() === defaultData.hex.toLowerCase()) {
+                            console.log("[雲端同步] 已經是預設狀態，無需覆蓋歷史紀錄");
+                        } else {
+                            // ✨ 3. 核心魔法：將被洗掉前的「目前客製化狀態」打包成救生圈
+                            const oldState = {
+                                customName: currentData.name,
+                                customHex: currentData.hex
+                            };
+
+                            // 4. 更新全域記憶體資料為預設值
                             currentData.name = defaultData.name;
                             currentData.hex = defaultData.hex;
+
+                            // ✨ 5. 改用 saveRoutePreference，把預設值存進去，並把舊顏色當作歷史紀錄傳給 DB！
+                            saveRoutePreference(activeId, defaultData.name, defaultData.hex, oldState)
+                                .then(() => console.log(`[DB] 已恢復預設值，並成功將客製化狀態保留於歷史紀錄中！`))
+                                .catch(err => console.error('[DB] 寫入 IndexedDB 失敗:', err));
                         }
-                        
-                        // 3. 即時更新畫面上的三張卡片顏色與標題
+
+                        // 6. 即時更新畫面上的三張卡片顏色與標題
                         const customizeCard = document.querySelector('#dynamic-blank-overlay .detail-card-inner');
                         if (customizeCard) applyThemeToCard(customizeCard, defaultData.hex);
 
@@ -842,11 +855,11 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                             if (mainNameNode) mainNameNode.textContent = defaultData.name;
                         }
 
-                        // 4. 更新準備降落的文字框內容
+                        // 7. 更新準備降落的文字框內容
                         if (nameEls.display) nameEls.display.textContent = defaultData.name;
                         if (colorEls.display) colorEls.display.textContent = defaultData.hex.toUpperCase();
                     }
-                });
+                }
             }
         }, 900);
 
