@@ -1668,44 +1668,41 @@ body.hamburger-active .search-container::after {
     pointer-events: auto;
 }
 
-/* 2. 縮小下沉 -> 等待灰色介面展開 -> 瞬間彈出動畫 */
-@keyframes diveWaitPop {
-    0% { transform: scale(1) translateY(0); opacity: 1; }
-    25% { transform: scale(0.8) translateY(15px); opacity: 0; } /* 縮小下沉並消失 */
-    50% { transform: scale(0.8) translateY(15px); opacity: 0; } /* 在水下等待灰色背景展開 */
-    75% { transform: scale(1.08) translateY(-4px); opacity: 1; } /* 破水而出 */
-    100% { transform: scale(1) translateY(0); opacity: 1; } /* 完美定位 */
+/* 2. 直接彈出動畫 (去除先縮小下沉的過程，改為瞬間隱藏後直接彈出) */
+@keyframes directPopUp {
+    0% { transform: scale(0.6) translateY(20px); opacity: 0; }
+    70% { transform: scale(1.05) translateY(-3px); opacity: 1; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
 }
 
-/* 母艦邊框專用 (必須保留 translate(50%,-50%) 的絕對居中錨點) */
-@keyframes diveWaitPopMatrix {
-    0% { transform: translate(50%, -50%) scale(1) translateY(0); opacity: 1; }
-    25% { transform: translate(50%, -50%) scale(0.8) translateY(15px); opacity: 0; }
-    50% { transform: translate(50%, -50%) scale(0.8) translateY(15px); opacity: 0; }
-    75% { transform: translate(50%, -50%) scale(1.08) translateY(-4px); opacity: 1; }
+/* 母艦邊框專用的彈出動畫 (必須保留 translate(50%, -50%) 矩陣中心點) */
+@keyframes directPopUpMatrix {
+    0% { transform: translate(50%, -50%) scale(0.6) translateY(20px); opacity: 0; }
+    70% { transform: translate(50%, -50%) scale(1.05) translateY(-3px); opacity: 1; }
     100% { transform: translate(50%, -50%) scale(1) translateY(0); opacity: 1; }
 }
 
-/* 3. 將動畫套用到四個元件，並加入依次的 Delay (高權重修復版) */
-/* 🟢 加入 .search-container 提高權重，強制破解 Safari 的動畫鎖死 Bug */
+/* 3. 將新動畫套用到四個元件，並加入依次的 0.1 秒 Delay */
 body.hamburger-active .search-container .left-circle-btn,
 body.hamburger-active .search-container .search-trigger,
 body.hamburger-active .search-container .action-capsule {
     opacity: 1 !important; 
     pointer-events: auto !important;
-    animation: diveWaitPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+    /* 🟢 關鍵：把原本的 forwards 改為 both，確保在 Delay 期間按鈕會保持 0% 的透明隱藏狀態，不會偷跑出來 */
+    animation: directPopUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both !important;
 }
 
 body.hamburger-active .search-container::before {
     opacity: 1 !important;
-    animation: diveWaitPopMatrix 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+    animation: directPopUpMatrix 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both !important;
 }
 
-/* 🟢 波浪般依次起伏的時間差 (Delay) */
-body.hamburger-active .search-container .left-circle-btn { animation-delay: 0s !important; }
-body.hamburger-active .search-container .search-trigger { animation-delay: 0.05s !important; }
-body.hamburger-active .search-container .action-capsule { animation-delay: 0.1s !important; }
-body.hamburger-active .search-container::before { animation-delay: 0.15s !important; }
+/* 🟢 完美的 0.1 秒依次彈出節奏 (波浪感) */
+body.hamburger-active .search-container .left-circle-btn { animation-delay: 0s !important; }     /* 第 1 個彈出 (通知按鈕) */
+body.hamburger-active .search-container .search-trigger { animation-delay: 0.1s !important; }  /* 第 2 個彈出 (搜尋按鈕) */
+body.hamburger-active .search-container::before { animation-delay: 0.15s !important; }         /* 母艦邊框緊跟著出現 */
+body.hamburger-active .search-container .action-capsule { animation-delay: 0.2s !important; }  /* 第 3 個彈出 (上方膠囊) */
+
 
 /* 4. 關閉時的防護與母艦邊框歸位 */
 .search-container::before {
