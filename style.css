@@ -2157,18 +2157,23 @@ body.hamburger-active .search-container .search-trigger {
     z-index: 5993 !important;
 }
 
-/* 2. 終極拔除 SVG 與點擊功能 (利用 ID 權重，強制鎮壓詳情與設定介面的衝突) */
+/* 3. 終極拔除 SVG、文字與點擊功能 (純淨空殼模式) */
 body.hamburger-active #action-capsule,
 body.hamburger-active #search-trigger,
 body.hamburger-active #action-capsule *,
-body.hamburger-active #search-trigger * {
-    /* 🟢 加上星號 (*)，能把膠囊裡面所有的按鈕、SVG、甚至是 path 的點擊事件全部封殺，防止點擊穿透 */
+body.hamburger-active #search-trigger *,
+body.hamburger-active #left-capsule-top *,
+body.hamburger-active #left-capsule-bottom * {
+    /* 🟢 封殺左右兩側母艦內所有按鈕、SVG、文字的點擊事件，防止穿透 */
     pointer-events: none !important;
 }
 
 body.hamburger-active #action-capsule svg,
-body.hamburger-active #search-trigger svg {
-    /* 🟢 改用 #action-capsule 等 ID 選擇器，它的權重 (1,0,0) 能無條件輾壓任何深層的 class 設定 */
+body.hamburger-active #search-trigger svg,
+body.hamburger-active #left-capsule-top svg,
+body.hamburger-active #left-capsule-bottom svg,
+body.hamburger-active #entry-time-display {
+    /* 🟢 精準狙擊：直接點名 #entry-time-display 與所有母艦內的 SVG，強制 100% 隱藏！ */
     opacity: 0 !important;
     transition: opacity 0.2s ease !important;
 }
