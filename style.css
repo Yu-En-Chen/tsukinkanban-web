@@ -2143,7 +2143,7 @@ body.hamburger-active .search-container .action-capsule {
    🟢 通知選單滿版與層級修復 (純淨空殼模式)
    ========================================= */
 
-/* 2. 救命關鍵 (Z-index 突破)：
+/* 1. 救命關鍵 (Z-index 突破)：
    讓母艦、膠囊、搜尋按鈕的層級高於灰色背景 (5990)，才能浮出水面 */
 body.hamburger-active .search-container::before {
     z-index: 5991 !important;
@@ -2157,7 +2157,7 @@ body.hamburger-active .search-container .search-trigger {
     z-index: 5993 !important;
 }
 
-/* 3. 終極拔除 SVG 與點擊功能 (利用 ID 權重，強制鎮壓詳情與設定介面的衝突) */
+/* 2. 終極拔除 SVG 與點擊功能 (利用 ID 權重，強制鎮壓詳情與設定介面的衝突) */
 body.hamburger-active #action-capsule,
 body.hamburger-active #search-trigger,
 body.hamburger-active #action-capsule *,
@@ -2192,16 +2192,7 @@ body.hamburger-active #search-trigger svg {
    🟢 頂部導航列：極致穩定化 (消滅重新整理時的 FOUC 抽搐)
    ========================================= */
 
-/* 1. 強制拔除所有可能殘留的進場動畫，瞬間 100% 顯示 */
-.left-circle-btn,
-.search-trigger,
-.action-capsule {
-    opacity: 1 !important;
-    transform: translate3d(0, 0, 0) !important;
-    animation: none !important;
-}
-
-/* 2. 鎖死母艦內部按鈕，防止 SVG 注入瞬間撐開排版 */
+/* 1. 鎖死母艦內部按鈕，防止 SVG 注入瞬間撐開排版 */
 #capsule-main-btn,
 #capsule-secondary-btn {
     opacity: 1 !important;
@@ -2212,7 +2203,7 @@ body.hamburger-active #search-trigger svg {
     justify-content: center !important;
 }
 
-/* 3. 預先鎖定所有預設 SVG 的尺寸，拒絕忽大忽小 */
+/* 2. 預先鎖定所有預設 SVG 的尺寸，拒絕忽大忽小 */
 #action-capsule .icon-default,
 #search-trigger .icon-default {
     opacity: 0.8;
@@ -2355,16 +2346,6 @@ body:has(.universal-window.is-active) .left-capsule {
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease !important;
 }
 
-.left-capsule {
-    opacity: 1 !important;
-    transform: translate3d(0, 0, 0) !important;
-    animation: none !important;
-}
-
-.left-matrix-bg {
-    animation: none !important;
-}
-
 /* =========================================
    🟢 左舷母艦：進場時間戳記字體設計
    ========================================= */
@@ -2385,3 +2366,28 @@ body:has(.universal-window.is-active) .left-capsule {
     align-items: center;
     justify-content: center;
 }
+
+/* =========================================
+   🟢 終極母艦鎖死系統 (智慧狀態切換與壓制版)
+   ========================================= */
+
+/* 1. 智慧鎖死：只要「沒有在搜尋」且「沒有打開全螢幕選單」，霸王條款就會自動生效，絕對防止重整抽搐！ 
+   一旦搜尋啟動 (.active)，它就會自動讓位給你的退場動畫。*/
+   body:not(.hamburger-active) .search-container:not(.active) .left-circle-btn,
+   body:not(.hamburger-active) .search-container:not(.active) .search-trigger,
+   body:not(.hamburger-active) .search-container:not(.active) .action-capsule,
+   body:not(.hamburger-active) .search-container:not(.active) .left-capsule {
+       opacity: 1 !important;
+       transform: translate3d(0, 0, 0) !important;
+       animation: none !important;
+   }
+   
+   body:not(.hamburger-active) .search-container:not(.active) .left-matrix-bg {
+       animation: none !important;
+   }
+   
+   /* 2. 搜尋框絕對壓制：賦予搜尋框與取消按鈕最高的 z-index，保證動畫期間絕對壓在所有人上面！ */
+   .search-container.active .search-input-box,
+   .search-container.active .cancel-circle-btn {
+       z-index: 6000 !important;
+   }
