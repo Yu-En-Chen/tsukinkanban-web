@@ -1628,3 +1628,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// ============================================================================
+// 🟢 左舷母艦：進場時間戳記系統 (Entry Time Display)
+// ============================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    const entryTimeDisplay = document.getElementById('entry-time-display');
+    if (entryTimeDisplay) {
+        const now = new Date();
+        // 取得小時與分鐘，並確保永遠是兩位數 (padStart)
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        // 組合時間，並強制使用全形冒號
+        entryTimeDisplay.textContent = `${hours}：${minutes}`;
+    }
+});

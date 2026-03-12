@@ -2365,3 +2365,24 @@ body:has(.universal-window.is-active) .left-capsule {
 .left-matrix-bg {
     animation: none !important;
 }
+
+/* =========================================
+   🟢 左舷母艦：進場時間戳記字體設計
+   ========================================= */
+   .slashed-time-font {
+    /* 1. 呼叫系統最高級的程式碼/色號等寬字體 */
+    font-family: 'SF Mono', ui-monospace, 'Cascadia Mono', 'Roboto Mono', Menlo, Consolas, monospace !important;
+    
+    /* 2. ✨ 核心魔法：強制啟動字體的「斜線零」特徵 */
+    font-variant-numeric: slashed-zero !important;
+    
+    font-size: 17px; /* 完美填滿膠囊的大小 */
+    font-weight: 600;
+    letter-spacing: 0.5px; /* 讓全形冒號與數字之間保持呼吸空間 */
+    color: var(--icon-color);
+    opacity: 0.85;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
