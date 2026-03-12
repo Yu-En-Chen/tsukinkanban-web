@@ -934,12 +934,14 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                 const svgs = index === 0 ? nameSvgs : colorSvgs;
                 if (svgs && svgs.container) svgs.container.remove();
                 if (els.sharedStatus) {
-                    els.sharedStatus.style.transform = '';
-                    els.sharedStatus.style.opacity = '';
+                    // ✨ 修復：明確設為 0 與原點，不可使用空字串，否則會喚醒幽靈文字
+                    els.sharedStatus.style.transform = 'translate3d(0, 0, 0)';
+                    els.sharedStatus.style.opacity = '0';
                 }
                 if (els.display) {
                     els.display.style.transition = '';
-                    els.display.style.transform = '';
+                    // ✨ 修復：確保文字絕對歸位
+                    els.display.style.transform = 'translate3d(0, 0, 0)';
                 }
             });
 
@@ -1096,19 +1098,25 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                 setTimeout(() => {
                     container.remove();
                     if (els.sharedText) els.sharedText.style.display = '';
-                    els.sharedStatus.style.transform = '';
-                    els.sharedStatus.style.opacity = '';
+                    
+                    // ✨ 修復：明確設為 0 與原點，徹底封殺幽靈文字
+                    els.sharedStatus.style.transform = 'translate3d(0, 0, 0)';
+                    els.sharedStatus.style.opacity = '0';
+                    
                     els.display.style.transition = '';
-                    els.display.style.transform = '';
+                    els.display.style.transform = 'translate3d(0, 0, 0)';
                 }, 500);
             } else {
                 // 強制清理 (防呆)
                 container.remove();
                 if (els.sharedText) els.sharedText.style.display = '';
-                els.sharedStatus.style.transform = '';
-                els.sharedStatus.style.opacity = '';
+                
+                // ✨ 修復：防呆狀態下也必須確保設為 0
+                els.sharedStatus.style.transform = 'translate3d(0, 0, 0)';
+                els.sharedStatus.style.opacity = '0';
+                
                 els.display.style.transition = '';
-                els.display.style.transform = '';
+                els.display.style.transform = 'translate3d(0, 0, 0)';
                 els.display.style.opacity = '1';
             }
         });
