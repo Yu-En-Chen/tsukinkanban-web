@@ -66,3 +66,55 @@
 #min-tens .ticker-track.rolling { animation-delay: 0.08s; }
 #hour-units .ticker-track.rolling { animation-delay: 0.16s; }
 #hour-tens .ticker-track.rolling { animation-delay: 0.24s; }
+
+/* =========================================
+   左舷母艦：時鐘圖示與電量進度條圖層設定
+   ========================================= */
+/* 確保時鐘文字與圖示浮在進度條上方 */
+#entry-time-display, .left-capsule-icon {
+    position: relative;
+    z-index: 2;
+}
+
+/* 🟢 電量消耗進度條 */
+.minute-progress-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* 這裡設定進度條的顏色，使用微微的白光模擬電量 */
+    background: rgba(255, 255, 255, 0.15); 
+    border-radius: inherit; /* 完美繼承膠囊的圓角 */
+    z-index: 1; /* 墊在文字下方 */
+    pointer-events: none;
+    
+    /* 🟢 核心：transform-origin 決定消耗方向 
+       設定為 right center 代表：左邊會慢慢空掉，往右方縮減 */
+    transform-origin: right center; 
+    transform: scaleX(1);
+}
+
+/* =========================================
+   同步圖示旋轉動畫 (1.5秒兩圈 + 變速引擎)
+   ========================================= */
+.left-capsule-icon.syncing {
+    /* 觸發 1.5 秒的旋轉動畫 */
+    animation: syncSpin 1.5s forwards;
+}
+
+@keyframes syncSpin {
+    /* 第一圈：從 0 度起步加速，到達 360 度(原始角度)時減速煞車 */
+    0% { 
+        transform: translateY(-50%) rotate(0deg); 
+        animation-timing-function: ease-in-out; 
+    }
+    /* 第二圈：從 360 度再次加速，到達 720 度時完美減速煞車 */
+    50% { 
+        transform: translateY(-50%) rotate(360deg); 
+        animation-timing-function: ease-in-out; 
+    }
+    100% { 
+        transform: translateY(-50%) rotate(720deg); 
+    }
+}
