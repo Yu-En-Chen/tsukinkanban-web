@@ -1,4 +1,4 @@
-// clock.js - 靈動膠囊 (CSS引擎接管絲滑版 + CSS變數突破版)
+// clock.js - 靈動膠囊 (CSS引擎接管絲滑版 + API防抽搐版)
 
 export function initDynamicClock() {
     const clockContainer = document.getElementById('entry-time-display');
@@ -18,7 +18,7 @@ export function initDynamicClock() {
     const initialRatio = initialS / 60; 
     const currentW = MAX_W - (RANGE * initialRatio);
 
-    // 瞬間設定現在該有的寬度 (無動畫)
+    // 瞬間設定現在該有的寬度
     leftCapsule.style.setProperty('--capsule-dur', '0s');
     leftCapsule.style.setProperty('--capsule-width', `${currentW}px`);
 
@@ -92,18 +92,21 @@ export function initDynamicClock() {
         updateDigit('min-units', m[1]);
 
         // --- 🟢 2. CSS 連續引擎指揮中心 ---
-        // JS 只有在「第 0 秒」和「第 1 秒」會下指令，其餘時間完全休眠，0 性能開銷！
         if (s === 0) {
             // 第 0 秒：賦予蘋果彈簧曲線，瞬間 Q 彈回滿 (95px)
             leftCapsule.style.setProperty('--capsule-dur', '0.8s');
             leftCapsule.style.setProperty('--capsule-ease', 'var(--apple-spring)');
             leftCapsule.style.setProperty('--capsule-width', `${MAX_W}px`);
 
-            // 觸發 SVG 旋轉 (直接拔掉重加，絕對不清除 class，完美解決抽搐 bug)
+            // 🟢 終極 API 旋轉法：不用 class 切換，保證 100% 不抽搐！
             if (syncIcon) {
-                syncIcon.classList.remove('syncing');
-                void syncIcon.offsetWidth; // 觸發重繪
-                syncIcon.classList.add('syncing');
+                syncIcon.animate([
+                    { transform: 'translate(50%, -50%) rotate(0deg)' },
+                    { transform: 'translate(50%, -50%) rotate(-360deg)' }
+                ], {
+                    duration: 1000, // 精準 1 秒鐘
+                    easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)' // 母艦級變速曲線
+                });
             }
         } else if (s === 1) {
             // 第 1 秒：彈簧動畫剛結束，下達「接下來 59 秒請慢慢縮小到 44px」的長期指令
