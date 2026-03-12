@@ -1,29 +1,22 @@
-// clock.js - 完美機械翻頁 + 智慧圓角電池消耗版
+// clock.js - 靈動膠囊 (Dynamic Island) 本體伸縮 + Q彈回彈版
 
 export function initDynamicClock() {
     const clockContainer = document.getElementById('entry-time-display');
-    const leftCapsule = document.querySelector('.left-capsule');
+    const leftCapsule = document.querySelector('.left-capsule.top-capsule');
     const syncIcon = document.querySelector('.left-capsule-icon');
     
-    if (!clockContainer) return;
+    if (!clockContainer || !leftCapsule) return;
 
-    // 1. 動態生成「電量進度條實體」
-    let progressBar = null;
-    if (leftCapsule) {
-        progressBar = document.createElement('div');
-        progressBar.className = 'minute-progress-bar';
-        
-        // 🟢 開場時計算：剩下多少「寬度百分比」
-        const initialS = new Date().getSeconds();
-        const initialRatio = Math.max(0, 1 - (initialS / 58));
-        progressBar.style.width = `${initialRatio * 100}%`; // 改用 width
-        
-        leftCapsule.insertBefore(progressBar, leftCapsule.firstChild);
+    // 🟢 設定膠囊的尺寸極限
+    const MAX_W = 95; // 原始寬度
+    const MIN_W = 44; // 縮到最小變成 44x44 的正圓形
+    const RANGE = MAX_W - MIN_W;
 
-        setTimeout(() => {
-            progressBar.style.transition = 'width 1s linear'; // 動畫改為 width
-        }, 100);
-    }
+    // 開場時計算：膠囊現在應該縮小到多寬？
+    const initialS = new Date().getSeconds();
+    const initialRatio = Math.max(0, initialS / 58);
+    leftCapsule.style.setProperty('--capsule-dur', '0s'); // 第一下沒有動畫
+    leftCapsule.style.setProperty('--capsule-width', `${MAX_W - (RANGE * initialRatio)}px`);
 
     const now = new Date();
     const currentH = String(now.getHours()).padStart(2, '0');
@@ -31,6 +24,7 @@ export function initDynamicClock() {
     let lastTimeString = localStorage.getItem('tsukin_last_time') || (currentH + currentM);
     let lastMinute = -1; 
 
+    // 初始化時間數字
     const ids = ['hour-tens', 'hour-units', 'min-tens', 'min-units'];
     ids.forEach((id, index) => {
         const digitContainer = document.getElementById(id);
@@ -82,21 +76,21 @@ export function initDynamicClock() {
         updateDigit('min-tens', m[0]);
         updateDigit('min-units', m[1]);
 
-        // 2. 🟢 更新電池寬度進度
-        if (progressBar) {
-            if (s === 0) {
-                // 第 0 秒：瞬間回滿寬度 100%
-                progressBar.style.transition = 'none';
-                progressBar.style.width = '100%'; // 回滿
-                void progressBar.offsetWidth; 
-                progressBar.style.transition = 'width 1s linear';
-            } else {
-                // 第 1~58 秒：寬度不斷縮小。因為釘在右側，所以會像 iOS 電池一樣往右縮短
-                const ratio = Math.max(0, 1 - (s / 58));
-                progressBar.style.width = `${ratio * 100}%`;
-            }
+        // 🟢 操控膠囊本人的寬度
+        if (s === 0) {
+            // 第 0 秒：賦予蘋果彈簧曲線，Q 彈回滿 (95px)
+            leftCapsule.style.setProperty('--capsule-dur', '0.8s');
+            leftCapsule.style.setProperty('--capsule-ease', 'var(--apple-spring)');
+            leftCapsule.style.setProperty('--capsule-width', `${MAX_W}px`);
+        } else {
+            // 第 1~58 秒：線性縮小，右邊不動，左邊像被吃掉一樣往右縮
+            const ratio = Math.max(0, s / 58);
+            leftCapsule.style.setProperty('--capsule-dur', '1s');
+            leftCapsule.style.setProperty('--capsule-ease', 'linear');
+            leftCapsule.style.setProperty('--capsule-width', `${MAX_W - (RANGE * ratio)}px`);
         }
 
+        // 觸發 SVG 逆時針旋轉
         if (lastMinute !== -1 && lastMinute !== m) {
             if (syncIcon) {
                 syncIcon.classList.remove('syncing');

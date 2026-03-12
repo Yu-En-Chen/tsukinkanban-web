@@ -68,40 +68,37 @@
 #hour-tens .ticker-track.rolling { animation-delay: 0.24s; }
 
 /* =========================================
-   左舷母艦：時鐘圖示與電量進度條圖層設定
+   左舷母艦：靈動膠囊與圖示圖層 (純淨修復版)
    ========================================= */
-   #entry-time-display, .left-capsule-icon {
-    position: relative;
-    z-index: 2;
-}
 
-/* 🟢 終極防護：修復 Safari 瀏覽器子元素移動時圓角遮罩失效的 Bug */
-.left-capsule {
-    -webkit-mask-image: -webkit-radial-gradient(white, black);
-    mask-image: radial-gradient(white, black);
-}
-
-/* 🟢 實體電量塊 (拋棄位移，改用寬度縮減) */
-.minute-progress-bar {
+/* 🟢 1. 將 SVG 永遠鎖死在上方膠囊的右側圓心 */
+.left-capsule-icon {
     position: absolute;
-    top: 0;
-    /* 🟢 錨點釘在「右側」，這樣當寬度變小時，視覺上就會自然地「往右邊消耗」 */
-    right: 0; 
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.15); 
-    
-    /* 💥 終極魔法：自動繼承母艦的圓角！
-       不管你以後把母艦改成多圓，它都會自己算出一樣的圓角，
-       而且在縮小到最後時，會自己變成一個完美的小圓弧！ */
-    border-radius: inherit; 
-    
-    z-index: 1; 
+    right: 13px; /* (44px寬度 - 18px圖示) / 2 = 13px，讓它完美置中於縮小後的正圓形中 */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;  
+    height: 18px;
+    z-index: 5;
     pointer-events: none;
 }
 
+/* 🟢 2. 靈動膠囊引擎：只針對「上方膠囊 (top-capsule)」發動伸縮魔法！絕對不影響下方時鐘！ */
+.left-capsule.top-capsule {
+    /* 解除原本的 left，改由 JS 動態變數接管，並透過 calc 鎖死右側邊界 (20px + 95px = 115px) */
+    left: calc(115px - var(--capsule-width, 95px)) !important;
+    width: var(--capsule-width, 95px) !important;
+    
+    /* 讓 width 和 left 同步動畫，創造出「右邊不動，左邊往右縮小」的物理錯覺 */
+    transition: width var(--capsule-dur, 1s) var(--capsule-ease, linear), 
+                left var(--capsule-dur, 1s) var(--capsule-ease, linear),
+                opacity 0.2s ease, 
+                transform 0.5s var(--apple-spring), 
+                scale 0.4s var(--apple-spring) !important;
+}
+
 /* =========================================
-   同步圖示旋轉動畫 (保持完美的逆時針與減速)
+   同步圖示旋轉動畫 (1.5秒逆時針兩圈)
    ========================================= */
 .left-capsule-icon.syncing {
     animation: syncSpin 1.5s forwards;
