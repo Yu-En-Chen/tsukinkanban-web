@@ -760,11 +760,16 @@ function initOverlayGestures() {
 
     const dismissIcon = document.getElementById('dismiss-icon');
     const extraElements = inner.querySelectorAll('.description, .info-tags-container, .status-tag');
-    // 🟢 抓取膠囊內的兩種 SVG
-    let defaultIcons = document.querySelectorAll('#action-capsule .icon-default');
-    let hiddenIcons = document.querySelectorAll('#action-capsule .icon-hidden');
+    
+    // 🟢 1. 將 const 改成 let，並把搜尋按鈕也加進初始名單
+    let defaultIcons = document.querySelectorAll('#action-capsule .icon-default, #search-trigger .icon-default');
+    let hiddenIcons = document.querySelectorAll('#action-capsule .icon-hidden, #search-trigger .icon-hidden');
 
     detailOverlay.ontouchstart = e => {
+        // ✨ 2. 核心修復：每次手指碰到螢幕時，重新抓取最新的 DOM 節點！
+        defaultIcons = document.querySelectorAll('#action-capsule .icon-default, #search-trigger .icon-default');
+        hiddenIcons = document.querySelectorAll('#action-capsule .icon-hidden, #search-trigger .icon-hidden');
+
         overlayStartY = e.touches[0].pageY;
         inner.style.transition = 'none';
         if (extension) extension.style.transition = 'none'; // 👇 2. 拔除過渡
