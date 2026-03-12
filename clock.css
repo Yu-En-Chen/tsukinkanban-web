@@ -108,3 +108,21 @@
                 transform 0.5s var(--apple-spring), 
                 scale 0.4s var(--apple-spring) !important;
 }
+
+/* =========================================
+   🟢 靈動膠囊 (進度條) 專屬對比度強化
+   ========================================= */
+
+/* 1. 預設 (深色模式)：加入純白透光，讓它比一般深灰色膠囊更亮、更白 */
+.left-capsule.top-capsule {
+    background: rgba(255, 255, 255, 0.13) !important;
+    border: 1px solid rgba(255, 255, 255, 0.13) !important;
+}
+
+/* 2. 淺色模式：加入純黑透光，讓它比一般全白膠囊更暗、更灰 */
+@media (prefers-color-scheme: light) {
+    .left-capsule.top-capsule {
+        background: rgba(0, 0, 0, 0.08) !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    }
+}
