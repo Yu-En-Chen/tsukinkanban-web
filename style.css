@@ -2266,9 +2266,6 @@ body.hamburger-active #entry-time-display {
     z-index: 5600;
     cursor: pointer;
 
-    /* 防 FOUC 重新整理抽搐 */
-    opacity: 1 !important;
-
     /* 繼承右側的彈跳與透明度過渡 */
     transition: opacity 0.2s ease, transform 0.5s var(--apple-spring), scale 0.4s var(--apple-spring);
 }
@@ -2335,7 +2332,7 @@ body.hamburger-active .search-container .left-capsule {
 }
 
 .search-container.active .left-capsule {
-    animation: popOutShrink var(--t-item-out) ease-in forwards var(--delay-out-3) !important;
+    animation: popOutShrink var(--t-item-out) ease-in both var(--delay-out-3) !important;
     pointer-events: none;
 }
 
