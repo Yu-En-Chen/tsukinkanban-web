@@ -99,7 +99,7 @@ export function initDynamicClock() {
                 
                 setTimeout(() => {
                     syncIcon.classList.remove('syncing');
-                }, 1500);
+                }, 1000);
             }
         }
         lastMinute = m; 

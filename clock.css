@@ -100,20 +100,19 @@
 /* =========================================
    同步圖示旋轉動畫 (1.5秒逆時針兩圈)
    ========================================= */
-.left-capsule-icon.syncing {
-    animation: syncSpin 1.5s forwards;
+   .left-capsule-icon.syncing {
+    animation: syncSpin 1s forwards; /* 🟢 改為 1 秒 */
 }
 
 @keyframes syncSpin {
+    /* 🟢 記得這裡的 transform 要加上剛剛修正的 translate(50%, -50%) 以免旋轉時跑位 */
     0% { 
-        transform: translateY(-50%) rotate(0deg); 
-        animation-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1); 
-    }
-    50% { 
-        transform: translateY(-50%) rotate(-360deg); 
+        transform: translate(50%, -50%) rotate(0deg); 
+        /* 套用右側母艦的高級減速曲線 */
         animation-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1); 
     }
     100% { 
-        transform: translateY(-50%) rotate(-720deg); 
+        /* 一圈即 360 度 */
+        transform: translate(50%, -50%) rotate(-360deg); 
     }
 }
