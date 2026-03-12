@@ -91,6 +91,26 @@
                                 <span class="ticker-track"><span class="new-val">0</span><span class="old-val">0</span></span>
                             </span>
                         </span>
+
+                        <script>
+                            (function() {
+                                var lastTime = localStorage.getItem('tsukin_last_time');
+                                // 如果有記憶，在畫面畫出來之前，偷偷把 0000 換成記憶的時間！
+                                if (lastTime && lastTime.length === 4) {
+                                    var ids = ['hour-tens', 'hour-units', 'min-tens', 'min-units'];
+                                    for (var i = 0; i < 4; i++) {
+                                        var digit = document.getElementById(ids[i]);
+                                        if (digit) {
+                                            digit.setAttribute('data-value', lastTime[i]);
+                                            var oldVal = digit.querySelector('.old-val');
+                                            var newVal = digit.querySelector('.new-val');
+                                            if (oldVal) oldVal.textContent = lastTime[i];
+                                            if (newVal) newVal.textContent = lastTime[i];
+                                        }
+                                    }
+                                }
+                            })();
+                        </script>
                     </div>
                 </div>
 

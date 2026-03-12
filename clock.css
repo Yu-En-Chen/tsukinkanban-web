@@ -8,6 +8,11 @@
     vertical-align: middle;
 }
 
+/* 🟢 當 JS 把數字排好後，就會加上這個 class 讓時鐘優雅浮現 */
+.clock-container.ready {
+    opacity: 1;
+}
+
 .ticker-digit {
     position: relative;
     display: inline-block; 
