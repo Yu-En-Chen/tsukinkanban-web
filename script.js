@@ -5,6 +5,7 @@ import { initPhysics } from './physics.js';
 import { initHeader } from './header.js';
 import { getAllUserPreferences, restorePreviousPreference } from './db.js';
 import { initPersonalization } from './personalization.js';
+import { initDynamicClock } from './clock.js';
 
 // 🟢 宣告全域變數，作為整個 App 實際渲染、搜尋、點擊的唯一資料來源
 window.appRailwayData = [];
@@ -1630,16 +1631,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================================================
-// 🟢 左舷母艦：進場時間戳記系統 (Entry Time Display)
+// 🟢 左舷母艦：進階機械滾動時鐘引擎 (Dynamic Clock)
 // ============================================================================
-document.addEventListener('DOMContentLoaded', () => {
-    const entryTimeDisplay = document.getElementById('entry-time-display');
-    if (entryTimeDisplay) {
-        const now = new Date();
-        // 取得小時與分鐘，並確保永遠是兩位數 (padStart)
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        // 組合時間，並強制使用全形冒號
-        entryTimeDisplay.textContent = `${hours}：${minutes}`;
-    }
-});
+document.addEventListener('DOMContentLoaded', initDynamicClock);

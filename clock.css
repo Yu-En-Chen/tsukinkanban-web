@@ -1,0 +1,66 @@
+/* clock.css - 機械時鐘滾動模組 */
+
+.clock-container {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 22px; /* 根據 slashed-time-font 大小鎖死高度 */
+    overflow: hidden; /* 隱藏軌道上下多餘的數字 */
+    vertical-align: middle;
+}
+
+.ticker-digit {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    height: 100%;
+    width: 12px; /* 鎖死單一等寬數字的寬度 */
+    text-align: center;
+}
+
+/* 冒號 */
+.time-colon {
+    margin: 0 1px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateY(-1px); /* 微調冒號視覺置中 */
+}
+
+/* 數字滾動軌道 (高度是兩倍，容納新/舊兩個數字) */
+.ticker-track {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 200%; 
+    display: flex;
+    flex-direction: column;
+    /* 預設狀態：停留在下方 (-50%)，顯示舊數字 */
+    transform: translateY(-50%);
+}
+
+/* 啟動滾動：由上往下掉落至 0% (顯示上方的新數字) */
+.ticker-track.rolling {
+    animation: rollDown 0.6s var(--apple-spring) forwards;
+}
+
+@keyframes rollDown {
+    0% { transform: translateY(-50%); }
+    100% { transform: translateY(0); }
+}
+
+.ticker-track span {
+    height: 50%; /* 每個數字佔據一半的高度 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 🟢 核心魔法：齒輪連動延遲 (進位帶動) */
+/* 當多個數字同時變化時 (例如 09:59 變 10:00) 產生依序被帶動落下的物理錯覺 */
+#min-units .ticker-track.rolling { animation-delay: 0s; }    /* 個位數先動 */
+#min-tens .ticker-track.rolling { animation-delay: 0.08s; }  /* 帶動分鐘十位 */
+#hour-units .ticker-track.rolling { animation-delay: 0.16s; } /* 帶動小時個位 */
+#hour-tens .ticker-track.rolling { animation-delay: 0.24s; }  /* 帶動小時十位 */
