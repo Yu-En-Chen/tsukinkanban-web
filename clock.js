@@ -9,29 +9,30 @@ export function initDynamicClock() {
 
     // 膠囊的尺寸極限
     const MAX_W = 95;
-    const MIN_W = 44;
+    const MIN_W = 50; // 🟢 將原本的 44 改成 50，讓它在 SVG 完美置中的瞬間提早回彈！
     const RANGE = MAX_W - MIN_W;
 
-    // --- 🟢 1. 處理開場滑順接續 ---
+    // --- 🟢 1. 處理開場滑順接續 (優雅追趕動畫版) ---
     const initialS = new Date().getSeconds();
-    const remainingS = 60 - initialS;
     const initialRatio = initialS / 60; 
     const currentW = MAX_W - (RANGE * initialRatio);
 
-    // 瞬間設定現在該有的寬度
-    leftCapsule.style.setProperty('--capsule-dur', '0s');
+    // 1. 開場瞬間：使用 0.8 秒的彈簧曲線，讓膠囊從預設的 95px 滑順「追趕」到當下該有的寬度
+    leftCapsule.style.setProperty('--capsule-dur', '0.8s');
+    leftCapsule.style.setProperty('--capsule-ease', 'var(--apple-spring)');
     leftCapsule.style.setProperty('--capsule-width', `${currentW}px`);
 
-    // 讓瀏覽器消化一下後，把剩下的秒數交給 CSS 引擎去「絲滑縮小」
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            if (initialS !== 0) {
-                leftCapsule.style.setProperty('--capsule-dur', `${remainingS}s`);
-                leftCapsule.style.setProperty('--capsule-ease', 'linear');
-                leftCapsule.style.setProperty('--capsule-width', `${MIN_W}px`);
-            }
-        });
-    });
+    // 2. 等待 0.8 秒追趕到位後，無縫接軌進入「剩下的線性倒數」
+    setTimeout(() => {
+        const newS = new Date().getSeconds();
+        // 防呆保護：避開 0 秒與 1 秒 (因為底下的 tickClock 核心迴圈會親自處理它們)
+        if (newS !== 0 && newS !== 1) { 
+            const remainingS = 60 - newS;
+            leftCapsule.style.setProperty('--capsule-dur', `${remainingS}s`);
+            leftCapsule.style.setProperty('--capsule-ease', 'linear');
+            leftCapsule.style.setProperty('--capsule-width', `${MIN_W}px`);
+        }
+    }, 800);
 
     // --- 初始化時間數字 ---
     const now = new Date();
@@ -109,7 +110,7 @@ export function initDynamicClock() {
                 });
             }
         } else if (s === 1) {
-            // 第 1 秒：彈簧動畫剛結束，下達「接下來 59 秒請慢慢縮小到 44px」的長期指令
+            // 第 1 秒：彈簧動畫剛結束，下達「接下來 59 秒請慢慢縮小到 50px」的長期指令
             leftCapsule.style.setProperty('--capsule-dur', '59s');
             leftCapsule.style.setProperty('--capsule-ease', 'linear');
             leftCapsule.style.setProperty('--capsule-width', `${MIN_W}px`);
