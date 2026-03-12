@@ -68,22 +68,27 @@
 #hour-tens .ticker-track.rolling { animation-delay: 0.24s; }
 
 /* =========================================
-   左舷母艦：靈動膠囊與圖示圖層 (防抖動終極版)
+   左舷母艦：靈動膠囊與圖示圖層 (幾何圓心錨點版)
    ========================================= */
 
-/* 🟢 1. 將 SVG 永遠鎖死在上方膠囊的右側「絕對圓心」 */
-.left-capsule-icon {
+   .left-capsule-icon {
     position: absolute;
-    /* 膠囊縮到最小是 44px，右側 22px 即為絕對圓心 */
+    
+    /* 💥 Apple 靈動島級別的幾何錨點：
+       因為膠囊高度是 44px，右側半圓的半徑就是 22px。
+       把 right 設為 22px，就等於把 SVG 放在這個半圓的絕對圓心！
+    */
     right: 22px; 
+    
     top: 50%;
-    /* 配合 translate 對齊中心，徹底消滅邊界誤差 */
+    
+    /* translate(50%, -50%) 確保是 SVG 的「正中心」對齊這個 22px 的錨點 */
     transform: translate(50%, -50%);
+    
     width: 18px;  
     height: 18px;
     z-index: 5;
     pointer-events: none;
-    /* 🔴 注意：這裡不需要任何 transition，也不需要 .syncing 動畫了 */
 }
 
 /* 🟢 2. 靈動膠囊引擎：數學錨點鎖死大法 */
