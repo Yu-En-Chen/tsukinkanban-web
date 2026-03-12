@@ -2026,3 +2026,34 @@ body.hamburger-active #search-trigger svg {
 .search-input-box .search-icon {
     margin-left: 0 !important; 
 }
+
+/* =========================================
+   🟢 頂部導航列：極致穩定化 (消滅重新整理時的 FOUC 抽搐)
+   ========================================= */
+
+/* 1. 強制拔除所有可能殘留的進場動畫，瞬間 100% 顯示 */
+.left-circle-btn,
+.search-trigger,
+.action-capsule {
+    opacity: 1 !important;
+    transform: translate3d(0, 0, 0) !important;
+    animation: none !important;
+}
+
+/* 2. 鎖死母艦內部按鈕，防止 SVG 注入瞬間撐開排版 */
+#capsule-main-btn,
+#capsule-secondary-btn {
+    opacity: 1 !important;
+    transform: translate3d(0, 0, 0) !important;
+    animation: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* 3. 預先鎖定所有預設 SVG 的尺寸，拒絕忽大忽小 */
+#action-capsule .icon-default,
+#search-trigger .icon-default {
+    opacity: 0.8; /* 保持你原本設定的透明度 */
+    transition: opacity 0.4s ease, transform 0.55s var(--spring-release);
+}
