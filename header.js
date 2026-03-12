@@ -140,13 +140,21 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                         setTimeout(() => {
                             if (searchTrigger) {
                                 searchTrigger.onclick = () => {
-                                    // 避免狂點打斷動畫 (加入 action-error 的防禦)
-                                    if (searchTrigger.classList.contains('action-spinning') || 
-                                        searchTrigger.classList.contains('action-success') || 
-                                        searchTrigger.classList.contains('action-error') || 
-                                        searchTrigger.classList.contains('action-resetting')) return;
+                                    // 🟢 霸王色全域防護鎖：攔截動畫期間的所有重複點擊，並給予「微互動縮放」與震動回饋
+                                    if (window.pSyncing) {
+                                        if (typeof window.triggerBump === 'function') window.triggerBump(searchTrigger);
+                                        return;
+                                    }
     
-                                    // 1. 啟動視覺回饋：右上角歷史按鈕開始旋轉
+                                    // 1. 正式上鎖！這會瞬間癱瘓畫面上所有的滑動手勢、複製貼上與膠囊按鈕
+                                    window.pSyncing = true;
+    
+                                    // 🟢 防呆：如果使用者正在編輯輸入框，強制收起並儲存目前的字，以免動畫打架
+                                    if (window.pActiveEditType && typeof window.closeGhostEditMode === 'function') {
+                                        window.closeGhostEditMode(true, null, true);
+                                    }
+    
+                                    // 2. 啟動視覺回饋：右上角歷史按鈕開始旋轉
                                     searchTrigger.classList.add('action-spinning');
                                     if (navigator.vibrate) navigator.vibrate(20);
                                     
@@ -155,7 +163,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
     
                                     let isRestoreSuccess = false;
     
-                                    // 2. 轉到一半 (500ms) 時：正式觸發資料庫還原
+                                    // 3. 轉到一半 (500ms) 時：正式觸發資料庫還原
                                     setTimeout(async () => {
                                         try {
                                             if (window.undoCardPreference) {
@@ -167,7 +175,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                                         }
                                     }, 500);
     
-                                    // 3. 1秒後 (轉完一圈)，根據結果給予不同動畫
+                                    // 4. 1秒後 (轉完一圈)，根據結果給予不同動畫
                                     setTimeout(() => {
                                         searchTrigger.classList.remove('action-spinning');
                                         
@@ -182,7 +190,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                                         // ✨ 同步指令 2：觸發底下輸入框的連動結果動畫 (落下打勾或打叉)
                                         if (window.finishInputUndoAnimation) window.finishInputUndoAnimation(isRestoreSuccess);
     
-                                        // 4. 停留，讓大腦接收視覺資訊後開始 Reset
+                                        // 5. 停留，讓大腦接收視覺資訊後開始 Reset
                                         const holdTime = isRestoreSuccess ? 500 : 600;
     
                                         setTimeout(() => {
@@ -196,9 +204,12 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                                                 requestAnimationFrame(() => {
                                                     searchTrigger.classList.add('action-resetting-active');
     
-                                                    // 5. 動畫全部結束，清除狀態
+                                                    // 6. 動畫全部結束，清除狀態
                                                     setTimeout(() => {
                                                         searchTrigger.classList.remove('action-resetting', 'action-resetting-active');
+                                                        
+                                                        // 🟢 任務完成，徹底解鎖，將所有的控制權還給使用者！
+                                                        window.pSyncing = false; 
                                                     }, 400); 
                                                 });
                                             });
