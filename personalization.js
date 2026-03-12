@@ -516,7 +516,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                     clearInlineStyles(card);
                     clearInlineStyles(leftBtn);
                     clearInlineStyles(rightBtn);
-                    clearInlineStyles(searchTrigger);
+                    clearInlineStyles(searchIconContainer);
                     container.classList.remove('is-flipping');
                     card.classList.remove('hardware-accelerated');
                 }, 500);

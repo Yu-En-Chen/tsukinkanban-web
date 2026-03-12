@@ -761,8 +761,8 @@ function initOverlayGestures() {
     const dismissIcon = document.getElementById('dismiss-icon');
     const extraElements = inner.querySelectorAll('.description, .info-tags-container, .status-tag');
     // 🟢 抓取膠囊內的兩種 SVG
-    const defaultIcons = document.querySelectorAll('#action-capsule .icon-default');
-    const hiddenIcons = document.querySelectorAll('#action-capsule .icon-hidden');
+    let defaultIcons = document.querySelectorAll('#action-capsule .icon-default');
+    let hiddenIcons = document.querySelectorAll('#action-capsule .icon-hidden');
 
     detailOverlay.ontouchstart = e => {
         overlayStartY = e.touches[0].pageY;
@@ -1180,6 +1180,7 @@ window.openInfoOverlay = function (hexColor, contentHTML = '') {
     const triggerThreshold = window.innerWidth / 3;
 
     overlay.addEventListener('touchstart', (e) => {
+        if (window.isFlipAnimating) return;
         if (e.touches.length > 1 || window.isFlipAnimating) return;
         swipeStartX = e.touches[0].clientX;
         swipeStartY = e.touches[0].clientY;
