@@ -2300,11 +2300,10 @@ body.hamburger-active #search-trigger svg {
 }
 
 /* 4. 與右側母艦同步的「通知選單彈出動畫」 */
-body.hamburger-active .search-container .left-matrix-bg {
-    opacity: 1 !important;
-    animation: directPopUpMatrix 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both !important;
-    animation-delay: 0.15s !important;
-    /* 邊框延遲對齊 */
+@keyframes directPopUpMatrixLeft {
+    0% { transform: translate(-50%, -50%) scale(0.6) translateY(20px); opacity: 0; }
+    70% { transform: translate(-50%, -50%) scale(1.05) translateY(-3px); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1) translateY(0); opacity: 1; }
 }
 
 body.hamburger-active .search-container .left-capsule.top-capsule {
