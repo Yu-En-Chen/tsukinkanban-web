@@ -146,11 +146,13 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                                         searchTrigger.classList.contains('action-error') || 
                                         searchTrigger.classList.contains('action-resetting')) return;
     
-                                    // 1. 啟動視覺回饋：開始旋轉
+                                    // 1. 啟動視覺回饋：右上角歷史按鈕開始旋轉
                                     searchTrigger.classList.add('action-spinning');
                                     if (navigator.vibrate) navigator.vibrate(20);
+                                    
+                                    // ✨ 同步指令 1：觸發底下兩個文字輸入框的下降與旋轉動畫！
+                                    if (window.startInputUndoAnimation) window.startInputUndoAnimation();
     
-                                    // ✨ 新增：用來追蹤還原是否成功的狀態變數
                                     let isRestoreSuccess = false;
     
                                     // 2. 轉到一半 (500ms) 時：正式觸發資料庫還原
@@ -174,16 +176,21 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                                             if (navigator.vibrate) navigator.vibrate([30, 50, 30]); // 成功雙次震動
                                         } else {
                                             searchTrigger.classList.add('action-error');
-                                            if (navigator.vibrate) navigator.vibrate([20, 30, 20, 30]); // 錯誤短促連續震動 (觸覺警告)
+                                            if (navigator.vibrate) navigator.vibrate([20, 30, 20, 30]); // 錯誤短促連續震動
                                         }
+                                        
+                                        // ✨ 同步指令 2：觸發底下輸入框的連動結果動畫 (落下打勾或打叉)
+                                        if (window.finishInputUndoAnimation) window.finishInputUndoAnimation(isRestoreSuccess);
     
                                         // 4. 停留，讓大腦接收視覺資訊後開始 Reset
-                                        // ✨ 由於搖頭動畫本身比較長，我們讓失敗狀態多停留 0.1 秒，視覺更從容
                                         const holdTime = isRestoreSuccess ? 500 : 600;
     
                                         setTimeout(() => {
                                             searchTrigger.classList.remove('action-success', 'action-error');
                                             searchTrigger.classList.add('action-resetting');
+                                            
+                                            // ✨ 同步指令 3：觸發底下輸入框的連動重置動畫 (文字浮上來歸位)
+                                            if (window.resetInputUndoAnimation) window.resetInputUndoAnimation();
     
                                             requestAnimationFrame(() => {
                                                 requestAnimationFrame(() => {

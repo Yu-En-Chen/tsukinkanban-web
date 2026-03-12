@@ -948,6 +948,173 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
     };
 }
 
+// (這裡應該是你原本 window.triggerCloudSync 函數的結尾大括號 } )
+
+    // =========================================================
+    // 🟢 個性化面板：連動「歷史紀錄 (Undo)」按鈕的輸入框動畫引擎
+    // =========================================================
+    window.startInputUndoAnimation = function() {
+        const nameEls = getElements('name');
+        const colorEls = getElements('color');
+        
+        // 防呆：如果輸入框不存在或沒顯示（代表沒打開客製化卡片），直接跳過不執行
+        if (!nameEls || !nameEls.display || !colorEls || !colorEls.display) return; 
+
+        // 確保沒有殘留的舊動畫
+        if (window.activeUndoSvgs) {
+            window.resetInputUndoAnimation(true);
+        }
+
+        const svgSync = `<svg class="undo-sync-icon lucide lucide-rotate-ccw" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>`;
+        const svgCheck = `<svg class="undo-check-icon lucide lucide-check" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
+        const svgError = `<svg class="undo-error-icon lucide lucide-x" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+
+        function setup(els) {
+            if (!els.sharedStatus) return null;
+            if (els.sharedText) els.sharedText.style.display = 'none';
+
+            const container = document.createElement('div');
+            container.style.position = 'absolute';
+            container.style.inset = '0';
+            container.style.display = 'flex';
+            container.style.justifyContent = 'center';
+            container.style.alignItems = 'center';
+            container.style.pointerEvents = 'none'; // 防止干擾點擊
+
+            const createIcon = (svgStr) => {
+                const el = document.createElement('div');
+                el.innerHTML = svgStr;
+                el.style.position = 'absolute';
+                // 預設藏在上方待命
+                el.style.transform = 'translate3d(0, -40px, 0)';
+                el.style.opacity = '0';
+                el.style.display = 'flex';
+                el.style.alignItems = 'center';
+                el.style.justifyContent = 'center';
+                return el;
+            };
+
+            const syncIcon = createIcon(svgSync);
+            const checkIcon = createIcon(svgCheck);
+            const errorIcon = createIcon(svgError);
+
+            container.appendChild(syncIcon);
+            container.appendChild(checkIcon);
+            container.appendChild(errorIcon);
+            els.sharedStatus.appendChild(container);
+
+            return { container, syncIcon, checkIcon, errorIcon, els };
+        }
+
+        window.activeUndoSvgs = {
+            name: setup(nameEls),
+            color: setup(colorEls)
+        };
+
+        // 🟢 階段一：開始動畫 (文字往下掉消失，Sync 圖示從上方掉入並同步旋轉)
+        setTimeout(() => {
+            [window.activeUndoSvgs.name, window.activeUndoSvgs.color].forEach(item => {
+                if (!item) return;
+                const { els, syncIcon } = item;
+
+                // 原有文字下降消失
+                els.display.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
+                els.display.style.transform = 'translate3d(0, 40px, 0)';
+                els.display.style.opacity = '0';
+
+                // 顯示共用狀態列
+                els.sharedStatus.style.transition = 'opacity 0.3s ease';
+                els.sharedStatus.style.transform = 'translate3d(0, 0, 0)';
+                els.sharedStatus.style.opacity = '1';
+
+                // Sync 圖示優雅掉入並一秒轉一圈 (100% 對齊右上角歷史按鈕節奏)
+                syncIcon.style.transition = 'transform 1s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.3s ease';
+                syncIcon.style.transform = 'translate3d(0, 0, 0) rotate(-360deg)';
+                syncIcon.style.opacity = '1';
+            });
+        }, 50);
+    };
+
+    window.finishInputUndoAnimation = function(isSuccess) {
+        if (!window.activeUndoSvgs) return;
+
+        // 🟢 階段二：根據成敗，將 Sync 圖示丟掉，換成打勾或打叉
+        [window.activeUndoSvgs.name, window.activeUndoSvgs.color].forEach(item => {
+            if (!item) return;
+            const { syncIcon, checkIcon, errorIcon } = item;
+            
+            // Sync 圖示轉完後直接往下掉出畫面 (維持旋轉角度避免彈回)
+            syncIcon.style.transition = 'transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), opacity 0.2s linear';
+            syncIcon.style.transform = 'translate3d(0, 40px, 0) rotate(-360deg)';
+            syncIcon.style.opacity = '0';
+
+            // 成功/失敗圖示從上方掉入，並帶有彈跳感
+            const targetIcon = isSuccess ? checkIcon : errorIcon;
+            targetIcon.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease-out';
+            targetIcon.style.transform = 'translate3d(0, 0, 0)';
+            targetIcon.style.opacity = '1';
+            
+            if (!isSuccess) {
+                // 錯誤時額外觸發左右搖頭震盪，對齊 UI 手感
+                setTimeout(() => {
+                    targetIcon.classList.add('p-shake-active');
+                }, 150);
+            }
+        });
+    };
+
+    window.resetInputUndoAnimation = function(immediate = false) {
+        if (!window.activeUndoSvgs) return;
+
+        // 🟢 階段三：清理戰場，讓最新的文字重新浮上來
+        [window.activeUndoSvgs.name, window.activeUndoSvgs.color].forEach(item => {
+            if (!item) return;
+            const { container, checkIcon, errorIcon, els } = item;
+            
+            if (!immediate) {
+                // 圖示往上飛走消失
+                checkIcon.style.transition = 'transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), opacity 0.2s linear';
+                checkIcon.style.transform = 'translate3d(0, -40px, 0)';
+                checkIcon.style.opacity = '0';
+                
+                errorIcon.style.transition = 'transform 0.3s cubic-bezier(0.4, 0.0, 1, 1), opacity 0.2s linear';
+                errorIcon.style.transform = 'translate3d(0, -40px, 0)';
+                errorIcon.style.opacity = '0';
+
+                // 讓文字瞬間傳送到下方待命，然後浮上來回到正中央
+                els.display.style.transition = 'none';
+                els.display.style.transform = 'translate3d(0, 40px, 0)'; 
+                void els.display.offsetWidth; // 強制瀏覽器重繪
+                
+                els.display.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
+                els.display.style.transform = 'translate3d(0, 0, 0)';
+                els.display.style.opacity = '1';
+
+                els.sharedStatus.style.transition = 'opacity 0.3s ease';
+                els.sharedStatus.style.opacity = '0';
+
+                setTimeout(() => {
+                    container.remove();
+                    if (els.sharedText) els.sharedText.style.display = '';
+                    els.sharedStatus.style.transform = '';
+                    els.sharedStatus.style.opacity = '';
+                    els.display.style.transition = '';
+                    els.display.style.transform = '';
+                }, 500);
+            } else {
+                // 強制清理 (防呆)
+                container.remove();
+                if (els.sharedText) els.sharedText.style.display = '';
+                els.sharedStatus.style.transform = '';
+                els.sharedStatus.style.opacity = '';
+                els.display.style.transition = '';
+                els.display.style.transform = '';
+                els.display.style.opacity = '1';
+            }
+        });
+        window.activeUndoSvgs = null;
+    };
+
 // =========================================================
 // 🟢 幽靈輸入框核心邏輯與絕對高度霸權守護
 // =========================================================
