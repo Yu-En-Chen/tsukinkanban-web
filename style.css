@@ -2057,3 +2057,125 @@ body.hamburger-active #search-trigger svg {
     opacity: 0.8; /* 保持你原本設定的透明度 */
     transition: opacity 0.4s ease, transform 0.55s var(--spring-release);
 }
+
+/* =========================================
+   🟢 左側水平母艦矩陣 (Left Horizontal Matrix)
+   ========================================= */
+
+/* 1. 左側外框底板 (中心錨點精準對齊左側) */
+.left-matrix-bg {
+    position: absolute;
+    top: 47.5px;
+    left: 47.5px; /* ✨ 與右側的 right: 47.5px 完美對稱 */
+    transform: translate(-50%, -50%) !important; /* 鎖死中心點 */
+    width: 110px;
+    height: 110px;
+    border-radius: 29.5px;
+    
+    /* 預設為純淨邊框模式 (如需底色請自行開啟) */
+    background: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border: 1px solid var(--search-border);
+    
+    z-index: 0;
+    pointer-events: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.5s var(--apple-spring), opacity 0.3s ease;
+}
+
+/* 2. 左側上下兩顆水平膠囊 */
+.left-capsule {
+    position: absolute;
+    left: 0; /* ✨ 緊貼左側邊界 */
+    width: 95px;  /* 寬度對齊右側母艦 */
+    height: 44px; /* 高度對齊右側母艦 */
+    background: var(--search-bg);
+    border: 1px solid var(--search-border);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    z-index: 5600;
+    cursor: pointer;
+    
+    /* 防 FOUC 重新整理抽搐 */
+    opacity: 1 !important;
+    
+    /* 繼承右側的彈跳與透明度過渡 */
+    transition: opacity 0.2s ease, transform 0.5s var(--apple-spring), scale 0.4s var(--apple-spring);
+}
+
+/* 上方膠囊定位 */
+.left-capsule.top-capsule {
+    top: 0;
+}
+
+/* 下方膠囊定位 (與右側下排按鈕的 51px 完美切齊) */
+.left-capsule.bottom-capsule {
+    top: 51px; 
+}
+
+/* 3. 深色模式：白灰微光陰影對齊 */
+@media (prefers-color-scheme: dark) {
+    .left-matrix-bg {
+        box-shadow: 0 8px 30px rgba(220, 220, 230, 0.15) !important;
+        border: 1px solid rgba(220, 220, 230, 0.15) !important;
+    }
+    .left-capsule {
+        box-shadow: 0 4px 15px rgba(220, 220, 230, 0.12) !important;
+    }
+}
+
+/* 4. 與右側母艦同步的「通知選單彈出動畫」 */
+body.hamburger-active .search-container .left-matrix-bg {
+    opacity: 1 !important;
+    animation: directPopUpMatrix 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both !important;
+    animation-delay: 0.15s !important; /* 邊框延遲對齊 */
+}
+
+body.hamburger-active .search-container .left-capsule.top-capsule {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    animation: directPopUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both !important;
+    animation-delay: 0.2s !important; /* 上方膠囊延遲對齊 */
+}
+
+body.hamburger-active .search-container .left-capsule.bottom-capsule {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    animation: directPopUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both !important;
+    animation-delay: 0.1s !important; /* 下方膠囊延遲對齊 */
+}
+
+/* 5. 確保滿版選單彈出時的高層級可點擊性 */
+body.hamburger-active .search-container .left-matrix-bg { z-index: 5991 !important; }
+body.hamburger-active .search-container .left-capsule { z-index: 5992 !important; }
+
+/* 6. 與右側同步：在搜尋模式或進入通用視窗時退場隱藏 */
+.search-container.active .left-matrix-bg {
+    opacity: 0 !important;
+    transform: translate(-50%, -50%) scale(0.8) !important;
+    transition: opacity var(--t-bg-fade) linear, transform var(--search-hero-time) var(--apple-spring) !important;
+}
+
+.search-container.active .left-capsule {
+    animation: popOutShrink var(--t-item-out) ease-in forwards var(--delay-out-3) !important;
+    pointer-events: none;
+}
+
+.search-container:not(.active) .left-capsule {
+    animation: popBackIn var(--t-item-in) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards var(--delay-out-3);
+}
+
+body:has(.universal-window.is-active) .left-matrix-bg,
+body:has(.universal-window.is-active) .left-capsule {
+    transform: scale(0.90) translateY(15px) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease !important;
+}

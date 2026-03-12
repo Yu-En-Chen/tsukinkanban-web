@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="通勤看板">
@@ -10,27 +12,27 @@
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
     <title>通勤看板</title>
     <link rel="manifest" href="manifest.json">
-    
+
     <script>
-        (function() {
+        (function () {
             // 1. 偵測是否為 Apple 裝置 (包含 Mac, iPhone, iPad, 以及偽裝成 Mac 的新版 iPad)
             var isApple = /(Mac|iPhone|iPod|iPad)/i.test(navigator.userAgent) || /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform);
-            
+
             // 2. 如果「不是」Apple 裝置，才去非同步索取 Google Fonts
             if (!isApple) {
                 var preconnect1 = document.createElement('link');
                 preconnect1.rel = 'preconnect';
                 preconnect1.href = 'https://fonts.googleapis.com';
-                
+
                 var preconnect2 = document.createElement('link');
                 preconnect2.rel = 'preconnect';
                 preconnect2.href = 'https://fonts.gstatic.com';
                 preconnect2.crossOrigin = 'anonymous';
-                
+
                 var fontLink = document.createElement('link');
                 fontLink.rel = 'stylesheet';
                 fontLink.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&display=swap';
-                
+
                 document.head.appendChild(preconnect1);
                 document.head.appendChild(preconnect2);
                 document.head.appendChild(fontLink);
@@ -43,13 +45,16 @@
     <link rel="stylesheet" href="menu.css">
     <link rel="stylesheet" href="overlay-window.css">
 </head>
+
 <body>
     <div id="search-mask" class="search-mask" onclick="toggleSearch(false)"></div>
 
     <div id="landscape-prompt" style="opacity: 0; visibility: hidden; pointer-events: none;">
-        <svg style="opacity: 0;" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="rotate-phone-icon">
-            <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
-            <path d="M12 18h.01"/>
+        <svg style="opacity: 0;" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="rotate-phone-icon">
+            <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
+            <path d="M12 18h.01" />
         </svg>
         <div class="landscape-title" style="opacity: 0;">縦向きでご利用ください</div>
         <div class="landscape-desc" style="opacity: 0;">この画面は縦向き専用です。</div>
@@ -58,35 +63,53 @@
     <div id="app-stage">
         <header class="header">
             <div id="search-container" class="search-container">
-                
+
+                <div class="left-matrix-bg"></div>
+
+                <div class="left-capsule top-capsule interactive-btn" id="left-capsule-top" onclick="/* 預留你的點擊功能 */">
+                    <div class="capsule-btn-item">
+                    </div>
+                </div>
+
+                <div class="left-capsule bottom-capsule interactive-btn" id="left-capsule-bottom"
+                    onclick="/* 預留你的點擊功能 */">
+                    <div class="capsule-btn-item">
+                    </div>
+                </div>
+
                 <button id="left-menu-btn" class="left-circle-btn">
                     <div class="menu-icon-wrapper">
-                        <svg class="icon-hamburger" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M10.268 21a2 2 0 0 0 3.464 0"/>
-                            <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>
+                        <svg class="icon-hamburger" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10.268 21a2 2 0 0 0 3.464 0" />
+                            <path
+                                d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" />
                         </svg>
 
-                        <svg class="icon-close" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M18 6 6 18"/>
-                            <path d="m6 6 12 12"/>
+                        <svg class="icon-close" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 6 6 18" />
+                            <path d="m6 6 12 12" />
                         </svg>
                     </div>
                 </button>
 
                 <div id="search-trigger" class="search-trigger" onclick="toggleSearch(true)">
                     <span class="search-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="m21 21-4.34-4.34"/>
-                            <circle cx="11" cy="11" r="8"/>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m21 21-4.34-4.34" />
+                            <circle cx="11" cy="11" r="8" />
                         </svg>
                     </span>
                 </div>
-                
+
                 <div id="search-input-box" class="search-input-box">
                     <span class="search-icon" style="margin-left: 4px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="11" cy="11" r="8"/>
-                            <path d="m21 21-4.3-4.3"/>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.3-4.3" />
                         </svg>
                     </span>
                     <input type="text" id="search-input" placeholder="路線検索...">
@@ -94,40 +117,52 @@
 
                 <div id="action-capsule" class="action-capsule">
                     <div id="capsule-grid-layout" class="capsule-grid-layout">
-                        <button id="capsule-main-btn" class="capsule-btn-item main-btn" onclick="handleCapsuleMainClick()">
-                            <svg class="icon-default" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M5 12h14 M12 5v14"/>
+                        <button id="capsule-main-btn" class="capsule-btn-item main-btn"
+                            onclick="handleCapsuleMainClick()">
+                            <svg class="icon-default" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M5 12h14 M12 5v14" />
                             </svg>
-                            <svg class="icon-hidden lucide lucide-palette-icon lucide-palette" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/>
-                                <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
-                                <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
-                                <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
-                                <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
+                            <svg class="icon-hidden lucide lucide-palette-icon lucide-palette"
+                                xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path
+                                    d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" />
+                                <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+                                <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+                                <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
+                                <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
                             </svg>
                         </button>
-                        
+
                         <div class="capsule-divider"></div>
-                        
-                        <button id="capsule-secondary-btn" class="capsule-btn-item" onclick="handleCapsuleSecondaryClick()">
-                            <svg class="icon-default" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="1"/>
-                                <circle cx="19" cy="12" r="1"/>
-                                <circle cx="5" cy="12" r="1"/>
+
+                        <button id="capsule-secondary-btn" class="capsule-btn-item"
+                            onclick="handleCapsuleSecondaryClick()">
+                            <svg class="icon-default" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="1" />
+                                <circle cx="19" cy="12" r="1" />
+                                <circle cx="5" cy="12" r="1" />
                             </svg>
-                            <svg class="icon-hidden lucide lucide-external-link-icon lucide-external-link" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M15 3h6v6"/>
-                                <path d="M10 14 21 3"/>
-                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                            <svg class="icon-hidden lucide lucide-external-link-icon lucide-external-link"
+                                xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M15 3h6v6" />
+                                <path d="M10 14 21 3" />
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                             </svg>
                         </button>
                     </div>
                 </div>
 
                 <button id="cancel-btn" class="cancel-circle-btn" onclick="toggleSearch(false)">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M18 6 6 18"/>
-                        <path d="m6 6 12 12"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
                     </svg>
                 </button>
             </div>
@@ -135,12 +170,12 @@
 
         <main class="card-stack" id="main-stack"></main>
 
-    
-            <div class="card-content">
-                <p class="description" id="fixed-desc"></p>
-                <div class="info-tags-container" id="fixed-tags"></div>
-            </div>
+
+        <div class="card-content">
+            <p class="description" id="fixed-desc"></p>
+            <div class="info-tags-container" id="fixed-tags"></div>
         </div>
+    </div>
     </div>
 
     <div id="detail-overlay" class="detail-overlay" onclick="handleOverlayClick(event)">
@@ -150,22 +185,29 @@
     <template id="railway-card-template">
         <div class="card">
             <div class="card-header"><span class="line-name"></span><span class="status-tag"></span></div>
-            <div class="card-content"><div class="info-tags-container"></div><p class="description"></p></div>
+            <div class="card-content">
+                <div class="info-tags-container"></div>
+                <p class="description"></p>
+            </div>
         </div>
     </template>
 
     <template id="detail-card-template">
         <div class="detail-card-inner">
             <div class="card-header"><span class="line-name"></span><span class="status-tag"></span></div>
-            <div class="card-content"><div class="info-tags-container"></div><p class="description"></p></div>
+            <div class="card-content">
+                <div class="info-tags-container"></div>
+                <p class="description"></p>
+            </div>
         </div>
-        
+
         <div class="detail-extension-card"></div>
-        
+
     </template>
 
     <script src="header.js"></script>
     <script type="module" src="script.js"></script>
     <script src="menu.js"></script>
 </body>
+
 </html>
