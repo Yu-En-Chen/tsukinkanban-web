@@ -389,6 +389,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             const rightBtn = document.getElementById('capsule-secondary-btn');
             const dismissIcon = document.getElementById('dismiss-icon');
             const dismissSvg = dismissIcon ? dismissIcon.querySelector('svg') : null;
+            const searchIconContainer = document.querySelector('#search-trigger .search-icon');
 
             if (!swipeLocked) {
                 if (deltaX < -5) {
@@ -416,6 +417,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                     clearInlineStyles(card);
                     clearInlineStyles(leftBtn);
                     clearInlineStyles(rightBtn);
+                    clearInlineStyles(searchIconContainer);
                     window.closeBlankOverlay(true);
                     return;
                 }
@@ -435,6 +437,11 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                     leftBtn.style.setProperty('transform', `translate3d(${-30 * progress}px, 0, 0)`, 'important');
                     rightBtn.style.setProperty('transition', 'none', 'important');
                     rightBtn.style.setProperty('transform', `translate3d(${-30 * progress}px, 0, 0)`, 'important');
+                }
+
+                if (searchIconContainer) {
+                    searchIconContainer.style.setProperty('transition', 'none', 'important');
+                    searchIconContainer.style.setProperty('transform', `translate3d(${-30 * progress}px, 0, 0)`, 'important');
                 }
 
                 if (dismissIcon) {
@@ -470,12 +477,14 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             const rightBtn = document.getElementById('capsule-secondary-btn');
             const dismissIcon = document.getElementById('dismiss-icon');
             const dismissSvg = dismissIcon ? dismissIcon.querySelector('svg') : null;
+            const searchIconContainer = document.querySelector('#search-trigger .search-icon');
 
             if (flippedDegrees > 20 || deltaX < -50) {
                 container.classList.remove('is-swiping');
                 clearInlineStyles(card);
                 clearInlineStyles(leftBtn);
                 clearInlineStyles(rightBtn);
+                clearInlineStyles(searchIconContainer);
                 window.closeBlankOverlay(true);
             } else {
                 container.classList.remove('is-swiping');
@@ -493,6 +502,11 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                     rightBtn.style.setProperty('transform', `translate3d(0px, 0, 0)`, 'important');
                 }
 
+                if (searchIconContainer) {
+                    searchIconContainer.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15)', 'important');
+                    searchIconContainer.style.setProperty('transform', `translate3d(0px, 0, 0)`, 'important');
+                }
+
                 if (dismissSvg) {
                     dismissSvg.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15)', 'important');
                     dismissSvg.style.setProperty('transform', `rotate(${window.DISMISS_ICON_TARGET_ROTATION}deg)`, 'important');
@@ -502,6 +516,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                     clearInlineStyles(card);
                     clearInlineStyles(leftBtn);
                     clearInlineStyles(rightBtn);
+                    clearInlineStyles(searchTrigger);
                     container.classList.remove('is-flipping');
                     card.classList.remove('hardware-accelerated');
                 }, 500);

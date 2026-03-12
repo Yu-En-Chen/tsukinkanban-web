@@ -545,6 +545,7 @@ body.searching .search-mask {
 .search-trigger .search-icon svg.lucide-history {
     width: 22px !important; /* 想要多大就在這裡調 */
     height: 22px !important;
+    stroke-width: 1.6 !important;
 }
 
 /* 1. 向右滑出消失 (🟢 距離改為 95px，與膠囊移動速度 100% 同步) */
