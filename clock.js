@@ -1,4 +1,4 @@
-// clock.js - 靈動膠囊 (Dynamic Island) 本體伸縮 + Q彈回彈版
+// clock.js - 靈動膠囊 (CSS引擎接管絲滑版 + CSS變數突破版)
 
 export function initDynamicClock() {
     const clockContainer = document.getElementById('entry-time-display');
@@ -7,24 +7,39 @@ export function initDynamicClock() {
     
     if (!clockContainer || !leftCapsule) return;
 
-    // 🟢 設定膠囊的尺寸極限
-    const MAX_W = 95; // 原始寬度
-    const MIN_W = 44; // 縮到最小變成 44x44 的正圓形
+    // 膠囊的尺寸極限
+    const MAX_W = 95;
+    const MIN_W = 44;
     const RANGE = MAX_W - MIN_W;
 
-    // 開場時計算：膠囊現在應該縮小到多寬？
+    // --- 🟢 1. 處理開場滑順接續 ---
     const initialS = new Date().getSeconds();
-    const initialRatio = Math.max(0, initialS / 58);
-    leftCapsule.style.setProperty('--capsule-dur', '0s'); // 第一下沒有動畫
-    leftCapsule.style.setProperty('--capsule-width', `${MAX_W - (RANGE * initialRatio)}px`);
+    const remainingS = 60 - initialS;
+    const initialRatio = initialS / 60; 
+    const currentW = MAX_W - (RANGE * initialRatio);
 
+    // 瞬間設定現在該有的寬度 (無動畫)
+    leftCapsule.style.setProperty('--capsule-dur', '0s');
+    leftCapsule.style.setProperty('--capsule-width', `${currentW}px`);
+
+    // 讓瀏覽器消化一下後，把剩下的秒數交給 CSS 引擎去「絲滑縮小」
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            if (initialS !== 0) {
+                leftCapsule.style.setProperty('--capsule-dur', `${remainingS}s`);
+                leftCapsule.style.setProperty('--capsule-ease', 'linear');
+                leftCapsule.style.setProperty('--capsule-width', `${MIN_W}px`);
+            }
+        });
+    });
+
+    // --- 初始化時間數字 ---
     const now = new Date();
     const currentH = String(now.getHours()).padStart(2, '0');
     const currentM = String(now.getMinutes()).padStart(2, '0');
     let lastTimeString = localStorage.getItem('tsukin_last_time') || (currentH + currentM);
     let lastMinute = -1; 
 
-    // 初始化時間數字
     const ids = ['hour-tens', 'hour-units', 'min-tens', 'min-units'];
     ids.forEach((id, index) => {
         const digitContainer = document.getElementById(id);
@@ -76,37 +91,32 @@ export function initDynamicClock() {
         updateDigit('min-tens', m[0]);
         updateDigit('min-units', m[1]);
 
-        // 🟢 操控膠囊本人的寬度
+        // --- 🟢 2. CSS 連續引擎指揮中心 ---
+        // JS 只有在「第 0 秒」和「第 1 秒」會下指令，其餘時間完全休眠，0 性能開銷！
         if (s === 0) {
-            // 第 0 秒：賦予蘋果彈簧曲線，Q 彈回滿 (95px)
+            // 第 0 秒：賦予蘋果彈簧曲線，瞬間 Q 彈回滿 (95px)
             leftCapsule.style.setProperty('--capsule-dur', '0.8s');
             leftCapsule.style.setProperty('--capsule-ease', 'var(--apple-spring)');
             leftCapsule.style.setProperty('--capsule-width', `${MAX_W}px`);
-        } else {
-            // 第 1~58 秒：線性縮小，右邊不動，左邊像被吃掉一樣往右縮
-            const ratio = Math.max(0, s / 58);
-            leftCapsule.style.setProperty('--capsule-dur', '1s');
-            leftCapsule.style.setProperty('--capsule-ease', 'linear');
-            leftCapsule.style.setProperty('--capsule-width', `${MAX_W - (RANGE * ratio)}px`);
-        }
 
-        // 觸發 SVG 逆時針旋轉
-        if (lastMinute !== -1 && lastMinute !== m) {
+            // 觸發 SVG 旋轉 (直接拔掉重加，絕對不清除 class，完美解決抽搐 bug)
             if (syncIcon) {
                 syncIcon.classList.remove('syncing');
-                void syncIcon.offsetWidth; 
+                void syncIcon.offsetWidth; // 觸發重繪
                 syncIcon.classList.add('syncing');
-                
-                setTimeout(() => {
-                    syncIcon.classList.remove('syncing');
-                }, 1000);
             }
+        } else if (s === 1) {
+            // 第 1 秒：彈簧動畫剛結束，下達「接下來 59 秒請慢慢縮小到 44px」的長期指令
+            leftCapsule.style.setProperty('--capsule-dur', '59s');
+            leftCapsule.style.setProperty('--capsule-ease', 'linear');
+            leftCapsule.style.setProperty('--capsule-width', `${MIN_W}px`);
         }
-        lastMinute = m; 
 
+        lastMinute = m; 
         localStorage.setItem('tsukin_last_time', h + m);
     }
 
+    // 開場立即啟動
     setTimeout(tickClock, 300);
     setInterval(tickClock, 1000);
 }

@@ -85,11 +85,10 @@
 
 /* 🟢 2. 靈動膠囊引擎：只針對「上方膠囊 (top-capsule)」發動伸縮魔法！絕對不影響下方時鐘！ */
 .left-capsule.top-capsule {
-    /* 解除原本的 left，改由 JS 動態變數接管，並透過 calc 鎖死右側邊界 (20px + 95px = 115px) */
     left: calc(115px - var(--capsule-width, 95px)) !important;
     width: var(--capsule-width, 95px) !important;
     
-    /* 讓 width 和 left 同步動畫，創造出「右邊不動，左邊往右縮小」的物理錯覺 */
+    /* 將 width 和 left 的過渡時間與曲線，完全交給 JS 變數控制 */
     transition: width var(--capsule-dur, 1s) var(--capsule-ease, linear), 
                 left var(--capsule-dur, 1s) var(--capsule-ease, linear),
                 opacity 0.2s ease, 
