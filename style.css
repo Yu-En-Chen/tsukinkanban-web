@@ -2370,6 +2370,29 @@ body:has(.universal-window.is-active) .left-capsule {
 }
 
 /* =========================================
+   左舷母艦：內部右側圓心圖示
+   ========================================= */
+   .left-capsule-icon {
+    position: absolute;
+    /* 膠囊高度是 44px (半徑22px)，right 設為 14px 能讓圖示完美座落在右側的幾何圓心 */
+    right: 14px; 
+    top: 50%;
+    transform: translateY(-50%);
+    
+    /* 🟢 參照右側母艦圖示的標準設定 */
+    width: 18px;  
+    height: 18px;
+    opacity: 0.8; 
+    color: currentColor; /* 自動繼承膠囊的文字/線條顏色 */
+    
+    /* 防呆設定：讓圖示不會干擾到整個膠囊的點擊範圍 */
+    pointer-events: none; 
+    
+    /* 預留一點過渡動畫，方便未來你想做點擊旋轉效果 */
+    transition: opacity 0.2s ease, transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* =========================================
    🟢 終極母艦鎖死系統 (智慧狀態切換與壓制版)
    ========================================= */
 
