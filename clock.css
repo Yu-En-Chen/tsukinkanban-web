@@ -81,24 +81,27 @@
     mask-image: radial-gradient(white, black);
 }
 
-/* 🟢 實體電量塊 (拋棄 ScaleX，改用物理位移) */
+/* 🟢 實體電量塊 (拋棄位移，改用寬度縮減) */
 .minute-progress-bar {
     position: absolute;
     top: 0;
-    left: 0;
+    /* 🟢 錨點釘在「右側」，這樣當寬度變小時，視覺上就會自然地「往右邊消耗」 */
+    right: 0; 
     width: 100%;
     height: 100%;
     background: rgba(255, 255, 255, 0.15); 
     
+    /* 💥 終極魔法：自動繼承母艦的圓角！
+       不管你以後把母艦改成多圓，它都會自己算出一樣的圓角，
+       而且在縮小到最後時，會自己變成一個完美的小圓弧！ */
+    border-radius: inherit; 
+    
     z-index: 1; 
     pointer-events: none;
-    
-    /* 起始位置為 0% (完全填滿膠囊) */
-    transform: translateX(0%);
 }
 
 /* =========================================
-   同步圖示旋轉動畫 (1.5秒逆時針兩圈 + 母艦級變速引擎)
+   同步圖示旋轉動畫 (保持完美的逆時針與減速)
    ========================================= */
 .left-capsule-icon.syncing {
     animation: syncSpin 1.5s forwards;
