@@ -12,27 +12,42 @@ export function initDynamicClock() {
     const MIN_W = 50; // 🟢 將原本的 44 改成 50，讓它在 SVG 完美置中的瞬間提早回彈！
     const RANGE = MAX_W - MIN_W;
 
-    // --- 🟢 1. 處理開場滑順接續 (優雅追趕動畫版) ---
-    const initialS = new Date().getSeconds();
-    const initialRatio = initialS / 60; 
-    const currentW = MAX_W - (RANGE * initialRatio);
+    // --- 🟢 1. 獨立出「追趕同步」引擎 ---
+    function resyncCapsule() {
+        const currentS = new Date().getSeconds();
+        
+        // 防呆：如果剛好是 0 秒或 1 秒，交給底下的 tickClock 核心引擎處理即可，避免動畫打架
+        if (currentS === 0 || currentS === 1) return;
 
-    // 1. 開場瞬間：使用 0.8 秒的彈簧曲線，讓膠囊從預設的 95px 滑順「追趕」到當下該有的寬度
-    leftCapsule.style.setProperty('--capsule-dur', '0.8s');
-    leftCapsule.style.setProperty('--capsule-ease', 'var(--apple-spring)');
-    leftCapsule.style.setProperty('--capsule-width', `${currentW}px`);
+        const currentRatio = currentS / 60; 
+        const currentW = MAX_W - (RANGE * currentRatio);
 
-    // 2. 等待 0.8 秒追趕到位後，無縫接軌進入「剩下的線性倒數」
-    setTimeout(() => {
-        const newS = new Date().getSeconds();
-        // 防呆保護：避開 0 秒與 1 秒 (因為底下的 tickClock 核心迴圈會親自處理它們)
-        if (newS !== 0 && newS !== 1) { 
-            const remainingS = 60 - newS;
-            leftCapsule.style.setProperty('--capsule-dur', `${remainingS}s`);
-            leftCapsule.style.setProperty('--capsule-ease', 'linear');
-            leftCapsule.style.setProperty('--capsule-width', `${MIN_W}px`);
+        // 1. 瞬間喚醒：使用 0.8 秒彈簧曲線，讓膠囊快速滑順「追趕」到當下該有的寬度
+        leftCapsule.style.setProperty('--capsule-dur', '0.8s');
+        leftCapsule.style.setProperty('--capsule-ease', 'var(--apple-spring)');
+        leftCapsule.style.setProperty('--capsule-width', `${currentW}px`);
+
+        // 2. 追趕到位後，無縫接軌進入「剩下的線性倒數」
+        setTimeout(() => {
+            const newS = new Date().getSeconds();
+            if (newS !== 0 && newS !== 1) { 
+                const remainingS = 60 - newS;
+                leftCapsule.style.setProperty('--capsule-dur', `${remainingS}s`);
+                leftCapsule.style.setProperty('--capsule-ease', 'linear');
+                leftCapsule.style.setProperty('--capsule-width', `${MIN_W}px`);
+            }
+        }, 800);
+    }
+
+    // 🟢 2. 開場立即執行一次同步
+    resyncCapsule();
+
+    // 🟢 3. 監聽網頁可視狀態：從背景切回前景時，重新校準膠囊進度！
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            resyncCapsule();
         }
-    }, 800);
+    });
 
     // --- 初始化時間數字 ---
     const now = new Date();
