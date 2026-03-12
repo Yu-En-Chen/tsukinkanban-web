@@ -1,66 +1,67 @@
-/* clock.css - 機械時鐘滾動模組 */
+/* clock.css - 終極暴力除錯鎖死版 */
 
 .clock-container {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    height: 22px; /* 根據 slashed-time-font 大小鎖死高度 */
-    overflow: hidden; /* 隱藏軌道上下多餘的數字 */
-    vertical-align: middle;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 22px !important;
+    overflow: hidden !important;
 }
 
+/* 🟢 1. 終極防線：鎖死寬度，絕對不允許被內容撐開 */
 .ticker-digit {
-    position: relative;
-    display: inline-flex;
-    flex-direction: column;
-    height: 100%;
-    width: 12px; /* 鎖死單一等寬數字的寬度 */
-    text-align: center;
+    position: relative !important;
+    display: block !important;
+    min-width: 12px !important;  /* 鎖死下限 */
+    max-width: 12px !important;  /* 鎖死上限 */
+    width: 12px !important;
+    height: 22px !important;
+    overflow: hidden !important; /* 嚴格裁切 */
 }
 
-/* 冒號 */
 .time-colon {
-    margin: 0 1px;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transform: translateY(-1px); /* 微調冒號視覺置中 */
+    display: inline-block !important;
+    min-width: 12px !important;
+    height: 22px !important;
+    line-height: 22px !important;
+    text-align: center !important;
+    transform: translateY(-1px) !important;
 }
 
-/* 數字滾動軌道 (高度是兩倍，容納新/舊兩個數字) */
+/* 🟢 2. 拔除 Flex，回歸最單純的絕對定位 */
 .ticker-track {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 200%; 
-    display: flex;
-    flex-direction: column;
-    /* 預設狀態：停留在下方 (-50%)，顯示舊數字 */
-    transform: translateY(-50%);
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    display: block !important; 
+    transform: translateY(-22px);
 }
 
-/* 啟動滾動：由上往下掉落至 0% (顯示上方的新數字) */
+/* 🟢 3. 將 Span 強制轉為 Block，讓它們「絕對只能上下疊」，不可能左右並排！ */
+.ticker-track .new-val, 
+.ticker-track .old-val {
+    display: block !important;
+    width: 100% !important;
+    height: 22px !important;
+    line-height: 22px !important;
+    text-align: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* 啟動滾動動畫 */
 .ticker-track.rolling {
-    animation: rollDown 0.6s var(--apple-spring) forwards;
+    animation: rollDown 0.6s var(--apple-spring) forwards !important;
 }
 
 @keyframes rollDown {
-    0% { transform: translateY(-50%); }
+    0% { transform: translateY(-22px); }
     100% { transform: translateY(0); }
 }
 
-.ticker-track span {
-    height: 50%; /* 每個數字佔據一半的高度 */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* 🟢 核心魔法：齒輪連動延遲 (進位帶動) */
-/* 當多個數字同時變化時 (例如 09:59 變 10:00) 產生依序被帶動落下的物理錯覺 */
-#min-units .ticker-track.rolling { animation-delay: 0s; }    /* 個位數先動 */
-#min-tens .ticker-track.rolling { animation-delay: 0.08s; }  /* 帶動分鐘十位 */
-#hour-units .ticker-track.rolling { animation-delay: 0.16s; } /* 帶動小時個位 */
-#hour-tens .ticker-track.rolling { animation-delay: 0.24s; }  /* 帶動小時十位 */
+/* 🟢 4. 齒輪連動延遲 */
+#min-units .ticker-track.rolling { animation-delay: 0s !important; }
+#min-tens .ticker-track.rolling { animation-delay: 0.08s !important; }
+#hour-units .ticker-track.rolling { animation-delay: 0.16s !important; }
+#hour-tens .ticker-track.rolling { animation-delay: 0.24s !important; }
