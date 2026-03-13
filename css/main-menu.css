@@ -159,13 +159,14 @@ body.main-menu-active #dynamic-main-menu .main-menu-capsule {
     stroke-width: 2px;
     stroke-linecap: round;
     stroke-linejoin: round;
-    opacity: 0.9;
+    opacity: 0.8 !important;
 }
 
 .main-menu-capsule .capsule-text {
     font-size: 15px;
     font-weight: 600;
     letter-spacing: 0.5px;
+    opacity: 0.85;
 }
 
 /* =========================================
@@ -477,4 +478,41 @@ body.universal-active #main-stack {
     pointer-events: auto !important;
     touch-action: pan-y !important; /* iOS 專屬：只允許垂直滑動 */
     overscroll-behavior: contain !important; /* 滾到底部時，不會拉扯到背後的網頁 */
+}
+
+/* =========================================
+   ☀️ 淺色模式專屬高階質感微調 (Light Mode)
+   ========================================= */
+   @media (prefers-color-scheme: light) {
+    
+    /* 1. 右上角小母艦外框：更乾淨的極淺灰邊框與擴散空氣陰影 */
+    .universal-nav-matrix {
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05) !important;
+        border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    }
+    
+    /* 雙圓按鈕本身的輕盈陰影 */
+    .universal-nav-btn {
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04) !important;
+    }
+    
+    /* 點擊時的微弱下壓感 */
+    .universal-nav-btn:active {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
+        background-color: rgba(0, 0, 0, 0.04) !important; 
+    }
+
+    /* 2. 主選單 5 個選項的文字與圖示 (消除死黑感) */
+    /* 在白色的毛玻璃上，我們把透明度再往下調一點，讓它變成高雅的深灰色 */
+    .main-menu-capsule .capsule-icon svg {
+        opacity: 0.7 !important; /* 讓圖示更柔和 */
+    }
+    .main-menu-capsule .capsule-text {
+        opacity: 0.75 !important; /* 文字保持比圖示稍微清晰一點 */
+    }
+    
+    /* 通用頁面右上角雙圓按鈕的 SVG 也同步柔和化 */
+    .universal-nav-btn svg {
+        opacity: 0.7 !important;
+    }
 }
