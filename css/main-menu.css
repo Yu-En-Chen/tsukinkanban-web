@@ -352,45 +352,45 @@ body.universal-active .universal-nav-container {
     pointer-events: none;
 }
 
-/* 🟢 內部的實體小母艦 */
-.universal-nav-capsule {
+/* 🟢 內部的獨立雙圓按鈕排版 */
+.universal-nav-circles {
     position: absolute;
     inset: 0; /* 撐滿 95x44 的容器 */
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    display: flex;
+    justify-content: space-between; /* 魔法：左右撐開，完美卡在兩端 */
     align-items: center;
-    justify-items: stretch;
+}
+
+/* 🟢 獨立小圓按鈕 (將玻璃材質加回獨立按鈕身上) */
+.universal-nav-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%; /* 恢復正圓形 */
     
+    /* 玻璃擬態與陰影 */
     background: var(--search-bg);
     border: 1px solid var(--search-border);
     -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
-    border-radius: 22px; 
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    overflow: hidden; 
-}
-
-/* 小母艦內的按鈕區塊 */
-.universal-nav-btn {
-    width: 100%;
-    height: 100%;
-    background: transparent;
-    border: none;
+    
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--icon-color);
     cursor: pointer;
     padding: 0;
-    transition: background-color 0.2s ease, opacity 0.2s ease;
+    
+    /* 繼承原生按鈕的縮小微互動 */
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.15), box-shadow 0.4s ease, opacity 0.2s ease;
 }
 
 .universal-nav-btn:active {
-    background-color: rgba(0, 0, 0, 0.05); 
-    opacity: 0.6;
+    transform: scale(0.92); /* 點擊時縮小 */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* 左側返回按鈕 */
+/* 🟢 左側返回按鈕尺寸精準校正 */
 .universal-nav-btn:first-child svg {
     width: 26px !important;
     height: 26px !important;
@@ -398,7 +398,7 @@ body.universal-active .universal-nav-container {
     transform: translateX(-1px) !important; 
 }
 
-/* 右側關閉 X 按鈕 */
+/* 🟢 右側關閉 X 按鈕尺寸精準校正 */
 .universal-nav-btn:last-child svg {
     width: 22px !important;
     height: 22px !important;
@@ -415,27 +415,17 @@ body.universal-active .universal-nav-container {
     pointer-events: none !important;
 }
 
-/* 分隔線 */
-.universal-nav-capsule .capsule-divider {
-    width: 1px;
-    height: 16px;
-    background: var(--border-color);
-    opacity: 0.5;
-    margin: 0;
-    flex-shrink: 0; 
-}
-
-/* 深色模式同步外框發光效果 */
+/* 深色模式同步獨立按鈕發光效果 */
 @media (prefers-color-scheme: dark) {
     .universal-nav-matrix {
         box-shadow: 0 8px 30px rgba(220, 220, 230, 0.15) !important;
         border: 1px solid rgba(220, 220, 230, 0.15) !important;
     }
-    .universal-nav-capsule {
+    .universal-nav-btn {
         box-shadow: 0 4px 15px rgba(220, 220, 230, 0.12);
     }
     .universal-nav-btn:active {
-        background-color: rgba(255, 255, 255, 0.05);
+        box-shadow: 0 2px 8px rgba(220, 220, 230, 0.1);
     }
 }
 
