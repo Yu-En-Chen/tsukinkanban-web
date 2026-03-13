@@ -56,10 +56,10 @@ window.initDynamicMainMenu = function () {
     capsule.onclick = () => {
         // 你可以根據不同的 item.text 來設定不同的內容
         const content = `
-            <div style="opacity: 0.8; font-size: 0.95rem; padding-top: 10px;">
-                <p>這裡是「<b>${item.text}</b>」的專屬內容區塊。</p>
-                <p>這個區塊完全是由 JavaScript 動態生成的，減少了首頁載入時的 DOM 負擔。它完美繼承了 iOS 的滑動體驗與玻璃擬態質感。</p>
-            </div>
+            <div style="opacity: 0.8;">
+                    <p>這裡是「<b>${item.text}</b>」的專屬內容區塊。</p>
+                    <p>這個區塊完全是由 JavaScript 動態生成的...</p>
+                </div>
         `;
         window.openUniversalPage(item.text, content);
     };

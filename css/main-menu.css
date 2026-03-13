@@ -235,7 +235,8 @@ body.universal-active .universal-page-wrapper {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    /* 文字與標題間距 */
+    margin-bottom: -15px;
     padding: 0 4px;
 }
 
@@ -272,16 +273,31 @@ body.universal-active .universal-page-wrapper {
     stroke-width: 2.5px;
 }
 
-/* 5. 內容捲動區 (隱藏原生滾動條) */
+/* 內容捲動區 */
 .universal-page-content {
     flex: 1;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: none; 
     color: var(--text-main);
     line-height: 1.6;
-    padding: 0 4px 40px 4px;
+    padding: 0 0 30px 10px !important; 
+    
+    /* ✨ 加入這兩行來精準控制文字大小與粗細 */
+    font-size: 1.2rem !important; /* 🟢 1.4rem 就是你標題的預設大小 */
+    font-weight: 440 !important;  /* 🟢 400 是一般的正常細度 (如果想要「極細」，可以改成 300) */
+    
+    pointer-events: auto !important;
+    touch-action: pan-y !important; 
+    overscroll-behavior: contain !important; 
 }
+
+/* ✨ (選擇性) 確保裡面的所有段落都乖乖聽話 */
+.universal-page-content p {
+    font-size: inherit !important;
+    font-weight: inherit !important;
+}
+
 .universal-page-content::-webkit-scrollbar {
     display: none; /* Chrome/Safari */
 }
