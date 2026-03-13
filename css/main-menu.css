@@ -228,32 +228,7 @@ body.universal-active .universal-page-wrapper {
 /* =========================================
    🚀 通用頁面導航雙按鈕 (完美對齊右上膠囊)
    ========================================= */
-   .universal-nav-buttons {
-    position: absolute;
-    right: 0px;
-    top: 0px;
-    width: 95px; 
-    height: 44px; 
-    display: flex;
-    justify-content: space-between; 
-    
-    /* 🟢 確保層級絕對高於玻璃與母艦 */
-    z-index: 6005 !important; 
-    
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(-20px);
-    transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
 /* 🟢 加入 !important 確保展開時絕對顯示，不會被其他狀態吃掉 */
-
-body.universal-active .universal-nav-buttons {
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    transform: translateY(0) !important;
-    transition: opacity 0.4s ease 0.1s, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1) 0.1s !important;
-}
 
 .universal-page-header {
     display: flex;
@@ -330,4 +305,142 @@ body.universal-active #main-stack {
     pointer-events: auto !important;
     touch-action: pan-y !important; /* 確保 iOS 只允許垂直滑動 */
     overscroll-behavior: contain !important; /* 滾到底部時，不會拉扯到後面的網頁 */
+}
+
+/* =========================================
+   🚀 1. 通用頁面導航：右上角小母艦 (Capsule)
+   ========================================= */
+   .universal-nav-capsule {
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    width: 95px;  /* 精準對齊右上母艦寬度 */
+    height: 44px; /* 精準對齊右上母艦高度 */
+    display: flex;
+    align-items: center;
+    justify-content: space-between; 
+    
+    /* 🟢 完美繼承主母艦的玻璃與顏色 */
+    background: var(--search-bg);
+    border: 1px solid var(--search-border);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border-radius: 22px; /* 膠囊圓角 */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden; 
+    
+    z-index: 6005 !important; 
+    
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-20px);
+    transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+body.universal-active .universal-nav-capsule {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transform: translateY(0) !important;
+    transition: opacity 0.4s ease 0.1s, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1) 0.1s !important;
+}
+
+/* 小母艦內的按鈕區塊 */
+.universal-nav-btn {
+    flex: 1; /* 均分空間，各自佔據一半 */
+    height: 100%;
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--icon-color);
+    cursor: pointer;
+    padding: 0;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.universal-nav-btn:active {
+    background-color: rgba(0, 0, 0, 0.05); /* 點擊時微弱回饋 */
+    opacity: 0.6;
+}
+
+/* 🟢 徹底解決 SVG 消失與變形問題 (強制霸王條款) */
+.universal-nav-btn svg {
+    width: 21px !important;
+    height: 21px !important;
+    stroke: currentColor !important;
+    stroke-width: 1.8px !important;
+    fill: none !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    opacity: 0.8 !important;
+    pointer-events: none !important;
+}
+
+/* 沿用原本的膠囊分隔線 */
+.universal-nav-capsule .capsule-divider {
+    width: 1px;
+    height: 16px;
+    background: var(--border-color);
+    opacity: 0.5;
+    margin: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+    .universal-nav-capsule {
+        box-shadow: 0 4px 15px rgba(220, 220, 230, 0.12);
+    }
+    .universal-nav-btn:active {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+}
+
+/* =========================================
+   🚀 2. 文字排版修復：強制推離母艦區域
+   ========================================= */
+.universal-page-wrapper {
+    position: fixed !important;
+    /* 🟢 110px 完美避開頂部的雙排母艦區域 (44px + 51px) */
+    top: calc(env(safe-area-inset-top, 0px) + 110px) !important; 
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 24px) !important;
+    left: calc(env(safe-area-inset-left, 0px) + 30px) !important;
+    right: calc(env(safe-area-inset-right, 0px) + 30px) !important;
+    margin: 0 auto !important;
+    max-width: 420px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    z-index: 5001 !important; 
+    
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(30px);
+    transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+body.universal-active .universal-page-wrapper {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transform: translateY(0) !important;
+    transition: opacity 0.4s ease 0.1s, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1) 0.1s !important;
+}
+
+/* =========================================
+   🔋 3. 省電與防誤觸機制 (Scroll Isolation)
+   ========================================= */
+/* A. 攔截邊緣滑動：讓滿版玻璃吸收所有邊緣觸控，且禁止原生滑動，防止底層無意義的物理運算 */
+body.universal-active .search-container::after {
+    pointer-events: auto !important; 
+    touch-action: none !important; 
+}
+
+/* B. 徹底凍結卡片堆疊：關閉所有點擊與手勢，釋放 GPU 效能 */
+body.universal-active #main-stack {
+    pointer-events: none !important;
+}
+
+/* C. 只允許文字內容區塊可以上下滑動，並阻止滾動溢出 (Scroll Chaining) */
+.universal-page-content {
+    pointer-events: auto !important;
+    touch-action: pan-y !important; /* iOS 專屬：只允許垂直滑動 */
+    overscroll-behavior: contain !important; /* 滾到底部時，不會拉扯到背後的網頁 */
 }

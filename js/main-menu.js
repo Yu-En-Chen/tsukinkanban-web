@@ -132,17 +132,19 @@ window.openUniversalPage = function(title, contentHTML) {
         `;
         searchContainer.appendChild(wrapper);
 
-        // B. 🚀 全新導航雙按鈕 (精準對齊右上母艦位置)
+        /// B. 🚀 全新導航小母艦 (Capsule)
         navBtns = document.createElement('div');
         navBtns.id = 'universal-nav-buttons';
-        navBtns.className = 'universal-nav-buttons';
+        // 👉 將 class 改為小母艦專用 class
+        navBtns.className = 'universal-nav-capsule'; 
         navBtns.innerHTML = `
-            <button class="universal-nav-btn interactive-btn" onclick="window.backToMainMenu()">
+            <button class="universal-nav-btn" onclick="window.backToMainMenu()">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                     <path d="m15 18-6-6 6-6"/>
                 </svg>
             </button>
-            <button class="universal-nav-btn interactive-btn" onclick="window.closeUniversalPage()">
+            <div class="capsule-divider"></div>
+            <button class="universal-nav-btn" onclick="window.closeUniversalPage()">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
                 </svg>
