@@ -1,31 +1,22 @@
-// main-menu.js - 動態引擎與外掛攔截器 (全自動版)
+// main-menu.js - 終極傳送門渲染引擎
 
-// 🟢 1. 自動攔截右側膠囊的點擊事件 (完全不需要改 header.js!)
 const originalSecondaryClick = window.handleCapsuleSecondaryClick;
 window.handleCapsuleSecondaryClick = function () {
     const capsule = document.getElementById('action-capsule');
     const mode = capsule ? (capsule.dataset.mode || 'native') : 'native';
-    
-    if (mode === 'native') {
-        // 如果是主畫面，直接強制呼叫我們的頂級選單
-        window.toggleMainMenu();
-    } else if (originalSecondaryClick) {
-        // 如果是設定/資訊模式，就把控制權還給原本的函數 (維持雲端同步等功能)
-        originalSecondaryClick();
-    }
+    if (mode === 'native') window.toggleMainMenu();
+    else if (originalSecondaryClick) originalSecondaryClick();
 };
 
-// 🟢 2. 動態生成引擎 (Lazy Rendering)
 window.initDynamicMainMenu = function () {
     let container = document.getElementById('dynamic-main-menu');
-    if (container) return; // 已經建好就不重複建
+    if (container) return;
 
     container = document.createElement('div');
     container.id = 'dynamic-main-menu';
 
-    const searchContainer = document.getElementById('search-container');
-    if (!searchContainer) return;
-    searchContainer.appendChild(container);
+    // 🔴 關鍵改變：直接掛載到 body 最外層，逃脫所有容器裁切！
+    document.body.appendChild(container);
 
     const menuItems = [
         { icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>', text: '防護中心' },
@@ -38,9 +29,8 @@ window.initDynamicMainMenu = function () {
     menuItems.forEach((item, index) => {
         const capsule = document.createElement('div');
         capsule.className = 'main-menu-capsule interactive-btn';
-        // 寫入波浪延遲時間
-        capsule.style.setProperty('--stagger-in', `${index * 0.08}s`);
-        capsule.style.setProperty('--stagger-out', `${(4 - index) * 0.04}s`);
+        capsule.style.setProperty('--stagger-in', `${index * 0.06}s`);
+        capsule.style.setProperty('--stagger-out', `${(4 - index) * 0.03}s`);
 
         capsule.innerHTML = `
             <div class="capsule-content">
@@ -56,16 +46,13 @@ window.initDynamicMainMenu = function () {
     });
 };
 
-// 🟢 3. 完美時序主控引擎
 window.toggleMainMenu = function () {
     const isCurrentlyOpen = document.body.classList.contains('main-menu-active');
     const mask = document.getElementById('search-mask');
 
     if (!isCurrentlyOpen) {
-        window.initDynamicMainMenu(); // 確保 DOM 存在
-        
-        void document.body.offsetHeight; // 🪄 魔法：強制瀏覽器重繪，承認新節點
-        
+        window.initDynamicMainMenu(); 
+        void document.body.offsetHeight; // 強制重繪
         document.body.classList.add('main-menu-active');
 
         if (mask) {
@@ -77,11 +64,8 @@ window.toggleMainMenu = function () {
         document.body.classList.remove('main-menu-active');
         if (mask) {
             mask.onclick = null;
-            if (mask.dataset.originalOnclick) {
-                mask.setAttribute('onclick', mask.dataset.originalOnclick);
-            } else {
-                mask.setAttribute('onclick', 'toggleSearch(false)');
-            }
+            if (mask.dataset.originalOnclick) mask.setAttribute('onclick', mask.dataset.originalOnclick);
+            else mask.setAttribute('onclick', 'toggleSearch(false)');
         }
         if (window.navigator.vibrate) window.navigator.vibrate(5);
     }

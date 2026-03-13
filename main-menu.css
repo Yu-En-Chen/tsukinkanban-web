@@ -67,59 +67,60 @@ body.main-menu-active #app-stage #search-container::before {
 }
 
 /* ==========================================
-   4. 🎯 動態五連發膠囊 (延遲渲染引擎)
+   5. 🎯 動態五連發膠囊 (固定於 Body 最上層！)
    ========================================== */
-#dynamic-main-menu {
-    position: absolute;
-    top: 0;
-    /* ✨ 母艦原本是 95px，我們將膠囊往右推 95px，完美露出一半！ */
-    right: -95px; 
+   
+   #dynamic-main-menu {
+    /* 🔴 改用 fixed，鎖死在螢幕右上角，徹底無視任何 HTML 容器裁切 */
+    position: fixed;
+    /* 對齊原本母艦的高度 (加入 safe-area 適配 iPhone 瀏海) */
+    top: calc(max(12px, env(safe-area-inset-top)));
+    /* 故意往右推，讓它有一部分在螢幕外 */
+    right: -30px; 
+    
     display: flex;
     flex-direction: column;
-    gap: 7px; 
+    gap: 7px;
     pointer-events: none;
-    z-index: 5700;
+    z-index: 9999; /* 絕對最上層 */
 }
 
-#app-stage #search-container .main-menu-capsule {
-    width: 190px; /* 原始膠囊的兩倍長 */
-    height: 44px; /* 原始母艦高度 */
+.main-menu-capsule {
+    width: 180px;
+    height: 44px;
     background: var(--search-bg);
     border: 1px solid var(--search-border);
     border-radius: 22px;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     pointer-events: auto;
     
     display: flex;
     align-items: center;
-    padding-left: 18px;
+    padding-left: 20px;
     color: var(--text-main);
 
-    /* ✨ 頂級視覺：邊緣霧化魔法 (Mask Image) */
-    -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 35%, rgba(0,0,0,0) 65%);
-    mask-image: linear-gradient(to right, rgba(0,0,0,1) 35%, rgba(0,0,0,0) 65%);
+    /* ✨ 視覺魔法：讓膠囊從 70% 處開始漸漸消散，融入螢幕邊緣的迷霧感 */
+    -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);
+    mask-image: linear-gradient(to right, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);
 
-    /* 預設隱藏在更右側 */
-    transform: translate3d(150px, 0, 0) !important;
-    opacity: 0 !important;
+    /* 起點：藏在螢幕外 150px 處 */
+    transform: translate3d(150px, 0, 0);
+    opacity: 0;
     
-    /* 退場動畫 (讀取 JS 注入的 --stagger-out) */
     transition: transform 0.4s var(--apple-spring) var(--stagger-out, 0s),
-                opacity 0.3s ease var(--stagger-out, 0s) !important;
+                opacity 0.3s ease var(--stagger-out, 0s);
 }
 
-/* 展開時的波浪進場狀態 */
-body.main-menu-active #app-stage #search-container .main-menu-capsule {
-    transform: translate3d(0, 0, 0) !important;
-    opacity: 1 !important;
-    /* 進場動畫 (讀取 JS 注入的 --stagger-in 波浪延遲) */
+body.main-menu-active #dynamic-main-menu .main-menu-capsule {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
     transition: transform 0.65s var(--apple-spring) var(--stagger-in, 0s),
-                opacity 0.4s ease var(--stagger-in, 0s) !important;
+                opacity 0.4s ease var(--stagger-in, 0s);
 }
 
-/* ✨ 關鍵修復：補回被遺忘的 SVG 骨架設定，救回隱形的圖標！ */
+/* 確保 SVG 圖示能顯示出來 */
 .main-menu-capsule .capsule-icon {
     display: flex;
     align-items: center;
@@ -127,14 +128,14 @@ body.main-menu-active #app-stage #search-container .main-menu-capsule {
     margin-right: 12px;
 }
 .main-menu-capsule .capsule-icon svg {
-    width: 20px !important;
-    height: 20px !important;
-    fill: none !important;
-    stroke: currentColor !important;
-    stroke-width: 1.8px !important;
-    stroke-linecap: round !important;
-    stroke-linejoin: round !important;
-    opacity: 0.8 !important;
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.8;
 }
 
 .main-menu-capsule .capsule-text {
