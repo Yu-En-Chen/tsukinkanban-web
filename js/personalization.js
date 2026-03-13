@@ -1596,7 +1596,7 @@ window.handleCopyAction = function(e, type, element) {
                 void els.sharedStatus.offsetWidth; 
                 els.sharedStatus.style.transition = 'opacity 0.3s linear, transform 0.5s cubic-bezier(0.34, 1.6, 0.64, 1)';
             }
-            if (els.sharedText) els.sharedText.textContent = '已複製';
+            if (els.sharedText) els.sharedText.textContent = 'コピーしました';
 
             if (els.clip) els.clip.style.transform = 'translate3d(calc(-50% - 40px), -50%, 0)';
             if (els.check) els.check.style.transform = 'translate3d(-50%, -50%, 0)';
@@ -1699,7 +1699,7 @@ window.handlePasteAction = function(e, type, element) {
         if (resType === 'error') {
             handleResult(errorMsg, 'error');
         } else {
-            handleResult('已貼上', 'success', finalVal);
+            handleResult('ペーストしました', 'success', finalVal);
         }
     }).catch(err => {
         if (els.sharedStatus) {
