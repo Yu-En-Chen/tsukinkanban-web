@@ -481,15 +481,16 @@ export function initHeader(onSearchCallback, getActiveCardId) {
 
 // 🟢 鍵盤防護機制：偵測到切換 App、回桌面、或點開其他分頁時，強制關閉鍵盤
 document.addEventListener('visibilitychange', () => {
-    if (document.hidden && searchInput) {
-        searchInput.blur();
+    if (document.hidden) {
+        // 每次觸發時，重新去畫面上抓取元素，而不是使用未定義的全域變數
+        const input = document.getElementById('search-input');
+        if (input) input.blur();
     }
 });
 
 window.addEventListener('blur', () => {
-    if (searchInput) {
-        searchInput.blur();
-    }
+    const input = document.getElementById('search-input');
+    if (input) input.blur();
 });
 
 // 🟢 全新的主選單控制引擎 (完美時序修復版)
