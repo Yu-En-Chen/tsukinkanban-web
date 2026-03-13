@@ -1,4 +1,5 @@
 // main-menu.js - 獨立主選單的唯一控制中心
+import { menuContents } from '../data/menu-content.js';
 
 window.initDynamicMainMenu = function () {
     let container = document.getElementById('dynamic-main-menu');
@@ -54,13 +55,15 @@ window.initDynamicMainMenu = function () {
     `;
 
     capsule.onclick = () => {
-        // 你可以根據不同的 item.text 來設定不同的內容
-        const content = `
+        // 🟢 魔法在這裡：去外部檔案尋找對應 item.text 的內容。
+        // 如果外部檔案有寫，就用外部的；如果沒寫 (例如設定、分享等)，就用後面備用的預設文字！
+        const content = menuContents[item.text] || `
             <div style="opacity: 0.8;">
-                    <p>這裡是「<b>${item.text}</b>」的專屬內容區塊。</p>
-                    <p>這個區塊完全是由 JavaScript 動態生成的...</p>
-                </div>
+                <p>這裡是「<b>${item.text}</b>」的專屬內容區塊。</p>
+                <p>此區塊尚未在外部檔案中設定專屬內容。</p>
+            </div>
         `;
+        
         window.openUniversalPage(item.text, content);
     };
 
