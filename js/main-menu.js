@@ -52,7 +52,7 @@ window.initDynamicMainMenu = function () {
             <span class="capsule-text">${item.text}</span>
         </div>
     `;
-    
+
     capsule.onclick = () => {
         // 你可以根據不同的 item.text 來設定不同的內容
         const content = `
@@ -104,27 +104,51 @@ window.toggleMainMenu = function () {
 // 🟢 動態通用子頁面引擎 (Universal Page Engine)
 // ============================================================================
 
+// 🚀 新增：返回主選單的功能
+window.backToMainMenu = function() {
+    window.closeUniversalPage();
+    // 延遲一點點打開主選單，創造像 iOS 的「堆疊退回 (Stack Pop)」視覺感
+    setTimeout(() => {
+        window.toggleMainMenu();
+    }, 150);
+};
+
 window.openUniversalPage = function(title, contentHTML) {
     let wrapper = document.getElementById('universal-page-wrapper');
+    let navBtns = document.getElementById('universal-nav-buttons');
     const searchContainer = document.getElementById('search-container');
 
-    // 1. 如果 DOM 還沒建立過，就動態生成它 (Lazy Loading)
+    // 1. 如果 DOM 還沒建立過，就動態生成它
     if (!wrapper) {
+        // A. 內容區塊 (移除了原本醜醜的 close-btn)
         wrapper = document.createElement('div');
         wrapper.id = 'universal-page-wrapper';
         wrapper.className = 'universal-page-wrapper';
         wrapper.innerHTML = `
             <div class="universal-page-header">
                 <h2 id="universal-page-title"></h2>
-                <button class="universal-close-btn interactive-btn" onclick="window.closeUniversalPage()">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-                    </svg>
-                </button>
             </div>
             <div id="universal-page-content" class="universal-page-content"></div>
         `;
         searchContainer.appendChild(wrapper);
+
+        // B. 🚀 全新導航雙按鈕 (精準對齊右上母艦位置)
+        navBtns = document.createElement('div');
+        navBtns.id = 'universal-nav-buttons';
+        navBtns.className = 'universal-nav-buttons';
+        navBtns.innerHTML = `
+            <button class="universal-nav-btn interactive-btn" onclick="window.backToMainMenu()">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m15 18-6-6 6-6"/>
+                </svg>
+            </button>
+            <button class="universal-nav-btn interactive-btn" onclick="window.closeUniversalPage()">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                </svg>
+            </button>
+        `;
+        searchContainer.appendChild(navBtns);
     }
 
     // 2. 填入標題與內容
@@ -136,7 +160,7 @@ window.openUniversalPage = function(title, contentHTML) {
         window.toggleMainMenu();
     }
 
-    // 4. 強制瀏覽器重繪 (魔法指令)，確保等一下加 class 時 CSS 動畫會生效
+    // 4. 強制瀏覽器重繪
     void wrapper.offsetWidth;
 
     // 5. 加上狀態類別，觸發 CSS 展開玻璃與顯示內容
@@ -149,11 +173,13 @@ window.closeUniversalPage = function() {
     document.body.classList.remove('universal-active');
     if (window.navigator.vibrate) window.navigator.vibrate(5);
     
-    // (選擇性) 如果你想要極致的 DOM 管理，可以在動畫結束後把它刪掉：
-  setTimeout(() => {
-     const wrapper = document.getElementById('universal-page-wrapper');
-     if (wrapper && !document.body.classList.contains('universal-active')) {
-         wrapper.remove();
-     }
- }, 500);
+    // 關閉後徹底清理 DOM，保持 HTML 乾淨
+    setTimeout(() => {
+        const wrapper = document.getElementById('universal-page-wrapper');
+        const navBtns = document.getElementById('universal-nav-buttons');
+        if (wrapper && !document.body.classList.contains('universal-active')) {
+            wrapper.remove();
+            if (navBtns) navBtns.remove();
+        }
+    }, 500);
 };

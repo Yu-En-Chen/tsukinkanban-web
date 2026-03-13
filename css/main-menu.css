@@ -188,6 +188,11 @@ body.universal-active #left-menu-btn {
     pointer-events: none !important;
     transform: translateY(-20px) !important;
 }
+/* 🚀 突破盲點：讓左舷母艦 (含邊框與膠囊) 浮出玻璃水面！ */
+body.universal-active .left-matrix-bg,
+body.universal-active .left-capsule {
+    z-index: 5002 !important; 
+}
 
 /* 3. 通用內容容器的排版與進場動畫 */
 .universal-page-wrapper {
