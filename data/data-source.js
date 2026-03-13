@@ -1,10 +1,9 @@
 export const dataSourceContent = `
     <div style="opacity: 0.85;">
-        <p>本系統的即時交通數據與介面設計，皆來自或參考以下來源：</p>
+        <p>当サイトの交通データは、公共交通オープンデータ協議会（以下「ODPT」）より提供されています。</p>
+        <p><a href="https://www.odpt.org/" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline; font-weight: 500;">https://www.odpt.org/</a></p>
         <br>
-        <ul style="padding-left: 20px;">
-            <li style="margin-bottom: 10px;"><b>JR 東日本 API</b> - 提供即時列車位置與時刻表。</li>
-            <li style="margin-bottom: 10px;"><b>Tokyo Metro Open Data</b> - 提供地下鐵運行狀態。</li>
-        </ul>
+        <p>ODPTデータの配信および処理プロセスの詳細につきましては、以下の公式ページをご参照ください：</p>
+        <p><a href="https://www.odpt.org/overview/" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline; font-weight: 500;">https://www.odpt.org/overview/</a></p>
     </div>
 `;
