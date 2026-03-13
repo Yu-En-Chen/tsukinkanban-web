@@ -2008,15 +2008,15 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 .search-container::after {
     content: '';
     position: fixed;
-    top: max(env(safe-area-inset-top), 12px) !important;
-    bottom: max(env(safe-area-inset-bottom), 12px) !important;
-    height: auto !important;
+    top: calc(env(safe-area-inset-top, 0px)) !important;
+    bottom: auto !important;
+    height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px) !important;
+    height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px) !important;
     border-radius: 36px !important;
 
     /* 🟢 手機版專屬魔法：依靠 left 和 right 撐開寬度，完美貼齊邊緣 12px */
-    left: max(env(safe-area-inset-left), 12px) !important;
-    right: max(env(safe-area-inset-right), 12px) !important;
-    width: auto !important;
+    left: calc(env(safe-area-inset-left, 0px) + 12px) !important;
+    right: calc(env(safe-area-inset-right, 0px) + 12px) !important;width: auto !important;
     max-width: none !important;
     margin: 0 !important;
 
