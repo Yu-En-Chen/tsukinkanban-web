@@ -2451,3 +2451,44 @@ body:has(.universal-window.is-active) .left-capsule {
    .search-container.active .cancel-circle-btn {
        z-index: 6000 !important;
    }
+
+/* ==========================================================================
+   🟢 搜尋框展開動畫重構 (優雅滑出風格)
+   ========================================================================== */
+
+/* 1. 覆寫隱藏與退場狀態：不再縮小成一坨 (scale: 0.5)，而是藏在右側等待滑出 */
+.search-input-box,
+.search-container:not(.active) .cancel-circle-btn {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    /* 取代原本的 scale(0.5)，改為水平右推 60px */
+    transform: translate3d(60px, 0, 0) !important;
+    /* 關閉時的退場：優雅地滑回右邊消失 */
+    transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+/* 2. 定義全新的風格滑入動畫 */
+@keyframes elegantSlideIn {
+    0% {
+        /* 起點從右邊 100px 開始 */
+        transform: translate3d(100px, 0, 0);
+        opacity: 0;
+    }
+    100% {
+        transform: translate3d(0, 0, 0);
+        opacity: 1;
+    }
+}
+
+/* 3. 展開時，取代原本醜陋的 popInBounce，改用專屬滑出 */
+.search-container.active .search-input-box {
+    pointer-events: auto !important;
+    /* 套用彈簧曲線 0.6 秒，讀取原本設定好的延遲 var(--delay-in) */
+    animation: elegantSlideIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards var(--delay-in) !important;
+}
+
+.search-container.active .cancel-circle-btn {
+    pointer-events: auto !important;
+    /* ✨ 頂級細節：讓「取消按鈕」比搜尋框還要再晚 0.04 秒出來，製造極度細緻的波浪跟隨感 (Stagger effect) */
+    animation: elegantSlideIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards calc(var(--delay-in) + 0.04s) !important;
+}
