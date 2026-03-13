@@ -1,17 +1,13 @@
-// main-menu.js - 純淨版 DOM 渲染引擎 (含雷達追蹤)
+// main-menu.js - 獨立主選單的唯一控制中心
 
 window.initDynamicMainMenu = function () {
     let container = document.getElementById('dynamic-main-menu');
-    if (container) {
-        console.log('✅ 主選單容器已存在，跳過重複生成');
-        return;
-    }
+    if (container) return; // 防呆：已存在就不重複建立
 
-    console.log('🚀 開始生成獨立主選單物件...');
     container = document.createElement('div');
     container.id = 'dynamic-main-menu';
     
-    // 傳送門：直接掛載到最外層 Body，絕對不受母艦容器限制
+    // 掛載到最外層，逃脫裁切限制
     document.body.appendChild(container);
 
     const menuItems = [
@@ -25,8 +21,8 @@ window.initDynamicMainMenu = function () {
     menuItems.forEach((item, index) => {
         const capsule = document.createElement('div');
         capsule.className = 'main-menu-capsule'; 
-        capsule.style.setProperty('--stagger-in', `${index * 0.07}s`);
-        capsule.style.setProperty('--stagger-out', `${(4 - index) * 0.04}s`);
+        capsule.style.setProperty('--stagger-in', `${index * 0.06}s`);
+        capsule.style.setProperty('--stagger-out', `${(4 - index) * 0.03}s`);
 
         capsule.innerHTML = `
             <div class="capsule-content">
@@ -40,6 +36,36 @@ window.initDynamicMainMenu = function () {
         `;
         container.appendChild(capsule);
     });
-    
-    console.log('✅ 獨立物件生成完畢，已成功附著於 body');
+};
+
+// 🎯 這是全域唯一的 toggleMainMenu 函數！
+window.toggleMainMenu = function () {
+    const isCurrentlyOpen = document.body.classList.contains('main-menu-active');
+    const mask = document.getElementById('search-mask');
+
+    if (!isCurrentlyOpen) {
+        // 1. 生成 DOM
+        window.initDynamicMainMenu();
+        
+        // 2. 魔法重繪：讓瀏覽器承認新 DOM 的隱藏狀態
+        void document.body.offsetHeight; 
+        
+        // 3. 加上標籤，觸發 CSS 彈簧波浪進場
+        document.body.classList.add('main-menu-active');
+
+        if (mask) {
+            mask.dataset.originalOnclick = mask.getAttribute('onclick');
+            mask.onclick = () => window.toggleMainMenu();
+        }
+        if (window.navigator.vibrate) window.navigator.vibrate(10);
+        
+    } else {
+        document.body.classList.remove('main-menu-active');
+        if (mask) {
+            mask.onclick = null;
+            if (mask.dataset.originalOnclick) mask.setAttribute('onclick', mask.dataset.originalOnclick);
+            else mask.setAttribute('onclick', 'toggleSearch(false)');
+        }
+        if (window.navigator.vibrate) window.navigator.vibrate(5);
+    }
 };

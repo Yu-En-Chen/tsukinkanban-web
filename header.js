@@ -331,34 +331,6 @@ export function initHeader(onSearchCallback, getActiveCardId) {
     };
 
     // 🟢 全新的主選單控制引擎 (防彈版)
-    window.toggleMainMenu = function () {
-        const isMenuOpen = document.body.classList.toggle('main-menu-active');
-        const mask = document.getElementById('search-mask');
-
-        if (isMenuOpen) {
-            // 開啟時：攔截遮罩的點擊事件，讓使用者點擊空白處可以關閉主選單
-            if (mask) {
-                // 先把原本搜尋框的 onclick 存起來
-                mask.dataset.originalOnclick = mask.getAttribute('onclick');
-                mask.onclick = () => window.toggleMainMenu();
-            }
-            if (window.navigator.vibrate) window.navigator.vibrate(10); // 加上高級的震動回饋
-            console.log('🚀 主選單展開：右舷母艦退避，Z 軸景深啟動！');
-            
-        } else {
-            // 關閉時：把遮罩的點擊事件還給搜尋框
-            if (mask) {
-                mask.onclick = null;
-                if (mask.dataset.originalOnclick) {
-                    mask.setAttribute('onclick', mask.dataset.originalOnclick);
-                } else {
-                    mask.setAttribute('onclick', 'toggleSearch(false)');
-                }
-            }
-            if (window.navigator.vibrate) window.navigator.vibrate(5);
-            console.log('🛸 主選單關閉：艦隊歸位');
-        }
-    };
 
     window.toggleSearch = function (show) {
         const dismissIcon = document.getElementById('dismiss-icon');
@@ -492,43 +464,3 @@ window.addEventListener('blur', () => {
     const input = document.getElementById('search-input');
     if (input) input.blur();
 });
-
-// 🟢 全新的主選單控制引擎 (完美時序修復版)
-window.toggleMainMenu = function () {
-    const isCurrentlyOpen = document.body.classList.contains('main-menu-active');
-    const mask = document.getElementById('search-mask');
-
-    if (!isCurrentlyOpen) {
-        // 1. 生成五顆膠囊 DOM (延遲渲染)
-        if (typeof window.initDynamicMainMenu === 'function') {
-            window.initDynamicMainMenu();
-        }
-
-        // 2. ✨ 核心魔法：強制重繪 (Force Reflow)
-        // 這行絕對不能省！它逼迫瀏覽器承認剛生成的隱形 DOM，保證下一秒的進場動畫絕對觸發！
-        void document.body.offsetHeight;
-
-        // 3. 正式展開：觸發波浪動畫
-        document.body.classList.add('main-menu-active');
-
-        if (mask) {
-            mask.dataset.originalOnclick = mask.getAttribute('onclick');
-            mask.onclick = () => window.toggleMainMenu();
-        }
-        if (window.navigator.vibrate) window.navigator.vibrate(10);
-        
-    } else {
-        // 關閉選單：退場動畫會自動依照 --stagger-out 延遲收回
-        document.body.classList.remove('main-menu-active');
-        
-        if (mask) {
-            mask.onclick = null;
-            if (mask.dataset.originalOnclick) {
-                mask.setAttribute('onclick', mask.dataset.originalOnclick);
-            } else {
-                mask.setAttribute('onclick', 'toggleSearch(false)');
-            }
-        }
-        if (window.navigator.vibrate) window.navigator.vibrate(5);
-    }
-};
