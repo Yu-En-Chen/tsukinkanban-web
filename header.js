@@ -495,6 +495,8 @@ window.addEventListener('blur', () => {
 // 🟢 全新的主選單控制引擎
 window.toggleMainMenu = function () {
     // 切換 Body 的狀態標籤，CSS 就會自動接管物理動畫
+    if (typeof window.initDynamicMainMenu === 'function') window.initDynamicMainMenu();
+    
     const isMenuOpen = document.body.classList.toggle('main-menu-active');
 
     // 同時綁定遮罩的點擊關閉事件 (防呆機制)

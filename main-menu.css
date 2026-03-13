@@ -65,3 +65,83 @@ body.main-menu-active #app-stage .search-container::before {
     pointer-events: none !important;
     transition: transform 0.5s var(--apple-spring), opacity 0.4s ease !important;
 }
+
+/* ==========================================
+   5. 🎯 動態生成的五連發膠囊 (Dynamic Main Menu)
+   ========================================== */
+
+   #dynamic-main-menu {
+    position: absolute;
+    top: 0;
+    /* ✨ 母艦原本是 95px，我們將這組長度 190px 的膠囊往右推 95px */
+    /* 這樣它就會有剛好一半 (95px) 在畫面內，一半在螢幕外！ */
+    right: -95px;
+    
+    display: flex;
+    flex-direction: column;
+    gap: 7px; /* 完美複製母艦內部的上下 7px 縫隙 */
+    pointer-events: none; /* 容器本身不干擾點擊 */
+    z-index: 5700;
+}
+
+.main-menu-capsule {
+    width: 190px; /* 原本膠囊的兩倍長 (95 * 2) */
+    height: 44px; /* 原始母艦高度 */
+    background: var(--search-bg);
+    border: 1px solid var(--search-border);
+    border-radius: 22px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    pointer-events: auto;
+    
+    /* 內容排版 */
+    display: flex;
+    align-items: center;
+    padding-left: 20px;
+    color: var(--text-main);
+
+    /* ✨ 邊緣霧化魔法 (Mask Image) */
+    /* 螢幕的邊界剛好落在 50% 的位置。
+       我們設定在 35% 之前是實體 (黑色)，到 65% 時變成全透明。
+       這會創造出膠囊「無縫消失在手機邊框迷霧中」的頂級視覺效果！ */
+    -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 35%, rgba(0,0,0,0) 65%);
+    mask-image: linear-gradient(to right, rgba(0,0,0,1) 35%, rgba(0,0,0,0) 65%);
+
+    /* 動畫起點：藏在更右邊 */
+    transform: translate3d(150px, 0, 0);
+    opacity: 0;
+    
+    /* 退場動畫 (關閉時：讀取 JS 注入的 --stagger-out) */
+    transition: transform 0.4s var(--apple-spring) var(--stagger-out, 0s),
+                opacity 0.3s ease var(--stagger-out, 0s);
+}
+
+/* 展開時的波浪進場狀態 */
+body.main-menu-active #dynamic-main-menu .main-menu-capsule {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+    /* 進場動畫 (開啟時：讀取 JS 注入的 --stagger-in 波浪延遲) */
+    transition: transform 0.65s var(--apple-spring) var(--stagger-in, 0s),
+                opacity 0.4s ease var(--stagger-in, 0s);
+}
+
+/* 膠囊內部細節微調 */
+.main-menu-capsule .capsule-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.main-menu-capsule .capsule-icon svg {
+    width: 20px;
+    height: 20px;
+    opacity: 0.8;
+}
+
+.main-menu-capsule .capsule-text {
+    font-size: 15px;
+    font-weight: 600;
+    opacity: 0.9;
+    letter-spacing: 0.5px;
+}
