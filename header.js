@@ -498,16 +498,16 @@ window.toggleMainMenu = function () {
     const mask = document.getElementById('search-mask');
 
     if (!isCurrentlyOpen) {
-        // 1. 確保 DOM 動態引擎已生成五顆膠囊 (Lazy Rendering)
+        // 1. 生成五顆膠囊 DOM (延遲渲染)
         if (typeof window.initDynamicMainMenu === 'function') {
             window.initDynamicMainMenu();
         }
 
         // 2. ✨ 核心魔法：強制重繪 (Force Reflow)
-        // 這會逼迫瀏覽器承認剛剛塞入的 DOM，並記錄它們的初始隱藏狀態，保證進場動畫絕對觸發！
+        // 這行絕對不能省！它逼迫瀏覽器承認剛生成的隱形 DOM，保證下一秒的進場動畫絕對觸發！
         void document.body.offsetHeight;
 
-        // 3. 正式加上 active 標籤，觸發 CSS 波浪進場動畫
+        // 3. 正式展開：觸發波浪動畫
         document.body.classList.add('main-menu-active');
 
         if (mask) {
@@ -515,7 +515,7 @@ window.toggleMainMenu = function () {
             mask.onclick = () => window.toggleMainMenu();
         }
         if (window.navigator.vibrate) window.navigator.vibrate(10);
-        console.log('🚀 主選單展開：Z 軸景深啟動，五連發膠囊進場！');
+        
     } else {
         // 關閉選單：退場動畫會自動依照 --stagger-out 延遲收回
         document.body.classList.remove('main-menu-active');
@@ -529,6 +529,5 @@ window.toggleMainMenu = function () {
             }
         }
         if (window.navigator.vibrate) window.navigator.vibrate(5);
-        console.log('🛸 主選單關閉：艦隊歸位');
     }
 };

@@ -1,5 +1,12 @@
 /* main-menu.css - 主選單專屬 UI 與動畫引擎 (終極破防版) */
 
+/* 🔴 關鍵修復：解除 HTML 預設的裁切 (overflow: hidden) 限制 */
+/* 如果沒有這段，推到畫面邊緣外的膠囊會直接變隱形！ */
+body.main-menu-active #app-stage #search-container {
+    overflow: visible !important;
+    clip-path: none !important;
+}
+
 /* ==========================================
    1. 左舷母艦：雙重 ID 絕對壓制原地彈跳
    ========================================== */
@@ -34,9 +41,6 @@ body.main-menu-active #app-stage .card-stack {
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-/* ==========================================
-   3. 喚醒全螢幕背景遮罩
-   ========================================== */
 body.main-menu-active .search-mask {
     opacity: 1 !important;
     visibility: visible !important;
@@ -44,7 +48,7 @@ body.main-menu-active .search-mask {
 }
 
 /* ==========================================
-   4. 🎯 右舷母艦：雙重 ID 壓制撤退 (包含通知按鈕)
+   3. 🎯 右舷母艦：雙重 ID 壓制撤退 (包含通知按鈕與底板)
    ========================================== */
 body.main-menu-active #app-stage #search-container .action-capsule,
 body.main-menu-active #app-stage #search-container .search-trigger,
@@ -63,7 +67,7 @@ body.main-menu-active #app-stage #search-container::before {
 }
 
 /* ==========================================
-   5. 🎯 動態五連發膠囊 (延遲渲染引擎)
+   4. 🎯 動態五連發膠囊 (延遲渲染引擎)
    ========================================== */
 #dynamic-main-menu {
     position: absolute;
@@ -72,7 +76,7 @@ body.main-menu-active #app-stage #search-container::before {
     right: -95px; 
     display: flex;
     flex-direction: column;
-    gap: 7px; /* 完美複製右側母艦內部的上下 7px 縫隙 */
+    gap: 7px; 
     pointer-events: none;
     z-index: 5700;
 }
@@ -94,7 +98,6 @@ body.main-menu-active #app-stage #search-container::before {
     color: var(--text-main);
 
     /* ✨ 頂級視覺：邊緣霧化魔法 (Mask Image) */
-    /* 螢幕邊界剛好在 50%，設定 35% 開始消散到 65% 透明，創造融化在邊界的高級感 */
     -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 35%, rgba(0,0,0,0) 65%);
     mask-image: linear-gradient(to right, rgba(0,0,0,1) 35%, rgba(0,0,0,0) 65%);
 
