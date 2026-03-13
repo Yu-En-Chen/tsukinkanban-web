@@ -67,17 +67,24 @@ body.main-menu-active #app-stage #search-container::before {
 }
 
 /* ==========================================
-   5. 🎯 動態五連發膠囊 (極致細膩 Native 互動版)
+   5. 🎯 動態五連發膠囊 (RWD 牌組邊界鎖定版)
    ========================================== */
 
    #dynamic-main-menu {
     --menu-width: 170px;      
-    --menu-right-gap: 15px;   
+    
+    /* 🎯 現在這個距離，是相對於「母艦卡片牌組的右邊緣」！ */
+    /* (0px = 完美貼齊右邊緣，15px = 往牌組內縮，-15px = 往牌組外凸) */
+    --menu-right-offset: 0px;   
+    
     --menu-top-pos: 22px;     
     
     position: fixed;
     top: calc(env(safe-area-inset-top) + var(--menu-top-pos));
-    right: var(--menu-right-gap); 
+    
+    /* 🚀 終極 RWD 邊界計算魔法：永遠鎖死母艦右側！ */
+    /* 公式詳解：畫面正中央 (50%) - 卡片實際寬度的一半 (min(94vw, 420px) / 2) + 你想要的偏移量 */
+    right: calc(50% - (min(94vw, 420px) / 2) + var(--menu-right-offset)); 
     
     display: flex;
     flex-direction: column;
