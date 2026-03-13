@@ -121,14 +121,6 @@ window.openUniversalPage = function(title, contentHTML) {
     let navBtns = document.getElementById('universal-nav-buttons');
     const searchContainer = document.getElementById('search-container');
 
-    // ✨ 核心邏輯：判斷是否為需要「高不透明度玻璃」的特定頁面
-    const solidTitles = ['利用規約', 'データ元', 'アバウト'];
-    if (solidTitles.includes(title)) {
-        document.body.classList.add('solid-glass-active'); // 加上專屬黑玻璃/白玻璃狀態
-    } else {
-        document.body.classList.remove('solid-glass-active');
-    }
-
     // 1. 如果 DOM 還沒建立過，就動態生成它
     if (!wrapper) {
         // A. 內容區塊 (移除了原本醜醜的 close-btn)
@@ -186,9 +178,6 @@ window.openUniversalPage = function(title, contentHTML) {
 
 window.closeUniversalPage = function() {
     document.body.classList.remove('universal-active');
-    
-    // ✨ 關閉時同步移除實心玻璃狀態
-    document.body.classList.remove('solid-glass-active');
 
     if (window.navigator.vibrate) window.navigator.vibrate(5);
     
