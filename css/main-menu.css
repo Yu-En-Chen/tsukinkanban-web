@@ -197,7 +197,7 @@ body.universal-active .left-capsule {
 /* 3. 通用內容容器的排版與進場動畫 */
 .universal-page-wrapper {
     position: fixed;
-    top: calc(env(safe-area-inset-top, 0px) + 85px); /* 完美避開左側母艦 */
+    top: calc(env(safe-area-inset-top, 0px) + 110px); /* 完美避開左側母艦 */
     bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
     left: calc(env(safe-area-inset-left, 0px) + 24px);
     right: calc(env(safe-area-inset-right, 0px) + 24px);
@@ -224,6 +224,37 @@ body.universal-active .universal-page-wrapper {
 }
 
 /* 4. 頂部標題與專屬關閉按鈕 */
+
+/* =========================================
+   🚀 通用頁面導航雙按鈕 (完美對齊右上膠囊)
+   ========================================= */
+   .universal-nav-buttons {
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    width: 95px; 
+    height: 44px; 
+    display: flex;
+    justify-content: space-between; 
+    
+    /* 🟢 確保層級絕對高於玻璃與母艦 */
+    z-index: 6005 !important; 
+    
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-20px);
+    transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 🟢 加入 !important 確保展開時絕對顯示，不會被其他狀態吃掉 */
+
+body.universal-active .universal-nav-buttons {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transform: translateY(0) !important;
+    transition: opacity 0.4s ease 0.1s, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1) 0.1s !important;
+}
+
 .universal-page-header {
     display: flex;
     justify-content: space-between;
@@ -277,4 +308,26 @@ body.universal-active .universal-page-wrapper {
 }
 .universal-page-content::-webkit-scrollbar {
     display: none; /* Chrome/Safari */
+}
+
+/* =========================================
+   🔋 通用頁面省電與防誤觸鎖定 (Scroll Isolation)
+   ========================================= */
+
+/* A. 攔截邊緣滑動：讓玻璃背景吸收所有觸控，且禁止原生滑動 */
+body.universal-active .search-container::after {
+    pointer-events: auto !important; 
+    touch-action: none !important; 
+}
+
+/* B. 徹底凍結卡片堆疊：關閉所有點擊與手勢，釋放 GPU 效能 */
+body.universal-active #main-stack {
+    pointer-events: none !important;
+}
+
+/* C. 只允許文字內容區塊可以上下滑動，並阻止滾動溢出 (Scroll Chaining) */
+.universal-page-content {
+    pointer-events: auto !important;
+    touch-action: pan-y !important; /* 確保 iOS 只允許垂直滑動 */
+    overscroll-behavior: contain !important; /* 滾到底部時，不會拉扯到後面的網頁 */
 }
