@@ -452,6 +452,24 @@ body.universal-active .universal-nav-container {
     transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+/* =========================================
+   🪟 3. 實心玻璃模式 (專屬高不透明度遮罩)
+   ========================================= */
+/* ☀️ 淺色模式：變成高不透明度的珍珠白玻璃 */
+body.solid-glass-active .search-container::after {
+    background: rgba(245, 245, 247, 0.85) !important; /* 濃度高達 85% */
+    -webkit-backdrop-filter: blur(35px) !important; /* 加強模糊度 */
+    backdrop-filter: blur(35px) !important;
+    transition: background 0.4s ease, backdrop-filter 0.4s ease !important;
+}
+
+/* 🌙 深色模式：變成高不透明度的深鈦灰玻璃 */
+@media (prefers-color-scheme: dark) {
+    body.solid-glass-active .search-container::after {
+        background: rgba(28, 28, 30, 0.85) !important; /* 濃度高達 85% 的深灰 */
+    }
+}
+
 body.universal-active .universal-page-wrapper {
     opacity: 1 !important;
     pointer-events: auto !important;
