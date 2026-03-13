@@ -1,10 +1,10 @@
-/* main-menu.css - 主選單專屬 UI 與動畫引擎 */
+/* main-menu.css - 主選單專屬 UI 與動畫引擎 (最高權重破防版) */
 
 /* 1. 卡片堆與左舷母艦的 Z 軸景深魔法 */
-body.main-menu-active .card-stack,
-body.main-menu-active .left-matrix-bg,
-body.main-menu-active .left-capsule,
-body.main-menu-active .left-circle-btn {
+body.main-menu-active #app-stage .card-stack,
+body.main-menu-active #app-stage .left-matrix-bg,
+body.main-menu-active #app-stage .left-capsule,
+body.main-menu-active #app-stage .left-circle-btn {
     transform: scale(0.90) translateY(15px) !important;
     pointer-events: none !important;
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
@@ -17,9 +17,18 @@ body.main-menu-active .search-mask {
     transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s 0s !important;
 }
 
-/* 4. 🎯 右舷母艦的「透明底板」也必須跟著往右滑出！ */
-/* 因為底板原本有 translate(50%, -50%) 的置中設定，必須疊加上去 */
-body.main-menu-active .search-container::before {
+/* 3. 🎯 核心：右舷母艦 (搜尋按鈕、膠囊) 往右滑出隱藏 */
+/* 加入 #app-stage 與 .search-container 徹底碾壓鎖死系統的權重 */
+body.main-menu-active #app-stage .search-container .action-capsule,
+body.main-menu-active #app-stage .search-container .search-trigger {
+    transform: translate3d(150px, 0, 0) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: transform 0.5s var(--apple-spring), opacity 0.4s ease !important;
+}
+
+/* 4. 🎯 右舷母艦的「透明底板」連動滑出 */
+body.main-menu-active #app-stage .search-container::before {
     transform: translate(calc(50% + 150px), -50%) !important;
     opacity: 0 !important;
     pointer-events: none !important;
