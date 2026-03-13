@@ -1,28 +1,26 @@
-/* main-menu.css - 主選單專屬 UI 與動畫引擎 (完美座標鎖死版) */
+/* main-menu.css - 主選單專屬 UI 與動畫引擎 (終極破防版) */
 
 /* ==========================================
-   1. 左舷母艦：原地彈跳與鎖死 (完美修復跑版)
+   1. 左舷母艦：雙重 ID 絕對壓制原地彈跳
    ========================================== */
-/* 專門給膠囊的原地彈跳動畫 */
-@keyframes leftCapsuleBounce {
+   @keyframes leftCapsuleBounce {
     0% { transform: scale(1); }
-    40% { transform: scale(1.05); }
+    50% { transform: scale(1.06); }
     100% { transform: scale(1); }
 }
 
-/* 🎯 專門給底板的動畫：絕對保留 -50% 的置中偏移量，保證不跑版！ */
 @keyframes leftMatrixBounce {
     0% { transform: translate(-50%, -50%) scale(1); }
-    40% { transform: translate(-50%, -50%) scale(1.05); }
+    50% { transform: translate(-50%, -50%) scale(1.06); }
     100% { transform: translate(-50%, -50%) scale(1); }
 }
 
-body.main-menu-active #app-stage .left-capsule {
+body.main-menu-active #app-stage #search-container .left-capsule {
     animation: leftCapsuleBounce 0.5s var(--apple-spring) forwards !important;
     pointer-events: none !important;
 }
 
-body.main-menu-active #app-stage .left-matrix-bg {
+body.main-menu-active #app-stage #search-container .left-matrix-bg {
     animation: leftMatrixBounce 0.5s var(--apple-spring) forwards !important;
     pointer-events: none !important;
 }
@@ -46,20 +44,18 @@ body.main-menu-active .search-mask {
 }
 
 /* ==========================================
-   4. 🎯 右舷母艦：【全員】同步往右滑出隱藏！
+   4. 🎯 右舷母艦：雙重 ID 壓制撤退 (包含通知按鈕)
    ========================================== */
-/* 將 .left-circle-btn (實際在右下角的通知按鈕) 加入右側撤退艦隊！ */
-body.main-menu-active #app-stage .search-container .action-capsule,
-body.main-menu-active #app-stage .search-container .search-trigger,
-body.main-menu-active #app-stage .search-container .left-circle-btn {
+body.main-menu-active #app-stage #search-container .action-capsule,
+body.main-menu-active #app-stage #search-container .search-trigger,
+body.main-menu-active #app-stage #search-container .left-circle-btn {
     transform: translate3d(150px, 0, 0) !important;
     opacity: 0 !important;
     pointer-events: none !important;
     transition: transform 0.5s var(--apple-spring), opacity 0.4s ease !important;
 }
 
-/* 🎯 右舷母艦的「透明底板」連動滑出 (保留 50% 圓心偏移) */
-body.main-menu-active #app-stage .search-container::before {
+body.main-menu-active #app-stage #search-container::before {
     transform: translate(calc(50% + 150px), -50%) !important;
     opacity: 0 !important;
     pointer-events: none !important;
@@ -67,25 +63,22 @@ body.main-menu-active #app-stage .search-container::before {
 }
 
 /* ==========================================
-   5. 🎯 動態生成的五連發膠囊 (Dynamic Main Menu)
+   5. 🎯 動態五連發膠囊 (延遲渲染引擎)
    ========================================== */
-
-   #dynamic-main-menu {
+#dynamic-main-menu {
     position: absolute;
     top: 0;
-    /* ✨ 母艦原本是 95px，我們將這組長度 190px 的膠囊往右推 95px */
-    /* 這樣它就會有剛好一半 (95px) 在畫面內，一半在螢幕外！ */
-    right: -95px;
-    
+    /* ✨ 母艦原本是 95px，我們將膠囊往右推 95px，完美露出一半！ */
+    right: -95px; 
     display: flex;
     flex-direction: column;
-    gap: 7px; /* 完美複製母艦內部的上下 7px 縫隙 */
-    pointer-events: none; /* 容器本身不干擾點擊 */
+    gap: 7px; /* 完美複製右側母艦內部的上下 7px 縫隙 */
+    pointer-events: none;
     z-index: 5700;
 }
 
-.main-menu-capsule {
-    width: 190px; /* 原本膠囊的兩倍長 (95 * 2) */
+#app-stage #search-container .main-menu-capsule {
+    width: 190px; /* 原始膠囊的兩倍長 */
     height: 44px; /* 原始母艦高度 */
     background: var(--search-bg);
     border: 1px solid var(--search-border);
@@ -95,48 +88,50 @@ body.main-menu-active #app-stage .search-container::before {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     pointer-events: auto;
     
-    /* 內容排版 */
     display: flex;
     align-items: center;
-    padding-left: 20px;
+    padding-left: 18px;
     color: var(--text-main);
 
-    /* ✨ 邊緣霧化魔法 (Mask Image) */
-    /* 螢幕的邊界剛好落在 50% 的位置。
-       我們設定在 35% 之前是實體 (黑色)，到 65% 時變成全透明。
-       這會創造出膠囊「無縫消失在手機邊框迷霧中」的頂級視覺效果！ */
+    /* ✨ 頂級視覺：邊緣霧化魔法 (Mask Image) */
+    /* 螢幕邊界剛好在 50%，設定 35% 開始消散到 65% 透明，創造融化在邊界的高級感 */
     -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 35%, rgba(0,0,0,0) 65%);
     mask-image: linear-gradient(to right, rgba(0,0,0,1) 35%, rgba(0,0,0,0) 65%);
 
-    /* 動畫起點：藏在更右邊 */
-    transform: translate3d(150px, 0, 0);
-    opacity: 0;
+    /* 預設隱藏在更右側 */
+    transform: translate3d(150px, 0, 0) !important;
+    opacity: 0 !important;
     
-    /* 退場動畫 (關閉時：讀取 JS 注入的 --stagger-out) */
+    /* 退場動畫 (讀取 JS 注入的 --stagger-out) */
     transition: transform 0.4s var(--apple-spring) var(--stagger-out, 0s),
-                opacity 0.3s ease var(--stagger-out, 0s);
+                opacity 0.3s ease var(--stagger-out, 0s) !important;
 }
 
 /* 展開時的波浪進場狀態 */
-body.main-menu-active #dynamic-main-menu .main-menu-capsule {
-    transform: translate3d(0, 0, 0);
-    opacity: 1;
-    /* 進場動畫 (開啟時：讀取 JS 注入的 --stagger-in 波浪延遲) */
+body.main-menu-active #app-stage #search-container .main-menu-capsule {
+    transform: translate3d(0, 0, 0) !important;
+    opacity: 1 !important;
+    /* 進場動畫 (讀取 JS 注入的 --stagger-in 波浪延遲) */
     transition: transform 0.65s var(--apple-spring) var(--stagger-in, 0s),
-                opacity 0.4s ease var(--stagger-in, 0s);
+                opacity 0.4s ease var(--stagger-in, 0s) !important;
 }
 
-/* 膠囊內部細節微調 */
-.main-menu-capsule .capsule-content {
+/* ✨ 關鍵修復：補回被遺忘的 SVG 骨架設定，救回隱形的圖標！ */
+.main-menu-capsule .capsule-icon {
     display: flex;
     align-items: center;
-    gap: 12px;
+    justify-content: center;
+    margin-right: 12px;
 }
-
 .main-menu-capsule .capsule-icon svg {
-    width: 20px;
-    height: 20px;
-    opacity: 0.8;
+    width: 20px !important;
+    height: 20px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.8px !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    opacity: 0.8 !important;
 }
 
 .main-menu-capsule .capsule-text {
