@@ -195,46 +195,33 @@ body.universal-active .left-capsule {
     z-index: 5002 !important; 
 }
 
-/* =========================================
-   🚀 2. 文字排版修復：實心大母艦 (Text Mothership)
-   ========================================= */
-   .universal-page-wrapper {
-    position: fixed !important;
+/* 3. 通用內容容器的排版與進場動畫 */
+.universal-page-wrapper {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 110px); /* 完美避開左側母艦 */
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+    left: calc(env(safe-area-inset-left, 0px) + 30px);
+    right: calc(env(safe-area-inset-right, 0px) + 30px);
+    margin: 0 auto;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    z-index: 5001; /* 必須比玻璃背景 (4000) 高 */
     
-    /* 📐 數學完美對齊：左母艦底部 (約117px) + 黃金間距 20px = 137px */
-    top: calc(env(safe-area-inset-top, 0px) + 137px) !important; 
-    
-    /* 📐 統一的 20px 邊界黃金間距 */
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 20px) !important;
-    left: calc(env(safe-area-inset-left, 0px) + 20px) !important;
-    right: calc(env(safe-area-inset-right, 0px) + 20px) !important;
-    
-    margin: 0 auto !important;
-    max-width: 420px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    z-index: 5001 !important; 
-    
-    /* ✨ 核心新增：淺色模式預設的實心大母艦樣式 */
-    background-color: #ffffff !important; /* 實心純白 (極致易讀性) */
-    border-radius: 36px !important; /* 圓潤的母艦倒角 */
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08) !important; /* 邊緣空氣陰影 */
-    
-    /* 內部留白：把文字往內推，讓母艦邊緣保持乾淨 */
-    padding: 24px 24px 0px 24px !important; 
-    overflow: hidden !important; /* 確保滾動的文字不會超出圓角 */
-    
+    /* 初始隱藏狀態 */
     opacity: 0;
     pointer-events: none;
     transform: translateY(30px);
     transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+/* 啟動狀態的動畫 */
 body.universal-active .universal-page-wrapper {
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    transform: translateY(0) !important;
-    transition: opacity 0.4s ease 0.1s, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1) 0.1s !important;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+    /* 延遲 0.1s 讓玻璃先展開，內容再浮現，層次感更好 */
+    transition: opacity 0.4s ease 0.1s, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1) 0.1s;
 }
 
 /* 4. 頂部標題與專屬關閉按鈕 */
@@ -242,29 +229,22 @@ body.universal-active .universal-page-wrapper {
 /* =========================================
    🚀 通用頁面導航雙按鈕 (完美對齊右上膠囊)
    ========================================= */
-/* 頂部標題 */
+/* 🟢 加入 !important 確保展開時絕對顯示，不會被其他狀態吃掉 */
+
 .universal-page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    padding: 0 !important; /* 🟢 歸零，交給外層母艦控制 */
+    padding: 0 4px;
 }
 
-/* 內容捲動區 */
-.universal-page-content {
-    flex: 1;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none; 
+.universal-page-title {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
     color: var(--text-main);
-    line-height: 1.6;
-    padding: 0 0 30px 0 !important; /* 🟢 左右歸零，底部保留 30px 方便滾動到底 */
-    
-    /* 防滑動耗電機制保留 */
-    pointer-events: auto !important;
-    touch-action: pan-y !important; 
-    overscroll-behavior: contain !important; 
+    letter-spacing: 0.5px;
 }
 
 .universal-close-btn {
