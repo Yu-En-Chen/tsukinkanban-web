@@ -1762,7 +1762,7 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
         border-radius: 50%;
         background-color: #ffffff;
         pointer-events: none;
-        z-index: 99999;
+        z-index: 999999;
         mix-blend-mode: difference;
         will-change: transform;
         transition: width 0.15s ease-out, height 0.15s ease-out;
