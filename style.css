@@ -2418,6 +2418,7 @@ body:has(.universal-window.is-active) .left-capsule {
     width: 18px;  
     height: 18px;
     opacity: 0.8; 
+    stroke-width: 1.7px !important;
     color: currentColor; /* 自動繼承膠囊的文字/線條顏色 */
     
     /* 防呆設定：讓圖示不會干擾到整個膠囊的點擊範圍 */
