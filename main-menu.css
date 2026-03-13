@@ -67,77 +67,89 @@ body.main-menu-active #app-stage #search-container::before {
 }
 
 /* ==========================================
-   5. 🎯 動態五連發膠囊 (防崩潰絕對顯現版)
+   5. 🎯 動態五連發膠囊 (全參數化完美顯示版)
    ========================================== */
-   
+
    #dynamic-main-menu {
-    position: fixed;
-    top: 15px; /* 直接鎖定絕對高度，與母艦看齊 */
-    right: -40px; /* 故意超出螢幕右側，讓實體螢幕邊緣自然裁切它 */
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-    pointer-events: none;
-    z-index: 99999; /* 提高到最高層級 */
+    /* 🟢 這裡是你專屬的控制面板！隨時可以來改！ */
+    --menu-width: 190px;      /* 調整膠囊總長度 */
+    --menu-right-gap: 15px;   /* 調整膠囊距離螢幕右邊緣的空白距離 */
+    --menu-top-pos: 12px; /* 調整膠囊距離螢幕上緣的空白距離 */
+    top: calc(max(var(--menu-top-pos), env(safe-area-inset-top))) !important;
+    
+    position: fixed !important;
+    top: calc(max(var(--menu-top-pos), env(safe-area-inset-top))) !important;
+    /* ✨ 將 right 設定為你想要的留白距離，讓膠囊完整顯示！ */
+    right: var(--menu-right-gap) !important; 
+    
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 7px !important;
+    pointer-events: none !important;
+    z-index: 99999 !important; 
 }
 
 .main-menu-capsule {
-    width: 190px;
-    height: 44px;
-    /* 加上備用色彩 (Fallback)，防止變數讀取失敗導致透明 */
-    background: var(--search-bg, rgba(255,255,255,0.85)); 
-    border: 1px solid var(--search-border, #ccc);
-    border-radius: 22px;
+    /* ✨ 寬度直接讀取上面的變數 */
+    width: var(--menu-width) !important;
+    height: 44px !important;
+    background: var(--search-bg, rgba(28,28,30,0.85)) !important; 
+    border: 1px solid var(--search-border, #333) !important;
+    border-radius: 22px !important;
     
-    /* 純保留毛玻璃，徹底移除 mask-image 以避開 Safari 渲染地雷 */
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
     
-    pointer-events: auto;
-    display: flex;
-    align-items: center;
-    padding-left: 20px;
-    color: var(--text-main, #000);
+    pointer-events: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    /* 調整左邊距，讓圖示看起來置中一點 */
+    padding-left: 18px !important; 
+    color: var(--text-main, #fff) !important;
 
-    /* 起點：藏在畫面外更遠處 */
+    /* 起點：藏在螢幕外 200px 處，等待滑入 */
     transform: translate3d(200px, 0, 0) !important;
     opacity: 0 !important;
     
-    /* 退場動畫：直接寫死自訂彈簧曲線，避免變數失效 */
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) var(--stagger-out, 0s),
                 opacity 0.3s ease var(--stagger-out, 0s) !important;
 }
 
 body.main-menu-active #dynamic-main-menu .main-menu-capsule {
-    /* 進場：停留在 0 的位置 (因為容器已經推到 -40px，所以會自然切斷) */
     transform: translate3d(0, 0, 0) !important;
     opacity: 1 !important;
-    /* 進場動畫：波浪彈簧 */
-    transition: transform 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.275) var(--stagger-in, 0s),
+    transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) var(--stagger-in, 0s),
                 opacity 0.4s ease var(--stagger-in, 0s) !important;
 }
 
-/* 確保 SVG 圖示顯示 */
+/* 🟢 微調內部排版，讓它看起來更像 iOS 的選單 */
+.main-menu-capsule .capsule-content {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
 .main-menu-capsule .capsule-icon {
     display: flex;
     align-items: center;
     justify-content: center;
     margin-right: 12px;
 }
+
 .main-menu-capsule .capsule-icon svg {
-    width: 20px;
-    height: 20px;
+    width: 18px; /* 稍微縮小圖示，看起來更精緻 */
+    height: 18px;
     fill: none;
     stroke: currentColor;
-    stroke-width: 1.8px;
+    stroke-width: 2px;
     stroke-linecap: round;
     stroke-linejoin: round;
-    opacity: 0.8;
+    opacity: 0.9;
 }
+
 .main-menu-capsule .capsule-text {
     font-size: 15px;
     font-weight: 600;
-    opacity: 0.9;
     letter-spacing: 0.5px;
 }
