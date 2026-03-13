@@ -330,6 +330,36 @@ export function initHeader(onSearchCallback, getActiveCardId) {
         }
     };
 
+    // 🟢 全新的主選單控制引擎 (防彈版)
+    window.toggleMainMenu = function () {
+        const isMenuOpen = document.body.classList.toggle('main-menu-active');
+        const mask = document.getElementById('search-mask');
+
+        if (isMenuOpen) {
+            // 開啟時：攔截遮罩的點擊事件，讓使用者點擊空白處可以關閉主選單
+            if (mask) {
+                // 先把原本搜尋框的 onclick 存起來
+                mask.dataset.originalOnclick = mask.getAttribute('onclick');
+                mask.onclick = () => window.toggleMainMenu();
+            }
+            if (window.navigator.vibrate) window.navigator.vibrate(10); // 加上高級的震動回饋
+            console.log('🚀 主選單展開：右舷母艦退避，Z 軸景深啟動！');
+            
+        } else {
+            // 關閉時：把遮罩的點擊事件還給搜尋框
+            if (mask) {
+                mask.onclick = null;
+                if (mask.dataset.originalOnclick) {
+                    mask.setAttribute('onclick', mask.dataset.originalOnclick);
+                } else {
+                    mask.setAttribute('onclick', 'toggleSearch(false)');
+                }
+            }
+            if (window.navigator.vibrate) window.navigator.vibrate(5);
+            console.log('🛸 主選單關閉：艦隊歸位');
+        }
+    };
+
     window.toggleSearch = function (show) {
         const dismissIcon = document.getElementById('dismiss-icon');
         if (show) {
