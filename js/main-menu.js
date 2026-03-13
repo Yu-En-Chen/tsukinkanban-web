@@ -52,6 +52,18 @@ window.initDynamicMainMenu = function () {
             <span class="capsule-text">${item.text}</span>
         </div>
     `;
+    
+    capsule.onclick = () => {
+        // 你可以根據不同的 item.text 來設定不同的內容
+        const content = `
+            <div style="opacity: 0.8; font-size: 0.95rem; padding-top: 10px;">
+                <p>這裡是「<b>${item.text}</b>」的專屬內容區塊。</p>
+                <p>這個區塊完全是由 JavaScript 動態生成的，減少了首頁載入時的 DOM 負擔。它完美繼承了 iOS 的滑動體驗與玻璃擬態質感。</p>
+            </div>
+        `;
+        window.openUniversalPage(item.text, content);
+    };
+
         container.appendChild(capsule);
     });
 };
@@ -86,4 +98,62 @@ window.toggleMainMenu = function () {
         }
         if (window.navigator.vibrate) window.navigator.vibrate(5);
     }
+};
+
+// ============================================================================
+// 🟢 動態通用子頁面引擎 (Universal Page Engine)
+// ============================================================================
+
+window.openUniversalPage = function(title, contentHTML) {
+    let wrapper = document.getElementById('universal-page-wrapper');
+    const searchContainer = document.getElementById('search-container');
+
+    // 1. 如果 DOM 還沒建立過，就動態生成它 (Lazy Loading)
+    if (!wrapper) {
+        wrapper = document.createElement('div');
+        wrapper.id = 'universal-page-wrapper';
+        wrapper.className = 'universal-page-wrapper';
+        wrapper.innerHTML = `
+            <div class="universal-page-header">
+                <h2 id="universal-page-title"></h2>
+                <button class="universal-close-btn interactive-btn" onclick="window.closeUniversalPage()">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div id="universal-page-content" class="universal-page-content"></div>
+        `;
+        searchContainer.appendChild(wrapper);
+    }
+
+    // 2. 填入標題與內容
+    document.getElementById('universal-page-title').textContent = title;
+    document.getElementById('universal-page-content').innerHTML = contentHTML;
+
+    // 3. 如果外部的主選單膠囊群還是開著的，先優雅地收起它們
+    if (document.body.classList.contains('main-menu-active')) {
+        window.toggleMainMenu();
+    }
+
+    // 4. 強制瀏覽器重繪 (魔法指令)，確保等一下加 class 時 CSS 動畫會生效
+    void wrapper.offsetWidth;
+
+    // 5. 加上狀態類別，觸發 CSS 展開玻璃與顯示內容
+    document.body.classList.add('universal-active');
+    
+    if (window.navigator.vibrate) window.navigator.vibrate(10);
+};
+
+window.closeUniversalPage = function() {
+    document.body.classList.remove('universal-active');
+    if (window.navigator.vibrate) window.navigator.vibrate(5);
+    
+    // (選擇性) 如果你想要極致的 DOM 管理，可以在動畫結束後把它刪掉：
+  setTimeout(() => {
+     const wrapper = document.getElementById('universal-page-wrapper');
+     if (wrapper && !document.body.classList.contains('universal-active')) {
+         wrapper.remove();
+     }
+ }, 500);
 };

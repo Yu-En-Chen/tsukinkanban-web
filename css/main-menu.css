@@ -167,3 +167,109 @@ body.main-menu-active #dynamic-main-menu .main-menu-capsule {
     font-weight: 600;
     letter-spacing: 0.5px;
 }
+
+/* =========================================
+   🟢 動態主選單通用子頁面 (Universal Page)
+   ========================================= */
+
+/* 1. 展開玻璃背景 (與通知/搜尋共用同一塊完美比例的玻璃) */
+body.universal-active .search-container::after {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transform: scale(1) !important;
+}
+
+/* 2. 隱藏不需要的元素 (右上母艦、搜尋按鈕、漢堡選單、搜尋輸入框) */
+body.universal-active #action-capsule,
+body.universal-active #search-trigger,
+body.universal-active #search-input-box,
+body.universal-active #left-menu-btn {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: translateY(-20px) !important;
+}
+
+/* 3. 通用內容容器的排版與進場動畫 */
+.universal-page-wrapper {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 85px); /* 完美避開左側母艦 */
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+    left: calc(env(safe-area-inset-left, 0px) + 24px);
+    right: calc(env(safe-area-inset-right, 0px) + 24px);
+    margin: 0 auto;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    z-index: 5001; /* 必須比玻璃背景 (4000) 高 */
+    
+    /* 初始隱藏狀態 */
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(30px);
+    transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 啟動狀態的動畫 */
+body.universal-active .universal-page-wrapper {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+    /* 延遲 0.1s 讓玻璃先展開，內容再浮現，層次感更好 */
+    transition: opacity 0.4s ease 0.1s, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1) 0.1s;
+}
+
+/* 4. 頂部標題與專屬關閉按鈕 */
+.universal-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0 4px;
+}
+
+.universal-page-title {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-main);
+    letter-spacing: 0.5px;
+}
+
+.universal-close-btn {
+    background: rgba(142, 142, 147, 0.2);
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-main);
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.universal-close-btn:active {
+    transform: scale(0.85);
+    opacity: 0.7;
+}
+.universal-close-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.5px;
+}
+
+/* 5. 內容捲動區 (隱藏原生滾動條) */
+.universal-page-content {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    color: var(--text-main);
+    line-height: 1.6;
+    padding: 0 4px 40px 4px;
+}
+.universal-page-content::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
