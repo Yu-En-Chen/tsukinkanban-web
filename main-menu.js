@@ -1,13 +1,17 @@
-// main-menu.js - 純淨版 DOM 渲染引擎 (無攔截器)
+// main-menu.js - 純淨版 DOM 渲染引擎 (含雷達追蹤)
 
 window.initDynamicMainMenu = function () {
     let container = document.getElementById('dynamic-main-menu');
-    if (container) return;
+    if (container) {
+        console.log('✅ 主選單容器已存在，跳過重複生成');
+        return;
+    }
 
+    console.log('🚀 開始生成獨立主選單物件...');
     container = document.createElement('div');
     container.id = 'dynamic-main-menu';
     
-    // 🚀 傳送門：直接掛載到最外層 Body，永遠逃脫裁切！
+    // 傳送門：直接掛載到最外層 Body，絕對不受母艦容器限制
     document.body.appendChild(container);
 
     const menuItems = [
@@ -20,10 +24,9 @@ window.initDynamicMainMenu = function () {
 
     menuItems.forEach((item, index) => {
         const capsule = document.createElement('div');
-        // 🛑 拔掉 interactive-btn，避免它的 transition 覆蓋我們的彈簧動畫！
         capsule.className = 'main-menu-capsule'; 
-        capsule.style.setProperty('--stagger-in', `${index * 0.06}s`);
-        capsule.style.setProperty('--stagger-out', `${(4 - index) * 0.03}s`);
+        capsule.style.setProperty('--stagger-in', `${index * 0.07}s`);
+        capsule.style.setProperty('--stagger-out', `${(4 - index) * 0.04}s`);
 
         capsule.innerHTML = `
             <div class="capsule-content">
@@ -37,4 +40,6 @@ window.initDynamicMainMenu = function () {
         `;
         container.appendChild(capsule);
     });
+    
+    console.log('✅ 獨立物件生成完畢，已成功附著於 body');
 };

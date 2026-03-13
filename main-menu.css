@@ -67,55 +67,58 @@ body.main-menu-active #app-stage #search-container::before {
 }
 
 /* ==========================================
-   5. 🎯 動態五連發膠囊 (終極無敵版)
+   5. 🎯 動態五連發膠囊 (防崩潰絕對顯現版)
    ========================================== */
    
    #dynamic-main-menu {
     position: fixed;
-    top: calc(max(12px, env(safe-area-inset-top)));
-    right: -30px; 
+    top: 15px; /* 直接鎖定絕對高度，與母艦看齊 */
+    right: -40px; /* 故意超出螢幕右側，讓實體螢幕邊緣自然裁切它 */
     display: flex;
     flex-direction: column;
     gap: 7px;
     pointer-events: none;
-    z-index: 9999; 
+    z-index: 99999; /* 提高到最高層級 */
 }
 
 .main-menu-capsule {
-    width: 180px;
+    width: 190px;
     height: 44px;
-    background: var(--search-bg);
-    border: 1px solid var(--search-border);
+    /* 加上備用色彩 (Fallback)，防止變數讀取失敗導致透明 */
+    background: var(--search-bg, rgba(255,255,255,0.85)); 
+    border: 1px solid var(--search-border, #ccc);
     border-radius: 22px;
+    
+    /* 純保留毛玻璃，徹底移除 mask-image 以避開 Safari 渲染地雷 */
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    pointer-events: auto;
     
+    pointer-events: auto;
     display: flex;
     align-items: center;
     padding-left: 20px;
-    color: var(--text-main);
+    color: var(--text-main, #000);
 
-    -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);
-    mask-image: linear-gradient(to right, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);
-
-    /* 🔴 加上 !important 絕對防護，防止任何權重干擾 */
-    transform: translate3d(150px, 0, 0) !important;
+    /* 起點：藏在畫面外更遠處 */
+    transform: translate3d(200px, 0, 0) !important;
     opacity: 0 !important;
     
-    transition: transform 0.4s var(--apple-spring) var(--stagger-out, 0s),
+    /* 退場動畫：直接寫死自訂彈簧曲線，避免變數失效 */
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) var(--stagger-out, 0s),
                 opacity 0.3s ease var(--stagger-out, 0s) !important;
 }
 
 body.main-menu-active #dynamic-main-menu .main-menu-capsule {
+    /* 進場：停留在 0 的位置 (因為容器已經推到 -40px，所以會自然切斷) */
     transform: translate3d(0, 0, 0) !important;
     opacity: 1 !important;
-    transition: transform 0.65s var(--apple-spring) var(--stagger-in, 0s),
+    /* 進場動畫：波浪彈簧 */
+    transition: transform 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.275) var(--stagger-in, 0s),
                 opacity 0.4s ease var(--stagger-in, 0s) !important;
 }
 
-/* SVG 樣式保持原樣 */
+/* 確保 SVG 圖示顯示 */
 .main-menu-capsule .capsule-icon {
     display: flex;
     align-items: center;
