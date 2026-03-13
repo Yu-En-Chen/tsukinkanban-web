@@ -1,9 +1,9 @@
 // script.js - 主 UI 邏輯與狀態控制 (動畫與 History API 修正版)
 
-import { bottomCardConfig, railwayData } from '../data.js';
+import { bottomCardConfig, railwayData } from '../data/data.js';
 import { initPhysics } from './physics.js';
 import { initHeader } from './header.js';
-import { getAllUserPreferences, restorePreviousPreference } from '../db.js';
+import { getAllUserPreferences, restorePreviousPreference } from '../data/db.js';
 import { initPersonalization } from './personalization.js';
 import { initDynamicClock } from './clock.js';
 
