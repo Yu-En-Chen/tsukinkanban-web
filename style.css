@@ -32,15 +32,16 @@
 html,
 body {
     width: 100%;
-    min-height: 100vh;
-    min-height: 100dvh;
-    height: 100vh;
-    height: 100dvh;
+    height: 100%;
     margin: 0;
     padding: 0;
     background-color: var(--bg-color);
     color: var(--text-main);
     position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     overflow: hidden !important;
     overscroll-behavior: none;
     font-family: var(--font-main);
@@ -2008,10 +2009,19 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 .search-container::after {
     content: '';
     position: fixed;
-    top: calc(env(safe-area-inset-top, 0px)) !important;
-    bottom: auto !important;
-    height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px) !important;
-    height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px) !important;
+    /* 🟢 1. 邊界直接貼齊安全區域 (無瀏海時就是 0) */
+    top: env(safe-area-inset-top, 0px) !important;
+    bottom: env(safe-area-inset-bottom, 0px) !important;
+    left: env(safe-area-inset-left, 0px) !important;
+    right: env(safe-area-inset-right, 0px) !important;
+
+    /* 🟢 2. 核心魔法：利用 Margin 統一向內推 12px 的優雅空隙 */
+    margin: 12px !important;
+    
+    /* 🟢 3. 放棄所有寫死的高度與寬度，讓 top/bottom/margin 自己去拉扯 */
+    height: auto !important;
+    width: auto !important;
+    max-width: none !important;
     border-radius: 36px !important;
 
     /* 🟢 手機版專屬魔法：依靠 left 和 right 撐開寬度，完美貼齊邊緣 12px */
