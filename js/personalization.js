@@ -1,7 +1,7 @@
 // personalization.js - 個性化設定 (Customize) 專用彈窗引擎
 
-import { saveRoutePreference, resetRoutePreference } from './db.js';
-import { railwayData } from './data.js';
+import { saveRoutePreference, resetRoutePreference } from '../db.js';
+import { railwayData } from '../data.js';
 
 // =========================================================
 // 🟢 網頁級別最優先寫死的系統導航防護 (全域封鎖)
