@@ -419,7 +419,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
             if (capsule.classList.contains('detail-active')) {
                 console.log('External Link Action Triggered');
             } else {
-                window.toggleCapsuleMenu();
+                window.toggleMainMenu();
             }
         } else if (mode === 'blank') {
             if (typeof window.triggerCloudSync === 'function') window.triggerCloudSync();
@@ -461,3 +461,26 @@ window.addEventListener('blur', () => {
         searchInput.blur();
     }
 });
+
+// 🟢 全新的主選單控制引擎
+window.toggleMainMenu = function () {
+    // 切換 Body 的狀態標籤，CSS 就會自動接管物理動畫
+    const isMenuOpen = document.body.classList.toggle('main-menu-active');
+
+    // 同時綁定遮罩的點擊關閉事件 (防呆機制)
+    const mask = document.getElementById('search-mask');
+    if (isMenuOpen && mask) {
+        mask.onclick = () => window.toggleMainMenu();
+    } else if (mask) {
+        // 關閉時把遮罩的點擊事件還給搜尋框
+        mask.onclick = () => window.toggleSearch(false);
+    }
+
+    if (isMenuOpen) {
+        console.log('🚀 主選單展開：右舷母艦已退避，Z 軸景深已啟動！');
+        // 未來你的主選單 UI 展開邏輯可以寫在這裡
+    } else {
+        console.log('主選單關閉：艦隊歸位');
+        // 關閉主選單的 UI 邏輯寫在這裡
+    }
+};
