@@ -67,63 +67,70 @@ body.main-menu-active #app-stage #search-container::before {
 }
 
 /* ==========================================
-   5. 🎯 動態五連發膠囊 (全參數化完美顯示版)
+   5. 🎯 動態五連發膠囊 (極致細膩 Native 互動版)
    ========================================== */
 
    #dynamic-main-menu {
-    /* 🟢 這裡是你專屬的控制面板！隨時可以來改！ */
-    --menu-width: 190px;      /* 調整膠囊總長度 */
-    --menu-right-gap: 15px;   /* 調整膠囊距離螢幕右邊緣的空白距離 */
-    --menu-top-pos: 12px; /* 調整膠囊距離螢幕上緣的空白距離 */
-    top: calc(max(var(--menu-top-pos), env(safe-area-inset-top))) !important;
+    --menu-width: 170px;      
+    --menu-right-gap: 15px;   
+    --menu-top-pos: 22px;     
     
-    position: fixed !important;
-    top: calc(max(var(--menu-top-pos), env(safe-area-inset-top))) !important;
-    /* ✨ 將 right 設定為你想要的留白距離，讓膠囊完整顯示！ */
-    right: var(--menu-right-gap) !important; 
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + var(--menu-top-pos));
+    right: var(--menu-right-gap); 
     
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 7px !important;
-    pointer-events: none !important;
-    z-index: 99999 !important; 
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    pointer-events: none;
+    z-index: 99999; 
 }
 
 .main-menu-capsule {
-    /* ✨ 寬度直接讀取上面的變數 */
-    width: var(--menu-width) !important;
-    height: 44px !important;
-    background: var(--search-bg, rgba(28,28,30,0.85)) !important; 
-    border: 1px solid var(--search-border, #333) !important;
-    border-radius: 22px !important;
+    width: var(--menu-width);
+    height: 44px;
+    /* 直接讀取你的全域變數，確保日夜間模式完美同步 */
+    background: var(--search-bg); 
+    border: 1px solid var(--search-border);
+    border-radius: 22px;
     
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     
-    pointer-events: auto !important;
-    display: flex !important;
-    align-items: center !important;
-    /* 調整左邊距，讓圖示看起來置中一點 */
-    padding-left: 18px !important; 
-    color: var(--text-main, #fff) !important;
+    /* 🟢 1. 完美還原母艦的輕盈陰影 (移除 !important 破壞) */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); 
+    
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    padding-left: 18px; 
+    color: var(--text-main);
 
-    /* 起點：藏在螢幕外 200px 處，等待滑入 */
-    transform: translate3d(200px, 0, 0) !important;
-    opacity: 0 !important;
+    /* 預設隱藏在右方 */
+    transform: translate3d(200px, 0, 0);
+    opacity: 0;
     
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) var(--stagger-out, 0s),
-                opacity 0.3s ease var(--stagger-out, 0s) !important;
+    /* 🟢 2. 完美繼承原生的 scale 與 box-shadow 過渡 (完全不加 !important) */
+    transition: 
+        transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) var(--stagger-out, 0s),
+        opacity 0.3s ease var(--stagger-out, 0s),
+        scale 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.15),
+        box-shadow 0.4s ease;
 }
 
 body.main-menu-active #dynamic-main-menu .main-menu-capsule {
-    transform: translate3d(0, 0, 0) !important;
-    opacity: 1 !important;
-    transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) var(--stagger-in, 0s),
-                opacity 0.4s ease var(--stagger-in, 0s) !important;
+    /* 展開定位 */
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+    
+    /* 🟢 3. 進場過渡同理，保持原生互動的平滑度 */
+    transition: 
+        transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) var(--stagger-in, 0s),
+        opacity 0.4s ease var(--stagger-in, 0s),
+        scale 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.15),
+        box-shadow 0.4s ease;
 }
 
-/* 🟢 微調內部排版，讓它看起來更像 iOS 的選單 */
 .main-menu-capsule .capsule-content {
     display: flex;
     align-items: center;
@@ -138,7 +145,7 @@ body.main-menu-active #dynamic-main-menu .main-menu-capsule {
 }
 
 .main-menu-capsule .capsule-icon svg {
-    width: 18px; /* 稍微縮小圖示，看起來更精緻 */
+    width: 18px; 
     height: 18px;
     fill: none;
     stroke: currentColor;

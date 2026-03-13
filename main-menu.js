@@ -6,7 +6,7 @@ window.initDynamicMainMenu = function () {
 
     container = document.createElement('div');
     container.id = 'dynamic-main-menu';
-    
+
     // 掛載到最外層，逃脫裁切限制
     document.body.appendChild(container);
 
@@ -18,22 +18,26 @@ window.initDynamicMainMenu = function () {
         { icon: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>', text: '偏好設定' }
     ];
 
+    // 🟢 只改這一段迴圈裡的 className，其他維持不變
     menuItems.forEach((item, index) => {
         const capsule = document.createElement('div');
-        capsule.className = 'main-menu-capsule'; 
+
+        // ✨ 將你原生強大的 interactive-btn 裝備回來！
+        capsule.className = 'main-menu-capsule interactive-btn';
+
         capsule.style.setProperty('--stagger-in', `${index * 0.06}s`);
         capsule.style.setProperty('--stagger-out', `${(4 - index) * 0.03}s`);
 
         capsule.innerHTML = `
-            <div class="capsule-content">
-                <span class="capsule-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        ${item.icon}
-                    </svg>
-                </span>
-                <span class="capsule-text">${item.text}</span>
-            </div>
-        `;
+        <div class="capsule-content">
+            <span class="capsule-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    ${item.icon}
+                </svg>
+            </span>
+            <span class="capsule-text">${item.text}</span>
+        </div>
+    `;
         container.appendChild(capsule);
     });
 };
@@ -46,10 +50,10 @@ window.toggleMainMenu = function () {
     if (!isCurrentlyOpen) {
         // 1. 生成 DOM
         window.initDynamicMainMenu();
-        
+
         // 2. 魔法重繪：讓瀏覽器承認新 DOM 的隱藏狀態
-        void document.body.offsetHeight; 
-        
+        void document.body.offsetHeight;
+
         // 3. 加上標籤，觸發 CSS 彈簧波浪進場
         document.body.classList.add('main-menu-active');
 
@@ -58,7 +62,7 @@ window.toggleMainMenu = function () {
             mask.onclick = () => window.toggleMainMenu();
         }
         if (window.navigator.vibrate) window.navigator.vibrate(10);
-        
+
     } else {
         document.body.classList.remove('main-menu-active');
         if (mask) {
