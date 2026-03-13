@@ -1,12 +1,4 @@
-// main-menu.js - 終極傳送門渲染引擎
-
-const originalSecondaryClick = window.handleCapsuleSecondaryClick;
-window.handleCapsuleSecondaryClick = function () {
-    const capsule = document.getElementById('action-capsule');
-    const mode = capsule ? (capsule.dataset.mode || 'native') : 'native';
-    if (mode === 'native') window.toggleMainMenu();
-    else if (originalSecondaryClick) originalSecondaryClick();
-};
+// main-menu.js - 純淨版 DOM 渲染引擎 (無攔截器)
 
 window.initDynamicMainMenu = function () {
     let container = document.getElementById('dynamic-main-menu');
@@ -14,8 +6,8 @@ window.initDynamicMainMenu = function () {
 
     container = document.createElement('div');
     container.id = 'dynamic-main-menu';
-
-    // 🔴 關鍵改變：直接掛載到 body 最外層，逃脫所有容器裁切！
+    
+    // 🚀 傳送門：直接掛載到最外層 Body，永遠逃脫裁切！
     document.body.appendChild(container);
 
     const menuItems = [
@@ -28,7 +20,8 @@ window.initDynamicMainMenu = function () {
 
     menuItems.forEach((item, index) => {
         const capsule = document.createElement('div');
-        capsule.className = 'main-menu-capsule interactive-btn';
+        // 🛑 拔掉 interactive-btn，避免它的 transition 覆蓋我們的彈簧動畫！
+        capsule.className = 'main-menu-capsule'; 
         capsule.style.setProperty('--stagger-in', `${index * 0.06}s`);
         capsule.style.setProperty('--stagger-out', `${(4 - index) * 0.03}s`);
 
@@ -44,29 +37,4 @@ window.initDynamicMainMenu = function () {
         `;
         container.appendChild(capsule);
     });
-};
-
-window.toggleMainMenu = function () {
-    const isCurrentlyOpen = document.body.classList.contains('main-menu-active');
-    const mask = document.getElementById('search-mask');
-
-    if (!isCurrentlyOpen) {
-        window.initDynamicMainMenu(); 
-        void document.body.offsetHeight; // 強制重繪
-        document.body.classList.add('main-menu-active');
-
-        if (mask) {
-            mask.dataset.originalOnclick = mask.getAttribute('onclick');
-            mask.onclick = () => window.toggleMainMenu();
-        }
-        if (window.navigator.vibrate) window.navigator.vibrate(10);
-    } else {
-        document.body.classList.remove('main-menu-active');
-        if (mask) {
-            mask.onclick = null;
-            if (mask.dataset.originalOnclick) mask.setAttribute('onclick', mask.dataset.originalOnclick);
-            else mask.setAttribute('onclick', 'toggleSearch(false)');
-        }
-        if (window.navigator.vibrate) window.navigator.vibrate(5);
-    }
 };

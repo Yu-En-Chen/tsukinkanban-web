@@ -67,22 +67,18 @@ body.main-menu-active #app-stage #search-container::before {
 }
 
 /* ==========================================
-   5. 🎯 動態五連發膠囊 (固定於 Body 最上層！)
+   5. 🎯 動態五連發膠囊 (終極無敵版)
    ========================================== */
    
    #dynamic-main-menu {
-    /* 🔴 改用 fixed，鎖死在螢幕右上角，徹底無視任何 HTML 容器裁切 */
     position: fixed;
-    /* 對齊原本母艦的高度 (加入 safe-area 適配 iPhone 瀏海) */
     top: calc(max(12px, env(safe-area-inset-top)));
-    /* 故意往右推，讓它有一部分在螢幕外 */
     right: -30px; 
-    
     display: flex;
     flex-direction: column;
     gap: 7px;
     pointer-events: none;
-    z-index: 9999; /* 絕對最上層 */
+    z-index: 9999; 
 }
 
 .main-menu-capsule {
@@ -101,26 +97,25 @@ body.main-menu-active #app-stage #search-container::before {
     padding-left: 20px;
     color: var(--text-main);
 
-    /* ✨ 視覺魔法：讓膠囊從 70% 處開始漸漸消散，融入螢幕邊緣的迷霧感 */
     -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);
     mask-image: linear-gradient(to right, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);
 
-    /* 起點：藏在螢幕外 150px 處 */
-    transform: translate3d(150px, 0, 0);
-    opacity: 0;
+    /* 🔴 加上 !important 絕對防護，防止任何權重干擾 */
+    transform: translate3d(150px, 0, 0) !important;
+    opacity: 0 !important;
     
     transition: transform 0.4s var(--apple-spring) var(--stagger-out, 0s),
-                opacity 0.3s ease var(--stagger-out, 0s);
+                opacity 0.3s ease var(--stagger-out, 0s) !important;
 }
 
 body.main-menu-active #dynamic-main-menu .main-menu-capsule {
-    transform: translate3d(0, 0, 0);
-    opacity: 1;
+    transform: translate3d(0, 0, 0) !important;
+    opacity: 1 !important;
     transition: transform 0.65s var(--apple-spring) var(--stagger-in, 0s),
-                opacity 0.4s ease var(--stagger-in, 0s);
+                opacity 0.4s ease var(--stagger-in, 0s) !important;
 }
 
-/* 確保 SVG 圖示能顯示出來 */
+/* SVG 樣式保持原樣 */
 .main-menu-capsule .capsule-icon {
     display: flex;
     align-items: center;
@@ -137,7 +132,6 @@ body.main-menu-active #dynamic-main-menu .main-menu-capsule {
     stroke-linejoin: round;
     opacity: 0.8;
 }
-
 .main-menu-capsule .capsule-text {
     font-size: 15px;
     font-weight: 600;
