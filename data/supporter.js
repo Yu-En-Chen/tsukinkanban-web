@@ -119,7 +119,7 @@ export const supporterContent = `
                 <rect x="116.25" y="12.61" width="2.73" height="9.64"/>
             </svg>
         </div>
-        
+
         <div style="padding: 12px 16px; background: rgba(120, 120, 128, 0.08); border-radius: 12px; margin-bottom: 16px;">
             <p style="font-weight: 600; font-size: 0.9em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;">
@@ -147,6 +147,26 @@ export const supporterContent = `
                 <li style="margin-bottom: 8px;">クレジットカードによるご決済につきましては、関連情報はすべて安全な決済代行プラットフォーム（Stripe）によって処理されます。当サイトでは最低限の識別情報のみを保持し、カード情報は一切保存しません。</li>
                 <li>スポンサー枠は画像とリンクのみで構成されており、サードパーティの広告プラットフォームは使用していません。スポンサー先のリンクにトラッキングコードが含まれるかについては関知できないため、懸念がある場合はクリックをお控えください。</li>
             </ul>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px; padding-bottom: 8px;">
+            
+            <a href="https://example.com/sponsor-test" target="_blank" rel="noopener noreferrer" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: rgba(120, 120, 128, 0.08); color: var(--text-main); padding: 14px 8px; border-radius: 12px; text-decoration: none; font-size: 0.85em; font-weight: 600; transition: background 0.2s ease, transform 0.2s ease;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.7;">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+                協賛のご相談
+            </a>
+
+            <a href="https://example.com/refund-test" target="_blank" rel="noopener noreferrer" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: rgba(120, 120, 128, 0.08); color: var(--text-main); padding: 14px 8px; border-radius: 12px; text-decoration: none; font-size: 0.85em; font-weight: 600; transition: background 0.2s ease, transform 0.2s ease;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.7;">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                    <polyline points="3 3 3 8 8 8"></polyline>
+                </svg>
+                返金のお手続き
+            </a>
+
         </div>
         
     </div>
