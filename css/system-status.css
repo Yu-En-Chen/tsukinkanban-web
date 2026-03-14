@@ -1,66 +1,65 @@
 /* ==========================================================================
-   system-status.css - 中控動態實心圖塊 (巨型外框對齊 + 邊框與全域隱藏版)
+   system-status.css - 中控動態實心圖塊 (極致效能優化版)
    ========================================================================== */
 
    .center-status-island {
     position: absolute;
-    
-    /* 🟢 1. 垂直對齊母艦外框 (110x110) */
     top: -7.5px;
     height: 110px;
-    
-    /* 🟢 2. 圓角與母艦外框完全相同 */
     border-radius: 29.5px;
     
-    /* 🟢 3. 完美等距魔法 (Gap) */
+    /* 完美等距魔法 */
     --gap: 14.5px;
     left: calc(122.5px + var(--gap));
     right: calc(102.5px + var(--gap));
     
-    /* 🎨 4. 顏色與【母艦同款邊框】 */
     background: #3a3a3c; 
-    border: 1px solid var(--search-border); /* ✨ 新增：跟隨系統變數的邊框 */
+    border: 1px solid var(--search-border);
     
     z-index: 5500;
-    pointer-events: none; /* 預設為純視覺元件，不干擾底層點擊 */
+    pointer-events: none; 
     
-    /* 🚀 回到首頁時的進場動畫 (彈性過渡) */
-    transform: translate3d(0, 0, 0) scale(1);
+    /* 🚀 拔除 will-change 與 translate3d，恢復瀏覽器原生調度，減輕 GPU 負擔 */
+    transform: scale(1);
     opacity: 1;
-    transition: all 0.5s var(--apple-spring), opacity 0.3s ease;
+    visibility: visible;
+    transition: transform 0.4s var(--apple-spring), opacity 0.3s ease;
 }
 
-/* 🎨 深色模式：自動反轉顏色與微光邊框 */
 @media (prefers-color-scheme: dark) {
     .center-status-island {
         background: #d1d1d6;
-        /* ✨ 新增：深色模式專屬的白灰微光邊框，與母艦完全相同 */
         border: 1px solid rgba(220, 220, 230, 0.15) !important; 
     }
 }
 
 /* =========================================
-   🟢 全域隱藏與退場邏輯 (臨時通知徹底收起版)
+   🟢 全域隱藏與退場邏輯 (輕量化淡出 + 涵蓋所有選單)
    ========================================= */
 
-   body.searching .center-status-island,
-   body.menu-active .center-status-island,
-   body.hamburger-active .center-status-island,
-   body:has(.detail-overlay.active) .center-status-island,
-   body:has(.universal-window.is-active) .center-status-island {
-       
-       /* 1. 透明度歸零 */
-       opacity: 0 !important;
-       
-       /* 2. ✨ 終極殺手鐧：徹底隱藏圖層，消滅所有邊框與殘影 */
-       visibility: hidden !important;
-       
-       /* 3. 往上滑動並縮小 */
-       transform: translate3d(0, -20px, 0) scale(0.8) !important;
-       
-       /* 4. 關閉點擊 */
-       pointer-events: none !important;
-       
-       /* 5. ✨ 動畫時序校正：讓 visibility 等待 0.2 秒 (透明度跑完) 後再觸發，確保有滑順的淡出過程 */
-       transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, visibility 0s 0.2s !important;
-   }
+/* 涵蓋情境：
+   1. searching -> 搜尋
+   2. menu-active -> 膠囊選單展開
+   3. hamburger-active -> 左側通知展開
+   4. main-menu-active -> 右側主選單展開 (新增)
+   5. universal-active -> 通用頁面/利用規約 (新增)
+   6. detail-overlay.active -> 點開卡片詳情
+*/
+body.searching .center-status-island,
+body.menu-active .center-status-island,
+body.hamburger-active .center-status-island,
+body.main-menu-active .center-status-island,
+body.universal-active .center-status-island,
+body:has(.detail-overlay.active) .center-status-island {
+    
+    opacity: 0 !important;
+    visibility: hidden !important;
+    
+    /* ✨ 效能優化：不使用耗能的上下滑動，只做單純的原地微縮小 (0.85) */
+    transform: scale(0.85) !important;
+    
+    pointer-events: none !important;
+    
+    /* ✨ 讓退場時間縮短到 0.15s，像氣泡一樣瞬間消散，不跟底下的重量級動畫搶資源 */
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease, visibility 0s 0.15s !important;
+}
