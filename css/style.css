@@ -620,9 +620,11 @@ body.searching .search-mask {
     pointer-events: none !important;
 }
 
-/* 當漢堡選單(通知)打開時，強制隱藏其他圖示，浮出 Menu 專屬圖示 */
+/* 當漢堡選單(通知)打開時，強制隱藏其他所有模式圖示，只浮出 Menu 專屬圖示 */
 body.hamburger-active .action-capsule .capsule-btn-item svg.icon-default,
-body.hamburger-active .action-capsule .capsule-btn-item svg.icon-hidden {
+body.hamburger-active .action-capsule .capsule-btn-item svg.icon-hidden,
+body.hamburger-active .action-capsule .capsule-btn-item svg.icon-blank-mode,
+body.hamburger-active .action-capsule .capsule-btn-item svg.icon-info-mode {
     opacity: 0 !important;
     transform: translateY(-120%) !important;
     pointer-events: none !important;
