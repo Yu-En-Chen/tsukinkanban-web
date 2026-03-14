@@ -1232,7 +1232,9 @@ body.menu-active .card-stack,
 body:has(.left-circle-btn.is-expanded) .card-stack,
 body:has(.universal-window.is-active) .card-stack,
 body:has(.detail-overlay.active) .card-stack,
-body.searching .card-stack {
+body.searching .card-stack,
+body.main-menu-active .card-stack,
+body.universal-active .card-stack {
     transform: scale(0.90) translateY(15px) !important;
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
     pointer-events: none !important;

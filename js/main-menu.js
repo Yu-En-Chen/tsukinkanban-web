@@ -113,13 +113,9 @@ window.toggleMainMenu = function () {
 // 🟢 動態通用子頁面引擎 (Universal Page Engine)
 // ============================================================================
 
-// 🚀 新增：返回主選單的功能
+// 🚀 返回主選單 (只關閉通用頁面，保留主選單)
 window.backToMainMenu = function() {
-    window.closeUniversalPage();
-    // 延遲一點點打開主選單，創造像 iOS 的「堆疊退回 (Stack Pop)」視覺感
-    setTimeout(() => {
-        window.toggleMainMenu();
-    }, 150);
+    window.closeUniversalPage(false); // 傳入 false，代表「不關閉」背景的主選單
 };
 
 window.openUniversalPage = function(title, contentHTML) {
@@ -129,7 +125,6 @@ window.openUniversalPage = function(title, contentHTML) {
 
     // 1. 如果 DOM 還沒建立過，就動態生成它
     if (!wrapper) {
-        // A. 內容區塊 (移除了原本醜醜的 close-btn)
         wrapper = document.createElement('div');
         wrapper.id = 'universal-page-wrapper';
         wrapper.className = 'universal-page-wrapper';
@@ -141,7 +136,7 @@ window.openUniversalPage = function(title, contentHTML) {
         `;
         searchContainer.appendChild(wrapper);
 
-        // B. 🚀 全新導航雙圓按鈕 (含完美膠囊外框)
+        // 🚀 全新導航雙圓按鈕
         navBtns = document.createElement('div');
         navBtns.id = 'universal-nav-buttons';
         navBtns.className = 'universal-nav-container'; 
@@ -154,7 +149,8 @@ window.openUniversalPage = function(title, contentHTML) {
                         <path d="m15 18-6-6 6-6"/>
                     </svg>
                 </button>
-                <button class="universal-nav-btn" onclick="window.closeUniversalPage()">
+                
+                <button class="universal-nav-btn" onclick="window.closeUniversalPage(true)">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
                     </svg>
@@ -168,22 +164,26 @@ window.openUniversalPage = function(title, contentHTML) {
     document.getElementById('universal-page-title').textContent = title;
     document.getElementById('universal-page-content').innerHTML = contentHTML;
 
-    // 3. 如果外部的主選單膠囊群還是開著的，先優雅地收起它們
-    if (document.body.classList.contains('main-menu-active')) {
-        window.toggleMainMenu();
-    }
+    // 🚫 這裡原本有「強制關閉主選單」的邏輯，已經被我拔除了！
+    // 讓主選單乖乖留在背景被 CSS 隱藏並下沉待命就好。
 
-    // 4. 強制瀏覽器重繪
+    // 3. 強制瀏覽器重繪
     void wrapper.offsetWidth;
 
-    // 5. 加上狀態類別，觸發 CSS 展開玻璃與顯示內容
+    // 4. 加上狀態類別，觸發 CSS 展開玻璃與顯示內容
     document.body.classList.add('universal-active');
     
     if (window.navigator.vibrate) window.navigator.vibrate(10);
 };
 
-window.closeUniversalPage = function() {
+// ✨ 接收 closeAll 參數 (預設為 false)
+window.closeUniversalPage = function(closeAll = false) {
     document.body.classList.remove('universal-active');
+
+    // ✨ 核心邏輯：如果使用者按下 X (closeAll 為 true)，且主選單還開著，就一起關掉它！
+    if (closeAll && document.body.classList.contains('main-menu-active')) {
+        window.toggleMainMenu();
+    }
 
     if (window.navigator.vibrate) window.navigator.vibrate(5);
     
