@@ -43,7 +43,7 @@ export const supporterContent = `
             }
         </style>
 
-        <p style="font-size: 0.85em; opacity: 0.9; margin-bottom: 12px;">当サイトを支援してくださるパートナー企業・団体様です。</p>
+        <p style="font-size: 0.85em; opacity: 0.9; margin-bottom: 12px;">当サイトの運営・開発を支えてくださる協賛企業・団体様です。</p>
 
         <div id="sponsor-carousel-container" style="
             position: relative;
@@ -84,8 +84,8 @@ export const supporterContent = `
             "></div>
         </div>
 
-        <p style="font-size: 0.95em; margin-bottom: 24px;">当サイトは、皆様からの温かいご支援によって運営・開発が維持されています。より便利で快適なサービスを提供するため、サポートをお願いいたします。</p>
-
+        <p style="font-size: 0.95em; margin-bottom: 24px;">当サイトは個人で開発・運営を行っており、サーバー維持費などは皆様からの温かいご支援によって成り立っています。今後もより便利で快適なサービスを継続して提供するため、サポートをお願いいたします。</p>
+        <br>
         <p style="color: var(--text-main); font-weight: 600; margin-bottom: 8px;">開発者をサポートする</p>
         
         <a href="https://buy.stripe.com/test_aFa5kD80s7AYdjbd0TaIM00" target="_blank" rel="noopener noreferrer" style="display: flex; justify-content: center; align-items: center; gap: 8px; background: var(--text-main); color: var(--bg-color); padding: 14px; border-radius: 12px; font-weight: 600; font-size: 1.05em; text-decoration: none; margin-bottom: 8px; transition: transform 0.2s ease, opacity 0.2s ease; transform: translateZ(0); backface-visibility: hidden;">
