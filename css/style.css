@@ -998,33 +998,31 @@ body.searching .search-mask {
 }
 
 /* ==========================================================================
-   🟢 詳情卡片：全透明延伸區塊 (絕對定位修復版)
+   🟢 詳情卡片：全透明延伸區塊 -> 改為實心毛玻璃版
    ========================================================================== */
-.detail-extension-card {
+   .detail-extension-card {
     position: absolute;
-    /* 🟢 脫離排版限制，解決高度被壓扁成一條線的問題 */
     top: 100%;
-    /* 🟢 讓起點永遠緊貼主卡片的正下方邊緣 */
     left: 0;
     right: 0;
     margin: 0 auto;
-    /* 🟢 完美水平置中，防止滑動時偏移 */
 
     width: var(--card-width);
     max-width: 420px;
     height: 100vh;
-    /* 🟢 暴力美學：直接給予一整個螢幕的高度，保證長度絕對穿透螢幕底部 */
-
-    /* 👇 這裡一樣可以手動調整「距離」與「邊框」 */
     margin-top: 30px;
-    border: 1.5px solid rgba(0, 0, 0, 0.2);
     border-radius: var(--card-radius);
 
-    background: transparent;
-    pointer-events: none;
-    /* 讓點擊穿透，不會干擾底下的東西 */
+    /* ✨ 替換為實心珍珠白毛玻璃材質 */
+    background: rgba(245, 245, 247, 0.65);
+    -webkit-backdrop-filter: blur(35px);
+    backdrop-filter: blur(35px);
+    
+    /* 柔和的邊框與層次陰影 */
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
 
-    /* 繼承主卡片的進出場動畫 */
+    pointer-events: none;
     transform: translate3d(0, 100vh, 0);
     transition: transform 0.55s var(--spring-release), opacity 0.3s ease;
     will-change: transform;
@@ -1114,8 +1112,10 @@ body.searching .search-mask {
     }
 
     .detail-extension-card {
-        /* 👇 深色模式：用 15% 透明度的純白，創造金屬/玻璃的高光反射邊緣 */
-        border: 1px solid rgba(255, 255, 255, 0.5);
+        /* ✨ 深色模式：深鈦灰玻璃與金屬高光邊緣 */
+        background: rgba(28, 28, 30, 0.65);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     }
 }
 
