@@ -612,13 +612,25 @@ body.searching .search-mask {
 }
 
 /* =========================================
-   🟢 空白/資訊模式下專屬 SVG 設定
+   🟢 空白/資訊/通知模式下專屬 SVG 設定
    ========================================= */
-.capsule-btn-item svg.icon-blank-mode,
-.capsule-btn-item svg.icon-info-mode {
-    position: relative !important;
+   .capsule-btn-item svg.icon-menu-mode {
+    opacity: 0 !important;
+    transform: translateY(120%) !important;
+    pointer-events: none !important;
+}
+
+/* 當漢堡選單(通知)打開時，強制隱藏其他圖示，浮出 Menu 專屬圖示 */
+body.hamburger-active .action-capsule .capsule-btn-item svg.icon-default,
+body.hamburger-active .action-capsule .capsule-btn-item svg.icon-hidden {
+    opacity: 0 !important;
+    transform: translateY(-120%) !important;
+    pointer-events: none !important;
+}
+
+body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
     opacity: 0.8 !important;
-    transform: scale(1) !important;
+    transform: translateY(0) !important;
     pointer-events: auto !important;
 }
 
@@ -2109,19 +2121,26 @@ body.hamburger-active .search-container::after {
     }
 }
 
-/* 3. 將新動畫套用到四個元件，並加入依次的 0.1 秒 Delay */
+/* 3. 將新動畫套用到母艦與膠囊 */
 body.hamburger-active .search-container .left-circle-btn,
-body.hamburger-active .search-container .search-trigger,
 body.hamburger-active .search-container .action-capsule {
     opacity: 1 !important;
     pointer-events: auto !important;
-    /* 🟢 關鍵：把原本的 forwards 改為 both，確保在 Delay 期間按鈕會保持 0% 的透明隱藏狀態，不會偷跑出來 */
     animation: directPopUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both !important;
 }
 
 body.hamburger-active .search-container::before {
     opacity: 1 !important;
     animation: directPopUpMatrix 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both !important;
+}
+
+/* 🟢 隱藏多餘的搜尋按鈕 (通知選單用不到) */
+body.hamburger-active .search-container .search-trigger {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: scale(0.8) translateY(10px) !important;
+    transition: opacity 0.3s ease, transform 0.3s ease !important;
+    animation: none !important;
 }
 
 /* 🟢 完美的 0.1 秒依次彈出節奏 (波浪感) */
