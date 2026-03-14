@@ -6,7 +6,6 @@ export const dataSourceContent = `
         <p>ODPTデータの配信および処理プロセスの詳細につきましては、以下の公式ページをご参照ください：</p>
         <p><a href="https://www.odpt.org/overview/" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline; font-weight: 500;">https://www.odpt.org/overview/</a></p>
         <br>
-        <br>
         <p style="color: var(--text-main); font-weight: 600; margin-bottom: 4px;">UI アイコン（SVG）</p>
         <p style="font-size: 0.95em; opacity: 0.9;">当サイトのインターフェースには、美しくオープンソースなアイコンライブラリ「Lucide Icons」を使用しています。</p>
         <p><a href="https://lucide.dev/" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline; font-weight: 500;">https://lucide.dev/</a></p>
