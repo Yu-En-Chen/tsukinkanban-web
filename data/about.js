@@ -26,7 +26,7 @@ export const aboutContent = `
                 </svg>
             </a>
 
-            <a href="https://x.com/你的帳號" target="_blank" rel="noopener noreferrer" style="flex: 1; display: flex; justify-content: center; align-items: center; gap: 8px; background: rgba(120, 120, 128, 0.08); padding: 14px 12px; border-radius: 12px; text-decoration: none; color: var(--text-main); font-weight: 600; font-size: 0.9em; transition: background 0.2s ease, transform 0.2s ease;">
+            <a href="https://x.com/yuyu_yuenchen" target="_blank" rel="noopener noreferrer" style="flex: 1; display: flex; justify-content: center; align-items: center; gap: 8px; background: rgba(120, 120, 128, 0.08); padding: 14px 12px; border-radius: 12px; text-decoration: none; color: var(--text-main); font-weight: 600; font-size: 0.9em; transition: background 0.2s ease, transform 0.2s ease;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                 </svg>
@@ -40,7 +40,7 @@ export const aboutContent = `
             
             <li style="margin-bottom: 12px;"> サポーターページの協賛パートナー枠は、画像とリンクのみの構成となっており、サードパーティの広告プラットフォームを介さず手動で配置しています。協賛企業様が提供するリンク先にトラッキングコードが含まれているかどうかは確認できないため、懸念がある場合はクリックをお控えください（クリックしない限り事前のプレビューやデータ送信は行われません）。</li>
             
-            <li style="margin-bottom: 12px;"> サポーターページでのクレジットカードによるご支援につきましては、関連情報はすべて安全な決済代行プラットフォーム（Stripe）によって処理されます。当サイトでは、<strong>万が一の返金等の手続きに必要な最低限の識別情報のみを保持し、クレジットカード番号等の決済情報は一切保存しません。</strong></li>
+            <li style="margin-bottom: 12px;"> サポーターページでのクレジットカードによるご支援につきましては、関連情報はすべて安全な決済代行プラットフォーム（Stripe）側で処理・厳重に保管されます。<strong>当サイトのサーバーにクレジットカード情報が保存されることは一切ありません。</strong>万が一の返金手続きにおいて、お客様から決済番号をご提示いただけない場合に限り、ご本人確認および決済特定の目的で、Stripe上に保管されている「メールアドレス」や「カードの下4桁」の情報を参照させていただく場合がございます。</li>
             
             <li> 現在、ユーザーによる路線遅延の報告機能およびプッシュ通知機能を開発中です。将来的にこれらの機能が公開され、お客様が当該機能をご利用（有効化）される場合には、機能の提供に必要な範囲でデータを記録させていただく予定です。</li>
         </ul>
