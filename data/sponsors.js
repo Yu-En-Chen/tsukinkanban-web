@@ -96,19 +96,29 @@ export function initSponsorCarousel() {
 
     // 自動播放邏輯 (每 5 秒)
     function nextSlide() {
-        // ✨ 效能守護神：如果發現輪播的 DOM 已經不在畫面上（代表使用者關閉了視窗），就立刻停止計時器並終止執行！
         if (!document.getElementById('sponsor-track')) {
             stopAutoPlay();
             return;
         }
-
         currentIndex = (currentIndex + 1) % totalSlides;
         updateCarousel();
     }
+
+    // 🟢 新增：往前一張邏輯
+    function prevSlide() {
+        if (!document.getElementById('sponsor-track')) {
+            stopAutoPlay();
+            return;
+        }
+        currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
+        updateCarousel();
+    }
+
     function startAutoPlay() {
         stopAutoPlay();
         autoPlayTimer = setInterval(nextSlide, 5000);
     }
+    
     function stopAutoPlay() {
         if (autoPlayTimer) clearInterval(autoPlayTimer);
     }
@@ -116,6 +126,28 @@ export function initSponsorCarousel() {
     // 初始化狀態
     updateCarousel();
     startAutoPlay();
+
+    // 🟢 新增：電腦版左右按鈕點擊事件綁定
+    const prevBtn = document.getElementById('sponsor-prev-btn');
+    const nextBtn = document.getElementById('sponsor-next-btn');
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', (e) => {
+            e.preventDefault(); 
+            e.stopPropagation(); // 阻止點擊事件穿透到後面的圖片連結
+            prevSlide();
+            startAutoPlay(); // 點擊後重置自動播放的計時器
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            nextSlide();
+            startAutoPlay(); // 點擊後重置自動播放的計時器
+        });
+    }
 
     // 🟢 3. 頂級觸控手勢綁定 (滑動與長按)
     let startX = 0;
