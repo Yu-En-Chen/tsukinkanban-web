@@ -160,7 +160,7 @@ export const supporterContent = `
                 協賛のご相談
             </a>
 
-            <a href="https://example.com/refund-test" target="_blank" rel="noopener noreferrer" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: rgba(120, 120, 128, 0.08); color: var(--text-main); padding: 14px 8px; border-radius: 12px; text-decoration: none; font-size: 0.85em; font-weight: 600; transition: background 0.2s ease, transform 0.2s ease;">
+            <a href="https://forms.gle/nKKsQd3yx41VPUAZ9" target="_blank" rel="noopener noreferrer" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: rgba(120, 120, 128, 0.08); color: var(--text-main); padding: 14px 8px; border-radius: 12px; text-decoration: none; font-size: 0.85em; font-weight: 600; transition: background 0.2s ease, transform 0.2s ease;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.7;">
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
                     <polyline points="3 3 3 8 8 8"></polyline>
