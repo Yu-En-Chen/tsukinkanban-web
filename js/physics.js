@@ -249,8 +249,20 @@ mainStack.addEventListener('touchmove', (e) => {
             }
         }
         
-        wheelDeltaSum -= e.deltaY;
-        currentPullY = Math.sign(wheelDeltaSum) * Math.pow(Math.abs(wheelDeltaSum), mouseSettings.tension) * mouseSettings.pullFactor;
+        // 🟢 設定單次滾輪的「極限值 (上限)」
+        let step = e.deltaY;
+        const maxStep = 35; // 限制最大暴衝值 (建議設定在 30 ~ 40 之間)
+        
+        // 超過上限就強制封頂
+        if (step > maxStep) step = maxStep;
+        else if (step < -maxStep) step = -maxStep;
+
+        // 將削平後的安全數值加入總和
+        wheelDeltaSum -= step;
+        
+        // 🟢 因為暴衝已經被防呆機制擋下了，這裡可以直接線性 1:1 輸出！
+        // 徹底廢除 Math.pow()，把原生手感還給使用者
+        currentPullY = wheelDeltaSum;
         
         if (!rafId) rafId = requestAnimationFrame(updateUI);
         
