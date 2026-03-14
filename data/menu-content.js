@@ -3,6 +3,7 @@ import { termsContent } from './terms.js';
 import { dataSourceContent } from './data-source.js';
 import { aboutContent } from './about.js';
 import { supporterContent } from './supporter.js';
+import { initSponsorCarousel } from '../data/sponsors.js';
 
 // 2. 組合成原本的 menuContents 物件再 export 出去
 export const menuContents = {

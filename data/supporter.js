@@ -6,22 +6,44 @@ export const supporterContent = `
         <p>当サイトは、皆様からの温かいご支援によって運営・開発が維持されています。より便利で快適なサービスを提供するため、サポートをお願いいたします。</p>
         <br>
 
+        <p style="color: var(--text-main); font-weight: 600; margin-bottom: 4px;">🤝 スポンサー</p>
+        <p style="font-size: 0.85em; opacity: 0.9; margin-bottom: 12px;">当サイトを支援してくださるパートナー企業・団体様です。</p>
+
+        <div id="sponsor-carousel-container" style="
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1.586 / 1; 
+            border-radius: 16px; 
+            overflow: hidden;
+            margin-bottom: 32px; /* 稍微加大與下方按鈕的間距 */
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            touch-action: pan-y;
+            background: rgba(120, 120, 128, 0.08); /* 容器底色 */
+        ">
+            <div id="sponsor-track" style="
+                display: flex;
+                width: 100%;
+                height: 100%;
+                transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            "></div>
+
+            <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 36px; background: linear-gradient(to top, rgba(0,0,0,0.3), transparent); pointer-events: none;"></div>
+
+            <div id="sponsor-dots" style="
+                position: absolute;
+                bottom: 10px;
+                left: 0;
+                right: 0;
+                display: flex;
+                justify-content: center;
+                gap: 8px;
+            "></div>
+        </div>
+
         <p style="color: var(--text-main); font-weight: 600; margin-bottom: 8px;">☕️ 開発者をサポートする</p>
         <a href="#" target="_blank" rel="noopener noreferrer" style="display: block; text-align: center; background: var(--text-main); color: var(--bg-main); padding: 12px; border-radius: 12px; font-weight: 600; text-decoration: none; margin-bottom: 24px; transition: opacity 0.2s ease;">
             クレジットカードで支援する
         </a>
-
-        <p style="color: var(--text-main); font-weight: 600; margin-bottom: 8px;">🤝 スポンサー</p>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;">
-            <a href="#" target="_blank" rel="noopener noreferrer" style="display: block; background: rgba(120, 120, 128, 0.08); border-radius: 12px; padding: 16px; text-align: center; text-decoration: none; color: inherit;">
-                <div style="width: 100%; height: 60px; background: rgba(120, 120, 128, 0.1); border-radius: 8px; margin-bottom: 8px;"></div>
-                <span style="font-size: 0.85em;">Sponsor Name</span>
-            </a>
-            <a href="#" target="_blank" rel="noopener noreferrer" style="display: block; background: rgba(120, 120, 128, 0.08); border-radius: 12px; padding: 16px; text-align: center; text-decoration: none; color: inherit;">
-                <div style="width: 100%; height: 60px; background: rgba(120, 120, 128, 0.1); border-radius: 8px; margin-bottom: 8px;"></div>
-                <span style="font-size: 0.85em;">Sponsor Name</span>
-            </a>
-        </div>
 
         <div style="padding: 12px 16px; background: rgba(120, 120, 128, 0.08); border-radius: 12px;">
             <p style="font-weight: 600; font-size: 0.9em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">

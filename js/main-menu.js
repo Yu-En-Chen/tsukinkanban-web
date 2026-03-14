@@ -55,8 +55,6 @@ window.initDynamicMainMenu = function () {
     `;
 
     capsule.onclick = () => {
-        // 🟢 魔法在這裡：去外部檔案尋找對應 item.text 的內容。
-        // 如果外部檔案有寫，就用外部的；如果沒寫 (例如設定、分享等)，就用後面備用的預設文字！
         const content = menuContents[item.text] || `
             <div style="opacity: 0.8;">
                 <p>這裡是「<b>${item.text}</b>」的專屬內容區塊。</p>
@@ -65,6 +63,13 @@ window.initDynamicMainMenu = function () {
         `;
         
         window.openUniversalPage(item.text, content);
+
+        // ✨ 如果開啟的是贊助者頁面，等動畫稍微跑完後 (50ms)，初始化輪播圖！
+        if (item.text === 'サポーター') {
+            setTimeout(() => {
+                initSponsorCarousel();
+            }, 50);
+        }
     };
 
         container.appendChild(capsule);
