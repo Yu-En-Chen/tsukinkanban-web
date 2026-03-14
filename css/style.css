@@ -1576,6 +1576,22 @@ body.searching .dismiss-icon {
     transform-origin: center center !important;
 }
 
+/* 🟢 通知選單圖示的大小與【粗細】微調 */
+.capsule-btn-item svg.lucide-cog {
+    width: 25px !important;
+    height: 25px !important;
+    /* 👇 在這裡調整設定(齒輪)的粗細，例如改為 1.5px (變細) 或 2.0px (變粗) */
+    stroke-width: 1.6px !important; 
+}
+
+.capsule-btn-item svg.lucide-archive-x {
+    width: 21px !important;
+    height: 21px !important;
+    /* 👇 在這裡調整封存(X)的粗細，例如改為 1.5px (變細) 或 2.0px (變粗) */
+    stroke-width: 1.8px !important;
+    transform: translateY(-1px) !important; 
+}
+
 /* ==========================================================================
    🟢 按鈕微互動 (Hover & Touch Scale)
    ========================================================================== */
