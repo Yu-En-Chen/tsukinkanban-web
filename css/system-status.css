@@ -8,7 +8,6 @@
     height: 110px;
     border-radius: 29.5px;
     
-    /* 完美等距魔法 */
     --gap: 14.5px;
     left: calc(122.5px + var(--gap));
     right: calc(102.5px + var(--gap));
@@ -19,11 +18,20 @@
     z-index: 5500;
     pointer-events: none; 
     
-    /* 🚀 拔除 will-change 與 translate3d，恢復瀏覽器原生調度，減輕 GPU 負擔 */
+    /* 🛑 修改這裡：預設為「隱藏並縮小」狀態，等待 JS 呼叫 */
+    transform: scale(0.85);
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.4s var(--apple-spring), opacity 0.3s ease, visibility 0s 0.3s;
+}
+
+/* 🚀 新增：未來的喚醒開關！只要用 JS 加上這個 class 就會彈出來 */
+.center-status-island.is-active {
     transform: scale(1);
     opacity: 1;
     visibility: visible;
-    transition: transform 0.4s var(--apple-spring), opacity 0.3s ease;
+    /* 顯示時立刻拔除 visibility 延遲 */
+    transition: transform 0.4s var(--apple-spring), opacity 0.3s ease, visibility 0s 0s;
 }
 
 @media (prefers-color-scheme: dark) {
