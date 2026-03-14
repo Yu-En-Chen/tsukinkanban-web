@@ -1,5 +1,6 @@
 // main-menu.js - 獨立主選單的唯一控制中心
 import { menuContents } from '../data/menu-content.js';
+import { initSponsorCarousel } from '../data/sponsors.js';
 
 window.initDynamicMainMenu = function () {
     let container = document.getElementById('dynamic-main-menu');

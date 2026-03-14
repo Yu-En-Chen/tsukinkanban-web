@@ -96,6 +96,12 @@ export function initSponsorCarousel() {
 
     // 自動播放邏輯 (每 5 秒)
     function nextSlide() {
+        // ✨ 效能守護神：如果發現輪播的 DOM 已經不在畫面上（代表使用者關閉了視窗），就立刻停止計時器並終止執行！
+        if (!document.getElementById('sponsor-track')) {
+            stopAutoPlay();
+            return;
+        }
+
         currentIndex = (currentIndex + 1) % totalSlides;
         updateCarousel();
     }
