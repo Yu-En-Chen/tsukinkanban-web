@@ -17,7 +17,7 @@ export const termsContent = `
         
         <p style="color: var(--text-main); font-weight: 600; margin-bottom: 4px;"><strong>4. 禁止事項</strong></p>
         <p style="font-size: 0.95em; opacity: 0.9;">本サービスの名前、ロゴ、スクリーンショットなどを無断で使用し、虚偽の情報や違法なメッセージを拡散する行為を固く禁じます。</p>
-        <p style="font-size: 0.95em; opacity: 0.9;">運営者（開発者）に対する誹謗中傷、脅迫、嫌がらせ、不当な要求、またはスパム行為（悪意のあるDMやメールの送信など）<</p>
+        <p style="font-size: 0.95em; opacity: 0.9;">運営者（開発者）に対する誹謗中傷、脅迫、嫌がらせ、不当な要求、またはスパム行為（悪意のあるDMやメールの送信など）</p>
         <br>
 
         <p style="color: var(--text-main); font-weight: 600; margin-bottom: 4px;"><strong>5. 利用の拒否</strong></p>
