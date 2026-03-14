@@ -1,73 +1,66 @@
 /* ==========================================================================
-   system-status.css - 中控動態實心圖塊 (Dynamic Status Island)
+   system-status.css - 中控動態實心圖塊 (巨型外框對齊 + 邊框與全域隱藏版)
    ========================================================================== */
 
    .center-status-island {
     position: absolute;
-    top: 0;
     
-    /* 📐 自動適應寬度與完美間距魔法：
-       外層 Header 的預設上緣間距為 12px，所以我們左右也抓 12px 的完美間距。
-       - 左側座標：左母艦起點(20px) + 寬度(95px) + 間距(12px) = 127px
-       - 右側座標：右母艦寬度(95px) + 間距(12px) = 107px
-       設定好 left 和 right 後，它會像彈簧一樣自動填滿中間的空隙！ */
-    left: 127px;
-    right: 107px;
+    /* 🟢 1. 垂直對齊母艦外框 (110x110) */
+    top: -7.5px;
+    height: 110px;
     
-    /* 📐 與左右母艦完全相同的圓角與高度 */
-    height: 44px;
-    border-radius: 22px;
+    /* 🟢 2. 圓角與母艦外框完全相同 */
+    border-radius: 29.5px;
     
-    /* 🎨 顏色：淺色模式預設為「深灰色」 */
+    /* 🟢 3. 完美等距魔法 (Gap) */
+    --gap: 14.5px;
+    left: calc(122.5px + var(--gap));
+    right: calc(102.5px + var(--gap));
+    
+    /* 🎨 4. 顏色與【母艦同款邊框】 */
     background: #3a3a3c; 
+    border: 1px solid var(--search-border); /* ✨ 新增：跟隨系統變數的邊框 */
     
     z-index: 5500;
     pointer-events: none; /* 預設為純視覺元件，不干擾底層點擊 */
     
-    /* 🚀 進出場動畫與彈性過渡 */
+    /* 🚀 回到首頁時的進場動畫 (彈性過渡) */
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
     transition: all 0.5s var(--apple-spring), opacity 0.3s ease;
 }
 
-/* 🎨 深色模式：自動反轉為「淺灰色」 */
+/* 🎨 深色模式：自動反轉顏色與微光邊框 */
 @media (prefers-color-scheme: dark) {
     .center-status-island {
         background: #d1d1d6;
+        /* ✨ 新增：深色模式專屬的白灰微光邊框，與母艦完全相同 */
+        border: 1px solid rgba(220, 220, 230, 0.15) !important; 
     }
 }
 
 /* =========================================
-   🟢 同步隱藏與退場邏輯 (緊跟母艦的動作)
+   🟢 全域隱藏與退場邏輯 (臨時通知徹底收起版)
    ========================================= */
 
-/* 1. 搜尋框展開時退場 (往上縮小消失) */
-.search-container.active .center-status-island {
-    opacity: 0 !important;
-    transform: translateY(-15px) scale(0.9) !important;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-}
-
-/* 2. 左側漢堡選單(通知)展開時退場 */
-body.hamburger-active .center-status-island {
-    opacity: 0 !important;
-    transform: translateY(-15px) scale(0.9) !important;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-}
-
-/* 3. 個性化設置 / 詳情視窗 展開時退場 (向後下沉) */
-body:has(.universal-window.is-active) .center-status-island {
-    opacity: 0 !important;
-    transform: scale(0.90) translateY(15px) !important;
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease !important;
-}
-
-/* =========================================
-   🚨 未來功能擴充準備區 (透過 JS 加上 class 來觸發)
-   ========================================= */
-
-/* 👉 未來你要做「飛機模式」或「警示」，只要在這裡加 CSS 就好 */
-/* 例如：
-.center-status-island.is-warning {
-    background: #ff3b30;
-    animation: warningPulse 1s infinite;
-}
-*/
+   body.searching .center-status-island,
+   body.menu-active .center-status-island,
+   body.hamburger-active .center-status-island,
+   body:has(.detail-overlay.active) .center-status-island,
+   body:has(.universal-window.is-active) .center-status-island {
+       
+       /* 1. 透明度歸零 */
+       opacity: 0 !important;
+       
+       /* 2. ✨ 終極殺手鐧：徹底隱藏圖層，消滅所有邊框與殘影 */
+       visibility: hidden !important;
+       
+       /* 3. 往上滑動並縮小 */
+       transform: translate3d(0, -20px, 0) scale(0.8) !important;
+       
+       /* 4. 關閉點擊 */
+       pointer-events: none !important;
+       
+       /* 5. ✨ 動畫時序校正：讓 visibility 等待 0.2 秒 (透明度跑完) 後再觸發，確保有滑順的淡出過程 */
+       transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, visibility 0s 0.2s !important;
+   }
