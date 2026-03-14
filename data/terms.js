@@ -23,6 +23,10 @@ export const termsContent = `
         <p style="font-size: 0.95em; opacity: 0.9;">外部データの仕様変更、提供停止、遅延等により、本サービスの機能が制限される場合があります。</p>
         <br>
 
+        <p style="color: var(--text-main); font-weight: 600; margin-bottom: 4px;"><strong>5. 外部リンクについて</strong></p>
+        <p style="font-size: 0.95em; opacity: 0.9;">本サービスからリンクされた外部サイトの内容について、本サービスは一切の責任を負いません。</p>
+        <br>
+
         <p style="color: var(--text-main); font-weight: 600; margin-bottom: 4px;"><strong>5. 禁止事項</strong></p>
         <p style="font-size: 0.95em; opacity: 0.9;">本サービスの名前、ロゴ、スクリーンショットなどを無断で使用し、虚偽の情報や違法なメッセージを拡散する行為を固く禁じます。</p>
         <p style="font-size: 0.95em; opacity: 0.9;">運営者（開発者）に対する誹謗中傷、脅迫、嫌がらせ、不当な要求、またはスパム行為（悪意のあるDMやメールの送信など）</p>
@@ -31,6 +35,7 @@ export const termsContent = `
         <p style="color: var(--text-main); font-weight: 600; margin-bottom: 4px;"><strong>6. 利用の拒否</strong></p>
         <p style="font-size: 0.95em; opacity: 0.9;">上記の禁止事項に該当する行為、または運営者が悪質な行為・運営を妨害する行為と判断した場合、開発者は事前通知なく当該ユーザーに対するサービス提供の拒否（アクセス遮断やアカウントのブロック等）を行う権利を有します。</p>
         <p style="font-size: 0.95em; opacity: 0.9;">また、悪質な嫌がらせや業務妨害に対しては、警察への相談や法的措置（開示請求を含む）を辞さないものとします。</p>
+        <p style="font-size: 0.95em; opacity: 0.9;">その他、運営者が不適切と判断する行為を禁止します。</p>
         <br>
 
         <p style="color: var(--text-main); font-weight: 600; margin-bottom: 4px;"><strong>7. 利用規約の変更</strong></p>

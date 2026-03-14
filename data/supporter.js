@@ -84,7 +84,8 @@ export const supporterContent = `
             "></div>
         </div>
 
-        <p style="font-size: 0.95em; margin-bottom: 24px;">当サイトは個人で開発・運営を行っており、サーバー維持費などは皆様からの温かいご支援によって成り立っています。今後もより便利で快適なサービスを継続して提供するため、サポートをお願いいたします。</p>
+        <p style="font-size: 0.95em; margin-bottom: 24px;">当サイトは個人で開発・運営を行っており、サーバー維持費などは皆様からの温かいご支援によって成り立っています。</p>
+        <p style="font-size: 0.95em; margin-bottom: 24px;">今後もより便利で快適なサービスを継続して提供するため、サポートをお願いいたします。</p>
         <br>
         <p style="color: var(--text-main); font-weight: 600; margin-bottom: 8px;">開発者をサポートする</p>
         
