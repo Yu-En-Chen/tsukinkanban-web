@@ -281,7 +281,7 @@ body.universal-active .universal-page-wrapper {
     scrollbar-width: none; 
     color: var(--text-main);
     line-height: 1.6;
-    padding: 0 0 30px 10px !important; 
+    padding: 0 10px 30px 10px !important; 
     
     /* ✨ 加入這兩行來精準控制文字大小與粗細 */
     font-size: 1.2rem !important; /* 🟢 1.4rem 就是你標題的預設大小 */

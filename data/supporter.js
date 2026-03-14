@@ -3,10 +3,7 @@
 export const supporterContent = `
     <div style="opacity: 0.85; line-height: 1.7;">
         
-        <p>当サイトは、皆様からの温かいご支援によって運営・開発が維持されています。より便利で快適なサービスを提供するため、サポートをお願いいたします。</p>
-        <br>
-
-        <p style="color: var(--text-main); font-weight: 600; margin-bottom: 4px;">🤝 スポンサー</p>
+        <p style="color: var(--text-main); font-weight: 600; margin-bottom: 4px;">スポンサー</p>
         <p style="font-size: 0.85em; opacity: 0.9; margin-bottom: 12px;">当サイトを支援してくださるパートナー企業・団体様です。</p>
 
         <div id="sponsor-carousel-container" style="
@@ -15,10 +12,10 @@ export const supporterContent = `
             aspect-ratio: 1.586 / 1; 
             border-radius: 16px; 
             overflow: hidden;
-            margin-bottom: 32px; /* 稍微加大與下方按鈕的間距 */
+            margin-bottom: 24px; /* 稍微縮小間距，讓視線順暢往下引導 */
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             touch-action: pan-y;
-            background: rgba(120, 120, 128, 0.08); /* 容器底色 */
+            background: rgba(120, 120, 128, 0.08);
         ">
             <div id="sponsor-track" style="
                 display: flex;
@@ -40,8 +37,10 @@ export const supporterContent = `
             "></div>
         </div>
 
-        <p style="color: var(--text-main); font-weight: 600; margin-bottom: 8px;">☕️ 開発者をサポートする</p>
-        <a href="#" target="_blank" rel="noopener noreferrer" style="display: block; text-align: center; background: var(--text-main); color: var(--bg-main); padding: 12px; border-radius: 12px; font-weight: 600; text-decoration: none; margin-bottom: 24px; transition: opacity 0.2s ease;">
+        <p style="font-size: 0.95em; margin-bottom: 24px;">当サイトは、皆様からの温かいご支援によって運営・開発が維持されています。より便利で快適なサービスを提供するため、サポートをお願いいたします。</p>
+
+        <p style="color: var(--text-main); font-weight: 600; margin-bottom: 8px;">開発者をサポートする</p>
+        <a href="https://buy.stripe.com/test_xxxxxxxx" target="_blank" rel="noopener noreferrer" style="display: block; text-align: center; background: var(--text-main); color: var(--bg-main); padding: 12px; border-radius: 12px; font-weight: 600; text-decoration: none; margin-bottom: 24px; transition: opacity 0.2s ease;">
             クレジットカードで支援する
         </a>
 
