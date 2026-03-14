@@ -39,6 +39,17 @@ export function initSponsorCarousel() {
         slide.href = sponsor.link;
         slide.target = '_blank';
         slide.rel = 'noopener noreferrer';
+
+        // ✨ 新增：點擊時的「防誤觸與跳轉確認」提示
+        slide.addEventListener('click', (e) => {
+            // 跳出確認視窗
+            const isConfirmed = window.confirm('外部サイトへ移動します。よろしいですか？' + sponsor.link);
+            
+            // 如果使用者點擊「取消」，就攔截預設的跳轉行為
+            if (!isConfirmed) {
+                e.preventDefault(); 
+            }
+        });
         
         // 🟢 實心灰色背景
         slide.style.cssText = `
