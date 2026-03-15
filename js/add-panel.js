@@ -17,9 +17,7 @@ window.openAddPanel = function () {
                 </button>
                 <div class="add-menu-content-wrapper">
                     <div class="add-menu-content">
-                        <div class="add-menu-inner">
-                            <p style="text-align: center; opacity: 0.6; padding-top: 40px;">ここに新規カード作成のUIが入ります</p>
-                        </div>
+                        ${typeof window.getAddNewCardHTML === 'function' ? window.getAddNewCardHTML() : '<p style="text-align: center; opacity: 0.6; padding-top: 40px;">モジュールを読み込み中...</p>'}
                     </div>
                 </div>
             </div>
