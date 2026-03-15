@@ -181,15 +181,20 @@ window.renderManagementCards = function() {
         capsule.style.color = luminance > 0.55 ? 'rgba(0, 0, 0, 0.85)' : '#ffffff';
         if (l > 95) capsule.style.border = '1px solid rgba(0,0,0,0.08)';
 
-        // ✨ 修改排版：眼睛在左、名字在中、拖拉在右
+        // ✨ 動態判定眼睛圖示：如果是personal，只放入一個 20x20 的隱形佔位方塊
+        const eyeIconHTML = card.id === 'personal'
+            ? `<div style="width: 20px; height: 20px; pointer-events: none;"></div>`
+            : `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.9;">
+                   <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/>
+                   <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/>
+                   <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/>
+                   <path d="m2 2 20 20"/>
+               </svg>`;
+
+        // ✨ 組合 HTML，並移除隱藏項目時多餘的點擊游標 (cursor)
         capsule.innerHTML = `
-            <div class="manage-card-visibility">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.9;">
-                    <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/>
-                    <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/>
-                    <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/>
-                    <path d="m2 2 20 20"/>
-                </svg>
+            <div class="manage-card-visibility" ${card.id === 'personal' ? 'style="cursor: default;"' : ''}>
+                ${eyeIconHTML}
             </div>
             
             <div class="manage-card-name">${card.name}</div>
@@ -205,6 +210,7 @@ window.renderManagementCards = function() {
                 </svg>
             </div>
         `;
+        
         list.appendChild(capsule);
     });
 
