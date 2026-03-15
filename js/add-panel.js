@@ -167,6 +167,7 @@ window.renderManagementCards = async function() {
             innerContainer.style.overscrollBehavior = 'contain';
         } else {
             // 只有一排或沒東西時：維持完美定身狀態，拖拉手感最大化！
+            innerContainer.scrollTop = 0;
             innerContainer.style.overflowY = 'hidden';
         }
     }
