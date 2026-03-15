@@ -416,7 +416,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
             } else if (capsule.classList.contains('menu-expanded')) {
                 window.toggleCapsuleMenu();
             } else {
-                console.log('Plus Action Triggered');
+                window.openUniversalPage('新規追加', '<div class="empty-panel-box">機能開発中...</div>');
             }
         } else if (mode === 'blank') {
             if (typeof window.closeBlankOverlay === 'function') window.closeBlankOverlay();
