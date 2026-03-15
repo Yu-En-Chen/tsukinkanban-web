@@ -164,42 +164,56 @@
 /* =========================================
    🟢 管理面板專屬卡片膠囊 (Management Capsules)
    ========================================= */
-
    .manage-card-capsule {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    /* ✨ 統一改為 flex-start 靠左，並使用 gap 來強制定距 */
+    justify-content: flex-start; 
+    gap: 12px; 
     padding: 16px 20px;
-    border-radius: 999px; /* 卡片內部的小膠囊圓角 */
+    border-radius: 999px; 
     font-size: 1.05rem;
     font-weight: 600;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* 微微的浮空陰影 */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
-}
-
-/* 點擊時的微縮放物理手感 */
-.manage-card-capsule:active {
-    transform: scale(0.97);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 
 .manage-card-name {
     flex: 1;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis; /* 如果名字太長自動變 ... */
+    text-overflow: ellipsis; 
     letter-spacing: 0.5px;
+    text-align: left;
 }
 
-/* 右側用來預留拖拉排序 (Drag & Drop) 的抓手圖示區 */
 .manage-card-drag {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding-left: 12px;
+    /* ✨ 移除多餘的 padding，靠 gap 控制距離 */
+    padding: 0; 
     cursor: grab;
+    /* 阻擋原生橫向手勢，確保長按順利觸發 */
+    touch-action: none; 
 }
 
 .manage-card-drag:active {
     cursor: grabbing;
+}
+
+/* ✨ 幽靈浮空狀態 (Drag Ghost) */
+.manage-card-capsule.is-dragging {
+    pointer-events: none; /* 讓滑鼠雷射光能穿透它打到底下的卡片 */
+    z-index: 99999;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+    transition: none; /* 拖拉時絕對跟手，不要延遲 */
+}
+
+/* ✨ 佔位虛線格 (Placeholder) */
+.manage-card-placeholder {
+    border-radius: 999px;
+    background: rgba(120, 120, 128, 0.1);
+    border: 2px dashed rgba(120, 120, 128, 0.3);
+    margin: 0;
 }

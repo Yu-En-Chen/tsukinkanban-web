@@ -302,3 +302,40 @@ export async function restorePreviousPreference(id) {
         }
     });
 }
+
+// 6. 🟢 新增：儲存卡片顯示順序 (Drag & Drop 專用)
+export async function saveDisplayOrder(orderedIds) {
+    const db = await initDB();
+    const data = { 
+        id: '__DISPLAY_ORDER__', // 使用一個特殊的保留字作為 ID
+        order: orderedIds, 
+        updatedAt: Date.now() 
+    };
+
+    if (useFallback || !db) {
+        saveFallbackData(data);
+        console.log('[DB] 新的卡片順序已儲存 (備用空間)');
+        return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+        try {
+            const transaction = db.transaction(STORE_NAME, 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.put(data);
+            request.onsuccess = () => {
+                console.log('[DB] 新的卡片順序已儲存');
+                resolve();
+            };
+            request.onerror = () => {
+                useFallback = true;
+                saveFallbackData(data);
+                resolve();
+            };
+        } catch (err) {
+            useFallback = true;
+            saveFallbackData(data);
+            resolve();
+        }
+    });
+}
