@@ -1087,12 +1087,12 @@ window.undoCardPreference = async function() {
     }
 };
 
-// 🟢 系統啟動引擎 (非同步合併資料)
+// 🟢 系統啟動引擎 (非同步合併資料與排序)
 async function initApp() {
-    // 1. 背景默默抓取使用者的自訂補丁
+    // 1. 背景默默抓取使用者的自訂補丁與設定
     const userPrefs = await getAllUserPreferences();
 
-    // 2. Base + Patch 疊加合併
+    // 2. Base + Patch 疊加合併 (套用自訂顏色與名字)
     window.appRailwayData = railwayData.map(route => {
         const pref = userPrefs[route.id];
         if (pref) {
@@ -1105,7 +1105,20 @@ async function initApp() {
         return { ...route };
     });
 
-    // 3. 用「合併後的資料」來生成畫面
+    // ✨ 3. 讀取存好的排序資料 (__DISPLAY_ORDER__)，對卡片進行洗牌！
+    const orderData = userPrefs['__DISPLAY_ORDER__'];
+    if (orderData && orderData.order) {
+        window.appRailwayData.sort((a, b) => {
+            let indexA = orderData.order.indexOf(a.id);
+            let indexB = orderData.order.indexOf(b.id);
+            // 如果未來有新增加的卡片（不在舊的排序名單內），自動往後排
+            if (indexA === -1) indexA = 999; 
+            if (indexB === -1) indexB = 999;
+            return indexA - indexB;
+        });
+    }
+
+    // 4. 用「合併且排序後的資料」來生成畫面
     renderCards(window.appRailwayData);
     initBottomCard();
     initDismissIcon();
