@@ -477,7 +477,7 @@ function initDragAndDrop(list) {
 }
 
 // ============================================================================
-// 🟢 新增卡片：Native 級「新建 -> 捲動 -> 翻轉」連鎖運鏡引擎
+// 🟢 新增卡片：Native 級「新建 -> 捲動 -> 點開 -> 翻轉」連鎖運鏡引擎
 // ============================================================================
 window.createNewCardAndEdit = async function() {
     // 1. 關閉目前的通用面板
@@ -486,19 +486,38 @@ window.createNewCardAndEdit = async function() {
     // 2. 等待面板收起 (約 300ms)
     setTimeout(async () => {
         
-        // ✨ 3. 無中生有：生成一張擁有獨立 ID 的全新卡片
-        const newId = 'custom-' + Date.now();
+        if (!window.appRailwayData) window.appRailwayData = [];
+
+        // ✨ 3. 智慧 ID 引擎：自動尋找 new-card-1, 2, 3... 的空位並遞增
+        const existingNumbers = window.appRailwayData
+            .map(c => c.id)
+            .filter(id => id.startsWith('new-card-'))
+            .map(id => parseInt(id.replace('new-card-', ''), 10))
+            .filter(num => !isNaN(num))
+            .sort((a, b) => a - b);
+            
+        let nextNum = 1;
+        for (let num of existingNumbers) {
+            if (num === nextNum) nextNum++;
+            else if (num > nextNum) break; // 發現中間有空位，立刻跳出迴圈填補！
+        }
+        const newId = `new-card-${nextNum}`;
+
+        // ✨ 4. 嚴謹的資料格式：補齊 script.js 渲染所需的必填欄位，防止 forEach 當機！
         const newCard = {
             id: newId,
             name: '新規カード',
+            kana: 'しんきかーど',
+            status: 'カスタム',      // 右上角標籤
+            desc: 'カスタム追加されたカード', // 副標題描述
+            detail: ['カスタマイズ可能'],   // 膠囊標籤 (陣列格式)
             hex: '#2C2C2E',
             isCustom: true // 標記為自訂卡片
         };
 
-        if (!window.appRailwayData) window.appRailwayData = [];
         window.appRailwayData.push(newCard);
 
-        // 4. 取得最新可見名單，並存入 DB (加入排序與生成偏好檔)
+        // 5. 取得最新可見名單，並真實存入 DB
         const dbSandbox = await import('../data/db-add-panel.js');
         const hiddenIds = dbSandbox.getHiddenCards ? dbSandbox.getHiddenCards() : [];
         const visibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
@@ -508,12 +527,12 @@ window.createNewCardAndEdit = async function() {
         if (db.saveDisplayOrder) db.saveDisplayOrder(visibleIds);
         if (db.saveRoutePreference) db.saveRoutePreference(newId, newCard.name, newCard.hex, null);
 
-        // 5. 重新渲染首頁主畫面 (此時新卡片已經出現在最後面了！)
+        // 6. 重新渲染首頁主畫面 (此時新卡片已經順利出現在最後面了！)
         if (typeof window.renderMainCards === 'function') {
             window.renderMainCards(visibleData);
         }
 
-        // ✨ 6. 運鏡開始：平滑捲動到最後一張卡片
+        // 7. 運鏡開始：平滑捲動到最後一張卡片
         const container = document.getElementById('main-cards-container');
         if (container) {
             const cards = container.querySelectorAll('.railway-card');
@@ -523,21 +542,30 @@ window.createNewCardAndEdit = async function() {
                     left: lastCard.offsetLeft - (window.innerWidth - lastCard.offsetWidth) / 2,
                     behavior: 'smooth'
                 });
+            }
+        }
 
-                // ✨ 7. 等待捲動完成後，觸發個性化設定的「翻轉動畫」
+        // ✨ 8. 點開新卡片，進入運鏡下半場
+        setTimeout(() => {
+            const targetCard = document.getElementById(`card-${newId}`);
+            if (targetCard) {
+                // 模擬手指點擊，觸發卡片升起！
+                targetCard.click(); 
+
+                // 9. 等待卡片升起動畫完成 (約 650ms) 後，立刻觸發翻轉引擎！
                 setTimeout(() => {
                     if (typeof window.openBlankOverlay === 'function') {
-                        // 呼叫你最完美的個性化引擎！
                         window.openBlankOverlay(newCard.hex);
                         
-                        // ✨ 8. 終極細節：翻轉完成後，自動觸發「表示名」的幽靈輸入框，直接彈出鍵盤！
+                        // 10. 終極細節：翻轉完成後，自動點擊「表示名」彈出鍵盤！
                         setTimeout(() => {
                             const nameLabel = document.getElementById('p-btn-label');
                             if (nameLabel) nameLabel.click();
-                        }, 500); 
+                        }, 550); 
                     }
-                }, 500); // 500ms 等待 Scroll 結束，讓系統更新 ActiveIndex
+                }, 650); // 等待卡片升起的飛行時間
             }
-        }
+        }, 350); // 等待平滑捲動到定位
+
     }, 300);
 };
