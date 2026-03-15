@@ -543,7 +543,7 @@ window.createNewCardAndEdit = async function() {
             isCustom: true 
         };
 
-        window.appRailwayData.push(newCard);
+        window.appRailwayData.unshift(newCard);
 
         // 取得最新可見名單，並真實存入 DB
         const updatedVisibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
