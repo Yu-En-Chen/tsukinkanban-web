@@ -24,7 +24,7 @@
     width: 100%;
     
     /* 點開前保持本來的狀態：999px 完美膠囊外觀與底色 */
-    background: rgba(120, 120, 128, 0.08);
+    background: rgba(120, 120, 128, 0.13);
     border-radius: 999px; 
     overflow: hidden;
     
@@ -97,22 +97,27 @@
     color: var(--text-main);
 }
 
-.add-menu-chevron {
-    color: #c7c7cc;
+/* =========================================
+   🟢 右側箭頭圖示 (Chevron)
+   ========================================= */
+   .add-menu-chevron {
+    /* ✨ 淺色模式：很深的灰色 (確保在白底上非常清晰) */
+    color: rgba(60, 60, 67, 0.6); 
     display: flex;
     align-items: center;
-    /* 箭頭旋轉也改為平滑過渡 */
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    /* 箭頭旋轉與顏色的平滑過渡設定 */
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease;
 }
 
-/* 展開時：原本的向下箭頭轉 180 度，變成向上 */
+/* 展開時箭頭轉 180 度，變成向上 */
 .add-menu-item.is-expanded .add-menu-chevron {
     transform: rotate(180deg);
 }
 
 @media (prefers-color-scheme: dark) {
     .add-menu-chevron {
-        color: #48484a;
+        /* ✨ 深色模式：很白的灰色 (確保在黑底上非常清晰) */
+        color: rgba(235, 235, 245, 0.6); 
     }
 }
 
