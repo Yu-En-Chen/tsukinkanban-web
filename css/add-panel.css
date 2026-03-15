@@ -139,19 +139,16 @@
     transform: translateY(-15px);
     transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     
-    /* ✨ 修正 1：拔除危險的 100svh，改用安全的相對高度，絕對不觸發全螢幕捲動 */
     height: 64.5vh; 
-    max-height: 600px; /* 限制生長極限，確保它絕對不會超出外框 */
-    min-height: 250px; /* 畫面太小時的保底高度 */
+    max-height: 600px; 
+    min-height: 250px; 
     
-    /* ✨ 修正 2：內部防爆框保護！萬一未來你塞了太多設定選單，它只會在面板內部滑動，不會影響外框 */
-    overflow-y: auto;
+    /* ✨ 徹底鎖死：拔除 auto，改為 hidden！手機開啟這個視窗時禁止任何頁面滑動！ */
+    overflow: hidden; 
     
     background: transparent; 
     margin-top: 0;
     border-radius: 0;
-    
-    /* ✨ 修正 3：精準鎖定內距！確保底部留白跟左右留白完全一致，都是 24px */
     padding: 0 24px 24px 24px; 
 }
 

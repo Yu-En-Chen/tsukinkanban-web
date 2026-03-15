@@ -146,8 +146,9 @@ window.renderManagementCards = function() {
         capsule.style.color = luminance > 0.55 ? 'rgba(0, 0, 0, 0.85)' : '#ffffff';
         if (l > 95) capsule.style.border = '1px solid rgba(0,0,0,0.08)';
 
-        // ✨ HTML 結構修正：拔除多餘方塊，讓 SVG 與文字純粹靠左
+        // ✨ 修正排版：名字在左，把拖拉用 SVG 移回右側！
         capsule.innerHTML = `
+            <div class="manage-card-name">${card.name}</div>
             <div class="manage-card-drag">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.6;">
                     <line x1="8" y1="6" x2="21" y2="6"></line>
@@ -158,7 +159,6 @@ window.renderManagementCards = function() {
                     <line x1="3" y1="18" x2="3.01" y2="18"></line>
                 </svg>
             </div>
-            <div class="manage-card-name">${card.name}</div>
         `;
         list.appendChild(capsule);
     });
