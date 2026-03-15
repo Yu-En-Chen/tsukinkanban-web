@@ -1779,13 +1779,18 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 /* ==========================================================================
    高級反差色動態游標 (Custom Difference Cursor)
    ========================================================================== */
-@media (pointer: fine) {
+   @media (pointer: fine) {
 
-    *,
+    /* ✨ 修正 1：標準元件獨立一組，確保絕對生效 */
+    html, body, *,
     *::before,
     *::after,
     input,
-    textarea,
+    textarea {
+        cursor: none !important;
+    }
+
+    /* ✨ 修正 2：瀏覽器專屬的虛擬元件獨立一組，避免拖累上面 */
     input::-webkit-search-cancel-button,
     input::-webkit-search-decoration,
     input::-webkit-search-results-button,
