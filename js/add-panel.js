@@ -100,7 +100,7 @@ window.toggleAddMenuItem = function(id) {
     }
 };
 
-// 🟢 渲染管理面板裡的彩色卡片膠囊
+// 🟢 渲染管理面板裡的彩色卡片膠囊 (完美漸層色彩版)
 window.renderManagementCards = function() {
     const loading = document.getElementById('manage-cards-loading');
     const list = document.getElementById('manage-cards-list');
@@ -111,23 +111,55 @@ window.renderManagementCards = function() {
     list.style.display = 'flex';
     list.innerHTML = ''; // 清空舊資料
 
-    // 抓取全域當前合併後的卡片資料 (這是最準確的)
     const currentCards = window.appRailwayData || [];
 
     currentCards.forEach(card => {
         const capsule = document.createElement('div');
         capsule.className = 'manage-card-capsule';
-        capsule.style.background = card.hex; // 注入該路線的色碼
 
-        // ✨ 自動反差色引擎：計算背景亮度，決定文字用黑色還是白色
-        const hex = card.hex.replace('#', '');
-        const r = parseInt(hex.substring(0, 2), 16) || 0;
-        const g = parseInt(hex.substring(2, 4), 16) || 0;
-        const b = parseInt(hex.substring(4, 6), 16) || 0;
+        // ✨ 核心升級：色彩提亮與漸層引擎 (完美還原卡片頂部的亮澤感)
+        let hex = card.hex.replace('#', '');
+        if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        
+        // 轉換為 HSL 以計算真實亮度
+        const rF = r / 255, gF = g / 255, bF = b / 255;
+        const max = Math.max(rF, gF, bF), min = Math.min(rF, gF, bF);
+        let h = 0, s = 0, l = (max + min) / 2;
+        if (max !== min) {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case rF: h = (gF - bF) / d + (gF < bF ? 6 : 0); break;
+                case gF: h = (bF - rF) / d + 2; break;
+                case bF: h = (rF - gF) / d + 4; break;
+            }
+            h /= 6;
+        }
+        h *= 360; s *= 100; l *= 100;
+
+        // 套用主卡片的提亮/加深參數
+        let topShift = 17, bottomShift = 17;
+        if (l > 95) { topShift = 0; bottomShift = 35; }
+        else if (l > 60) { topShift = 4; bottomShift = 14; }
+        else if (l < 5) { topShift = 26; bottomShift = 0; }
+        else if (l < 40) { topShift = 14; bottomShift = 4; }
+
+        const lTop = Math.min(100, l + topShift);
+        const lBottom = Math.max(0, l - bottomShift);
+
+        // 注入完美漸層背景
+        capsule.style.background = `linear-gradient(135deg, hsl(${h}, ${s}%, ${lTop}%), hsl(${h}, ${s}%, ${lBottom}%))`;
+
+        // 計算文字反差色
         const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-        capsule.style.color = luminance > 0.6 ? 'rgba(0, 0, 0, 0.85)' : '#ffffff';
+        capsule.style.color = luminance > 0.55 ? 'rgba(0, 0, 0, 0.85)' : '#ffffff';
 
-        // 注入 HTML (左側標題 + 右側預留的排序把手)
+        // 為了讓淺色膠囊不融入背景，加上極淡的邊框保護
+        if (l > 95) capsule.style.border = '1px solid rgba(0,0,0,0.08)';
+
         capsule.innerHTML = `
             <div class="manage-card-name">${card.name}</div>
             <div class="manage-card-drag">
