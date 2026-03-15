@@ -59,7 +59,7 @@
 /* ✨ 展開後：膠囊本人變形成大面板 */
 .add-menu-item.is-expanded {
     /* ✨ 修正 2：拔除多餘的 background 變色，只保留圓角的平滑收斂 */
-    border-radius: 24px; 
+    border-radius: 32px; 
 }
 
 /* 🛑 終極消滅魔法：當有人展開時，把「不是展開的膠囊」徹底隱藏並縮小！ */
