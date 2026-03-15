@@ -6,20 +6,15 @@ window.openAddPanel = function () {
     const contentHTML = `
         <div class="add-panel-container" id="add-panel-container">
             
-            <div class="add-menu-item" id="add-item-1">
-                <button class="add-menu-btn" onclick="window.toggleAddMenuItem('add-item-1')">
-                    <div class="add-menu-text">
-                        <div class="add-menu-title">新しいカードを追加</div>
+            <div class="add-menu-item" style="border-radius: 999px; overflow: hidden; background: rgba(120, 120, 128, 0.11);">
+                <button class="add-menu-btn" onclick="window.createNewCardAndEdit()" style="width: 100%; display: flex; align-items: center; padding: 16px 20px; border: none; background: transparent; cursor: pointer;">
+                    <div class="add-menu-text" style="flex: 1; text-align: left;">
+                        <div class="add-menu-title" style="font-size: 1.05rem; font-weight: 600;">新しいカードを追加</div>
                     </div>
-                    <div class="add-menu-chevron">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                    <div class="add-menu-chevron" style="opacity: 0.6;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                     </div>
                 </button>
-                <div class="add-menu-content-wrapper">
-                    <div class="add-menu-content">
-                        ${typeof window.getAddNewCardHTML === 'function' ? window.getAddNewCardHTML() : '<p style="text-align: center; opacity: 0.6; padding-top: 40px;">モジュールを読み込み中...</p>'}
-                    </div>
-                </div>
             </div>
 
             <div class="add-menu-item" id="add-item-2">
@@ -480,3 +475,69 @@ function initDragAndDrop(list) {
         });
     }
 }
+
+// ============================================================================
+// 🟢 新增卡片：Native 級「新建 -> 捲動 -> 翻轉」連鎖運鏡引擎
+// ============================================================================
+window.createNewCardAndEdit = async function() {
+    // 1. 關閉目前的通用面板
+    if (typeof window.closeUniversalPage === 'function') window.closeUniversalPage(true);
+
+    // 2. 等待面板收起 (約 300ms)
+    setTimeout(async () => {
+        
+        // ✨ 3. 無中生有：生成一張擁有獨立 ID 的全新卡片
+        const newId = 'custom-' + Date.now();
+        const newCard = {
+            id: newId,
+            name: '新規カード',
+            hex: '#2C2C2E',
+            isCustom: true // 標記為自訂卡片
+        };
+
+        if (!window.appRailwayData) window.appRailwayData = [];
+        window.appRailwayData.push(newCard);
+
+        // 4. 取得最新可見名單，並存入 DB (加入排序與生成偏好檔)
+        const dbSandbox = await import('../data/db-add-panel.js');
+        const hiddenIds = dbSandbox.getHiddenCards ? dbSandbox.getHiddenCards() : [];
+        const visibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
+        const visibleIds = visibleData.map(c => c.id);
+
+        const db = await import('../data/db.js');
+        if (db.saveDisplayOrder) db.saveDisplayOrder(visibleIds);
+        if (db.saveRoutePreference) db.saveRoutePreference(newId, newCard.name, newCard.hex, null);
+
+        // 5. 重新渲染首頁主畫面 (此時新卡片已經出現在最後面了！)
+        if (typeof window.renderMainCards === 'function') {
+            window.renderMainCards(visibleData);
+        }
+
+        // ✨ 6. 運鏡開始：平滑捲動到最後一張卡片
+        const container = document.getElementById('main-cards-container');
+        if (container) {
+            const cards = container.querySelectorAll('.railway-card');
+            if (cards.length > 0) {
+                const lastCard = cards[cards.length - 1];
+                container.scrollTo({
+                    left: lastCard.offsetLeft - (window.innerWidth - lastCard.offsetWidth) / 2,
+                    behavior: 'smooth'
+                });
+
+                // ✨ 7. 等待捲動完成後，觸發個性化設定的「翻轉動畫」
+                setTimeout(() => {
+                    if (typeof window.openBlankOverlay === 'function') {
+                        // 呼叫你最完美的個性化引擎！
+                        window.openBlankOverlay(newCard.hex);
+                        
+                        // ✨ 8. 終極細節：翻轉完成後，自動觸發「表示名」的幽靈輸入框，直接彈出鍵盤！
+                        setTimeout(() => {
+                            const nameLabel = document.getElementById('p-btn-label');
+                            if (nameLabel) nameLabel.click();
+                        }, 500); 
+                    }
+                }, 500); // 500ms 等待 Scroll 結束，讓系統更新 ActiveIndex
+            }
+        }
+    }, 300);
+};
