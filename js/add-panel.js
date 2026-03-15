@@ -259,7 +259,7 @@ window.renderManagementCards = async function() {
     initDragAndDrop(visibleList);
 };
 
-// 🟢 切換隱藏狀態的控制器
+// 🟢 切換隱藏狀態的控制器 (加入滿 5 張汰舊換新引擎)
 window.toggleVisibility = async function(id) {
     if (id === 'personal') return; 
 
@@ -270,12 +270,32 @@ window.toggleVisibility = async function(id) {
         // 從隱藏名單中移除 (顯示)
         hiddenIds = hiddenIds.filter(hid => hid !== id);
     } else {
-        // 加入隱藏名單 (最多 6 個 = 3格 x 2行)
-        if (hiddenIds.length >= 6) {
-            alert("非表示にできるカードは最大6枚です。");
-            return;
+        // ✨ 加入隱藏名單：判斷是否已達 5 張上限
+        if (hiddenIds.length >= 5) {
+            // 彈出確認視窗，詢問是否要刪除最舊的隱藏卡片
+            const confirmDelete = confirm("非表示にできるカードは最大5枚です。\nこれ以上隠す場合、最も古い非表示カードが完全に「削除」されます。\n続行しますか？");
+            
+            // 如果使用者按取消，直接中斷所有動作
+            if (!confirmDelete) return; 
+
+            // 🟢 確定繼續：取出最舊的一筆 (陣列第一項)
+            const oldestHiddenId = hiddenIds.shift(); 
+
+            // 1. 從全域記憶體中徹底移除該卡片
+            window.appRailwayData = window.appRailwayData.filter(r => r.id !== oldestHiddenId);
+
+            // 2. 呼叫 db.js 徹底刪除資料庫中的紀錄
+            const db = await import('../data/db.js');
+            if (db.deleteRoutePreference) {
+                await db.deleteRoutePreference(oldestHiddenId);
+            }
+            
+            // 3. 汰舊換新完成，將剛剛點擊的這張新卡片加入隱藏名單
+            hiddenIds.push(id);
+        } else {
+            // 空間還夠，直接隱藏
+            hiddenIds.push(id);
         }
-        hiddenIds.push(id);
     }
     
     // 將最新名單存入沙盒
@@ -290,7 +310,7 @@ window.toggleVisibility = async function(id) {
         window.renderMainCards(visibleData);
     }
 
-    // ✨ 將剩下的可見卡片傳給 db.js 儲存，完美避開隱藏卡片！
+    // 將剩下的可見卡片傳給 db.js 儲存排序
     const visibleCapsules = document.querySelectorAll('#manage-visible-list .manage-card-capsule');
     const visibleIds = Array.from(visibleCapsules).map(c => c.dataset.id);
     import('../data/db.js').then(module => {
