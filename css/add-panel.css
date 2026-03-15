@@ -1,24 +1,30 @@
 /* ==========================================================================
-   add-panel.css - 新增面板專屬 UI 樣式
+   add-panel.css - 新增面板專屬 UI 樣式 (極簡版)
    ========================================================================== */
 
    .add-panel-container {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px; /* 按鈕之間的間距 */
     padding: 10px 0;
 }
 
 .add-menu-btn {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     width: 100%;
     background: rgba(120, 120, 128, 0.08);
     border: none;
-    padding: 16px 18px;
-    border-radius: 20px;
+    
+    /* ✨ 1. 左右 Padding 稍微加大到 24px，給完美半圓角一點呼吸空間 */
+    padding: 18px 24px; 
+    
+    /* ✨ 2. 終極膠囊魔法：設為 999px，不管按鈕多高，左右永遠是完美半圓！ */
+    /* (如果你只是想要跟母艦的「圓角弧度數字」一模一樣，也可以改成 22px) */
+    border-radius: 999px; 
+    
     cursor: pointer;
-    text-align: left;
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s ease;
 }
 
@@ -34,41 +40,21 @@
     background: rgba(120, 120, 128, 0.16);
 }
 
-.add-menu-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-right: 16px;
-    flex-shrink: 0;
-}
-
 .add-menu-text {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    text-align: left;
 }
 
 .add-menu-title {
     font-size: 1.1rem;
-    font-weight: 600;
+    font-weight: 500;
     color: var(--text-main);
 }
 
-.add-menu-desc {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    opacity: 0.8;
-}
-
+/* 右側小箭頭 */
 .add-menu-chevron {
     color: #c7c7cc;
     display: flex;
     align-items: center;
-    margin-left: 8px;
 }
 
 /* 深色模式自動適應 */
