@@ -340,16 +340,31 @@ export async function saveDisplayOrder(orderedIds) {
     });
 }
 // ============================================================================
-// 🟢 物理刪除引擎：徹底銷毀卡片設定與排序殘留
+// 🟢 物理刪除引擎：徹底銷毀卡片設定與排序殘留 (修復資料表與加入備援邏輯)
 // ============================================================================
 export async function deleteRoutePreference(id) {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open('TsukinKanbanDB', 1);
+    const db = await initDB();
+
+    // 🟢 處理備用模式 (LocalStorage) 的刪除邏輯
+    if (useFallback || !db) {
+        removeFallbackData(id);
         
-        request.onsuccess = (event) => {
-            const db = event.target.result;
-            const transaction = db.transaction(['preferences'], 'readwrite');
-            const store = transaction.objectStore('preferences');
+        // 順便把排序裡面的紀錄也清掉
+        const map = getFallbackData();
+        if (map['__DISPLAY_ORDER__'] && map['__DISPLAY_ORDER__'].order) {
+            map['__DISPLAY_ORDER__'].order = map['__DISPLAY_ORDER__'].order.filter(oid => oid !== id);
+            localStorage.setItem(FALLBACK_KEY, JSON.stringify(map));
+        }
+        console.log(`[DB-Fallback] 卡片 ${id} 已徹底刪除`);
+        return Promise.resolve();
+    }
+
+    // 🟢 處理 IndexedDB 模式的刪除邏輯
+    return new Promise((resolve) => {
+        try {
+            // ✨ 修正：使用正確的 STORE_NAME，而不是硬寫的 'preferences'
+            const transaction = db.transaction(STORE_NAME, 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
             
             // 1. 刪除該卡片的資料
             store.delete(id);
@@ -364,10 +379,20 @@ export async function deleteRoutePreference(id) {
                 }
             };
 
-            transaction.oncomplete = () => resolve(true);
-            transaction.onerror = () => reject(transaction.error);
-        };
-        
-        request.onerror = () => reject(request.error);
+            transaction.oncomplete = () => {
+                console.log(`[DB] 卡片 ${id} 已徹底刪除`);
+                resolve(true);
+            };
+            
+            transaction.onerror = () => {
+                useFallback = true;
+                removeFallbackData(id);
+                resolve(true);
+            };
+        } catch (err) {
+            useFallback = true;
+            removeFallbackData(id);
+            resolve(true);
+        }
     });
 }
