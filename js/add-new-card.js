@@ -7,14 +7,16 @@ window.getAddNewCardHTML = function() {
     return `
         <div class="add-menu-inner" style="padding-top: 15px;">
             
-            <div style="display: flex; flex-direction: column; width: 100%; margin-bottom: 20px;">
-                <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; padding-left: 4px; opacity: 0.8; letter-spacing: 0.5px;">表示名</label>
+            <div style="display: flex; flex-direction: column; width: 100%; margin-bottom: 12px;">
+                <div style="font-size: 17px; font-weight: 600; margin-bottom: 6px; padding-left: 12px; opacity: 0.6; letter-spacing: 0.5px;">表示名</div>
                 
                 <div style="--btn-height: 48px; display: flex; gap: 10px; width: 100%; align-items: center;">
-                    <div style="height: var(--btn-height); border-radius: 12px; display: flex; align-items: center; background: rgba(120, 120, 128, 0.11); flex-grow: 1; padding: 0 16px;">
+                    <div style="height: var(--btn-height); border-radius: 999px; display: flex; align-items: center; background: rgba(120, 120, 128, 0.11); flex-grow: 1; padding: 0 16px;">
                         <input id="add-new-name" type="text" placeholder="例: 通勤用" maxlength="10" autocomplete="off"
+                            onfocus="if(window.pScrollManager) window.pScrollManager.lock();"
+                            onblur="if(window.pScrollManager) window.pScrollManager.unlock();"
                             oninput="this.value = this.value.replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)); document.getElementById('add-new-name-count').textContent = this.value.length + '/10';"
-                            style="width: 100%; background: transparent; border: none; outline: none; color: inherit; font-size: 1.05rem; text-align: left;">
+                            style="width: 100%; background: transparent; border: none; outline: none; color: inherit; font-size: 17px; text-align: left;">
                     </div>
                     <button id="add-new-name-paste" onclick="window.handleAddNewPaste('name')" 
                         style="position: relative; overflow: hidden; height: var(--btn-height); width: var(--btn-height); border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(120, 120, 128, 0.11); border: none; color: inherit; cursor: pointer; flex-shrink: 0; transition: transform 0.2s, opacity 0.2s;"
@@ -27,20 +29,22 @@ window.getAddNewCardHTML = function() {
                         </div>
                     </button>
                 </div>
-                <p style="font-size: 0.75rem; display: flex; justify-content: space-between; padding: 0 4px; margin-top: 8px; opacity: 0.5;">
+                <div style="font-size: 14px; display: flex; justify-content: space-between; padding: 0 12px; margin-top: 8px; opacity: 0.5;">
                     <span>- 十文字以內 -</span>
                     <span id="add-new-name-count" style="font-family: monospace;">0/10</span>
-                </p>
+                </div>
             </div>
 
             <div style="display: flex; flex-direction: column; width: 100%; margin-bottom: 24px;">
-                <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; padding-left: 4px; opacity: 0.8; letter-spacing: 0.5px;">カラー</label>
+                <div style="font-size: 17px; font-weight: 600; margin-bottom: 6px; padding-left: 14px; opacity: 0.6; letter-spacing: 0.5px;">カラー</div>
                 
                 <div style="--btn-height: 48px; display: flex; gap: 10px; width: 100%; align-items: center;">
-                    <div style="height: var(--btn-height); border-radius: 12px; display: flex; align-items: center; background: rgba(120, 120, 128, 0.11); flex-grow: 1; padding: 0 16px;">
+                    <div style="height: var(--btn-height); border-radius: 999px; display: flex; align-items: center; background: rgba(120, 120, 128, 0.11); flex-grow: 1; padding: 0 16px;">
                         <input id="add-new-color" type="text" placeholder="#2C2C2E" maxlength="7" autocomplete="off"
+                            onfocus="if(window.pScrollManager) window.pScrollManager.lock();"
+                            onblur="if(window.pScrollManager) window.pScrollManager.unlock();"
                             oninput="let v = this.value.replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/＃/g, '#').toUpperCase().replace(/[^A-F0-9#]/g, ''); if(v && !v.startsWith('#')) v = '#' + v; this.value = v;"
-                            style="width: 100%; background: transparent; border: none; outline: none; color: inherit; font-size: 1.05rem; font-family: monospace; text-align: left;">
+                            style="width: 100%; background: transparent; border: none; outline: none; color: inherit; font-size: 17px; font-family: monospace; text-align: left;">
                     </div>
                     <button id="add-new-color-paste" onclick="window.handleAddNewPaste('color')" 
                         style="position: relative; overflow: hidden; height: var(--btn-height); width: var(--btn-height); border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(120, 120, 128, 0.11); border: none; color: inherit; cursor: pointer; flex-shrink: 0; transition: transform 0.2s, opacity 0.2s;"
@@ -53,9 +57,9 @@ window.getAddNewCardHTML = function() {
                         </div>
                     </button>
                 </div>
-                <p style="font-size: 0.75rem; padding: 0 4px; margin-top: 8px; opacity: 0.5;">
+                <div style="font-size: 14px; padding: 0 12px; margin-top: 8px; opacity: 0.5;">
                     - HEX形式で入力してください -
-                </p>
+                </div>
             </div>
             
         </div>
