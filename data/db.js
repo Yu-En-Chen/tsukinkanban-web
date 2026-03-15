@@ -339,3 +339,35 @@ export async function saveDisplayOrder(orderedIds) {
         }
     });
 }
+// ============================================================================
+// 🟢 物理刪除引擎：徹底銷毀卡片設定與排序殘留
+// ============================================================================
+export async function deleteRoutePreference(id) {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open('TsukinKanbanDB', 1);
+        
+        request.onsuccess = (event) => {
+            const db = event.target.result;
+            const transaction = db.transaction(['preferences'], 'readwrite');
+            const store = transaction.objectStore('preferences');
+            
+            // 1. 刪除該卡片的資料
+            store.delete(id);
+            
+            // 2. 順便把排序裡面的紀錄也清掉，防止出現幽靈空缺
+            const orderReq = store.get('__DISPLAY_ORDER__');
+            orderReq.onsuccess = () => {
+                const orderData = orderReq.result;
+                if (orderData && orderData.order) {
+                    orderData.order = orderData.order.filter(oid => oid !== id);
+                    store.put(orderData);
+                }
+            };
+
+            transaction.oncomplete = () => resolve(true);
+            transaction.onerror = () => reject(transaction.error);
+        };
+        
+        request.onerror = () => reject(request.error);
+    });
+}
