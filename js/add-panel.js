@@ -6,12 +6,12 @@ window.openAddPanel = function () {
     const contentHTML = `
         <div class="add-panel-container" id="add-panel-container">
             
-            <div class="add-menu-item" style="border-radius: 999px; overflow: hidden; background: rgba(120, 120, 128, 0.11);">
-                <button class="add-menu-btn" onclick="window.createNewCardAndEdit()" style="width: 100%; display: flex; align-items: center; padding: 16px 20px; border: none; background: transparent; cursor: pointer;">
-                    <div class="add-menu-text" style="flex: 1; text-align: left;">
-                        <div class="add-menu-title" style="font-size: 1.05rem; font-weight: 600;">新しいカードを追加</div>
+            <div class="add-menu-item" id="add-item-1">
+                <button class="add-menu-btn" onclick="window.createNewCardAndEdit()">
+                    <div class="add-menu-text">
+                        <div class="add-menu-title">新しいカードを追加</div>
                     </div>
-                    <div class="add-menu-chevron" style="opacity: 0.6;">
+                    <div class="add-menu-chevron">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                     </div>
                 </button>
@@ -480,15 +480,24 @@ function initDragAndDrop(list) {
 // 🟢 新增卡片：Native 級「新建 -> 捲動 -> 點開 -> 翻轉」連鎖運鏡引擎
 // ============================================================================
 window.createNewCardAndEdit = async function() {
-    // 1. 關閉目前的通用面板
+    // ✨ 1. 第一時間攔截防呆：檢查畫面上可見的卡片是否已經滿 5 張
+    if (!window.appRailwayData) window.appRailwayData = [];
+    const dbSandbox = await import('../data/db-add-panel.js');
+    const hiddenIds = dbSandbox.getHiddenCards ? dbSandbox.getHiddenCards() : [];
+    const visibleCount = window.appRailwayData.filter(r => !hiddenIds.includes(r.id)).length;
+
+    if (visibleCount >= 5) {
+        alert("表示できるカードは最大5枚です。\nこれ以上追加する場合は、既存のカードを非表示にしてください。");
+        return; // 🛑 滿五張直接擋下，不關閉面板也不新增
+    }
+
+    // 2. 數量安全，關閉目前的通用面板
     if (typeof window.closeUniversalPage === 'function') window.closeUniversalPage(true);
 
-    // 2. 等待面板收起 (約 300ms)
+    // 3. 等待面板收起 (約 300ms)
     setTimeout(async () => {
         
-        if (!window.appRailwayData) window.appRailwayData = [];
-
-        // ✨ 3. 智慧 ID 引擎：自動尋找 new-card-1, 2, 3... 的空位並遞增
+        // 智慧 ID 引擎：自動尋找 new-card-1, 2, 3... 的空位並遞增
         const existingNumbers = window.appRailwayData
             .map(c => c.id)
             .filter(id => id.startsWith('new-card-'))
@@ -499,40 +508,38 @@ window.createNewCardAndEdit = async function() {
         let nextNum = 1;
         for (let num of existingNumbers) {
             if (num === nextNum) nextNum++;
-            else if (num > nextNum) break; // 發現中間有空位，立刻跳出迴圈填補！
+            else if (num > nextNum) break; 
         }
         const newId = `new-card-${nextNum}`;
 
-        // ✨ 4. 嚴謹的資料格式：補齊 script.js 渲染所需的必填欄位，防止 forEach 當機！
+        // 嚴謹的資料格式：補齊 script.js 渲染所需的必填欄位
         const newCard = {
             id: newId,
             name: '新規カード',
             kana: 'しんきかーど',
-            status: 'カスタム',      // 右上角標籤
-            desc: 'カスタム追加されたカード', // 副標題描述
-            detail: ['カスタマイズ可能'],   // 膠囊標籤 (陣列格式)
+            status: 'カスタム',      
+            desc: 'カスタム追加されたカード', 
+            detail: ['カスタマイズ可能'],   
             hex: '#2C2C2E',
-            isCustom: true // 標記為自訂卡片
+            isCustom: true 
         };
 
         window.appRailwayData.push(newCard);
 
-        // 5. 取得最新可見名單，並真實存入 DB
-        const dbSandbox = await import('../data/db-add-panel.js');
-        const hiddenIds = dbSandbox.getHiddenCards ? dbSandbox.getHiddenCards() : [];
-        const visibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
-        const visibleIds = visibleData.map(c => c.id);
+        // 取得最新可見名單，並真實存入 DB
+        const updatedVisibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
+        const visibleIds = updatedVisibleData.map(c => c.id);
 
         const db = await import('../data/db.js');
         if (db.saveDisplayOrder) db.saveDisplayOrder(visibleIds);
         if (db.saveRoutePreference) db.saveRoutePreference(newId, newCard.name, newCard.hex, null);
 
-        // 6. 重新渲染首頁主畫面 (此時新卡片已經順利出現在最後面了！)
+        // 重新渲染首頁主畫面 (此時新卡片已經出現在最後面了！)
         if (typeof window.renderMainCards === 'function') {
-            window.renderMainCards(visibleData);
+            window.renderMainCards(updatedVisibleData);
         }
 
-        // 7. 運鏡開始：平滑捲動到最後一張卡片
+        // 運鏡開始：平滑捲動到最後一張卡片
         const container = document.getElementById('main-cards-container');
         if (container) {
             const cards = container.querySelectorAll('.railway-card');
@@ -545,27 +552,27 @@ window.createNewCardAndEdit = async function() {
             }
         }
 
-        // ✨ 8. 點開新卡片，進入運鏡下半場
+        // 點開新卡片，進入運鏡下半場
         setTimeout(() => {
             const targetCard = document.getElementById(`card-${newId}`);
             if (targetCard) {
                 // 模擬手指點擊，觸發卡片升起！
                 targetCard.click(); 
 
-                // 9. 等待卡片升起動畫完成 (約 650ms) 後，立刻觸發翻轉引擎！
+                // 等待卡片升起動畫完成 (約 650ms) 後，立刻觸發翻轉引擎！
                 setTimeout(() => {
                     if (typeof window.openBlankOverlay === 'function') {
                         window.openBlankOverlay(newCard.hex);
                         
-                        // 10. 終極細節：翻轉完成後，自動點擊「表示名」彈出鍵盤！
+                        // 終極細節：翻轉完成後，自動點擊「表示名」彈出鍵盤！
                         setTimeout(() => {
                             const nameLabel = document.getElementById('p-btn-label');
                             if (nameLabel) nameLabel.click();
                         }, 550); 
                     }
-                }, 650); // 等待卡片升起的飛行時間
+                }, 650); 
             }
-        }, 350); // 等待平滑捲動到定位
+        }, 350); 
 
     }, 300);
 };
