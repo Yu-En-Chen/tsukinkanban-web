@@ -206,13 +206,13 @@ window.renderManagementCards = async function() {
             visibleCount++;
             capsule.className = 'manage-card-capsule';
 
-            // 大江戶線防呆：不給眼睛、不給隱藏
-            const eyeIconHTML = card.id === 'toei-oedo'
+            // personal防呆：不給眼睛、不給隱藏
+            const eyeIconHTML = card.id === 'personal'
                 ? `<div style="width: 20px; height: 20px; pointer-events: none;"></div>`
                 : `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.9;"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>`;
 
             capsule.innerHTML = `
-                <div class="manage-card-visibility" ${card.id !== 'toei-oedo' ? `onclick="window.toggleVisibility('${card.id}')"` : 'style="cursor: default;"'}>
+                <div class="manage-card-visibility" ${card.id !== 'personal' ? `onclick="window.toggleVisibility('${card.id}')"` : 'style="cursor: default;"'}>
                     ${eyeIconHTML}
                 </div>
                 <div class="manage-card-name">${card.name}</div>
@@ -245,7 +245,7 @@ window.renderManagementCards = async function() {
 
 // 🟢 切換隱藏狀態的控制器
 window.toggleVisibility = async function(id) {
-    if (id === 'toei-oedo') return; 
+    if (id === 'personal') return; 
 
     const dbSandbox = await import('../data/db-add-panel.js');
     let hiddenIds = dbSandbox.getHiddenCards();
