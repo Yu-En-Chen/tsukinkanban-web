@@ -1,5 +1,5 @@
 /* ==========================================================================
-   add-panel.css - 新增面板專屬 UI 樣式 (膠囊本人 Hero 展開版)
+   add-panel.css - 新增面板專屬 UI 樣式 (膠囊本人 Hero 展開版 - 防滾動絲滑微調版)
    ========================================================================== */
 
    .add-panel-container {
@@ -10,7 +10,7 @@
     transition: gap 0.4s var(--apple-spring);
 }
 
-/* ✨ 當容器內有人展開時，將按鈕間距歸零，讓消失的按鈕徹底不佔空間 */
+/* 當容器內有人展開時，將按鈕間距歸零，讓消失的按鈕徹底不佔空間 */
 .add-panel-container.has-expanded {
     gap: 0; 
 }
@@ -23,7 +23,7 @@
     flex-direction: column;
     width: 100%;
     
-    /* ✨ 點開前保持本來的狀態：999px 完美膠囊外觀與底色 */
+    /* 點開前保持本來的狀態：999px 完美膠囊外觀與底色 */
     background: rgba(120, 120, 128, 0.08);
     border-radius: 999px; 
     overflow: hidden;
@@ -32,13 +32,13 @@
     opacity: 1;
     transform: scale(1);
     
-    /* 變形動畫：包含圓角、背景、高度的平滑過渡 */
-    transition: max-height 0.4s var(--apple-spring), 
-                border-radius 0.4s var(--apple-spring),
-                background 0.4s ease,
+    /* ✨ 修正 1：把變形動畫改為平滑減速 (cubic-bezier)，拔除彈簧感，解決用力過猛的拉扯問題 */
+    transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                border-radius 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                background 0.3s ease,
                 opacity 0.3s ease, 
-                transform 0.4s var(--apple-spring), 
-                margin 0.4s var(--apple-spring);
+                transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                margin 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     
     will-change: max-height, opacity, transform, border-radius;
 }
@@ -58,9 +58,8 @@
 
 /* ✨ 展開後：膠囊本人變形成大面板 */
 .add-menu-item.is-expanded {
-    /* 從 999px 平滑變形成卡片的 24px，避免圓角太大像氣球 */
+    /* ✨ 修正 2：拔除多餘的 background 變色，只保留圓角的平滑收斂 */
     border-radius: 24px; 
-    background: rgba(120, 120, 128, 0.12); 
 }
 
 /* 🛑 終極消滅魔法：當有人展開時，把「不是展開的膠囊」徹底隱藏並縮小！ */
@@ -81,7 +80,6 @@
     justify-content: space-between;
     width: 100%;
     
-    /* 背景已交給外層膠囊，這裡變成透明熱區 */
     background: transparent; 
     border: none;
     padding: 18px 24px; 
@@ -103,11 +101,11 @@
     color: #c7c7cc;
     display: flex;
     align-items: center;
-    /* 箭頭旋轉的平滑過渡設定 */
-    transition: transform 0.4s var(--apple-spring);
+    /* 箭頭旋轉也改為平滑過渡 */
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ✨ 展開時：原本的向下箭頭轉 180 度，變成向上 */
+/* 展開時：原本的向下箭頭轉 180 度，變成向上 */
 .add-menu-item.is-expanded .add-menu-chevron {
     transform: rotate(180deg);
 }
@@ -124,7 +122,8 @@
 .add-menu-content-wrapper {
     display: grid;
     grid-template-rows: 0fr; 
-    transition: grid-template-rows 0.4s var(--apple-spring);
+    /* ✨ 修正 1：展開動畫也改為平滑減速 */
+    transition: grid-template-rows 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .add-menu-item.is-expanded .add-menu-content-wrapper {
@@ -138,16 +137,22 @@
 .add-menu-inner {
     opacity: 0;
     transform: translateY(-15px);
-    transition: opacity 0.3s ease, transform 0.4s var(--apple-spring);
+    transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     
-    /* ✨ 核心魔法：給它一個 65vh 的巨大高度！ */
-    height: 65vh; 
+    /* ✨ 修正 1：拔除危險的 100svh，改用安全的相對高度，絕對不觸發全螢幕捲動 */
+    height: 64.5vh; 
+    max-height: 600px; /* 限制生長極限，確保它絕對不會超出外框 */
+    min-height: 250px; /* 畫面太小時的保底高度 */
     
-    /* 拔除原有的獨立背景與 margin，讓它完美融入膠囊本人 */
+    /* ✨ 修正 2：內部防爆框保護！萬一未來你塞了太多設定選單，它只會在面板內部滑動，不會影響外框 */
+    overflow-y: auto;
+    
     background: transparent; 
     margin-top: 0;
     border-radius: 0;
-    padding: 0 24px 24px 24px; /* 給內部留底端和左右的 padding */
+    
+    /* ✨ 修正 3：精準鎖定內距！確保底部留白跟左右留白完全一致，都是 24px */
+    padding: 0 24px 24px 24px; 
 }
 
 /* 展開時內容浮現 */
