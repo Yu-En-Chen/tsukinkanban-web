@@ -156,6 +156,22 @@ window.renderManagementCards = async function() {
     const dbSandbox = await import('../data/db-add-panel.js');
     const hiddenIds = dbSandbox.getHiddenCards ? dbSandbox.getHiddenCards() : [];
     
+    // =========================================================
+    // ✨ 智慧滾動解鎖引擎：判斷隱藏數量是否超過一排 (大於 3 個)
+    // =========================================================
+    const innerContainer = list.closest('.add-menu-inner');
+    if (innerContainer) {
+        if (hiddenIds.length > 3) {
+            // 當擠到第二排，可能導致空間不夠時：動態開啟滑動，並加上阻斷拉扯魔法
+            innerContainer.style.overflowY = 'auto';
+            innerContainer.style.overscrollBehavior = 'contain';
+        } else {
+            // 只有一排或沒東西時：維持完美定身狀態，拖拉手感最大化！
+            innerContainer.style.overflowY = 'hidden';
+        }
+    }
+    // =========================================================
+    
     const currentCards = window.appRailwayData || [];
     let visibleCount = 0;
 
