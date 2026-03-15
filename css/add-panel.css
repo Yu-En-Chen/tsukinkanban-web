@@ -1,12 +1,20 @@
 /* ==========================================================================
-   add-panel.css - 新增面板專屬 UI 樣式 (極簡版)
+   add-panel.css - 新增面板專屬 UI 樣式 (手風琴展開版)
    ========================================================================== */
 
-   .add-panel-container {
+.add-panel-container {
     display: flex;
     flex-direction: column;
-    gap: 10px; /* 按鈕之間的間距 */
+    gap: 12px; 
     padding: 10px 0;
+    /* 底部預留一點空間，確保最後一個展開時能順利滾到頂部 */
+    padding-bottom: 60px; 
+}
+
+.add-menu-item {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
 }
 
 .add-menu-btn {
@@ -16,16 +24,11 @@
     width: 100%;
     background: rgba(120, 120, 128, 0.08);
     border: none;
-    
-    /* ✨ 1. 左右 Padding 稍微加大到 24px，給完美半圓角一點呼吸空間 */
     padding: 18px 24px; 
-    
-    /* ✨ 2. 終極膠囊魔法：設為 999px，不管按鈕多高，左右永遠是完美半圓！ */
-    /* (如果你只是想要跟母艦的「圓角弧度數字」一模一樣，也可以改成 22px) */
-    border-radius: 999px; 
-    
+    border-radius: 999px; /* 完美膠囊外觀 */
     cursor: pointer;
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s ease;
+    z-index: 2; 
 }
 
 @media (any-hover: hover) {
@@ -50,16 +53,67 @@
     color: var(--text-main);
 }
 
-/* 右側小箭頭 */
 .add-menu-chevron {
     color: #c7c7cc;
     display: flex;
     align-items: center;
+    /* ✨ 箭頭旋轉的平滑過渡設定 */
+    transition: transform 0.4s var(--apple-spring);
 }
 
-/* 深色模式自動適應 */
+/* ✨ 展開時：箭頭旋轉 180 度變向上 */
+.add-menu-item.is-expanded .add-menu-chevron {
+    transform: rotate(180deg);
+}
+
 @media (prefers-color-scheme: dark) {
     .add-menu-chevron {
         color: #48484a;
+    }
+}
+
+/* =========================================
+   🟢 展開內容區 (CSS Grid 動態高度魔法)
+   ========================================= */
+
+.add-menu-content-wrapper {
+    display: grid;
+    /* 預設把內容壓扁到 0 高度 */
+    grid-template-rows: 0fr; 
+    transition: grid-template-rows 0.4s var(--apple-spring);
+}
+
+/* 展開時高度釋放 */
+.add-menu-item.is-expanded .add-menu-content-wrapper {
+    grid-template-rows: 1fr;
+}
+
+.add-menu-content {
+    overflow: hidden;
+}
+
+.add-menu-inner {
+    opacity: 0;
+    transform: translateY(-15px); /* 預設微微往上縮 */
+    transition: opacity 0.3s ease, transform 0.4s var(--apple-spring);
+    
+    /* ✨ 核心魔法：給它一個 65vh 的巨大高度！ */
+    /* 展開時它會把底下的選單全部往下推，配合 JS 的滾動置頂，就會製造出「獨佔全螢幕」的效果 */
+    height: 65vh; 
+    
+    background: rgba(120, 120, 128, 0.05); /* 淡淡的凹陷背景感 */
+    margin-top: 8px;
+    border-radius: 24px;
+}
+
+/* 展開時內容浮現 */
+.add-menu-item.is-expanded .add-menu-inner {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@media (prefers-color-scheme: dark) {
+    .add-menu-inner {
+        background: rgba(120, 120, 128, 0.08);
     }
 }
