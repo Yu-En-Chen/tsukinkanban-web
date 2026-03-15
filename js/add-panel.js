@@ -1,8 +1,8 @@
-// add-panel.js - 新增卡片與路線的管理面板引擎 (手風琴展開版)
+// add-panel.js - 新增卡片與路線的管理面板引擎 (膠囊本人 Hero 展開版)
 
 window.openAddPanel = function() {
     const contentHTML = `
-        <div class="add-panel-container">
+        <div class="add-panel-container" id="add-panel-container">
             
             <div class="add-menu-item" id="add-item-1">
                 <button class="add-menu-btn" onclick="window.toggleAddMenuItem('add-item-1')">
@@ -64,24 +64,22 @@ window.openAddPanel = function() {
     window.openUniversalPage('新規追加', contentHTML);
 };
 
-// ✨ 展開/收起的專屬控制器
+// ✨ 展開/收起與「隱藏其他人」的專屬控制器
 window.toggleAddMenuItem = function(id) {
+    const container = document.getElementById('add-panel-container');
     const item = document.getElementById(id);
     const isExpanded = item.classList.contains('is-expanded');
 
-    // 1. 先把所有其他已展開的選項收起來 (手風琴特性)
-    document.querySelectorAll('.add-menu-item').forEach(el => {
-        el.classList.remove('is-expanded');
-    });
-
-    // 2. 如果原本是收起的，就把它展開
-    if (!isExpanded) {
+    if (isExpanded) {
+        // 1. 如果原本是展開的 -> 再次點擊會收合，並恢復顯示所有膠囊
+        item.classList.remove('is-expanded');
+        container.classList.remove('has-expanded');
+    } else {
+        // 2. 如果原本是收起的 -> 關閉所有膠囊，展開自己，並隱藏別人！
+        document.querySelectorAll('.add-menu-item').forEach(el => {
+            el.classList.remove('is-expanded');
+        });
         item.classList.add('is-expanded');
-        
-        // 3. ✨ 核心魔法：等待 150ms 讓 CSS 展開動畫啟動後，直接把它「平滑滾動到畫面最頂端」！
-        // 這樣上下的其他按鈕就會瞬間被推出螢幕外。
-        setTimeout(() => {
-            item.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 150);
+        container.classList.add('has-expanded');
     }
 };

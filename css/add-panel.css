@@ -1,46 +1,92 @@
 /* ==========================================================================
-   add-panel.css - 新增面板專屬 UI 樣式 (手風琴展開版)
+   add-panel.css - 新增面板專屬 UI 樣式 (膠囊本人 Hero 展開版)
    ========================================================================== */
 
-.add-panel-container {
+   .add-panel-container {
     display: flex;
     flex-direction: column;
     gap: 12px; 
     padding: 10px 0;
-    /* 底部預留一點空間，確保最後一個展開時能順利滾到頂部 */
-    padding-bottom: 60px; 
+    transition: gap 0.4s var(--apple-spring);
 }
 
+/* ✨ 當容器內有人展開時，將按鈕間距歸零，讓消失的按鈕徹底不佔空間 */
+.add-panel-container.has-expanded {
+    gap: 0; 
+}
+
+/* =========================================
+   🟢 膠囊本人 (完美繼承原本的狀態)
+   ========================================= */
 .add-menu-item {
     display: flex;
     flex-direction: column;
     width: 100%;
-}
-
-.add-menu-btn {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
+    
+    /* ✨ 點開前保持本來的狀態：999px 完美膠囊外觀與底色 */
     background: rgba(120, 120, 128, 0.08);
-    border: none;
-    padding: 18px 24px; 
-    border-radius: 999px; /* 完美膠囊外觀 */
-    cursor: pointer;
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s ease;
-    z-index: 2; 
+    border-radius: 999px; 
+    overflow: hidden;
+    
+    max-height: 1000px;
+    opacity: 1;
+    transform: scale(1);
+    
+    /* 變形動畫：包含圓角、背景、高度的平滑過渡 */
+    transition: max-height 0.4s var(--apple-spring), 
+                border-radius 0.4s var(--apple-spring),
+                background 0.4s ease,
+                opacity 0.3s ease, 
+                transform 0.4s var(--apple-spring), 
+                margin 0.4s var(--apple-spring);
+    
+    will-change: max-height, opacity, transform, border-radius;
 }
 
+/* 將原本的 Hover 與 Active 微縮放效果加在外層膠囊上，保持本來的手感 */
 @media (any-hover: hover) {
-    .add-menu-btn:hover {
+    .add-menu-item:not(.is-expanded):hover {
         background: rgba(120, 120, 128, 0.12);
         transform: scale(1.02);
     }
 }
 
-.add-menu-btn:active {
+.add-menu-item:not(.is-expanded):active {
     transform: scale(0.96) !important;
     background: rgba(120, 120, 128, 0.16);
+}
+
+/* ✨ 展開後：膠囊本人變形成大面板 */
+.add-menu-item.is-expanded {
+    /* 從 999px 平滑變形成卡片的 24px，避免圓角太大像氣球 */
+    border-radius: 24px; 
+    background: rgba(120, 120, 128, 0.12); 
+}
+
+/* 🛑 終極消滅魔法：當有人展開時，把「不是展開的膠囊」徹底隱藏並縮小！ */
+.add-panel-container.has-expanded .add-menu-item:not(.is-expanded) {
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
+    transform: scale(0.95) translateY(-10px);
+    pointer-events: none;
+}
+
+/* =========================================
+   🟢 可點擊的頭部區域 (原本的按鈕)
+   ========================================= */
+.add-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    
+    /* 背景已交給外層膠囊，這裡變成透明熱區 */
+    background: transparent; 
+    border: none;
+    padding: 18px 24px; 
+    cursor: pointer;
+    z-index: 2; 
 }
 
 .add-menu-text {
@@ -57,11 +103,11 @@
     color: #c7c7cc;
     display: flex;
     align-items: center;
-    /* ✨ 箭頭旋轉的平滑過渡設定 */
+    /* 箭頭旋轉的平滑過渡設定 */
     transition: transform 0.4s var(--apple-spring);
 }
 
-/* ✨ 展開時：箭頭旋轉 180 度變向上 */
+/* ✨ 展開時：原本的向下箭頭轉 180 度，變成向上 */
 .add-menu-item.is-expanded .add-menu-chevron {
     transform: rotate(180deg);
 }
@@ -75,15 +121,12 @@
 /* =========================================
    🟢 展開內容區 (CSS Grid 動態高度魔法)
    ========================================= */
-
 .add-menu-content-wrapper {
     display: grid;
-    /* 預設把內容壓扁到 0 高度 */
     grid-template-rows: 0fr; 
     transition: grid-template-rows 0.4s var(--apple-spring);
 }
 
-/* 展開時高度釋放 */
 .add-menu-item.is-expanded .add-menu-content-wrapper {
     grid-template-rows: 1fr;
 }
@@ -94,26 +137,21 @@
 
 .add-menu-inner {
     opacity: 0;
-    transform: translateY(-15px); /* 預設微微往上縮 */
+    transform: translateY(-15px);
     transition: opacity 0.3s ease, transform 0.4s var(--apple-spring);
     
     /* ✨ 核心魔法：給它一個 65vh 的巨大高度！ */
-    /* 展開時它會把底下的選單全部往下推，配合 JS 的滾動置頂，就會製造出「獨佔全螢幕」的效果 */
     height: 65vh; 
     
-    background: rgba(120, 120, 128, 0.05); /* 淡淡的凹陷背景感 */
-    margin-top: 8px;
-    border-radius: 24px;
+    /* 拔除原有的獨立背景與 margin，讓它完美融入膠囊本人 */
+    background: transparent; 
+    margin-top: 0;
+    border-radius: 0;
+    padding: 0 24px 24px 24px; /* 給內部留底端和左右的 padding */
 }
 
 /* 展開時內容浮現 */
 .add-menu-item.is-expanded .add-menu-inner {
     opacity: 1;
     transform: translateY(0);
-}
-
-@media (prefers-color-scheme: dark) {
-    .add-menu-inner {
-        background: rgba(120, 120, 128, 0.08);
-    }
 }
