@@ -480,7 +480,7 @@ function initDragAndDrop(list) {
 // 🟢 新增卡片：Native 級「新建 -> 捲動 -> 點開 -> 翻轉」連鎖運鏡引擎
 // ============================================================================
 window.createNewCardAndEdit = async function() {
-    // ✨ 1. 第一時間攔截防呆：檢查畫面上可見的卡片是否已經滿 5 張
+    // 1. 第一時間攔截防呆：檢查畫面上可見的卡片是否已經滿 5 張
     if (!window.appRailwayData) window.appRailwayData = [];
     const dbSandbox = await import('../data/db-add-panel.js');
     const hiddenIds = dbSandbox.getHiddenCards ? dbSandbox.getHiddenCards() : [];
@@ -488,7 +488,7 @@ window.createNewCardAndEdit = async function() {
 
     if (visibleCount >= 5) {
         alert("表示できるカードは最大5枚です。\nこれ以上追加する場合は、既存のカードを非表示にしてください。");
-        return; // 🛑 滿五張直接擋下，不關閉面板也不新增
+        return; 
     }
 
     // 2. 數量安全，關閉目前的通用面板
@@ -500,8 +500,8 @@ window.createNewCardAndEdit = async function() {
         // 智慧 ID 引擎：自動尋找 new-card-1, 2, 3... 的空位並遞增
         const existingNumbers = window.appRailwayData
             .map(c => c.id)
-            .filter(id => id.startsWith('new-card-'))
-            .map(id => parseInt(id.replace('new-card-', ''), 10))
+            .filter(id => id.startsWith('new-card-') || id.startsWith('custom-'))
+            .map(id => parseInt(id.replace('new-card-', '').replace('custom-', ''), 10))
             .filter(num => !isNaN(num))
             .sort((a, b) => a - b);
             
@@ -512,7 +512,6 @@ window.createNewCardAndEdit = async function() {
         }
         const newId = `new-card-${nextNum}`;
 
-        // 嚴謹的資料格式：補齊 script.js 渲染所需的必填欄位
         const newCard = {
             id: newId,
             name: '新規カード',
@@ -539,40 +538,33 @@ window.createNewCardAndEdit = async function() {
             window.renderMainCards(updatedVisibleData);
         }
 
-        // 運鏡開始：平滑捲動到最後一張卡片
-        const container = document.getElementById('main-cards-container');
-        if (container) {
-            const cards = container.querySelectorAll('.railway-card');
-            if (cards.length > 0) {
-                const lastCard = cards[cards.length - 1];
-                container.scrollTo({
-                    left: lastCard.offsetLeft - (window.innerWidth - lastCard.offsetWidth) / 2,
-                    behavior: 'smooth'
-                });
-            }
-        }
-
-        // 點開新卡片，進入運鏡下半場
+        // ✨ 核心修復：使用 scrollIntoView 精準追蹤剛出爐的新卡片！
         setTimeout(() => {
             const targetCard = document.getElementById(`card-${newId}`);
             if (targetCard) {
-                // 模擬手指點擊，觸發卡片升起！
-                targetCard.click(); 
+                // 確保視角平滑捲動到正中央
+                targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-                // 等待卡片升起動畫完成 (約 650ms) 後，立刻觸發翻轉引擎！
+                // 點開新卡片，進入運鏡下半場
                 setTimeout(() => {
-                    if (typeof window.openBlankOverlay === 'function') {
-                        window.openBlankOverlay(newCard.hex);
-                        
-                        // 終極細節：翻轉完成後，自動點擊「表示名」彈出鍵盤！
-                        setTimeout(() => {
-                            const nameLabel = document.getElementById('p-btn-label');
-                            if (nameLabel) nameLabel.click();
-                        }, 550); 
-                    }
-                }, 650); 
+                    // 模擬手指點擊，觸發卡片升起！
+                    targetCard.click(); 
+
+                    // 等待卡片升起動畫完成 (約 650ms) 後，立刻觸發翻轉引擎！
+                    setTimeout(() => {
+                        if (typeof window.openBlankOverlay === 'function') {
+                            window.openBlankOverlay(newCard.hex);
+                            
+                            // 終極細節：翻轉完成後，自動點擊「表示名」彈出鍵盤！
+                            setTimeout(() => {
+                                const nameLabel = document.getElementById('p-btn-label');
+                                if (nameLabel) nameLabel.click();
+                            }, 550); 
+                        }
+                    }, 650); 
+                }, 350); // 等待平滑捲動到定位
             }
-        }, 350); 
+        }, 100); // 給瀏覽器一點時間把 DOM 畫出來
 
     }, 300);
 };

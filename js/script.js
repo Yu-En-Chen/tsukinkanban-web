@@ -1091,6 +1091,7 @@ window.undoCardPreference = async function() {
 async function initApp() {
     const userPrefs = await getAllUserPreferences();
 
+    // 1. 合併原生路線的偏好設定
     window.appRailwayData = railwayData.map(route => {
         const pref = userPrefs[route.id];
         if (pref) {
@@ -1103,6 +1104,28 @@ async function initApp() {
         return { ...route };
     });
 
+    // ✨ 2. 核心修復：找回那些被遺忘的新增卡片！
+    // 掃描 userPrefs，如果發現有 'new-card-' 開頭的 ID，就把它加回主陣列。
+    for (const key in userPrefs) {
+        if (key.startsWith('new-card-') || key.startsWith('custom-')) {
+            // 確保不重複加入
+            if (!window.appRailwayData.find(r => r.id === key)) {
+                const pref = userPrefs[key];
+                window.appRailwayData.push({
+                    id: key,
+                    name: pref.customName || '新規カード',
+                    kana: 'しんきかーど',
+                    status: 'カスタム',
+                    desc: 'カスタム追加されたカード',
+                    detail: ['カスタマイズ可能'],
+                    hex: pref.customHex || '#2C2C2E',
+                    isCustom: true
+                });
+            }
+        }
+    }
+
+    // 3. 執行自訂排序
     const orderData = userPrefs['__DISPLAY_ORDER__'];
     if (orderData && orderData.order) {
         window.appRailwayData.sort((a, b) => {
@@ -1114,7 +1137,7 @@ async function initApp() {
         });
     }
 
-    // ✨ 核心過濾：讀取隱藏清單，把被隱藏的卡片扣掉後再渲染給畫面！
+    // 4. 讀取隱藏清單並過濾
     let hiddenIds = [];
     try { hiddenIds = JSON.parse(localStorage.getItem('TsukinKanban_HiddenCards') || '[]'); } catch (e) {}
     
