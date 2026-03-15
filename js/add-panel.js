@@ -520,8 +520,33 @@ window.createNewCardAndEdit = async function() {
     const visibleCount = window.appRailwayData.filter(r => !hiddenIds.includes(r.id)).length;
 
     if (visibleCount >= 5) {
-        alert("表示できるカードは最大5枚です。\nこれ以上追加する場合は、既存のカードを非表示にしてください。");
-        return; 
+        // ✨ UX 升級：給予使用者直接前往管理介面的選擇
+        const goToManage = confirm("表示できるカードは最大5枚です。\nこれ以上追加する場合は、既存のカードを非表示にしてください。\n\n「カードの管理・編集」画面を開きますか？");
+        
+        if (goToManage) {
+            const manageItem = document.getElementById('add-item-3');
+            // 抓取會滾動的外層容器 (通用面板)
+            const scrollContainer = document.getElementById('universal-page-content') || document.getElementById('universal-page-wrapper');
+            
+            if (manageItem && scrollContainer) {
+                // ✨ 核心修復：使用絕對座標計算，並「刻意扣掉 24px 的高度」作為頂部呼吸空間！
+                const targetY = scrollContainer.scrollTop + manageItem.getBoundingClientRect().top - scrollContainer.getBoundingClientRect().top - 24;
+                
+                // 確保外層允許滾動，執行平滑滑動
+                scrollContainer.style.overflowY = 'auto';
+                scrollContainer.scrollTo({ top: targetY, behavior: 'smooth' });
+                
+                // 等待畫面滑順到達定點後，再觸發面板展開 (展開時會自動把畫面重新鎖死，完美銜接！)
+                setTimeout(() => {
+                    if (!manageItem.classList.contains('is-expanded')) {
+                        window.toggleAddMenuItem('add-item-3');
+                    }
+                }, 350);
+            } else {
+                window.toggleAddMenuItem('add-item-3');
+            }
+        }
+        return; // 🛑 擋下新增卡片的流程
     }
 
     // 2. 數量安全，關閉目前的通用面板
