@@ -169,9 +169,9 @@
    .manage-card-capsule {
     display: flex;
     align-items: center;
-    /* ✨ 統一改為 flex-start 靠左，並使用 gap 來強制定距 */
+    /* ✨ 改為 flex-start，讓所有內容乖乖從最左邊開始排列 */
     justify-content: flex-start; 
-    gap: 12px; 
+    gap: 16px; /* ✨ 控制「左側圖示區」與「右側文字」之間的完美距離 */
     padding: 16px 20px;
     border-radius: 999px; 
     font-size: 1.05rem;
@@ -189,14 +189,54 @@
     text-align: left;
 }
 
+/* =========================================
+   🟢 管理面板專屬卡片膠囊 (Management Capsules)
+   ========================================= */
+   .manage-card-capsule {
+    display: flex;
+    align-items: center;
+    /* ✨ 讓內容平均分佈，配合 flex:1 會自動變成左中右排版 */
+    justify-content: space-between; 
+    gap: 16px; /* 控制三個元素之間的間距 */
+    padding: 16px 20px;
+    border-radius: 999px; 
+    font-size: 1.05rem;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+
+/* 中間的名稱：設定 flex: 1 讓它自動把左右兩邊的圖示推到最邊緣 */
+.manage-card-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; 
+    letter-spacing: 0.5px;
+    text-align: left;
+}
+
+/* ✨ 隱藏/顯示按鈕 (眼睛 - 左側) */
+.manage-card-visibility {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.manage-card-visibility:active {
+    transform: scale(0.85);
+    opacity: 0.7;
+}
+
+/* ✨ 拖拉抓手 (三條線 - 右側) */
 .manage-card-drag {
     display: flex;
     align-items: center;
     justify-content: center;
-    /* ✨ 移除多餘的 padding，靠 gap 控制距離 */
     padding: 0; 
     cursor: grab;
-    /* 阻擋原生橫向手勢，確保長按順利觸發 */
     touch-action: none; 
 }
 
