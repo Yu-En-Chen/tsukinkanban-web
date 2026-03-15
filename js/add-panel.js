@@ -283,11 +283,11 @@ window.toggleVisibility = async function(id) {
 };
 
 // ============================================================================
-// 🟢 拖拉排序引擎 (僅限可見區)
+// 🟢 拖拉排序引擎 (純物理絕對跟手修正版)
 // ============================================================================
 function initDragAndDrop(list) {
     let dragEl = null, ghostEl = null, placeholder = null;
-    let startY = 0, initialTop = 0;
+    let startY = 0; // 拔除有缺陷的 initialTop
 
     const handles = list.querySelectorAll('.manage-card-drag');
     
@@ -327,7 +327,6 @@ function initDragAndDrop(list) {
     function startDrag(el, clientY, clientX) {
         dragEl = el;
         const rect = dragEl.getBoundingClientRect();
-        initialTop = rect.top;
         startY = clientY;
 
         ghostEl = dragEl.cloneNode(true);
@@ -338,10 +337,18 @@ function initDragAndDrop(list) {
         
         dragEl.style.display = 'none';
 
+        // ✨ 核心修正：將父容器設為相對定位 (relative)，並計算絕對精準的內部偏移量！
+        // 這樣可以完美無視外層面板的所有 transform 縮放與位移動畫！
+        dragEl.parentNode.style.position = 'relative';
+        const parentRect = dragEl.parentNode.getBoundingClientRect();
+        
+        const relativeTop = rect.top - parentRect.top + dragEl.parentNode.scrollTop;
+        const relativeLeft = rect.left - parentRect.left + dragEl.parentNode.scrollLeft;
+
         ghostEl.style.display = 'flex';
-        ghostEl.style.position = 'fixed';
-        ghostEl.style.top = `${initialTop}px`;
-        ghostEl.style.left = `${rect.left}px`;
+        ghostEl.style.position = 'absolute'; // ✨ 改為 absolute
+        ghostEl.style.top = `${relativeTop}px`;
+        ghostEl.style.left = `${relativeLeft}px`;
         ghostEl.style.width = `${rect.width}px`;
         ghostEl.style.zIndex = '999999'; 
         
@@ -365,13 +372,14 @@ function initDragAndDrop(list) {
         
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const deltaY = clientY - startY;
         
+        // ✨ 計算純粹的物理位移 delta，套用在絕對定位的卡片上
+        const deltaY = clientY - startY;
         ghostEl.style.transform = `translateY(${deltaY}px) scale(1.08)`;
 
         const elemUnder = document.elementFromPoint(clientX, clientY);
         if (!elemUnder) return;
-        // 確保雷射不會打到隱藏區或空位
+        
         const target = elemUnder.closest('#manage-visible-list .manage-card-capsule:not(.is-dragging-active)');
         
         if (target) {
@@ -393,10 +401,16 @@ function initDragAndDrop(list) {
         document.removeEventListener('touchend', onDragEnd);
         document.removeEventListener('mouseup', onDragEnd);
 
-        const rect = placeholder.getBoundingClientRect();
+        // ✨ 吸附時也必須相對於父容器計算目標位置
+        const pRect = placeholder.getBoundingClientRect();
+        const parentRect = placeholder.parentNode.getBoundingClientRect();
+        
+        const relativeTop = pRect.top - parentRect.top + placeholder.parentNode.scrollTop;
+        const relativeLeft = pRect.left - parentRect.left + placeholder.parentNode.scrollLeft;
+
         ghostEl.style.transition = 'top 0.2s ease, left 0.2s ease, transform 0.2s ease';
-        ghostEl.style.top = `${rect.top}px`;
-        ghostEl.style.left = `${rect.left}px`;
+        ghostEl.style.top = `${relativeTop}px`;
+        ghostEl.style.left = `${relativeLeft}px`;
         ghostEl.style.transform = 'scale(1)'; 
 
         setTimeout(() => {
@@ -412,24 +426,20 @@ function initDragAndDrop(list) {
     }
 
     function saveNewOrder() {
-        // ✨ 只抓取上方可見區域的卡片
         const capsules = document.querySelectorAll('#manage-visible-list .manage-card-capsule');
         const visibleIds = Array.from(capsules).map(c => c.dataset.id);
         
         import('../data/db-add-panel.js').then(sandbox => {
             const hiddenIds = sandbox.getHiddenCards();
             
-            // 將可見與隱藏組合以維持順序記憶
             const newOrder = [...visibleIds, ...hiddenIds];
             window.appRailwayData.sort((a, b) => newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
 
-            // 首頁只顯示可見部分
             const visibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
             if (typeof window.renderMainCards === 'function') {
                 window.renderMainCards(visibleData);
             }
 
-            // ✨ db.js 什麼都不用知道，單純只把可見部分存進去！
             import('../data/db.js').then(module => {
                 if(module.saveDisplayOrder) module.saveDisplayOrder(visibleIds);
             });
