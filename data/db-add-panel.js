@@ -187,3 +187,24 @@ export async function commitToMainDB() {
     console.log(`[Sandbox-DB] 覆寫完成！主資料庫已更新 ${keys.length} 筆資料。`);
     return true;
 }
+
+// ============================================================================
+// 🟢 獨立隱藏狀態記憶引擎 (不干擾 db.js)
+// ============================================================================
+const HIDDEN_KEY = 'TsukinKanban_HiddenCards';
+
+export function getHiddenCards() {
+    try {
+        return JSON.parse(localStorage.getItem(HIDDEN_KEY) || '[]');
+    } catch (e) {
+        return [];
+    }
+}
+
+export function saveHiddenCards(ids) {
+    try {
+        localStorage.setItem(HIDDEN_KEY, JSON.stringify(ids));
+    } catch (e) {
+        console.error('[Sandbox-DB] 隱藏狀態儲存失敗', e);
+    }
+}

@@ -2,7 +2,7 @@
 
 let isSandboxInitialized = false;
 
-window.openAddPanel = function() {
+window.openAddPanel = function () {
     const contentHTML = `
         <div class="add-panel-container" id="add-panel-container">
             
@@ -55,7 +55,10 @@ window.openAddPanel = function() {
                     <div class="add-menu-content">
                         <div class="add-menu-inner" style="padding-top: 10px;">
                             <p id="manage-cards-loading" style="text-align: center; opacity: 0.6; padding-top: 40px;">データを読み込み中...</p>
-                            <div id="manage-cards-list" style="display: none; flex-direction: column; gap: 12px; padding-bottom: 20px;"></div>
+                            <div id="manage-cards-list" style="display: none; flex-direction: column; gap: 12px; padding-bottom: 20px;">
+                            <div id="manage-visible-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
+                            <div class="manage-separator"></div>
+                            <div id="manage-hidden-list" class="manage-hidden-area"></div>
                         </div>
                     </div>
                 </div>
@@ -84,11 +87,11 @@ window.openAddPanel = function() {
 };
 
 // ✨ 展開/收起與「隱藏其他人」的專屬控制器（外部滾動徹底凍結版）
-window.toggleAddMenuItem = function(id) {
+window.toggleAddMenuItem = function (id) {
     const container = document.getElementById('add-panel-container');
     const item = document.getElementById(id);
     const isExpanded = item.classList.contains('is-expanded');
-    
+
     // 🟢 抓取外層所有可能產生滾動的容器
     const uniContent = document.getElementById('universal-page-content');
     const uniWrapper = document.getElementById('universal-page-wrapper');
@@ -97,7 +100,7 @@ window.toggleAddMenuItem = function(id) {
         // 收合時：恢復原本狀態
         item.classList.remove('is-expanded');
         container.classList.remove('has-expanded');
-        
+
         // 🟢 歸還滾動權限（解除鎖定）
         if (uniContent) uniContent.style.overflowY = '';
         if (uniWrapper) uniWrapper.style.overflowY = '';
@@ -109,7 +112,7 @@ window.toggleAddMenuItem = function(id) {
         });
         item.classList.add('is-expanded');
         container.classList.add('has-expanded');
-        
+
         // 🟢 徹底凍結：從外層 wrapper 到 body，把上下滾動權限全部沒收！
         // 這樣在面板外部的上空或下方滑動時，畫面絕對不會再被拉扯。
         if (uniContent) uniContent.style.overflowY = 'hidden';
@@ -122,12 +125,12 @@ window.toggleAddMenuItem = function(id) {
 if (!window.hasInjectedScrollLockHook) {
     const originalClose = window.closeUniversalPage;
     if (typeof originalClose === 'function') {
-        window.closeUniversalPage = function(closeAll = false) {
+        window.closeUniversalPage = function (closeAll = false) {
             // 面板關閉瞬間，強制解除 body 與 wrapper 的鎖定防呆
-            document.body.style.overflow = ''; 
+            document.body.style.overflow = '';
             const uniWrapper = document.getElementById('universal-page-wrapper');
             if (uniWrapper) uniWrapper.style.overflowY = '';
-            
+
             // 執行原本的關閉邏輯
             originalClose(closeAll);
         };
@@ -135,23 +138,34 @@ if (!window.hasInjectedScrollLockHook) {
     }
 }
 
-// 🟢 渲染管理面板裡的彩色卡片膠囊 (完美漸層色彩版 + 拖拉排序引擎)
-window.renderManagementCards = function() {
+// 🟢 渲染管理面板：區分可見與隱藏卡片
+window.renderManagementCards = async function() {
     const loading = document.getElementById('manage-cards-loading');
     const list = document.getElementById('manage-cards-list');
+    const visibleList = document.getElementById('manage-visible-list');
+    const hiddenList = document.getElementById('manage-hidden-list');
+    
     if (!loading || !list) return;
 
     loading.style.display = 'none';
     list.style.display = 'flex';
-    list.innerHTML = ''; 
+    visibleList.innerHTML = ''; 
+    hiddenList.innerHTML = '';
 
+    // 取得隱藏名單
+    const dbSandbox = await import('../data/db-add-panel.js');
+    const hiddenIds = dbSandbox.getHiddenCards ? dbSandbox.getHiddenCards() : [];
+    
     const currentCards = window.appRailwayData || [];
+    let visibleCount = 0;
 
     currentCards.forEach(card => {
+        const isHidden = hiddenIds.includes(card.id);
+
         const capsule = document.createElement('div');
-        capsule.className = 'manage-card-capsule';
         capsule.dataset.id = card.id; 
 
+        // 共通色彩計算...
         let hex = card.hex.replace('#', '');
         if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
         const r = parseInt(hex.substring(0, 2), 16), g = parseInt(hex.substring(2, 4), 16), b = parseInt(hex.substring(4, 6), 16);
@@ -181,44 +195,95 @@ window.renderManagementCards = function() {
         capsule.style.color = luminance > 0.55 ? 'rgba(0, 0, 0, 0.85)' : '#ffffff';
         if (l > 95) capsule.style.border = '1px solid rgba(0,0,0,0.08)';
 
-        // ✨ 動態判定眼睛圖示：如果是personal，只放入一個 20x20 的隱形佔位方塊
-        const eyeIconHTML = card.id === 'personal'
-            ? `<div style="width: 20px; height: 20px; pointer-events: none;"></div>`
-            : `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.9;">
-                   <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/>
-                   <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/>
-                   <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/>
-                   <path d="m2 2 20 20"/>
-               </svg>`;
+        if (isHidden) {
+            // ✨ 如果是被隱藏的卡片，變身為小膠囊並放入隱藏區
+            capsule.className = 'manage-hidden-capsule';
+            capsule.textContent = card.name.substring(0, 2); // 縮短為兩個字元
+            capsule.onclick = () => window.toggleVisibility(card.id);
+            hiddenList.appendChild(capsule);
+        } else {
+            // ✨ 如果是正常卡片，放入上方可見區
+            visibleCount++;
+            capsule.className = 'manage-card-capsule';
 
-        // ✨ 組合 HTML，並移除隱藏項目時多餘的點擊游標 (cursor)
-        capsule.innerHTML = `
-            <div class="manage-card-visibility" ${card.id === 'personal' ? 'style="cursor: default;"' : ''}>
-                ${eyeIconHTML}
-            </div>
-            
-            <div class="manage-card-name">${card.name}</div>
-            
-            <div class="manage-card-drag">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.9;">
-                    <line x1="8" y1="6" x2="21" y2="6"></line>
-                    <line x1="8" y1="12" x2="21" y2="12"></line>
-                    <line x1="8" y1="18" x2="21" y2="18"></line>
-                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                </svg>
-            </div>
-        `;
-        
-        list.appendChild(capsule);
+            // 大江戶線防呆：不給眼睛、不給隱藏
+            const eyeIconHTML = card.id === 'toei-oedo'
+                ? `<div style="width: 20px; height: 20px; pointer-events: none;"></div>`
+                : `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.9;"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>`;
+
+            capsule.innerHTML = `
+                <div class="manage-card-visibility" ${card.id !== 'toei-oedo' ? `onclick="window.toggleVisibility('${card.id}')"` : 'style="cursor: default;"'}>
+                    ${eyeIconHTML}
+                </div>
+                <div class="manage-card-name">${card.name}</div>
+                <div class="manage-card-drag">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.9;">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                </div>
+            `;
+            visibleList.appendChild(capsule);
+        }
     });
 
-    initDragAndDrop(list);
+    // ✨ 填補虛線空位：確保畫面上永遠有 5 格的位置
+    for (let i = visibleCount; i < 5; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'empty-slot';
+        empty.innerHTML = `<span style="opacity: 0.5;">空き枠</span>`;
+        visibleList.appendChild(empty);
+    }
+
+    // 只讓可見區的卡片可以被拖拉
+    initDragAndDrop(visibleList);
+};
+
+// 🟢 切換隱藏狀態的控制器
+window.toggleVisibility = async function(id) {
+    if (id === 'toei-oedo') return; 
+
+    const dbSandbox = await import('../data/db-add-panel.js');
+    let hiddenIds = dbSandbox.getHiddenCards();
+    
+    if (hiddenIds.includes(id)) {
+        // 從隱藏名單中移除 (顯示)
+        hiddenIds = hiddenIds.filter(hid => hid !== id);
+    } else {
+        // 加入隱藏名單 (最多 6 個 = 3格 x 2行)
+        if (hiddenIds.length >= 6) {
+            alert("非表示にできるカードは最大6枚です。");
+            return;
+        }
+        hiddenIds.push(id);
+    }
+    
+    // 將最新名單存入沙盒
+    dbSandbox.saveHiddenCards(hiddenIds);
+    
+    // 重新繪製管理面板
+    window.renderManagementCards();
+    
+    // 即時更新首頁畫面
+    const visibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
+    if (typeof window.renderMainCards === 'function') {
+        window.renderMainCards(visibleData);
+    }
+
+    // ✨ 將剩下的可見卡片傳給 db.js 儲存，完美避開隱藏卡片！
+    const visibleCapsules = document.querySelectorAll('#manage-visible-list .manage-card-capsule');
+    const visibleIds = Array.from(visibleCapsules).map(c => c.dataset.id);
+    import('../data/db.js').then(module => {
+        if(module.saveDisplayOrder) module.saveDisplayOrder(visibleIds);
+    });
 };
 
 // ============================================================================
-// 🟢 頂級順滑拖拉排序引擎 (修復手機座標遺失與畫面聯動)
+// 🟢 拖拉排序引擎 (僅限可見區)
 // ============================================================================
 function initDragAndDrop(list) {
     let dragEl = null, ghostEl = null, placeholder = null;
@@ -230,7 +295,6 @@ function initDragAndDrop(list) {
         const capsule = handle.closest('.manage-card-capsule');
         let pressTimer = null, checkY = 0;
         
-        // ✨ 手機觸控修復：必須在 setTimeout 之前，先把座標「死死記住」！
         handle.addEventListener('touchstart', e => {
             if (e.touches.length > 1) return;
             const currentY = e.touches[0].clientY;
@@ -239,7 +303,7 @@ function initDragAndDrop(list) {
             
             pressTimer = setTimeout(() => {
                 startDrag(capsule, currentY, currentX);
-                if (navigator.vibrate) navigator.vibrate(15);
+                if (navigator.vibrate) navigator.vibrate([15, 30, 15]);
             }, 400); 
         }, { passive: true });
         
@@ -266,6 +330,7 @@ function initDragAndDrop(list) {
         initialTop = rect.top;
         startY = clientY;
 
+        ghostEl = dragEl.cloneNode(true);
         placeholder = document.createElement('div');
         placeholder.className = 'manage-card-placeholder';
         placeholder.style.height = `${rect.height}px`;
@@ -273,16 +338,21 @@ function initDragAndDrop(list) {
         
         dragEl.style.display = 'none';
 
-        ghostEl = dragEl.cloneNode(true);
         ghostEl.style.display = 'flex';
-        ghostEl.classList.add('is-dragging');
         ghostEl.style.position = 'fixed';
         ghostEl.style.top = `${initialTop}px`;
         ghostEl.style.left = `${rect.left}px`;
         ghostEl.style.width = `${rect.width}px`;
-        document.body.appendChild(ghostEl);
+        ghostEl.style.zIndex = '999999'; 
         
-        // ✨ { passive: false } 確保能呼叫 e.preventDefault() 鎖死背景捲動
+        ghostEl.classList.add('is-dragging-active');
+        ghostEl.style.transition = 'transform 0.15s cubic-bezier(0.16, 1, 0.3, 1)';
+        dragEl.parentNode.appendChild(ghostEl);
+
+        requestAnimationFrame(() => {
+            ghostEl.style.transform = `translateY(0px) scale(1.08)`;
+        });
+        
         document.addEventListener('touchmove', onDragMove, { passive: false });
         document.addEventListener('mousemove', onDragMove, { passive: false });
         document.addEventListener('touchend', onDragEnd);
@@ -291,18 +361,18 @@ function initDragAndDrop(list) {
 
     function onDragMove(e) {
         if (!ghostEl) return;
-        // ✨ 鎖定原生捲動：不管怎麼滑，頁面都不會跟著走，只有彩色膠囊會動！
         if (e.cancelable) e.preventDefault(); 
         
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const deltaY = clientY - startY;
         
-        ghostEl.style.transform = `translateY(${deltaY}px) scale(1.03)`;
+        ghostEl.style.transform = `translateY(${deltaY}px) scale(1.08)`;
 
         const elemUnder = document.elementFromPoint(clientX, clientY);
         if (!elemUnder) return;
-        const target = elemUnder.closest('.manage-card-capsule:not(.is-dragging)');
+        // 確保雷射不會打到隱藏區或空位
+        const target = elemUnder.closest('#manage-visible-list .manage-card-capsule:not(.is-dragging-active)');
         
         if (target) {
             const targetRect = target.getBoundingClientRect();
@@ -327,7 +397,7 @@ function initDragAndDrop(list) {
         ghostEl.style.transition = 'top 0.2s ease, left 0.2s ease, transform 0.2s ease';
         ghostEl.style.top = `${rect.top}px`;
         ghostEl.style.left = `${rect.left}px`;
-        ghostEl.style.transform = 'scale(1)';
+        ghostEl.style.transform = 'scale(1)'; 
 
         setTimeout(() => {
             placeholder.parentNode.insertBefore(dragEl, placeholder);
@@ -342,20 +412,27 @@ function initDragAndDrop(list) {
     }
 
     function saveNewOrder() {
-        const capsules = document.querySelectorAll('#manage-cards-list .manage-card-capsule');
-        const newOrder = Array.from(capsules).map(c => c.dataset.id);
+        // ✨ 只抓取上方可見區域的卡片
+        const capsules = document.querySelectorAll('#manage-visible-list .manage-card-capsule');
+        const visibleIds = Array.from(capsules).map(c => c.dataset.id);
         
-        // 1. 修改全域順序
-        window.appRailwayData.sort((a, b) => newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
+        import('../data/db-add-panel.js').then(sandbox => {
+            const hiddenIds = sandbox.getHiddenCards();
+            
+            // 將可見與隱藏組合以維持順序記憶
+            const newOrder = [...visibleIds, ...hiddenIds];
+            window.appRailwayData.sort((a, b) => newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
 
-        // 2. ✨ 呼叫剛才開放的權限，讓主畫面立刻依新順序重新洗牌渲染！
-        if (typeof window.renderMainCards === 'function') {
-            window.renderMainCards(window.appRailwayData);
-        }
+            // 首頁只顯示可見部分
+            const visibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
+            if (typeof window.renderMainCards === 'function') {
+                window.renderMainCards(visibleData);
+            }
 
-        // 3. 寫入資料庫永久保存
-        import('../data/db.js').then(module => {
-            if(module.saveDisplayOrder) module.saveDisplayOrder(newOrder);
+            // ✨ db.js 什麼都不用知道，單純只把可見部分存進去！
+            import('../data/db.js').then(module => {
+                if(module.saveDisplayOrder) module.saveDisplayOrder(visibleIds);
+            });
         });
     }
 }
