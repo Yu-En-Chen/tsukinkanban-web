@@ -299,6 +299,22 @@
     opacity: 0.8;
 }
 
+/* ✨ 一鍵刪除隱藏卡片的空心按鈕 */
+.delete-all-hidden-btn {
+    background: transparent !important;
+    border: 2px solid rgba(120, 120, 128, 0.25) !important;
+    color: rgba(120, 120, 128, 0.6) !important;
+    box-shadow: none !important;
+    box-sizing: border-box;
+}
+
+/* 點擊時會有微紅色的警告回饋感 */
+.delete-all-hidden-btn:active {
+    background: rgba(255, 59, 48, 0.1) !important;
+    border-color: rgba(255, 59, 48, 0.4) !important;
+    color: #FF3B30 !important;
+}
+
 /* 上方留下的空位虛線格 */
 .empty-slot {
     height: 56px;

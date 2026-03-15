@@ -247,6 +247,19 @@ window.renderManagementCards = async function() {
         }
     });
 
+    // =========================================================
+    // ✨ 如果隱藏區有資料，在最後面加上「一鍵刪除」空心按鈕
+    // =========================================================
+    if (hiddenIds.length > 0) {
+        const deleteAllBtn = document.createElement('div');
+        // 共用小膠囊的大小與變形動畫，再加上空心樣式
+        deleteAllBtn.className = 'manage-hidden-capsule delete-all-hidden-btn';
+        // 套用你指定的垃圾桶 SVG，並微調大小以完美置中
+        deleteAllBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash2-icon lucide-trash-2"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+        deleteAllBtn.onclick = () => window.deleteAllHiddenCards();
+        hiddenList.appendChild(deleteAllBtn);
+    }
+
     // ✨ 填補虛線空位：確保畫面上永遠有 5 格的位置
     for (let i = visibleCount; i < 5; i++) {
         const empty = document.createElement('div');
@@ -587,4 +600,38 @@ window.createNewCardAndEdit = async function() {
         }, 100); // 給瀏覽器一點時間把 DOM 畫出來
 
     }, 300);
+};
+
+// ============================================================================
+// 🟢 一鍵刪除所有隱藏卡片引擎
+// ============================================================================
+window.deleteAllHiddenCards = async function() {
+    const confirmDelete = confirm("非表示のカードをすべて完全に削除しますか？\nこの操作は取り消せません。");
+    if (!confirmDelete) return;
+
+    const dbSandbox = await import('../data/db-add-panel.js');
+    const hiddenIds = dbSandbox.getHiddenCards();
+    if (hiddenIds.length === 0) return;
+
+    // 1. 從全域記憶體中徹底移除這些卡片
+    window.appRailwayData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
+
+    // 2. 呼叫 db.js 徹底刪除資料庫中的紀錄 (跑迴圈連續刪除)
+    const db = await import('../data/db.js');
+    if (db.deleteRoutePreference) {
+        for (const id of hiddenIds) {
+            await db.deleteRoutePreference(id);
+        }
+    }
+
+    // 3. 清空沙盒中的隱藏名單
+    dbSandbox.saveHiddenCards([]);
+
+    // 4. 重新繪製管理面板 (此時垃圾桶按鈕也會因為 hiddenIds 為空而自動消失)
+    window.renderManagementCards();
+
+    // 5. 將剩下的可見卡片傳給 db.js 儲存排序
+    const visibleCapsules = document.querySelectorAll('#manage-visible-list .manage-card-capsule');
+    const visibleIds = Array.from(visibleCapsules).map(c => c.dataset.id);
+    if(db.saveDisplayOrder) db.saveDisplayOrder(visibleIds);
 };
