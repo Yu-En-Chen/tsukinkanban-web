@@ -170,7 +170,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 16px 20px;
-    border-radius: 16px; /* 卡片內部的小膠囊，用 16px 剛剛好 */
+    border-radius: 999px; /* 卡片內部的小膠囊圓角 */
     font-size: 1.05rem;
     font-weight: 600;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* 微微的浮空陰影 */
