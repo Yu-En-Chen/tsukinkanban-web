@@ -272,7 +272,7 @@ window.renderManagementCards = async function() {
     initDragAndDrop(visibleList);
 };
 
-// 🟢 切換隱藏狀態的控制器 (加入滿 5 張汰舊換新引擎)
+// 🟢 切換隱藏狀態的控制器 (加入滿 5 張汰舊換新 與 恢復顯示上限防呆)
 window.toggleVisibility = async function(id) {
     if (id === 'personal') return; 
 
@@ -280,10 +280,18 @@ window.toggleVisibility = async function(id) {
     let hiddenIds = dbSandbox.getHiddenCards();
     
     if (hiddenIds.includes(id)) {
-        // 從隱藏名單中移除 (顯示)
+        // ✨ 準備從隱藏名單中移除 (也就是要恢復顯示)
+        // 新增防呆：先檢查目前畫面上可見的卡片是否已經滿 5 張！
+        const visibleCount = window.appRailwayData.filter(r => !hiddenIds.includes(r.id)).length;
+        if (visibleCount >= 5) {
+            alert("表示できるカードは最大5枚です。\nこれ以上表示する場合は、先に他のカードを非表示にしてください。");
+            return; // 🛑 滿五張直接擋下，不讓他恢復顯示
+        }
+
+        // 空間足夠，從隱藏名單中移除
         hiddenIds = hiddenIds.filter(hid => hid !== id);
     } else {
-        // ✨ 加入隱藏名單：判斷是否已達 5 張上限
+        // 加入隱藏名單：判斷是否已達 5 張上限
         if (hiddenIds.length >= 5) {
             // 彈出確認視窗，詢問是否要刪除最舊的隱藏卡片
             const confirmDelete = confirm("非表示にできるカードは最大5枚です。\nこれ以上隠す場合、最も古い非表示カードが完全に「削除」されます。\n続行しますか？");
@@ -291,7 +299,7 @@ window.toggleVisibility = async function(id) {
             // 如果使用者按取消，直接中斷所有動作
             if (!confirmDelete) return; 
 
-            // 🟢 確定繼續：取出最舊的一筆 (陣列第一項)
+            // 確定繼續：取出最舊的一筆 (陣列第一項)
             const oldestHiddenId = hiddenIds.shift(); 
 
             // 1. 從全域記憶體中徹底移除該卡片
