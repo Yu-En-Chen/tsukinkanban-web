@@ -83,22 +83,57 @@ window.openAddPanel = function() {
     }
 };
 
+// ✨ 展開/收起與「隱藏其他人」的專屬控制器（外部滾動徹底凍結版）
 window.toggleAddMenuItem = function(id) {
     const container = document.getElementById('add-panel-container');
     const item = document.getElementById(id);
     const isExpanded = item.classList.contains('is-expanded');
+    
+    // 🟢 抓取外層所有可能產生滾動的容器
+    const uniContent = document.getElementById('universal-page-content');
+    const uniWrapper = document.getElementById('universal-page-wrapper');
 
     if (isExpanded) {
+        // 收合時：恢復原本狀態
         item.classList.remove('is-expanded');
         container.classList.remove('has-expanded');
+        
+        // 🟢 歸還滾動權限（解除鎖定）
+        if (uniContent) uniContent.style.overflowY = '';
+        if (uniWrapper) uniWrapper.style.overflowY = '';
+        document.body.style.overflow = '';
     } else {
+        // 展開時：關閉其他人並展開自己
         document.querySelectorAll('.add-menu-item').forEach(el => {
             el.classList.remove('is-expanded');
         });
         item.classList.add('is-expanded');
         container.classList.add('has-expanded');
+        
+        // 🟢 徹底凍結：從外層 wrapper 到 body，把上下滾動權限全部沒收！
+        // 這樣在面板外部的上空或下方滑動時，畫面絕對不會再被拉扯。
+        if (uniContent) uniContent.style.overflowY = 'hidden';
+        if (uniWrapper) uniWrapper.style.overflowY = 'hidden';
+        document.body.style.overflow = 'hidden';
     }
 };
+
+// 🟢 終極安全裝置：當使用者按「＜」或「Ｘ」直接關閉整個通用面板時，確保自動解鎖！
+if (!window.hasInjectedScrollLockHook) {
+    const originalClose = window.closeUniversalPage;
+    if (typeof originalClose === 'function') {
+        window.closeUniversalPage = function(closeAll = false) {
+            // 面板關閉瞬間，強制解除 body 與 wrapper 的鎖定防呆
+            document.body.style.overflow = ''; 
+            const uniWrapper = document.getElementById('universal-page-wrapper');
+            if (uniWrapper) uniWrapper.style.overflowY = '';
+            
+            // 執行原本的關閉邏輯
+            originalClose(closeAll);
+        };
+        window.hasInjectedScrollLockHook = true; // 防止重複註冊
+    }
+}
 
 // 🟢 渲染管理面板裡的彩色卡片膠囊 (完美漸層色彩版 + 拖拉排序引擎)
 window.renderManagementCards = function() {
