@@ -320,6 +320,10 @@ function initDragAndDrop(list) {
         
         handle.addEventListener('mousedown', e => {
             if (e.button !== 0) return; 
+            
+            // ✨ 阻止電腦版瀏覽器原生的 SVG/圖片拖曳干擾！
+            e.preventDefault(); 
+            
             startDrag(capsule, e.clientY, e.clientX);
         });
     });
@@ -371,24 +375,33 @@ function initDragAndDrop(list) {
         if (e.cancelable) e.preventDefault(); 
         
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         
-        // ✨ 計算純粹的物理位移 delta，套用在絕對定位的卡片上
+        // 幽靈卡片純粹的物理位移
         const deltaY = clientY - startY;
         ghostEl.style.transform = `translateY(${deltaY}px) scale(1.08)`;
 
-        const elemUnder = document.elementFromPoint(clientX, clientY);
-        if (!elemUnder) return;
+        // ✨ 頂級水平雷射掃描引擎 (無視空隙，純算 Y 軸座標！)
+        const listContainer = document.getElementById('manage-visible-list');
+        const siblings = [...listContainer.querySelectorAll('.manage-card-capsule:not(.is-dragging-active)')];
         
-        const target = elemUnder.closest('#manage-visible-list .manage-card-capsule:not(.is-dragging-active)');
-        
-        if (target) {
-            const targetRect = target.getBoundingClientRect();
-            const isBottomHalf = clientY > targetRect.top + targetRect.height / 2;
-            if (isBottomHalf) {
-                target.parentNode.insertBefore(placeholder, target.nextSibling);
+        // 從上到下掃描，找到第一張「中心點」在我們鼠標水平線下方的卡片
+        const nextElement = siblings.find(sibling => {
+            const rect = sibling.getBoundingClientRect();
+            const siblingCenterY = rect.top + rect.height / 2;
+            // 如果鼠標高過這張卡片的中心點，代表我們想排在它前面！
+            return clientY < siblingCenterY;
+        });
+
+        // 執行雷射換位判定
+        if (nextElement) {
+            listContainer.insertBefore(placeholder, nextElement);
+        } else {
+            // 如果鼠標比所有彩色卡片都低，就插在有效卡片的最後面（要避開虛線空格）
+            const firstEmptySlot = listContainer.querySelector('.empty-slot');
+            if (firstEmptySlot) {
+                listContainer.insertBefore(placeholder, firstEmptySlot);
             } else {
-                target.parentNode.insertBefore(placeholder, target);
+                listContainer.appendChild(placeholder);
             }
         }
     }
