@@ -167,7 +167,7 @@ window.renderManagementCards = async function() {
         // 必須使用 requestAnimationFrame，確保瀏覽器已經把剛剛生成的卡片都畫到畫面上，高度才量得準！
         requestAnimationFrame(() => {
             // 如果「內容實際總高 (scrollHeight)」 大於 「容器可視高度 (clientHeight)」，代表被螢幕切到了！
-            if (innerContainer.scrollHeight > innerContainer.clientHeight) {
+            if (innerContainer.scrollHeight > innerContainer.clientHeight+ 50) {
                 innerContainer.style.overflowY = 'auto';
                 innerContainer.style.overscrollBehavior = 'contain';
             } else {
