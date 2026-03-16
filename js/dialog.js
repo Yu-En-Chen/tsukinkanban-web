@@ -5,7 +5,7 @@ window.iosConfirm = function(title, message, confirmText = 'OK', cancelText = 'ã
     return new Promise((resolve) => {
         const overlay = document.createElement('div');
         overlay.style.cssText = `
-            position: fixed; inset: 0; z-index: 999999;
+            position: fixed; inset: 0; z-index: 999998;
             display: flex; align-items: center; justify-content: center;
             background: rgba(0, 0, 0, 0.4); opacity: 0;
             transition: opacity 0.2s ease;
