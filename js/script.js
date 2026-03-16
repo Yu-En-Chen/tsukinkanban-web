@@ -528,10 +528,10 @@ function handleCardClick(id) {
         tagsContainer.className = 'vertical-info-list';
         tagsContainer.innerHTML = '';
         
-        const dummyTexts = ['運行状況：平常運転', '現在の混雑度：ゆったり', '次の列車：快速'];
-        const dummyCircles = ['◎', '空', '5分'];
+        const dummyTexts = ['運行状況：平常運転', '現在の混雑度：ゆったり', '次の列車：快速', '車両編成：8両編成'];
+        const dummyCircles = ['◎', '空', '5分', '8両'];
 
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 4; i++) {
             const row = document.createElement('div');
             row.className = 'info-list-row';
 

@@ -892,8 +892,9 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 /* ==========================================================================
    內容佈局、膠囊標籤與文字格
    ========================================================================== */
-   .card-content {
-    padding: 0 24px 40px 24px;
+.card-content {
+    /* ✨ 把第三個數值(底部留白)從 40px 改為 20px，釋放底部空間 */
+    padding: 0 24px 20px 24px; 
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -968,33 +969,40 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 }
 
 /* ==========================================================================
-   🟢 垂直膠囊與圓形預覽排版 (Vertical Info List)
+   🟢 垂直膠囊與圓形預覽排版 (置中自適應連動版)
    ========================================================================== */
-.vertical-info-list {
+   .vertical-info-list {
     display: flex;
     flex-direction: column;
-    gap: 12px; /* 垂直間距 */
-    align-items: flex-start; /* 靠左對齊 */
-    margin-bottom: 20px;
+    align-items: center; /* ✨ 1. 改為置中排列 */
+    gap: 8px;            /* 稍微縮小垂直間距，讓 4 排更緊湊 */
+    margin-bottom: 0;    /* 移除多餘的底部空間 */
+
+    /* 🚀 比例控制台：以後只要調這幾個數字，全體自動完美縮放！ */
+    --info-font-size: 1.1rem;     /* 👉 調整這個，膠囊與圓形會跟著自動放大縮小 */
+    --info-pad-y: 0.26em;          /* 👉 膠囊上下厚度 (em 代表以文字大小為基準) */
+    --info-pad-x: 1.2em;           /* 👉 膠囊左右留白 */
+    --info-circle-size: 2.1em;     /* 👉 後方圓形的直徑比例 */
 }
 
 .info-list-row {
     display: flex;
     align-items: center;
-    gap: 10px; /* 膠囊跟後方正圓之間的距離 */
+    justify-content: center; /* 確保內部組合置中 */
+    gap: 8px; /* 膠囊跟後方正圓之間的距離 */
 }
 
 .info-capsule {
     background: var(--tag-bg);
     border: 1px solid var(--border-color);
     
-    /* ✨ 關鍵修改：將上下留白從 10px 壓縮到 4px，左右保持 16px，讓膠囊緊緊包覆文字 */
-    padding: 4px 16px; 
+    /* ✨ 這裡使用 em 變數，它會自動拿文字大小來乘上比例！ */
+    padding: var(--info-pad-y) var(--info-pad-x); 
     border-radius: 999px; 
     
-    font-size: 1.05rem; 
+    font-size: var(--info-font-size); 
     font-weight: 600;
-    line-height: 1.4; /* 鎖定行高，避免被預設字體撐開 */
+    line-height: 1.4; 
     
     color: var(--card-text-color);
     text-shadow: var(--text-shadow-subtle);
@@ -1004,9 +1012,9 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 }
 
 .info-circle {
-    /* ✨ 配合變扁的膠囊，將正圓直徑從 42px 縮小到 32px，維持完美比例 */
-    width: 32px; 
-    height: 32px;
+    /* ✨ 圓形直徑也綁定 em 比例，保證永遠是完美正圓，且跟文字等比例 */
+    width: var(--info-circle-size); 
+    height: var(--info-circle-size);
     border-radius: 50%; 
     background: var(--tag-bg);
     border: 1px solid var(--border-color);
@@ -1014,8 +1022,8 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
     align-items: center;
     justify-content: center;
     
-    /* 配合縮小的圓形，字體稍微調小一點點才裝得下 */
-    font-size: 0.95rem; 
+    /* 圓形內的字體設定為膠囊文字的 90%，維持視覺平衡 */
+    font-size: calc(var(--info-font-size) * 0.9); 
     font-weight: 700;
     
     color: var(--card-text-color);
