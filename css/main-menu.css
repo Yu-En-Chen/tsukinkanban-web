@@ -584,3 +584,146 @@ body.universal-active #dynamic-main-menu .main-menu-capsule {
     animation: none !important;
     transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease !important;
 }
+
+/* ==========================================================================
+   🟢 顯示設定面板 (Display Settings) 專屬 UI 樣式 (通勤看板專屬圓角風格)
+   ========================================================================== */
+
+   .settings-container {
+    padding-top: 10px;
+}
+
+.settings-description {
+    font-size: 0.95rem;
+    color: var(--text-main);
+    opacity: 0.6;
+    margin-bottom: 16px;
+    padding-left: 14px;
+    letter-spacing: 0.5px;
+}
+
+/* ✨ 專屬化 1：外框群組 (放大到 32px 超大圓角，完美呼應你的彈出視窗) */
+.settings-group {
+    background: var(--search-bg);
+    border-radius: 32px; /* 👈 從 14px 改為 32px */
+    margin-bottom: 24px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--search-border);
+}
+
+@media (prefers-color-scheme: dark) {
+    .settings-group { box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); }
+}
+
+/* 每一列的設定 */
+.settings-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 24px; /* 加大上下左右的呼吸空間 */
+    border-bottom: 1px solid var(--search-border);
+}
+
+.settings-row:last-child {
+    border-bottom: none;
+}
+
+.settings-label {
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: var(--text-main);
+    letter-spacing: 0.5px;
+}
+
+/* =========================================
+   ✨ 專屬化 2：分段控制器 (改為完美 999px 膠囊風格)
+   ========================================= */
+   .segmented-control {
+    display: flex;
+    position: relative;
+    background: rgba(120, 120, 128, 0.12);
+    border-radius: 999px; 
+    padding: 4px; 
+    /* ✨ 將原本的 210px 收縮到 160px，讓膠囊變得緊湊且渾圓！ */
+    width: 160px; 
+    height: 38px; 
+}
+
+.segmented-control .seg-bg {
+    position: absolute;
+    top: 4px; bottom: 4px; left: 4px;
+    width: calc(50% - 4px);
+    background: #ffffff;
+    border-radius: 999px; /* 👈 滑塊也變成完美膠囊 */
+    box-shadow: 0 3px 8px rgba(0,0,0,0.12), 0 3px 1px rgba(0,0,0,0.04);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15);
+    z-index: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+    .segmented-control .seg-bg { background: #636366; }
+}
+
+.segmented-control .seg-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-main);
+    opacity: 0.6;
+    z-index: 2;
+    cursor: pointer;
+    transition: opacity 0.3s;
+    padding: 0;
+}
+
+.segmented-control .seg-btn.active {
+    opacity: 1;
+}
+
+/* =========================================
+   ✨ 專屬化 3：開關 (更寬胖可愛的比例，呼應粗線條 SVG)
+   ========================================= */
+.ios-switch {
+    position: relative;
+    display: inline-block;
+    width: 54px; /* 稍微加寬 */
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.ios-switch input { display: none; }
+
+.ios-switch .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(120, 120, 128, 0.16);
+    border-radius: 999px;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.ios-switch .slider:before {
+    position: absolute;
+    content: "";
+    height: 24px; width: 24px; /* 讓裡面的白球小一點，增加外圍的呼吸感 */
+    left: 4px; bottom: 4px; /* 往內縮 */
+    background-color: #ffffff;
+    border-radius: 50%;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15), width 0.2s ease;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15), 0 3px 1px rgba(0,0,0,0.06);
+}
+
+.ios-switch input:checked + .slider {
+    /* 這裡可以換成你的主色調，目前保留高辨識度的柔和綠色 */
+    background-color: #34C759; 
+}
+
+.ios-switch input:checked + .slider:before {
+    transform: translateX(22px); /* 配合加寬的按鈕調整位移距離 */
+}
+
+.ios-switch:active .slider:before { width: 32px; } /* 點擊按壓時的微互動拉伸 */
+.ios-switch input:checked:active + .slider:before { transform: translateX(14px); }
