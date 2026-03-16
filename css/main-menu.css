@@ -657,8 +657,8 @@ body.universal-active #dynamic-main-menu .main-menu-capsule {
 .segmented-control .seg-bg {
     position: absolute;
     
-    /* ✨ 配合 1px 的縫隙，滑塊高度等於 34px - 2px = 32px (完美黃金比例) */
-    top: 1px; bottom: 1px; left: 1px;
+    /* ✨ 同步將上下左右的距離縮到 0.5px */
+    top: 0.5px; bottom: 0.5px; left: 0.5px;
     width: calc(50% - 1px); 
     
     background: #ffffff;
