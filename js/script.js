@@ -1,5 +1,12 @@
 // script.js - 主 UI 邏輯與狀態控制 (動畫與 History API 修正版)
 
+// 🚀 零延遲視覺攔截器：在任何 DOM 渲染前，同步檢查是否關閉了自訂鼠標
+try {
+    if (localStorage.getItem('tsukin_setting_useSystemCursor') === 'true') {
+        document.body.classList.add('use-system-cursor');
+    }
+} catch(e) {}
+
 import { bottomCardConfig, railwayData } from '../data/data.js';
 import { initPhysics } from './physics.js';
 import { initHeader } from './header.js';

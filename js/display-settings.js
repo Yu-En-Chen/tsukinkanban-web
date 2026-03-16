@@ -147,15 +147,46 @@ window.initDisplaySettingsEvents = function() {
         });
     }
 
-    // C. 開關按鈕邏輯
-    const switches = ['reduce-motion', 'reduce-blur', 'disable-gradient', 'default-cursor'];
-    switches.forEach(id => {
-        const el = document.getElementById(`setting-${id}`);
-        if (el) {
-            el.addEventListener('change', (e) => {
-                console.log(`設定 [${id}] 狀態改變：`, e.target.checked);
+    // C. 動態設定開關邏輯 (連接資料庫)
+    // ✨ 這裡改成引入 db-settings.js
+    import('../data/db-settings.js').then(dbSettings => {
+        
+        // 🎯 1. 系統鼠標設定 (預設為 false：代表啟用自訂鼠標)
+        const cursorSwitch = document.getElementById('setting-default-cursor');
+        if (cursorSwitch && dbSettings.getDisplaySetting) {
+            
+            // 初始化：從資料庫讀取並設定開關狀態
+            dbSettings.getDisplaySetting('useSystemCursor', false).then(useSystem => {
+                cursorSwitch.checked = useSystem;
+            });
+
+            // 監聽變更：寫入資料庫並「即時」切換畫面鼠標
+            cursorSwitch.addEventListener('change', (e) => {
+                const isChecked = e.target.checked;
+                dbSettings.saveDisplaySetting('useSystemCursor', isChecked); // 寫入雙引擎資料庫
+                
+                // 立即套用視覺效果
+                if (isChecked) {
+                    document.body.classList.add('use-system-cursor');
+                } else {
+                    document.body.classList.remove('use-system-cursor');
+                }
+                
+                console.log(`設定 [系統鼠標] 切換為：`, isChecked ? '開啟 (隱藏自訂)' : '關閉 (顯示自訂)');
                 if (window.navigator.vibrate) window.navigator.vibrate(5);
             });
         }
+
+        // 🎯 2. 其他開關 (暫時保留 Console 預留未來擴充)
+        const otherSwitches = ['reduce-motion', 'reduce-blur', 'disable-gradient'];
+        otherSwitches.forEach(id => {
+            const el = document.getElementById(`setting-${id}`);
+            if (el) {
+                el.addEventListener('change', (e) => {
+                    console.log(`設定 [${id}] 狀態改變：`, e.target.checked);
+                    if (window.navigator.vibrate) window.navigator.vibrate(5);
+                });
+            }
+        });
     });
 };

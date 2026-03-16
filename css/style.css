@@ -2592,3 +2592,20 @@ body:has(.universal-window.is-active) .left-capsule {
     opacity: 0.7 !important;
     stroke-width: 2px !important; 
 }
+
+/* ==========================================================================
+   🟢 使用者設定：強制恢復系統預設鼠標
+   ========================================================================== */
+   body.use-system-cursor,
+   body.use-system-cursor * {
+       /* 強制所有元素恢復原生的滑鼠指標 */
+       cursor: auto !important;
+   }
+   
+   body.use-system-cursor .cursor-dot,
+   body.use-system-cursor .cursor-outline {
+       /* 徹底隱藏自訂的圓點與光圈 */
+       display: none !important;
+       opacity: 0 !important;
+       visibility: hidden !important;
+   }
