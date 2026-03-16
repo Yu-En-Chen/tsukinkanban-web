@@ -2,6 +2,87 @@
 
 let isSandboxInitialized = false;
 
+// ============================================================================
+// 🟢 專屬頂級客製化對話框引擎 (黃金比例微調版：加寬、收縮頂部、完美同心圓角)
+// ============================================================================
+window.iosConfirm = function(title, message, confirmText = 'OK', cancelText = 'キャンセル', isDestructive = false) {
+    return new Promise((resolve) => {
+        // 1. 建立背景遮罩
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed; inset: 0; z-index: 999998;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0, 0, 0, 0.4); opacity: 0;
+            transition: opacity 0.2s ease;
+        `;
+
+        // 2. 建立對話框本體 
+        // ✨ 加寬到 320px，並將外圓角加大到 36px，以完美包覆內部的膠囊按鈕
+        const box = document.createElement('div');
+        const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        box.style.cssText = `
+            width: 320px; border-radius: 36px; text-align: center;
+            background: ${isDarkMode ? 'rgba(35, 35, 35, 0.85)' : 'rgba(240, 240, 240, 0.9)'};
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            transform: scale(1.1); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            color: ${isDarkMode ? '#fff' : '#000'};
+            border: 1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'};
+            display: flex; flex-direction: column;
+        `;
+
+        const confirmBg = isDestructive ? '#FF3B30' : '#007AFF';
+        const confirmShadow = isDestructive ? 'rgba(255, 59, 48, 0.25)' : 'rgba(0, 122, 255, 0.25)';
+
+        // 3. 填入文字與按鈕
+        // ✨ 頂部 Padding 從 28px 縮減到 20px，左右 Padding 放寬到 24px
+        box.innerHTML = `
+            <div style="padding: 20px 24px 20px;">
+                <div style="font-size: 1.15rem; font-weight: 600; margin-bottom: 6px; letter-spacing: 0.5px;">${title}</div>
+                <div style="font-size: 0.9rem; opacity: 0.7; line-height: 1.5; white-space: pre-wrap;">${message}</div>
+            </div>
+            
+            <div style="display: flex; gap: 12px; padding: 0 20px 20px;">
+                ${cancelText ? `
+                <button id="ios-btn-cancel" style="flex: 1; padding: 12px 0; border-radius: 999px; border: none; background: rgba(120, 120, 128, 0.15); color: inherit; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: transform 0.15s, opacity 0.15s;" 
+                    onmousedown="this.style.transform='scale(0.94)'; this.style.opacity='0.8'" 
+                    onmouseup="this.style.transform='scale(1)'; this.style.opacity='1'" 
+                    onmouseleave="this.style.transform='scale(1)'; this.style.opacity='1'">
+                    ${cancelText}
+                </button>` : ''}
+                
+                <button id="ios-btn-confirm" style="flex: 1; padding: 12px 0; border-radius: 999px; border: none; background: ${confirmBg}; color: #FFF; font-size: 0.95rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px ${confirmShadow}; transition: transform 0.15s, opacity 0.15s;" 
+                    onmousedown="this.style.transform='scale(0.94)'; this.style.opacity='0.8'" 
+                    onmouseup="this.style.transform='scale(1)'; this.style.opacity='1'" 
+                    onmouseleave="this.style.transform='scale(1)'; this.style.opacity='1'">
+                    ${confirmText}
+                </button>
+            </div>
+        `;
+
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+
+        requestAnimationFrame(() => {
+            overlay.style.opacity = '1';
+            box.style.transform = 'scale(1)';
+        });
+
+        const closeDialog = (result) => {
+            overlay.style.opacity = '0';
+            box.style.transform = 'scale(0.95)';
+            setTimeout(() => overlay.remove(), 200);
+            resolve(result); 
+        };
+
+        const btnConfirm = box.querySelector('#ios-btn-confirm');
+        const btnCancel = box.querySelector('#ios-btn-cancel');
+
+        btnConfirm.addEventListener('click', () => closeDialog(true));
+        if (btnCancel) btnCancel.addEventListener('click', () => closeDialog(false));
+    });
+};
+
 window.openAddPanel = function () {
     const contentHTML = `
         <div class="add-panel-container" id="add-panel-container">
@@ -294,8 +375,15 @@ window.toggleVisibility = async function(id) {
         // 加入隱藏名單：判斷是否已達 5 張上限
         if (hiddenIds.length >= 5) {
             // 彈出確認視窗，詢問是否要刪除最舊的隱藏卡片
-            const confirmDelete = confirm("非表示にできるカードは最大5枚です。\nこれ以上隠す場合、最も古い非表示カードが完全に「削除」されます。\n続行しますか？");
-            
+            // ✨ 彈出帶有「紅色警告」的自訂刪除視窗
+            const confirmDelete = await window.iosConfirm(
+                "非表示の上限に達しました", 
+                "非表示にできるカードは最大5枚です。\nこれ以上隠す場合、最も古い非表示カードが完全に「削除」されます。",
+                "削除して続行", // 確定按鈕文字
+                "キャンセル", // 取消按鈕文字
+                true // isDestructive 設為 true，字體會變紅色！
+            );
+
             // 如果使用者按取消，直接中斷所有動作
             if (!confirmDelete) return; 
 
@@ -529,8 +617,14 @@ window.createNewCardAndEdit = async function() {
 
     if (visibleCount >= 5) {
         // ✨ UX 升級：給予使用者直接前往管理介面的選擇
-        const goToManage = confirm("表示できるカードは最大5枚です。\nこれ以上追加する場合は、既存のカードを非表示にしてください。\n\n「カードの管理・編集」画面を開きますか？");
-        
+        // ✨ UX 升級：使用頂級自訂視窗
+        const goToManage = await window.iosConfirm(
+            "表示上限に達しました", 
+            "表示できるカードは最大5枚です。\nこれ以上追加する場合は、既存のカードを非表示にしてください。",
+            "管理画面へ", // 確定按鈕文字
+            "キャンセル" // 取消按鈕文字
+        );
+
         if (goToManage) {
             const manageItem = document.getElementById('add-item-3');
             // 抓取會滾動的外層容器 (通用面板)
@@ -639,7 +733,15 @@ window.createNewCardAndEdit = async function() {
 // 🟢 一鍵刪除所有隱藏卡片引擎
 // ============================================================================
 window.deleteAllHiddenCards = async function() {
-    const confirmDelete = confirm("非表示のカードをすべて完全に削除しますか？\nこの操作は取り消せません。");
+    // ✨ 彈出帶有「紅色警告」的自訂刪除視窗
+    const confirmDelete = await window.iosConfirm(
+        "すべて削除しますか？", 
+        "非表示のカードをすべて完全に削除します。\nこの操作は取り消せません。",
+        "すべて削除", // 確定按鈕文字
+        "キャンセル", // 取消按鈕文字
+        true // isDestructive 設為 true，字體會變紅色！
+    );
+    
     if (!confirmDelete) return;
 
     const dbSandbox = await import('../data/db-add-panel.js');
