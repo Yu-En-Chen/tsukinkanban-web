@@ -124,7 +124,7 @@ function getDynamicTheme(hex, opacity = 1) {
         textColor = `hsl(${hsl.h}, ${textS}%, ${textL}%)`;
         textSecondary = `hsl(${hsl.h}, ${textS}%, ${textL + 5}%)`;
         borderColor = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.35)`;
-        tagBg = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.5)`;
+        tagBg = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.15)`;
         textShadow = `0 1px 1px hsla(${hsl.h}, ${textS}%, ${textL - 10}%, 0.2)`;
 
         const textLTop = textL;
@@ -148,7 +148,7 @@ function getDynamicTheme(hex, opacity = 1) {
         textColor = '#ffffff';
         textSecondary = 'rgba(255, 255, 255, 0.8)';
         borderColor = 'rgba(255, 255, 255, 0.12)';
-        tagBg = 'rgba(255, 255, 255, 0.25)';
+        tagBg = 'rgba(255, 255, 255, 0.15)';
         textShadow = '0 1px 2px rgba(0, 0, 0, 0.2)';
 
         textBgGradientSecondary = 'none';

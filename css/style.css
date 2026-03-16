@@ -962,6 +962,13 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
     -webkit-text-fill-color: var(--text-fill, var(--text-secondary));
 }
 
+/* ==========================================================================
+   ✨ 隱藏主畫面卡片（包含底層預覽）的描述文字，將空間純粹留給膠囊
+   ========================================================================== */
+.card .description {
+    display: none;
+}
+
 .info-row {
     display: flex;
     justify-content: space-between;
