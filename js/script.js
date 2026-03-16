@@ -124,7 +124,7 @@ function getDynamicTheme(hex, opacity = 1) {
         textColor = `hsl(${hsl.h}, ${textS}%, ${textL}%)`;
         textSecondary = `hsl(${hsl.h}, ${textS}%, ${textL + 5}%)`;
         borderColor = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.35)`;
-        tagBg = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.15)`;
+        tagBg = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.5)`;
         textShadow = `0 1px 1px hsla(${hsl.h}, ${textS}%, ${textL - 10}%, 0.2)`;
 
         const textLTop = textL;
@@ -148,7 +148,7 @@ function getDynamicTheme(hex, opacity = 1) {
         textColor = '#ffffff';
         textSecondary = 'rgba(255, 255, 255, 0.8)';
         borderColor = 'rgba(255, 255, 255, 0.12)';
-        tagBg = 'rgba(255, 255, 255, 0.15)';
+        tagBg = 'rgba(255, 255, 255, 0.25)';
         textShadow = '0 1px 2px rgba(0, 0, 0, 0.2)';
 
         textBgGradientSecondary = 'none';
@@ -426,12 +426,32 @@ function renderCards(data) {
         clone.querySelector('.description').textContent = line.desc;
 
         const tagsContainer = clone.querySelector('.info-tags-container');
-        line.detail.forEach(info => {
-            const tagDiv = document.createElement('div');
-            tagDiv.className = 'info-tag-item';
-            tagDiv.textContent = info;
-            tagsContainer.appendChild(tagDiv);
-        });
+        if (tagsContainer) {
+            tagsContainer.className = 'vertical-info-list';
+            tagsContainer.innerHTML = '';
+            
+            // ✨ 測試用假資料，強制生成 3 個「膠囊 + 圓形」
+            const dummyTexts = ['運行状況：平常運転', '現在の混雑度：ゆったり', '次の列車：快速'];
+            const dummyCircles = ['◎', '空', '5分'];
+
+            for (let i = 0; i < 3; i++) {
+                const row = document.createElement('div');
+                row.className = 'info-list-row';
+
+                const cap = document.createElement('div');
+                cap.className = 'info-capsule';
+                // 優先使用原本的 detail，如果沒有就用假資料墊檔
+                cap.textContent = line.detail[i] || dummyTexts[i];
+
+                const cir = document.createElement('div');
+                cir.className = 'info-circle';
+                cir.textContent = dummyCircles[i];
+
+                row.appendChild(cap);
+                row.appendChild(cir);
+                tagsContainer.appendChild(row);
+            }
+        }
 
         mainStack.appendChild(clone);
     });
@@ -504,12 +524,30 @@ function handleCardClick(id) {
     clone.querySelector('.description').textContent = data.desc;
 
     const tagsContainer = clone.querySelector('.info-tags-container');
-    data.detail.forEach(info => {
-        const tagDiv = document.createElement('div');
-        tagDiv.className = 'info-tag-item';
-        tagDiv.textContent = info;
-        tagsContainer.appendChild(tagDiv);
-    });
+    if (tagsContainer) {
+        tagsContainer.className = 'vertical-info-list';
+        tagsContainer.innerHTML = '';
+        
+        const dummyTexts = ['運行状況：平常運転', '現在の混雑度：ゆったり', '次の列車：快速'];
+        const dummyCircles = ['◎', '空', '5分'];
+
+        for (let i = 0; i < 3; i++) {
+            const row = document.createElement('div');
+            row.className = 'info-list-row';
+
+            const cap = document.createElement('div');
+            cap.className = 'info-capsule';
+            cap.textContent = data.detail[i] || dummyTexts[i];
+
+            const cir = document.createElement('div');
+            cir.className = 'info-circle';
+            cir.textContent = dummyCircles[i];
+
+            row.appendChild(cap);
+            row.appendChild(cir);
+            tagsContainer.appendChild(row);
+        }
+    }
 
     detailContainer.appendChild(clone);
 
