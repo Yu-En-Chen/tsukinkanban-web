@@ -40,14 +40,22 @@ export function initSponsorCarousel() {
         slide.target = '_blank';
         slide.rel = 'noopener noreferrer';
 
-        // ✨ 新增：點擊時的「防誤觸與跳轉確認」提示
-        slide.addEventListener('click', (e) => {
-            // 跳出確認視窗
-            const isConfirmed = window.confirm('外部サイトへ移動します。よろしいですか？' + sponsor.link);
+        // ✨ 新增：點擊時的「防誤觸與跳轉確認」提示 (自訂 iOS 視窗版)
+        slide.addEventListener('click', async (e) => {
+            // 1. 絕對防禦：因為 await 會打斷事件的同步性，所以我們必須第一時間「先斬後奏」攔截跳轉！
+            e.preventDefault(); 
             
-            // 如果使用者點擊「取消」，就攔截預設的跳轉行為
-            if (!isConfirmed) {
-                e.preventDefault(); 
+            // 2. 呼叫我們自訂的頂級 iOS 視窗
+            const isConfirmed = await window.iosConfirm(
+                "外部サイトへ移動", 
+                "以下のリンクを開きますか？\n\n" + sponsor.link,
+                "開く",      // 確定按鈕文字
+                "キャンセル" // 取消按鈕文字
+            );
+            
+            // 3. 如果使用者按下「開く (確定)」，我們再用程式手動幫他打開新分頁
+            if (isConfirmed) {
+                window.open(sponsor.link, '_blank', 'noopener,noreferrer');
             }
         });
         
