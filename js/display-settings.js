@@ -66,30 +66,31 @@ window.initDisplaySettingsEvents = function() {
     const segBg = document.querySelector('#render-mode-control .seg-bg');
     
     let activeIndex = 0; // 0=品質, 1=動作
-    let isDragging = false;
     let startX = 0;
     let currentTranslate = 0;
     let bgWidth = 0;
+    
+    // ✨ 核心升級：用來精準區分「點擊」還是「刻意滑動」的旗標
+    let hasMoved = false; 
 
-    // 🎯 核心切換功能 (供點擊與拖曳放開時呼叫)
+    // 🎯 核心切換功能
     function setSegment(index) {
         activeIndex = index;
         segBtns.forEach(b => b.classList.remove('active'));
         segBtns[index].classList.add('active');
         
-        // 恢復彈簧動畫
         segBg.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15)';
         if (index === 0) segBg.style.transform = 'translateX(0)';
         else segBg.style.transform = 'translateX(100%)';
         
-        console.log('描畫模式切換為：', segBtns[index].dataset.val);
+        console.log('描画モード切り替え：', segBtns[index].dataset.val);
         if (window.navigator.vibrate) window.navigator.vibrate(10);
     }
 
-    // A. 點擊事件
+    // A. 點擊事件 (永遠有效，除非使用者進行了大幅度拖曳)
     segBtns.forEach((btn, index) => {
         btn.addEventListener('click', () => {
-            if (isDragging) return; // 如果正在拖曳，就不觸發點擊
+            if (hasMoved) return; // 只有在確認是拖曳時才擋下點擊
             setSegment(index);
         });
     });
@@ -97,50 +98,56 @@ window.initDisplaySettingsEvents = function() {
     // B. 手指拖曳 (Swipe) 物理引擎
     if (segControl && segBg) {
         segControl.addEventListener('touchstart', (e) => {
-            isDragging = true;
             startX = e.touches[0].clientX;
-            bgWidth = segBg.offsetWidth; // 取得滑塊的實際寬度
-            
-            // 拔掉動畫，讓滑塊完全「零延遲」跟著手指
-            segBg.style.transition = 'none';
-            
-            // 判斷目前是從 0 出發，還是從右邊 (bgWidth) 出發
+            bgWidth = segBg.offsetWidth; 
             currentTranslate = activeIndex === 0 ? 0 : bgWidth;
+            hasMoved = false; // 每次觸碰螢幕時重置
+            
+            // 準備跟隨手指，拔除延遲動畫
+            segBg.style.transition = 'none';
         }, { passive: true });
 
         segControl.addEventListener('touchmove', (e) => {
-            if (!isDragging) return;
             const deltaX = e.touches[0].clientX - startX;
-            let newTranslate = currentTranslate + deltaX;
 
-            // 物理邊界鎖定：不准滑出左右膠囊範圍
+            // ✨ 容錯機制：手指移動超過 3px 才算是「刻意拖曳」，過濾掉點擊時的微手震！
+            if (Math.abs(deltaX) > 3) {
+                hasMoved = true;
+            }
+
+            // 如果還沒超過 3px (還在手震範圍內)，就不移動背景
+            if (!hasMoved) return;
+
+            let newTranslate = currentTranslate + deltaX;
             if (newTranslate < 0) newTranslate = 0;
             if (newTranslate > bgWidth) newTranslate = bgWidth;
 
-            // 絕對跟手位移
             segBg.style.transform = `translateX(${newTranslate}px)`;
         }, { passive: true });
 
         segControl.addEventListener('touchend', () => {
-            if (!isDragging) return;
+            if (!hasMoved) {
+                // 如果判定只是「點擊」，把動畫加回來，剩下的切換邏輯交給 Click 事件處理！
+                segBg.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15)';
+                return;
+            }
             
-            // 讀取手指放開瞬間的像素位置
+            // 如果是「拖曳放開」，執行物理吸附
             const match = segBg.style.transform.match(/translateX\(([-\d.]+)px\)/);
             if (match) {
                 const finalTranslate = parseFloat(match[1]);
-                // 如果滑超過中線，就吸附到右邊 (動作)；否則吸附回左邊 (品質)
                 if (finalTranslate > bgWidth / 2) setSegment(1);
                 else setSegment(0);
             } else {
                 setSegment(activeIndex);
             }
             
-            // 延遲 50ms 解除拖曳狀態，避免誤觸 click 事件
-            setTimeout(() => { isDragging = false; }, 50);
+            // 給予 50ms 延遲解除狀態，防止原生點擊事件趁虛而入
+            setTimeout(() => { hasMoved = false; }, 50);
         });
     }
 
-    // C. 綁定 iOS 原生開關的狀態變更
+    // C. 開關按鈕邏輯
     const switches = ['reduce-motion', 'reduce-blur', 'disable-gradient', 'default-cursor'];
     switches.forEach(id => {
         const el = document.getElementById(`setting-${id}`);

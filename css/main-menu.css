@@ -638,7 +638,7 @@ body.universal-active #dynamic-main-menu .main-menu-capsule {
 }
 
 /* =========================================
-   ✨ 專屬化 2：分段控制器 (極致同心完美膠囊 + 緊湊版)
+   ✨ 專屬化 2：分段控制器 (點滑雙棲 + 滿版滑塊)
    ========================================= */
    .segmented-control {
     display: flex;
@@ -646,18 +646,21 @@ body.universal-active #dynamic-main-menu .main-menu-capsule {
     background: rgba(120, 120, 128, 0.12);
     border-radius: 999px; 
     
-    /* ✨ 將縫隙逼到極限的 1.5px，完全貼合邊緣 */
-    padding: 1.5px; 
-    /* ✨ 將整體寬度從 160px 大幅縮小到 130px，消除文字旁的空洞 */
+    /* ✨ 關鍵 1：縫隙極小化 (從 1.5px 縮到 1px)，讓滑塊更高、更飽滿 */
+    padding: 0.5px; 
     width: 130px; 
-    height: 32px; 
+    
+    /* ✨ 關鍵 2：整體高度稍微加高到 34px，視覺比例更修長 */
+    height: 36px; 
 }
 
 .segmented-control .seg-bg {
     position: absolute;
-    /* 配合 1.5px 的縫隙 */
-    top: 1.5px; bottom: 1.5px; left: 1.5px;
-    width: calc(50% - 1.5px); 
+    
+    /* ✨ 配合 1px 的縫隙，滑塊高度等於 34px - 2px = 32px (完美黃金比例) */
+    top: 1px; bottom: 1px; left: 1px;
+    width: calc(50% - 1px); 
+    
     background: #ffffff;
     border-radius: 999px;
     box-shadow: 0 3px 8px rgba(0,0,0,0.12), 0 3px 1px rgba(0,0,0,0.04);
