@@ -430,11 +430,12 @@ function renderCards(data) {
             tagsContainer.className = 'vertical-info-list';
             tagsContainer.innerHTML = '';
             
-            // ✨ 測試用假資料，強制生成 3 個「膠囊 + 圓形」
-            const dummyTexts = ['運行状況：平常運転', '現在の混雑度：ゆったり', '次の列車：快速'];
-            const dummyCircles = ['◎', '空', '25'];
+            // ✨ 測試用假資料，強制生成 4 個「膠囊 + 圓形」
+            const dummyTexts = ['運行状況：平常運転', '現在の混雑度：ゆったり', '次の列車：快速', '車両編成：8両編成'];
+            const dummyCircles = ['◎', '空', '5分', '8両'];
 
-            for (let i = 0; i < 3; i++) {
+            // 👇 這裡的迴圈要改成 i < 4
+            for (let i = 0; i < 4; i++) {
                 const row = document.createElement('div');
                 row.className = 'info-list-row';
 
