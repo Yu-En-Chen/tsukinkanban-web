@@ -1035,6 +1035,23 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 }
 
 /* ==========================================================================
+   🟢 舊版共用膠囊按鈕 (負責修復個性化設定與新增面板的 UI)
+   ========================================================================== */
+   .info-tag-item {
+    background: var(--tag-bg);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: 100px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--card-text-color);
+    text-shadow: var(--text-shadow-subtle);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* ==========================================================================
    獨立詳情層 (Detail Overlay)
    ========================================================================== */
 .detail-overlay {
