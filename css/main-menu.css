@@ -276,7 +276,7 @@ body.universal-active .universal-page-wrapper {
     stroke-width: 2.5px;
 }
 
-/* 內容捲動區 */
+/* 內容捲動區 (保持純淨，讓瀏覽器啟動原生 GPU 平滑滾動) */
 .universal-page-content {
     flex: 1;
     overflow-y: auto;
@@ -293,24 +293,24 @@ body.universal-active .universal-page-wrapper {
     touch-action: pan-y !important; 
     overscroll-behavior: contain !important; 
 
-    /* 🚀 終極修復 V2：抗鋸齒與圖層隔離 */
-    /* 1. 關閉子像素渲染！強迫文字不要去讀取底下的毛玻璃顏色，徹底切斷重繪關聯 */
+    /* 🚀 修正 1：拔除 transform，把滾動權限徹底還給顯示卡 (Compositor Thread)！ */
+    /* 只保留文字抗鋸齒隔離與容器邊界，切斷與底層毛玻璃的聯結 */
+    contain: strict !important; 
     -webkit-font-smoothing: antialiased !important;
     -moz-osx-font-smoothing: grayscale !important;
-
-    /* 2. 拔除會干擾「原生滾動加速」的 contain 與 will-change，只保留純粹的 3D 圖層 */
-    transform: translate3d(0, 0, 0) !important;
-    backface-visibility: hidden !important; 
 }
 
-/* ✨ (選擇性) 確保裡面的所有段落都乖乖聽話 */
-.universal-page-content p {
-    font-size: inherit !important;
-    font-weight: inherit !important;
+/* 🚀 修正 2：把 3D 靜態快取魔法，套用在「滾動框裡面的所有文字段落」身上！ */
+.universal-page-content > * {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    /* 讓電腦知道這些文字是一張張不會變形的靜態貼紙 */
+    will-change: transform; 
 }
 
+/* 隱藏捲動條 */
 .universal-page-content::-webkit-scrollbar {
-    display: none; /* Chrome/Safari */
+    display: none; 
 }
 
 /* =========================================
