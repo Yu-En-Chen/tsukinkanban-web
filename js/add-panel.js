@@ -248,13 +248,13 @@ window.renderManagementCards = async function() {
     });
 
     // =========================================================
-    // ✨ 如果隱藏區有資料，在最後面加上「一鍵刪除」空心按鈕
+    // ✨ 如果隱藏區有「自訂卡片」，在最後面加上「一鍵刪除」空心按鈕
     // =========================================================
-    if (hiddenIds.length > 0) {
+    const hasCustomHidden = hiddenIds.some(hid => hid.startsWith('new-card-') || hid.startsWith('custom-'));
+    
+    if (hasCustomHidden) {
         const deleteAllBtn = document.createElement('div');
-        // 共用小膠囊的大小與變形動畫，再加上空心樣式
         deleteAllBtn.className = 'manage-hidden-capsule delete-all-hidden-btn';
-        // 套用你指定的垃圾桶 SVG，並微調大小以完美置中
         deleteAllBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash2-icon lucide-trash-2"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
         deleteAllBtn.onclick = () => window.deleteAllHiddenCards();
         hiddenList.appendChild(deleteAllBtn);
@@ -294,13 +294,17 @@ window.toggleVisibility = async function(id) {
     } else {
         // 準備隱藏：判斷是否已達 5 張上限
         if (hiddenIds.length >= 5) {
-            // ✨ 智慧引擎：只尋找「自訂卡片 (custom- 或 new-card-)」作為刪除目標
+            // ✨ 智慧引擎：只尋找「自訂卡片」作為刪除目標
             const oldestCustomId = hiddenIds.find(hid => hid.startsWith('new-card-') || hid.startsWith('custom-'));
 
             if (oldestCustomId) {
+                // ✨ 抓出這張卡片的自訂名稱，讓使用者明確知道是誰要被殺掉！
+                const targetCard = window.appRailwayData.find(c => c.id === oldestCustomId);
+                const targetName = targetCard ? targetCard.name : 'カスタムカード';
+
                 const confirmDelete = await window.iosConfirm(
                     "非表示の上限に達しました", 
-                    "非表示にできるカードは最大5枚です。\nこれ以上隠す場合、最も古い「カスタムカード」が完全に削除されます。\n続行しますか？",
+                    `非表示にできるカードは最大5枚です。\nこれ以上隠す場合、最も古いカード\n「${targetName}」\nが完全に削除されます。\n続行しますか？`,
                     "削除して続行", "キャンセル", true
                 );
                 if (!confirmDelete) return; 
@@ -642,76 +646,43 @@ window.createNewCardAndEdit = async function() {
 };
 
 // ============================================================================
-// 🟢 一鍵刪除所有隱藏卡片引擎
+// 🟢 一鍵刪除所有隱藏自訂卡片引擎 (保護內建卡片版 + 自訂視窗)
 // ============================================================================
 window.deleteAllHiddenCards = async function() {
-    // ✨ 彈出帶有「紅色警告」的自訂刪除視窗
-    const confirmDelete = await window.iosConfirm(
-        "すべて削除しますか？", 
-        "非表示のカードをすべて完全に削除します。\nこの操作は取り消せません。",
-        "すべて削除", // 確定按鈕文字
-        "キャンセル", // 取消按鈕文字
-        true // isDestructive 設為 true，字體會變紅色！
-    );
+    const dbSandbox = await import('../data/db-add-panel.js');
+    const hiddenIds = dbSandbox.getHiddenCards();
     
+    // ✨ 篩選出隱藏區中的「自訂卡片」
+    const customHiddenIds = hiddenIds.filter(hid => hid.startsWith('new-card-') || hid.startsWith('custom-'));
+    if (customHiddenIds.length === 0) return;
+
+    // 提示文字更明確，告知只會刪除自訂卡片
+    const confirmDelete = await window.iosConfirm(
+        "カスタムカードを削除", 
+        "非表示の「カスタムカード」をすべて完全に削除します。\n(初期カードは削除されず残ります)\n\nこの操作は取り消せません。",
+        "すべて削除", 
+        "キャンセル", 
+        true 
+    );
     if (!confirmDelete) return;
 
-    const dbSandbox = await import('../data/db-add-panel.js');
-    const hiddenIds = dbSandbox.getHiddenCards();
-    if (hiddenIds.length === 0) return;
+    // 1. 從全域記憶體中徹底移除這些自訂卡片
+    window.appRailwayData = window.appRailwayData.filter(r => !customHiddenIds.includes(r.id));
 
-    // 1. 從全域記憶體中徹底移除這些卡片
-    window.appRailwayData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
-
-    // 2. 呼叫 db.js 徹底刪除資料庫中的紀錄 (跑迴圈連續刪除)
+    // 2. 呼叫 db.js 徹底刪除資料庫中的紀錄
     const db = await import('../data/db.js');
     if (db.deleteRoutePreference) {
-        for (const id of hiddenIds) {
+        for (const id of customHiddenIds) {
             await db.deleteRoutePreference(id);
         }
     }
 
-    // 3. 清空沙盒中的隱藏名單
-    dbSandbox.saveHiddenCards([]);
+    // 3. ✨ 更新隱藏名單，把內建卡片溫柔地保留下來！
+    const remainingHiddenIds = hiddenIds.filter(hid => !customHiddenIds.includes(hid));
+    dbSandbox.saveHiddenCards(remainingHiddenIds);
 
-    // 4. 重新繪製管理面板 (此時垃圾桶按鈕也會因為 hiddenIds 為空而自動消失)
     window.renderManagementCards();
 
-    // 5. 將剩下的可見卡片傳給 db.js 儲存排序
-    const visibleCapsules = document.querySelectorAll('#manage-visible-list .manage-card-capsule');
-    const visibleIds = Array.from(visibleCapsules).map(c => c.dataset.id);
-    if(db.saveDisplayOrder) db.saveDisplayOrder(visibleIds);
-};
-
-// ============================================================================
-// 🟢 一鍵刪除所有隱藏卡片引擎
-// ============================================================================
-window.deleteAllHiddenCards = async function() {
-    const confirmDelete = confirm("非表示のカードをすべて完全に削除しますか？\nこの操作は取り消せません。");
-    if (!confirmDelete) return;
-
-    const dbSandbox = await import('../data/db-add-panel.js');
-    const hiddenIds = dbSandbox.getHiddenCards();
-    if (hiddenIds.length === 0) return;
-
-    // 1. 從全域記憶體中徹底移除這些卡片
-    window.appRailwayData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
-
-    // 2. 呼叫 db.js 徹底刪除資料庫中的紀錄 (跑迴圈連續刪除)
-    const db = await import('../data/db.js');
-    if (db.deleteRoutePreference) {
-        for (const id of hiddenIds) {
-            await db.deleteRoutePreference(id);
-        }
-    }
-
-    // 3. 清空沙盒中的隱藏名單
-    dbSandbox.saveHiddenCards([]);
-
-    // 4. 重新繪製管理面板 (此時垃圾桶按鈕也會因為 hiddenIds 為空而自動消失)
-    window.renderManagementCards();
-
-    // 5. 將剩下的可見卡片傳給 db.js 儲存排序
     const visibleCapsules = document.querySelectorAll('#manage-visible-list .manage-card-capsule');
     const visibleIds = Array.from(visibleCapsules).map(c => c.dataset.id);
     if(db.saveDisplayOrder) db.saveDisplayOrder(visibleIds);
