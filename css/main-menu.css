@@ -422,7 +422,7 @@ body.universal-active .universal-nav-container {
 .universal-nav-btn:first-child svg {
     width: 26px !important;
     height: 26px !important;
-    stroke-width: 1.5px !important; 
+    stroke-width: 2px !important; 
     transform: translateX(-1px) !important; 
 }
 
@@ -430,7 +430,7 @@ body.universal-active .universal-nav-container {
 .universal-nav-btn:last-child svg {
     width: 22px !important;
     height: 22px !important;
-    stroke-width: 1.5px !important; 
+    stroke-width: 2.1px !important; 
 }
 
 /* SVG 基礎設定 */
