@@ -15,7 +15,7 @@ window.getDisplaySettingsHTML = function() {
 
     // 2. 判斷是否為「純正」的 Safari
     // 關鍵：Safari 的 UA 必須包含 Safari 但「絕對不能」包含 Chrome, CriOS, Edg... 等字眼
-    const isSafari = isApple && /Safari/i.test(ua) && !/Chrome|CriOS|Edg|OPR|FxiOS|Firefox/i.test(ua);
+    const isSafari = isApple && /Safari/i.test(ua) && !/Chrome|CriOS|Edg|OPR|FxiOS|Firefox|Line|FBAV|FBAN|Instagram|MicroMessenger|WeChat|Threads|Twitter/i.test(ua);
     
     // 3. 判斷是否為 Blink 核心 (Chrome, Edge, Opera)
     const isBlink = /Chrome|CriOS|Edg|OPR/i.test(ua);
