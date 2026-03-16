@@ -892,13 +892,25 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 /* ==========================================================================
    內容佈局、膠囊標籤與文字格
    ========================================================================== */
-.card-content {
+   .card-content {
     padding: 0 24px 40px 24px;
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
     transform: translate3d(0, 15px, 0);
     transition: opacity 0.4s ease 0.2s, visibility 0.4s, transform var(--dynamic-speed, 0.65s) var(--active-bounce) 0.2s;
+}
+
+/* ==========================================================================
+   🟢 預覽魔法：永遠讓最底層（視覺最前面）的卡片顯示詳情內容
+   ========================================================================== */
+.card-stack:not(.has-active) .card:last-child .card-content {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translate3d(0, 0, 0);
+    /* 稍微提早一點淡入，讓卡片掉下來時內容已經準備好 */
+    transition: opacity 0.4s ease 0.1s, visibility 0.4s, transform var(--dynamic-speed, 0.65s) var(--active-bounce);
 }
 
 .active .card-content {
