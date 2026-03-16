@@ -621,7 +621,8 @@ body.universal-active #dynamic-main-menu .main-menu-capsule {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 18px 24px; /* 加大上下左右的呼吸空間 */
+    /* ✨ 縮減上下留白：從 18px 改為 14px，讓排版更緊湊有張力 */
+    padding: 14px 24px; 
     border-bottom: 1px solid var(--search-border);
 }
 
@@ -637,25 +638,31 @@ body.universal-active #dynamic-main-menu .main-menu-capsule {
 }
 
 /* =========================================
-   ✨ 專屬化 2：分段控制器 (改為完美 999px 膠囊風格)
+   ✨ 專屬化 2：分段控制器 (極致同心完美膠囊)
    ========================================= */
    .segmented-control {
     display: flex;
     position: relative;
     background: rgba(120, 120, 128, 0.12);
     border-radius: 999px; 
-    padding: 4px; 
-    /* ✨ 將原本的 210px 收縮到 160px，讓膠囊變得緊湊且渾圓！ */
+    
+    /* ✨ 關鍵 1：把內部縫隙從 4px 縮小到 2px */
+    padding: 2px; 
     width: 160px; 
-    height: 38px; 
+    
+    /* ✨ 關鍵 2：高度微調為 32px，讓長寬比例更修長 */
+    height: 32px; 
 }
 
 .segmented-control .seg-bg {
     position: absolute;
-    top: 4px; bottom: 4px; left: 4px;
-    width: calc(50% - 4px);
+    
+    /* ✨ 關鍵 3：配合 2px 的縫隙，把定位與寬度計算都改為 2px */
+    top: 2px; bottom: 2px; left: 2px;
+    width: calc(50% - 2px); 
+    
     background: #ffffff;
-    border-radius: 999px; /* 👈 滑塊也變成完美膠囊 */
+    border-radius: 999px;
     box-shadow: 0 3px 8px rgba(0,0,0,0.12), 0 3px 1px rgba(0,0,0,0.04);
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15);
     z-index: 1;
