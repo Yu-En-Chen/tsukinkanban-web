@@ -302,9 +302,10 @@ window.toggleVisibility = async function(id) {
                 const targetCard = window.appRailwayData.find(c => c.id === oldestCustomId);
                 const targetName = targetCard ? targetCard.name : 'カスタムカード';
 
+                // ✨ 文案優化：直接點名即將被刪除的卡片，不再提及「最舊的卡片」
                 const confirmDelete = await window.iosConfirm(
                     "非表示の上限に達しました", 
-                    `非表示にできるカードは最大5枚です。\nこれ以上隠す場合、最も古いカード\n「${targetName}」\nが完全に削除されます。\n続行しますか？`,
+                    `非表示にできるカードは最大5枚です。\nこれ以上隠す場合、\n「${targetName}」\nが完全に削除されます。\n続行しますか？`,
                     "削除して続行", "キャンセル", true
                 );
                 if (!confirmDelete) return; 
@@ -317,7 +318,7 @@ window.toggleVisibility = async function(id) {
                 
                 hiddenIds.push(id);
             } else {
-                // ✨ 如果底下 5 張全部都是殺不死的內建卡片，直接擋下操作！
+                // 如果底下 5 張全部都是殺不死的內建卡片，直接擋下操作！
                 await window.iosConfirm(
                     "非表示の上限に達しました", 
                     "非表示にできるカードは最大5枚です。\n現在非表示のカードはすべて「初期カード」のため削除できません。\n先に他のカードを表示してください。",
