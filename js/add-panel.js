@@ -365,7 +365,13 @@ window.toggleVisibility = async function(id) {
         // 新增防呆：先檢查目前畫面上可見的卡片是否已經滿 5 張！
         const visibleCount = window.appRailwayData.filter(r => !hiddenIds.includes(r.id)).length;
         if (visibleCount >= 5) {
-            alert("表示できるカードは最大5枚です。\nこれ以上表示する場合は、先に他のカードを非表示にしてください。");
+            // ✨ 替換為自訂視窗 (傳入 null 取消第二顆按鈕，變成純警告窗)
+            await window.iosConfirm(
+                "表示上限に達しました", 
+                "表示できるカードは最大5枚です。\nこれ以上表示する場合は、先に他のカードを非表示にしてください。",
+                "OK",
+                null 
+            );
             return; // 🛑 滿五張直接擋下，不讓他恢復顯示
         }
 
