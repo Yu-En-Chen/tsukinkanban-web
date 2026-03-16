@@ -56,19 +56,30 @@ window.initDynamicMainMenu = function () {
     `;
 
     capsule.onclick = () => {
-        const content = menuContents[item.text] || `
-            <div style="opacity: 0.8;">
-                <p>這裡是「<b>${item.text}</b>」的專屬內容區塊。</p>
-                <p>此區塊尚未在外部檔案中設定專屬內容。</p>
-            </div>
-        `;
+        let content = '';
+
+        // 🟢 判斷：如果是點擊「表示設定」，就去跟獨立腳本要畫面！
+        if (item.text === '表示設定' && window.getDisplaySettingsHTML) {
+            content = window.getDisplaySettingsHTML();
+        } else {
+            // 其他選項照舊
+            content = menuContents[item.text] || `
+                <div style="opacity: 0.8;">
+                    <p>這裡是「<b>${item.text}</b>」的專屬內容區塊。</p>
+                    <p>此區塊尚未在外部檔案中設定專屬內容。</p>
+                </div>
+            `;
+        }
         
         window.openUniversalPage(item.text, content);
 
-        // ✨ 如果開啟的是贊助者頁面，等動畫稍微跑完後 (50ms)，初始化輪播圖！
+        // 🟢 彈出後的事件綁定分發
         if (item.text === 'サポーター') {
-            setTimeout(() => {
-                initSponsorCarousel();
+            setTimeout(() => { initSponsorCarousel(); }, 50);
+        } else if (item.text === '表示設定') {
+            // 給予 50ms 延遲等待 DOM 畫好後，綁定開關點擊事件
+            setTimeout(() => { 
+                if (window.initDisplaySettingsEvents) window.initDisplaySettingsEvents(); 
             }, 50);
         }
     };
