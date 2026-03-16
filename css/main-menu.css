@@ -638,7 +638,7 @@ body.universal-active #dynamic-main-menu .main-menu-capsule {
 }
 
 /* =========================================
-   ✨ 專屬化 2：分段控制器 (極致同心完美膠囊)
+   ✨ 專屬化 2：分段控制器 (極致同心完美膠囊 + 緊湊版)
    ========================================= */
    .segmented-control {
     display: flex;
@@ -646,21 +646,18 @@ body.universal-active #dynamic-main-menu .main-menu-capsule {
     background: rgba(120, 120, 128, 0.12);
     border-radius: 999px; 
     
-    /* ✨ 關鍵 1：把內部縫隙從 4px 縮小到 2px */
-    padding: 2px; 
-    width: 160px; 
-    
-    /* ✨ 關鍵 2：高度微調為 32px，讓長寬比例更修長 */
+    /* ✨ 將縫隙逼到極限的 1.5px，完全貼合邊緣 */
+    padding: 1.5px; 
+    /* ✨ 將整體寬度從 160px 大幅縮小到 130px，消除文字旁的空洞 */
+    width: 130px; 
     height: 32px; 
 }
 
 .segmented-control .seg-bg {
     position: absolute;
-    
-    /* ✨ 關鍵 3：配合 2px 的縫隙，把定位與寬度計算都改為 2px */
-    top: 2px; bottom: 2px; left: 2px;
-    width: calc(50% - 2px); 
-    
+    /* 配合 1.5px 的縫隙 */
+    top: 1.5px; bottom: 1.5px; left: 1.5px;
+    width: calc(50% - 1.5px); 
     background: #ffffff;
     border-radius: 999px;
     box-shadow: 0 3px 8px rgba(0,0,0,0.12), 0 3px 1px rgba(0,0,0,0.04);
@@ -684,6 +681,10 @@ body.universal-active #dynamic-main-menu .main-menu-capsule {
     cursor: pointer;
     transition: opacity 0.3s;
     padding: 0;
+    /* 確保文字絕對置中 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .segmented-control .seg-btn.active {
