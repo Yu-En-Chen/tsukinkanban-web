@@ -2481,7 +2481,7 @@ body:has(.universal-window.is-active) .left-capsule {
     width: 18px;  
     height: 18px;
     opacity: 0.8; 
-    stroke-width: 1.7px !important;
+    stroke-width: 2px !important;
     color: currentColor; /* 自動繼承膠囊的文字/線條顏色 */
     
     /* 防呆設定：讓圖示不會干擾到整個膠囊的點擊範圍 */
@@ -2583,4 +2583,12 @@ body:has(.universal-window.is-active) .left-capsule {
     
     /* ✨ 終極魔法：等待前方所有動畫 (等待淨空 + 滑出時長 0.6s) 都結束後，才讓游標閃爍！ */
     transition: caret-color 0s calc(var(--delay-in) + 0.6s) !important;
+}
+
+/* =========================================================
+   🟢 左上角時間母艦：重新整理圖示專屬控制權限 (絕對鎖死版)
+   ========================================================= */
+   #left-capsule-top .left-capsule-icon {
+    opacity: 0.7 !important;
+    stroke-width: 2px !important; 
 }
