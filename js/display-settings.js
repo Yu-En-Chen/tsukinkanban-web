@@ -7,6 +7,48 @@ window.getDisplaySettingsHTML = function() {
     // 判斷是否為「精確指標裝置 (如電腦滑鼠)」
     const isDesktop = window.matchMedia('(pointer: fine)').matches;
     
+    // ✨ 智慧瀏覽器偵測引擎
+    const ua = navigator.userAgent;
+    const platform = navigator.platform;
+    
+    // 判斷 Apple 生態系與 Safari
+    const isApple = /(Mac|iPhone|iPod|iPad)/i.test(platform) || /(Mac|iPhone|iPod|iPad)/i.test(ua);
+    const isSafari = isApple && /Safari/i.test(ua) && !/Chrome|CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua);
+    
+    // 判斷 Windows / Android 與 Blink / Firefox
+    const isWindowsOrAndroid = /(Windows|Android)/i.test(ua);
+    const isBlink = /Chrome|Edg|OPR/i.test(ua); // 涵蓋 Chrome, Edge, Opera 等 Blink 核心
+    const isFirefox = /Firefox|FxiOS/i.test(ua);
+
+    let browserRecommendationHTML = '';
+
+    // 條件 1：Apple 裝置且不是用 Safari
+    if (isApple && !isSafari) {
+        browserRecommendationHTML = `
+            <div class="settings-browser-recommendation">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+                </svg>
+                <div class="recommendation-text">
+                    最高のパフォーマンスと視覚効果を得るため、<br><strong>Safari</strong> ブラウザのご利用を推奨します。
+                </div>
+            </div>
+        `;
+    } 
+    // 條件 2：Windows/Android 裝置，使用 Blink 核心且不是 Firefox
+    else if (isWindowsOrAndroid && isBlink && !isFirefox) {
+         browserRecommendationHTML = `
+            <div class="settings-browser-recommendation">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+                </svg>
+                <div class="recommendation-text">
+                    最高のパフォーマンスと視覚効果を得るため、<br><strong>Firefox</strong> ブラウザのご利用を推奨します。
+                </div>
+            </div>
+        `;
+    }
+    
     return `
     <div class="settings-container">
         <p class="settings-description">アプリの動作や視覚効果をカスタマイズできます。</p>

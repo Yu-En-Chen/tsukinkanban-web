@@ -738,3 +738,48 @@ body.universal-active #dynamic-main-menu .main-menu-capsule {
 
 .ios-switch:active .slider:before { width: 32px; } /* 點擊按壓時的微互動拉伸 */
 .ios-switch input:checked:active + .slider:before { transform: translateX(14px); }
+
+/* =========================================
+   ✨ 顯示設定：瀏覽器推薦提示框 (Browser Recommendation)
+   ========================================= */
+   .settings-browser-recommendation {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(0, 122, 255, 0.08); /* 柔和的蘋果藍背景 */
+    border: 1px solid rgba(0, 122, 255, 0.15);
+    border-radius: 24px; /* 呼應你的大圓角風格 */
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    color: var(--text-main);
+}
+
+@media (prefers-color-scheme: dark) {
+    .settings-browser-recommendation {
+        background: rgba(10, 132, 255, 0.12);
+        border: 1px solid rgba(10, 132, 255, 0.2);
+    }
+}
+
+.settings-browser-recommendation svg {
+    color: #007AFF; /* 經典 Info Blue */
+    flex-shrink: 0;
+}
+
+.settings-browser-recommendation .recommendation-text {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    letter-spacing: 0.5px;
+}
+
+.settings-browser-recommendation .recommendation-text strong {
+    color: #007AFF;
+    font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+    .settings-browser-recommendation svg,
+    .settings-browser-recommendation .recommendation-text strong {
+        color: #0A84FF; /* 深色模式下更亮一點的藍 */
+    }
+}
