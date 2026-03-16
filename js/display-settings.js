@@ -4,25 +4,32 @@
 
 // 🟢 1. 負責生成設定面板的 HTML 結構
 window.getDisplaySettingsHTML = function() {
-    // 判斷是否為「精確指標裝置 (如電腦滑鼠)」
     const isDesktop = window.matchMedia('(pointer: fine)').matches;
     
-    // ✨ 智慧瀏覽器偵測引擎
     const ua = navigator.userAgent;
-    const platform = navigator.platform;
+    const platform = navigator.platform || '';
     
-    // 判斷 Apple 生態系與 Safari
+    // ✨ 終極精準偵測引擎
+    // 1. 判斷是否為 Apple 裝置 (iOS 或 Mac)
     const isApple = /(Mac|iPhone|iPod|iPad)/i.test(platform) || /(Mac|iPhone|iPod|iPad)/i.test(ua);
-    const isSafari = isApple && /Safari/i.test(ua) && !/Chrome|CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua);
+
+    // 2. 判斷是否為「純正」的 Safari
+    // 關鍵：Safari 的 UA 必須包含 Safari 但「絕對不能」包含 Chrome, CriOS, Edg... 等字眼
+    const isSafari = isApple && /Safari/i.test(ua) && !/Chrome|CriOS|Edg|OPR|FxiOS|Firefox/i.test(ua);
     
-    // 判斷 Windows / Android 與 Blink / Firefox
-    const isWindowsOrAndroid = /(Windows|Android)/i.test(ua);
-    const isBlink = /Chrome|Edg|OPR/i.test(ua); // 涵蓋 Chrome, Edge, Opera 等 Blink 核心
+    // 3. 判斷是否為 Blink 核心 (Chrome, Edge, Opera)
+    const isBlink = /Chrome|CriOS|Edg|OPR/i.test(ua);
+    
+    // 4. 判斷是否為 Firefox
     const isFirefox = /Firefox|FxiOS/i.test(ua);
+
+    // 5. 判斷環境類型
+    const isWindowsOrAndroid = /(Windows|Android)/i.test(ua);
 
     let browserRecommendationHTML = '';
 
-    // 條件 1：Apple 裝置且不是用 Safari
+    // 🎯 偵測邏輯分發
+    // A. Apple 裝置卻不是用 Safari (包含 Mac Chrome, iPhone Chrome 等)
     if (isApple && !isSafari) {
         browserRecommendationHTML = `
             <div class="settings-browser-recommendation">
@@ -35,7 +42,7 @@ window.getDisplaySettingsHTML = function() {
             </div>
         `;
     } 
-    // 條件 2：Windows/Android 裝置，使用 Blink 核心且不是 Firefox
+    // B. Windows/Android 使用 Blink 卻不是用 Firefox (你的特殊建議)
     else if (isWindowsOrAndroid && isBlink && !isFirefox) {
          browserRecommendationHTML = `
             <div class="settings-browser-recommendation">
@@ -49,7 +56,11 @@ window.getDisplaySettingsHTML = function() {
         `;
     }
     
+    // 偵測 Debug Log (開發完可刪除)
+    console.log(`[偵測結果] Apple: ${isApple}, Safari: ${isSafari}, Blink: ${isBlink}, Firefox: ${isFirefox}`);
+
     return `
+    
     <div class="settings-container">
         <p class="settings-description">アプリの動作や視覚効果をカスタマイズできます。</p>
         
