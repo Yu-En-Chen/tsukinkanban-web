@@ -60,10 +60,12 @@ window.getDisplaySettingsHTML = function() {
     console.log(`[偵測結果] Apple: ${isApple}, Safari: ${isSafari}, Blink: ${isBlink}, Firefox: ${isFirefox}`);
 
     return `
-    
+
     <div class="settings-container">
         <p class="settings-description">アプリの動作や視覚効果をカスタマイズできます。</p>
         
+        ${browserRecommendationHTML}
+
         <div class="settings-group">
             <div class="settings-row">
                 <span class="settings-label">描画モード</span>
