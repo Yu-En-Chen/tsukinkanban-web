@@ -954,10 +954,39 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 }
 
 /* ==========================================================================
-   ✨ 徹底隱藏描述文字 (包含主畫面與詳情面板)
+   ✨ 描述文字：還原原始排版與顏色 (專供個性化面板維持原樣使用)
    ========================================================================== */
    .description {
+    line-height: 1.6;
+    margin-top: 0; /* ✨ 關鍵：消除預設的巨大段落留白 */
+    color: var(--text-secondary);
+    background-image: var(--text-bg-gradient-secondary, none);
+    -webkit-background-clip: var(--text-clip, border-box);
+    background-clip: var(--text-clip, border-box);
+    -webkit-text-fill-color: var(--text-fill, var(--text-secondary));
+}
+
+/* 🚀 精準打擊：只隱藏「主畫面」和「詳情面板」的文字，絕對不碰個性化面板 */
+.card > .card-content > .description,
+#detail-card-container .description {
     display: none !important;
+}
+
+/* ==========================================================================
+   🟢 舊版共用膠囊按鈕：還原最原始的緊湊尺寸 (修復個性化面板跑版)
+   ========================================================================== */
+.info-tag-item {
+    background: var(--tag-bg);
+    border: 1px solid var(--border-color);
+    padding: 6px 14px; /* ✨ 還原原本小巧的內距 */
+    border-radius: 100px;
+    font-size: 0.9rem; /* ✨ 還原原本的字體大小 */
+    font-weight: 600;
+    color: var(--card-text-color);
+    text-shadow: var(--text-shadow-subtle);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .info-row {
