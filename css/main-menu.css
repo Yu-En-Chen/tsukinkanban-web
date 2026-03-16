@@ -177,7 +177,10 @@ body.main-menu-active #dynamic-main-menu .main-menu-capsule {
 body.universal-active .search-container::after {
     opacity: 1 !important;
     pointer-events: auto !important;
-    transform: scale(1) !important;
+    transform: translateZ(0) !important;
+    
+    /* ✨ 修正：拔除 backdrop-filter，讓瀏覽器真正把它當成靜態圖片 */
+    will-change: opacity !important; 
 }
 
 /* 2. 隱藏不需要的元素 (右上母艦、搜尋按鈕、漢堡選單、搜尋輸入框) */
@@ -283,13 +286,21 @@ body.universal-active .universal-page-wrapper {
     line-height: 1.6;
     padding: 0 10px 30px 10px !important; 
     
-    /* ✨ 加入這兩行來精準控制文字大小與粗細 */
-    font-size: 1.2rem !important; /* 🟢 1.4rem 就是你標題的預設大小 */
-    font-weight: 440 !important;  /* 🟢 400 是一般的正常細度 (如果想要「極細」，可以改成 300) */
+    font-size: 1.2rem !important; 
+    font-weight: 440 !important;  
     
     pointer-events: auto !important;
     touch-action: pan-y !important; 
     overscroll-behavior: contain !important; 
+
+    /* 🚀 終極修復 V2：抗鋸齒與圖層隔離 */
+    /* 1. 關閉子像素渲染！強迫文字不要去讀取底下的毛玻璃顏色，徹底切斷重繪關聯 */
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+
+    /* 2. 拔除會干擾「原生滾動加速」的 contain 與 will-change，只保留純粹的 3D 圖層 */
+    transform: translate3d(0, 0, 0) !important;
+    backface-visibility: hidden !important; 
 }
 
 /* ✨ (選擇性) 確保裡面的所有段落都乖乖聽話 */
