@@ -952,21 +952,11 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
 }
 
-.description {
-    line-height: 1.6;
-    margin-top: 0;
-    color: var(--text-secondary);
-    background-image: var(--text-bg-gradient-secondary, none);
-    -webkit-background-clip: var(--text-clip, border-box);
-    background-clip: var(--text-clip, border-box);
-    -webkit-text-fill-color: var(--text-fill, var(--text-secondary));
-}
-
 /* ==========================================================================
-   ✨ 隱藏主畫面卡片（包含底層預覽）的描述文字，將空間純粹留給膠囊
+   ✨ 徹底隱藏描述文字 (包含主畫面與詳情面板)
    ========================================================================== */
-.card .description {
-    display: none;
+   .description {
+    display: none !important;
 }
 
 .info-row {
@@ -997,10 +987,15 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 .info-capsule {
     background: var(--tag-bg);
     border: 1px solid var(--border-color);
-    padding: 10px 20px; /* 加大內距讓膠囊更飽滿 */
-    border-radius: 999px; /* 完美膠囊 */
-    font-size: 1.05rem; /* 字體加大 */
+    
+    /* ✨ 關鍵修改：將上下留白從 10px 壓縮到 4px，左右保持 16px，讓膠囊緊緊包覆文字 */
+    padding: 4px 16px; 
+    border-radius: 999px; 
+    
+    font-size: 1.05rem; 
     font-weight: 600;
+    line-height: 1.4; /* 鎖定行高，避免被預設字體撐開 */
+    
     color: var(--card-text-color);
     text-shadow: var(--text-shadow-subtle);
     -webkit-backdrop-filter: blur(10px);
@@ -1009,16 +1004,20 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 }
 
 .info-circle {
-    width: 42px; /* 正圓直徑 */
-    height: 42px;
-    border-radius: 50%; /* 完美正圓 */
+    /* ✨ 配合變扁的膠囊，將正圓直徑從 42px 縮小到 32px，維持完美比例 */
+    width: 32px; 
+    height: 32px;
+    border-radius: 50%; 
     background: var(--tag-bg);
     border: 1px solid var(--border-color);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.05rem; /* 字體加大 */
+    
+    /* 配合縮小的圓形，字體稍微調小一點點才裝得下 */
+    font-size: 0.95rem; 
     font-weight: 700;
+    
     color: var(--card-text-color);
     text-shadow: var(--text-shadow-subtle);
     -webkit-backdrop-filter: blur(10px);
