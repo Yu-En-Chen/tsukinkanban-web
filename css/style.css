@@ -935,57 +935,6 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 }
 
 /* ==========================================================================
-   🟢 右上角狀態膠囊 (五燈號 SVG 圖示陣列連動版)
-   ========================================================================== */
-   .status-tag {
-    /* 🚀 比例控制台：只要調整這幾個數值，圖示跟外框會一起完美縮放！ */
-    --status-font-size: 0.85rem;    /* 👉 1. 調整這裡：改大字體，整個膠囊就會等比例放大 */
-    --status-pad-y: 0.6em;         /* 👉 2. 膠囊上下厚度 */
-    --status-pad-x: 0.85em;         /* 👉 3. 膠囊左右長度 */
-    --status-icon-size: 1.35em;     /* 👉 4. SVG 圖示的直徑 (相對於字體大小) */
-    --status-icon-gap: 6px;         /* 👉 5. 圖示之間的間距 */
-
-    /* 改用 Flexbox 讓圖示完美水平置中排列 */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--status-icon-gap);
-
-    font-size: var(--status-font-size);
-    padding: var(--status-pad-y) var(--status-pad-x);
-    
-    border: 1px solid var(--border-color);
-    background: var(--tag-bg);
-    border-radius: 100px;
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
-    width: fit-content;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* ✨ 針對裡面的 SVG 進行強勢渲染，確保所有圖示一致 */
-.status-tag svg {
-    width: var(--status-icon-size) !important;
-    height: var(--status-icon-size) !important;
-    color: #ffffff !important; 
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2)); 
-    stroke-width: 2.2px !important; 
-    flex-shrink: 0; 
-}
-
-/* ==========================================================================
-   🚀 單獨微調特定圖示的大小 (維持連動比例)
-   ========================================================================== */
-   .status-tag svg.lucide-x {
-    /* 捨棄 width 和 height，改用 scale 原地等比放大。
-       1.25 代表放大 25%，這樣絕對不會影響水平對齊線！ */
-    transform: scale(1.25);
-    
-    /* 如果覺得圖示放大後線條太粗，也可以在這裡單獨調細一點，例如： */
-    stroke-width: 2px !important;
-}
-
-/* ==========================================================================
    ✨ 描述文字：還原原始排版與顏色 (專供個性化面板維持原樣使用)
    ========================================================================== */
    .description {

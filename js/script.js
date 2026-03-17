@@ -17,14 +17,17 @@ import { initDynamicClock } from './clock.js';
 // 🟢 宣告全域變數，作為整個 App 實際渲染、搜尋、點擊的唯一資料來源
 window.appRailwayData = [];
 
-// ✨ 新增：五燈號 SVG 狀態圖示模板
-const STATUS_ICONS_HTML = `
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-snowflake-icon lucide-snowflake"><path d="m10 20-1.25-2.5L6 18"/><path d="M10 4 8.75 6.5 6 6"/><path d="m14 20 1.25-2.5L18 18"/><path d="m14 4 1.25 2.5L18 6"/><path d="m17 21-3-6h-4"/><path d="m17 3-3 6 1.5 3"/><path d="M2 12h6.5L10 9"/><path d="m20 10-1.5 2 1.5 2"/><path d="M22 12h-6.5L14 15"/><path d="m4 10 1.5 2L4 14"/><path d="m7 21 3-6-1.5-3"/><path d="m7 3 3 6h4"/></svg>
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-triangle-icon lucide-triangle"><path d="M13.73 4a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/></svg>
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-icon lucide-circle"><circle cx="12" cy="12" r="10"/></svg>
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square-warning-icon lucide-message-square-warning"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/><path d="M12 15h.01"/><path d="M12 7v4"/></svg>
-`;
+// 🚀 升級版：五燈號 SVG 狀態生成引擎 (預設全部為 false 暗燈)
+window.getStatusIconsHTML = function(activeFlags = [false, false, false, false, false]) {
+    // 陣列對應順序：0:雪花, 1:打叉, 2:三角形, 3:圓形, 4:注意
+    return `
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-snowflake-icon lucide-snowflake ${activeFlags[0] ? 'active' : ''}"><path d="m10 20-1.25-2.5L6 18"/><path d="M10 4 8.75 6.5 6 6"/><path d="m14 20 1.25-2.5L18 18"/><path d="m14 4 1.25 2.5L18 6"/><path d="m17 21-3-6h-4"/><path d="m17 3-3 6 1.5 3"/><path d="M2 12h6.5L10 9"/><path d="m20 10-1.5 2 1.5 2"/><path d="M22 12h-6.5L14 15"/><path d="m4 10 1.5 2L4 14"/><path d="m7 21 3-6-1.5-3"/><path d="m7 3 3 6h4"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x ${activeFlags[1] ? 'active' : ''}"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-triangle-icon lucide-triangle ${activeFlags[2] ? 'active' : ''}"><path d="M13.73 4a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-icon lucide-circle ${activeFlags[3] ? 'active' : ''}"><circle cx="12" cy="12" r="10"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square-warning-icon lucide-message-square-warning ${activeFlags[4] ? 'active' : ''}"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/><path d="M12 15h.01"/><path d="M12 7v4"/></svg>
+`.trim();
+};
 
 //Blink 引擎系統專屬偵測，為 html 標籤打上標記
 const ua = navigator.userAgent;
@@ -431,7 +434,7 @@ function renderCards(data) {
         // --- 結束新增 ---
 
         clone.querySelector('.line-name').textContent = line.name;
-        clone.querySelector('.status-tag').innerHTML = STATUS_ICONS_HTML;
+        clone.querySelector('.status-tag').innerHTML = window.getStatusIconsHTML(line.statusFlags || []);
         clone.querySelector('.description').textContent = line.desc;
 
         const tagsContainer = clone.querySelector('.info-tags-container');
@@ -530,7 +533,7 @@ function handleCardClick(id) {
 
     inner.style.background = applyThemeToCard(inner, data.hex);
     clone.querySelector('.line-name').textContent = data.name;
-    clone.querySelector('.status-tag').innerHTML = STATUS_ICONS_HTML;
+    clone.querySelector('.status-tag').innerHTML = window.getStatusIconsHTML(data.statusFlags || []);
     clone.querySelector('.description').textContent = data.desc;
 
     const tagsContainer = clone.querySelector('.info-tags-container');
@@ -627,7 +630,7 @@ function handleBottomCardClick() {
     inner.style.background = bgStyle;
     inner.style.setProperty('color', 'var(--card-text-color)', 'important');
     clone.querySelector('.line-name').textContent = bottomCardConfig.title;
-    clone.querySelector('.status-tag').innerHTML = STATUS_ICONS_HTML;
+    clone.querySelector('.status-tag').innerHTML = window.getStatusIconsHTML(bottomCardConfig.statusFlags || []);
     clone.querySelector('.description').textContent = bottomCardConfig.description;
 
     const tagsContainer = clone.querySelector('.info-tags-container');
@@ -1030,7 +1033,7 @@ function initBottomCard() {
     card.style.setProperty('--fixed-border', `rgba(255, 255, 255, ${bottomCardConfig.borderColorOpacity})`);
 
     document.getElementById('fixed-title').textContent = bottomCardConfig.title;
-    document.getElementById('fixed-status').innerHTML = STATUS_ICONS_HTML;
+    document.getElementById('fixed-status').innerHTML = window.getStatusIconsHTML(bottomCardConfig.statusFlags || []);
     document.getElementById('fixed-desc').textContent = bottomCardConfig.description;
 
     const tag = card.querySelector('.status-tag');

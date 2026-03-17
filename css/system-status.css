@@ -71,3 +71,81 @@ body:has(.detail-overlay.active) .center-status-island {
     /* ✨ 讓退場時間縮短到 0.15s，像氣泡一樣瞬間消散，不跟底下的重量級動畫搶資源 */
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease, visibility 0s 0.15s !important;
 }
+
+/* ==========================================================================
+   🟢 狀態指示燈：全域比例控制與獨立發光系統 (移轉自 style.css)
+   ========================================================================== */
+   .status-tag {
+    /* 🚀 控制台：主控膠囊與圖示大小 */
+    --status-font-size: 0.85rem;    
+    --status-pad-y: 0.6em;         
+    --status-pad-x: 0.85em;         
+    --status-icon-size: 1.35em;     
+    --status-icon-gap: 6px;         
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--status-icon-gap);
+    font-size: var(--status-font-size);
+    padding: var(--status-pad-y) var(--status-pad-x);
+    
+    border: 1px solid var(--border-color);
+    background: var(--tag-bg);
+    border-radius: 100px;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    width: fit-content;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ✨ SVG 統一預設狀態：不顯眼的低調科技灰 */
+.status-tag svg {
+    width: var(--status-icon-size) !important;
+    height: var(--status-icon-size) !important;
+    stroke-width: 2.2px !important; 
+    flex-shrink: 0; 
+    
+    color: rgba(255, 255, 255, 0.25) !important; /* 預設暗灰 */
+    filter: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 🚀 單獨微調：打叉圖示原地等比放大 (保留你的完美對齊設定) */
+.status-tag svg.lucide-x {
+    transform: scale(1.25);
+}
+
+/* ==========================================================================
+   ✨ 亮起狀態 (Active)：專屬顏色與白色發光外框
+   ========================================================================== */
+
+/* 1. 雪花 (Snowflake) */
+.status-tag svg.lucide-snowflake.active {
+    color: #0A84FF !important; /* 偏深的藍色 */
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.85));
+}
+
+/* 2. 打叉 (X) */
+.status-tag svg.lucide-x.active {
+    color: #FF453A !important; /* 暗紅色 */
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.85));
+}
+
+/* 3. 三角形 (Triangle) */
+.status-tag svg.lucide-triangle.active {
+    color: #FFD60A !important; /* 黃色 */
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.85));
+}
+
+/* 4. 圓形 (Circle) */
+.status-tag svg.lucide-circle.active {
+    color: #32D74B !important; /* 綠色 */
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.85));
+}
+
+/* 5. 注意 (Warning) */
+.status-tag svg.lucide-message-square-warning.active {
+    color: #FFFFFF !important; /* 白色 */
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.9)); /* 白色光暈稍微強一點 */
+}
