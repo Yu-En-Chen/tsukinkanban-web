@@ -134,71 +134,96 @@ window.getDisplaySettingsHTML = function() {
 
 // 🟢 2. 負責綁定面板內的微互動、拖曳與點擊事件
 window.initDisplaySettingsEvents = function() {
+    const segControl = document.getElementById('render-mode-control');
     const segBtns = document.querySelectorAll('#render-mode-control .seg-btn');
     const segBg = document.querySelector('#render-mode-control .seg-bg');
     
-    // 🎯 核心切換功能 (純淨點擊版，絕對防呆儲存)
-    function setSegment(index, save = true) {
-        if (!segBtns[index]) return;
-        
-        // 切換按鈕視覺
+    let activeIndex = 0; // 0=品質, 1=動作
+    let startX = 0;
+    let currentTranslate = 0;
+    let bgWidth = 0;
+    
+    // ✨ 核心升級：用來精準區分「點擊」還是「刻意滑動」的旗標
+    let hasMoved = false; 
+
+    // 🎯 核心切換功能
+    function setSegment(index) {
+        activeIndex = index;
         segBtns.forEach(b => b.classList.remove('active'));
         segBtns[index].classList.add('active');
         
-        // 切換背景滑塊
-        if (segBg) {
-            segBg.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15)';
-            segBg.style.transform = index === 0 ? 'translateX(0)' : 'translateX(100%)';
-        }
+        segBg.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15)';
+        if (index === 0) segBg.style.transform = 'translateX(0)';
+        else segBg.style.transform = 'translateX(100%)';
         
-        const mode = index === 0 ? 'quality' : 'performance';
-        
-        // ✨ 強制控制光影凍結標籤
-        if (mode === 'performance') {
-            document.body.classList.add('performance-mode');
-        } else {
-            document.body.classList.remove('performance-mode');
-        }
-        
-        // 💾 雙重儲存保險 (強制寫入 LocalStorage 與 IndexedDB)
-        if (save) {
-            try { localStorage.setItem('tsukin_setting_renderMode', mode); } catch(e) {}
-            
-            import('../data/db-settings.js').then(db => {
-                if (db.saveDisplaySetting) {
-                    db.saveDisplaySetting('renderMode', mode);
-                    console.log('✅ 描画モード已儲存：', mode);
-                }
-            }).catch(e => console.error(e));
-            
-            if (window.navigator.vibrate) window.navigator.vibrate(10);
-        }
+        console.log('描画モード切り替え：', segBtns[index].dataset.val);
+        if (window.navigator.vibrate) window.navigator.vibrate(10);
     }
 
-    // =========================================================
-    // A. 暴力點擊綁定：移除複雜手勢計算，點擊誰就切換誰並強制存檔
-    // =========================================================
+    // A. 點擊事件 (永遠有效，除非使用者進行了大幅度拖曳)
     segBtns.forEach((btn, index) => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            setSegment(index, true); 
+        btn.addEventListener('click', () => {
+            if (hasMoved) return; // 只有在確認是拖曳時才擋下點擊
+            setSegment(index);
         });
     });
 
-    // =========================================================
-    // B. 初始化讀取與其他設定開關
-    // =========================================================
+    // B. 手指拖曳 (Swipe) 物理引擎
+    if (segControl && segBg) {
+        segControl.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            bgWidth = segBg.offsetWidth; 
+            currentTranslate = activeIndex === 0 ? 0 : bgWidth;
+            hasMoved = false; // 每次觸碰螢幕時重置
+            
+            // 準備跟隨手指，拔除延遲動畫
+            segBg.style.transition = 'none';
+        }, { passive: true });
+
+        segControl.addEventListener('touchmove', (e) => {
+            const deltaX = e.touches[0].clientX - startX;
+
+            // ✨ 容錯機制：手指移動超過 3px 才算是「刻意拖曳」，過濾掉點擊時的微手震！
+            if (Math.abs(deltaX) > 3) {
+                hasMoved = true;
+            }
+
+            // 如果還沒超過 3px (還在手震範圍內)，就不移動背景
+            if (!hasMoved) return;
+
+            let newTranslate = currentTranslate + deltaX;
+            if (newTranslate < 0) newTranslate = 0;
+            if (newTranslate > bgWidth) newTranslate = bgWidth;
+
+            segBg.style.transform = `translateX(${newTranslate}px)`;
+        }, { passive: true });
+
+        segControl.addEventListener('touchend', () => {
+            if (!hasMoved) {
+                // 如果判定只是「點擊」，把動畫加回來，剩下的切換邏輯交給 Click 事件處理！
+                segBg.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15)';
+                return;
+            }
+            
+            // 如果是「拖曳放開」，執行物理吸附
+            const match = segBg.style.transform.match(/translateX\(([-\d.]+)px\)/);
+            if (match) {
+                const finalTranslate = parseFloat(match[1]);
+                if (finalTranslate > bgWidth / 2) setSegment(1);
+                else setSegment(0);
+            } else {
+                setSegment(activeIndex);
+            }
+            
+            // 給予 50ms 延遲解除狀態，防止原生點擊事件趁虛而入
+            setTimeout(() => { hasMoved = false; }, 50);
+        });
+    }
+
+    // C. 動態設定開關邏輯 (連接資料庫)
+    // ✨ 這裡改成引入 db-settings.js
     import('../data/db-settings.js').then(dbSettings => {
         
-        // 🎯 0. 讀取並初始化描畫模式
-        if (dbSettings.getDisplaySetting) {
-            dbSettings.getDisplaySetting('renderMode', 'quality').then(dbMode => {
-                // 優先信任 LocalStorage，防止非同步載入導致狀態閃爍
-                const localMode = localStorage.getItem('tsukin_setting_renderMode') || dbMode;
-                setSegment(localMode === 'performance' ? 1 : 0, false); 
-            });
-        }
-
         // 🎯 1. 系統鼠標設定 (預設為 false：代表啟用自訂鼠標)
         const cursorSwitch = document.getElementById('setting-default-cursor');
         if (cursorSwitch && dbSettings.getDisplaySetting) {
