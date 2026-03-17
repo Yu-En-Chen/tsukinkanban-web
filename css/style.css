@@ -935,33 +935,42 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 }
 
 /* ==========================================================================
-   🟢 右上角狀態膠囊 (比例控制台版 - 正常運轉 / 一部遲延)
+   🟢 右上角狀態膠囊 (五燈號 SVG 圖示陣列連動版)
    ========================================================================== */
    .status-tag {
-    /* 🚀 比例控制台：只要調整這幾個數值，主畫面跟詳情卡片會一起完美縮放！ */
-    --status-font-size: 0.8rem;    /* 👉 1. 調整這裡：改大字體，整個膠囊就會等比例放大 */
-    --status-pad-y: 0.7em;         /* 👉 2. 上下厚度 (em 代表以文字大小為基準) */
-    --status-pad-x: 2.5em;         /* 👉 3. 左右長度 */
+    /* 🚀 比例控制台：只要調整這幾個數值，圖示跟外框會一起完美縮放！ */
+    --status-font-size: 0.85rem;    /* 👉 1. 調整這裡：改大字體，整個膠囊就會等比例放大 */
+    --status-pad-y: 0.6em;         /* 👉 2. 膠囊上下厚度 */
+    --status-pad-x: 0.85em;         /* 👉 3. 膠囊左右長度 */
+    --status-icon-size: 1.35em;     /* 👉 4. SVG 圖示的直徑 (相對於字體大小) */
+    --status-icon-gap: 6px;         /* 👉 5. 圖示之間的間距 */
 
-    /* 將寫死的數值綁定到控制台變數 */
+    /* 改用 Flexbox 讓圖示完美水平置中排列 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--status-icon-gap);
+
     font-size: var(--status-font-size);
     padding: var(--status-pad-y) var(--status-pad-x);
     
-    /* 膠囊原始樣式維持不變 */
     border: 1px solid var(--border-color);
     background: var(--tag-bg);
     border-radius: 100px;
-    font-weight: 600;
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
-    display: inline-block;
     width: fit-content;
-    min-width: 4.5em; /* 確保字少的時候也不會縮得太短 */
-    text-align: center;
-    white-space: nowrap;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    color: #ffffff !important;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* ✨ 針對裡面的 SVG 進行強勢渲染，確保所有圖示一致 */
+.status-tag svg {
+    width: var(--status-icon-size) !important;
+    height: var(--status-icon-size) !important;
+    color: #ffffff !important; /* 強制所有線條為純白色 */
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2)); /* 加上陰影維持玻璃上的立體感 */
+    stroke-width: 2.2px !important; /* 稍微加粗讓它在小尺寸時更銳利清晰 */
+    flex-shrink: 0; /* 絕對禁止擠壓變形 */
 }
 
 /* ==========================================================================
