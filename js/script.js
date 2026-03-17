@@ -2,6 +2,10 @@
 
 // 🚀 零延遲視覺攔截器：在任何 DOM 渲染前，同步檢查設定狀態並即時套用
 try {
+    // 0. 描畫模式 (效能模式：凍結光影)
+    if (localStorage.getItem('tsukin_setting_renderMode') === 'performance') {
+        document.body.classList.add('performance-mode');
+    }
     // 1. 系統鼠標
     if (localStorage.getItem('tsukin_setting_useSystemCursor') === 'true') {
         document.body.classList.add('use-system-cursor');
