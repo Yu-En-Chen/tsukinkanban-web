@@ -125,6 +125,12 @@ body:has(.detail-overlay.active) .center-status-island {
     stroke-width: 2.8px !important; 
 }
 
+/* 0. 心跳 (Activity) */
+.status-tag svg.lucide-activity.active {
+    color: #FF9500 !important; /* 科技感亮橘色 */
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 1)) drop-shadow(0 0 7px rgba(255, 255, 255, 0.6));
+}
+
 /* 1. 雪花 (Snowflake) */
 .status-tag svg.lucide-snowflake.active {
     color: #0A84FF !important; 
@@ -159,8 +165,9 @@ body:has(.detail-overlay.active) .center-status-island {
 }
 
 /* ==========================================================================
-   🚀 動態隱藏系統：未亮起的「雪花」與「注意」自動消失、膠囊自動縮排
+   🚀 動態隱藏系統：未亮起的「心跳」、「雪花」與「注意」自動消失、膠囊自動縮排
    ========================================================================== */
+   .status-tag svg.lucide-activity:not(.active),
    .status-tag svg.lucide-snowflake:not(.active),
    .status-tag svg.lucide-message-square-warning:not(.active) {
        display: none !important;
