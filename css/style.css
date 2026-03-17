@@ -967,10 +967,22 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 .status-tag svg {
     width: var(--status-icon-size) !important;
     height: var(--status-icon-size) !important;
-    color: #ffffff !important; /* 強制所有線條為純白色 */
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2)); /* 加上陰影維持玻璃上的立體感 */
-    stroke-width: 2.2px !important; /* 稍微加粗讓它在小尺寸時更銳利清晰 */
-    flex-shrink: 0; /* 絕對禁止擠壓變形 */
+    color: #ffffff !important; 
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2)); 
+    stroke-width: 2.2px !important; 
+    flex-shrink: 0; 
+}
+
+/* ==========================================================================
+   🚀 單獨微調特定圖示的大小 (維持連動比例)
+   ========================================================================== */
+   .status-tag svg.lucide-x {
+    /* 捨棄 width 和 height，改用 scale 原地等比放大。
+       1.25 代表放大 25%，這樣絕對不會影響水平對齊線！ */
+    transform: scale(1.25);
+    
+    /* 如果覺得圖示放大後線條太粗，也可以在這裡單獨調細一點，例如： */
+    stroke-width: 2px !important;
 }
 
 /* ==========================================================================
