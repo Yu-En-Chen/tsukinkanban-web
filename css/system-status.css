@@ -131,32 +131,39 @@ body:has(.detail-overlay.active) .center-status-island {
     filter: drop-shadow(0 0 2px rgba(255, 255, 255, 1)) drop-shadow(0 0 7px rgba(255, 255, 255, 0.6));
 }
 
-/* 1. 雪花 (Snowflake) */
+/* 1. 雨風 (Cloud Rain Wind) - 偏亮白灰色 */
+.status-tag svg.lucide-cloud-rain-wind.active {
+    color: #E5E5EA !important; /* 偏白亮的科技灰 */
+    /* 同樣疊加雙層白光，做出通電發光的質感 */
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 1)) drop-shadow(0 0 7px rgba(255, 255, 255, 0.6));
+}
+
+/* 2. 雪花 (Snowflake) */
 .status-tag svg.lucide-snowflake.active {
     color: #0A84FF !important; 
     /* ✨ 雙層光暈魔法：第一層(2px)作為高光核心，第二層(7px)作為向外發散的柔光 */
     filter: drop-shadow(0 0 2px rgba(255, 255, 255, 1)) drop-shadow(0 0 7px rgba(255, 255, 255, 0.6));
 }
 
-/* 2. 打叉 (X) */
+/* 3. 打叉 (X) */
 .status-tag svg.lucide-x.active {
     color: #FF453A !important; 
     filter: drop-shadow(0 0 2px rgba(255, 255, 255, 1)) drop-shadow(0 0 7px rgba(255, 255, 255, 0.6));
 }
 
-/* 3. 三角形 (Triangle) */
+/* 4. 三角形 (Triangle) */
 .status-tag svg.lucide-triangle.active {
     color: #FFD60A !important; 
     filter: drop-shadow(0 0 2px rgba(255, 255, 255, 1)) drop-shadow(0 0 7px rgba(255, 255, 255, 0.6));
 }
 
-/* 4. 圓形 (Circle) */
+/* 5. 圓形 (Circle) */
 .status-tag svg.lucide-circle.active {
     color: #32D74B !important; 
     filter: drop-shadow(0 0 2px rgba(255, 255, 255, 1)) drop-shadow(0 0 7px rgba(255, 255, 255, 0.6));
 }
 
-/* 5. 注意 (Warning) */
+/* 6. 注意 (Warning) */
 .status-tag svg.lucide-message-square-warning.active {
     /* 因為圖示本身就是純白 (#FFFFFF)，如果疊加純白高光會糊成一團 */
     /* 所以這裡只給它一層適中的柔光，讓它保持清晰銳利 */
@@ -168,6 +175,7 @@ body:has(.detail-overlay.active) .center-status-island {
    🚀 動態隱藏系統：未亮起的「心跳」、「雪花」與「注意」自動消失、膠囊自動縮排
    ========================================================================== */
    .status-tag svg.lucide-activity:not(.active),
+   .status-tag svg.lucide-cloud-rain-wind:not(.active),
    .status-tag svg.lucide-snowflake:not(.active),
    .status-tag svg.lucide-message-square-warning:not(.active) {
        display: none !important;
