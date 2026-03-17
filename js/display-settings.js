@@ -120,7 +120,7 @@ window.getDisplaySettingsHTML = function() {
 
         <div class="settings-group">
             <div class="settings-row">
-                <span class="settings-label">下部カードのプレビューを有効にする</span>
+                <span class="settings-label">下部カードのプレビュー</span>
                 <label class="ios-switch">
                     <input type="checkbox" id="setting-bottom-card-preview">
                     <span class="slider"></span>
