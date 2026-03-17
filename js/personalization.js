@@ -70,6 +70,41 @@ import { railwayData } from '../data/data.js';
             }
         }
     });
+    // =========================================================
+    // 🟢 桌面版鍵盤快捷鍵：方向鍵關閉卡片
+    // =========================================================
+    window.addEventListener('keydown', (e) => {
+        // 防呆 1：如果使用者正在輸入框裡面打字（例如搜尋框、編輯名稱），不要攔截方向鍵
+        const activeElement = document.activeElement;
+        const isTyping = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+        if (isTyping) return;
+
+        // 【左鍵 ArrowLeft】 -> 關閉「個性化設定卡片 (Customize)」
+        if (e.key === 'ArrowLeft') {
+            const blankOverlay = document.getElementById('dynamic-blank-overlay');
+            if (blankOverlay && typeof window.closeBlankOverlay === 'function') {
+                e.preventDefault(); 
+                window.closeBlankOverlay(true); // 傳入 true 模擬手勢關閉，觸發流暢動畫
+                return;
+            }
+        }
+
+        // 【下鍵 ArrowDown】 -> 關閉「詳情卡片 (Detail Card)」
+        if (e.key === 'ArrowDown') {
+            // 防呆 2：如果「個性化設定卡片」還開著，先擋住！不要讓下鍵一次關掉兩層
+            const blankOverlay = document.getElementById('dynamic-blank-overlay');
+            if (blankOverlay) return;
+
+            // 判斷詳情卡片是否有展開 (根據你專案中 card-stack 有 has-active 來判斷)
+            const hasActiveCard = document.querySelector('.card-stack.has-active') || document.body.classList.contains('detail-active');
+            
+            if (hasActiveCard && typeof window.closeAllCards === 'function') {
+                e.preventDefault();
+                window.closeAllCards(true); // 呼叫全域的卡片關閉函數
+            }
+        }
+    });
+    
 })();
 
 export function initPersonalization(applyThemeToCard, getActiveCardId) {
