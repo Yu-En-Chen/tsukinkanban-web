@@ -157,3 +157,11 @@ body:has(.detail-overlay.active) .center-status-island {
     color: #FFFFFF !important; 
     filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.8)); 
 }
+
+/* ==========================================================================
+   🚀 動態隱藏系統：未亮起的「雪花」與「注意」自動消失、膠囊自動縮排
+   ========================================================================== */
+   .status-tag svg.lucide-snowflake:not(.active),
+   .status-tag svg.lucide-message-square-warning:not(.active) {
+       display: none !important;
+   }
