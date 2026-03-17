@@ -1,9 +1,18 @@
 // script.js - 主 UI 邏輯與狀態控制 (動畫與 History API 修正版)
 
-// 🚀 零延遲視覺攔截器：在任何 DOM 渲染前，同步檢查是否關閉了自訂鼠標
+// 🚀 零延遲視覺攔截器：在任何 DOM 渲染前，同步檢查設定狀態並即時套用
 try {
+    // 1. 系統鼠標
     if (localStorage.getItem('tsukin_setting_useSystemCursor') === 'true') {
         document.body.classList.add('use-system-cursor');
+    }
+    // 2. 提高狀態符號對比度
+    if (localStorage.getItem('tsukin_setting_highContrastIcons') === 'true') {
+        document.body.classList.add('high-contrast-icons');
+    }
+    // 3. 底部卡片預覽 (預設關閉，如果有開啟才加上 class)
+    if (localStorage.getItem('tsukin_setting_bottomCardPreview') === 'true') {
+        document.body.classList.add('enable-bottom-preview');
     }
 } catch(e) {}
 
