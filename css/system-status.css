@@ -103,10 +103,10 @@ body:has(.detail-overlay.active) .center-status-island {
 .status-tag svg {
     width: var(--status-icon-size) !important;
     height: var(--status-icon-size) !important;
-    stroke-width: 2.2px !important; 
+    stroke-width: 2.2px !important; /* 預設的暗燈粗細 */
     flex-shrink: 0; 
     
-    color: rgba(255, 255, 255, 0.25) !important; /* 預設暗灰 */
+    color: rgba(255, 255, 255, 0.25) !important; 
     filter: none;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -117,35 +117,43 @@ body:has(.detail-overlay.active) .center-status-island {
 }
 
 /* ==========================================================================
-   ✨ 亮起狀態 (Active)：專屬顏色與白色發光外框
+   ✨ 亮起狀態 (Active)：光學膨脹效應與雙層霓虹光暈
    ========================================================================== */
+
+/* 🟢 通用亮起物理特效：模擬通電後的光學膨脹 (線條變粗) */
+.status-tag svg.active {
+    stroke-width: 2.8px !important; 
+}
 
 /* 1. 雪花 (Snowflake) */
 .status-tag svg.lucide-snowflake.active {
-    color: #0A84FF !important; /* 偏深的藍色 */
-    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.85));
+    color: #0A84FF !important; 
+    /* ✨ 雙層光暈魔法：第一層(2px)作為高光核心，第二層(7px)作為向外發散的柔光 */
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 1)) drop-shadow(0 0 7px rgba(255, 255, 255, 0.6));
 }
 
 /* 2. 打叉 (X) */
 .status-tag svg.lucide-x.active {
-    color: #FF453A !important; /* 暗紅色 */
-    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.85));
+    color: #FF453A !important; 
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 1)) drop-shadow(0 0 7px rgba(255, 255, 255, 0.6));
 }
 
 /* 3. 三角形 (Triangle) */
 .status-tag svg.lucide-triangle.active {
-    color: #FFD60A !important; /* 黃色 */
-    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.85));
+    color: #FFD60A !important; 
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 1)) drop-shadow(0 0 7px rgba(255, 255, 255, 0.6));
 }
 
 /* 4. 圓形 (Circle) */
 .status-tag svg.lucide-circle.active {
-    color: #32D74B !important; /* 綠色 */
-    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.85));
+    color: #32D74B !important; 
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 1)) drop-shadow(0 0 7px rgba(255, 255, 255, 0.6));
 }
 
 /* 5. 注意 (Warning) */
 .status-tag svg.lucide-message-square-warning.active {
-    color: #FFFFFF !important; /* 白色 */
-    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.9)); /* 白色光暈稍微強一點 */
+    /* 因為圖示本身就是純白 (#FFFFFF)，如果疊加純白高光會糊成一團 */
+    /* 所以這裡只給它一層適中的柔光，讓它保持清晰銳利 */
+    color: #FFFFFF !important; 
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.8)); 
 }
