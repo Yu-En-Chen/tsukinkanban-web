@@ -1738,6 +1738,31 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================================================
+// 🟢 桌面版鍵盤快捷鍵：方向鍵關閉詳情卡片 (全域監聽)
+// ============================================================================
+window.addEventListener('keydown', (e) => {
+    // 防呆 1：如果使用者正在輸入框裡面打字（例如頂部的搜尋框），不要攔截方向鍵
+    const activeElement = document.activeElement;
+    const isTyping = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+    if (isTyping) return;
+
+    // 【下鍵 ArrowDown】 -> 關閉「詳情卡片 (Detail Card)」
+    if (e.key === 'ArrowDown') {
+        // 防呆 2：如果「個性化設定卡片 (blank-overlay)」或「自訂資訊卡片 (info-overlay)」還開著，先擋住！
+        // 必須遵守 Z 軸層級物理法則，不能一次穿透關掉兩層
+        if (document.getElementById('dynamic-blank-overlay') || document.getElementById('dynamic-info-overlay')) {
+            return;
+        }
+
+        // 防呆 3：確認目前真的有詳情卡片展開中 (activeCardId 有值)，且不在動畫過渡期間
+        if (activeCardId && !isAnimating) {
+            e.preventDefault();  // 攔截預設行為，防止網頁背景跟著往下滾動
+            closeAllCards(true); // 呼叫你原本寫好的關閉函數 (傳入 true 觸發流暢動畫)
+        }
+    }
+});
+
+// ============================================================================
 // 🟢 左舷母艦：進階機械滾動時鐘引擎 (Dynamic Clock)
 // ============================================================================
 document.addEventListener('DOMContentLoaded', initDynamicClock);
