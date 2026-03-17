@@ -146,38 +146,18 @@ window.initDisplaySettingsEvents = function() {
     // ✨ 核心升級：用來精準區分「點擊」還是「刻意滑動」的旗標
     let hasMoved = false; 
 
-    // 🎯 核心切換功能 (修復狀態死角與儲存同步)
-    function setSegment(index, save = true) {
+    // 🎯 核心切換功能
+    function setSegment(index) {
         activeIndex = index;
         segBtns.forEach(b => b.classList.remove('active'));
         segBtns[index].classList.add('active');
         
-        if (segBg) {
-            segBg.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15)';
-            segBg.style.transform = index === 0 ? 'translateX(0)' : 'translateX(100%)';
-        }
+        segBg.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15)';
+        if (index === 0) segBg.style.transform = 'translateX(0)';
+        else segBg.style.transform = 'translateX(100%)';
         
-        const mode = index === 0 ? 'quality' : 'performance';
-        
-        // ✨ 強制防呆：必定執行新增或移除 CSS Class
-        if (mode === 'performance') {
-            document.body.classList.add('performance-mode');
-        } else {
-            document.body.classList.remove('performance-mode');
-        }
-        
-        if (save) {
-            // 雙重保險：強制寫入 localStorage 確保重整時絕對能讀到最新狀態
-            localStorage.setItem('tsukin_setting_renderMode', mode);
-            
-            import('../data/db-settings.js').then(dbSettings => {
-                if (dbSettings.saveDisplaySetting) {
-                    dbSettings.saveDisplaySetting('renderMode', mode);
-                }
-            });
-            console.log('描画モード切り替え：', mode);
-            if (window.navigator.vibrate) window.navigator.vibrate(10);
-        }
+        console.log('描画モード切り替え：', segBtns[index].dataset.val);
+        if (window.navigator.vibrate) window.navigator.vibrate(10);
     }
 
     // A. 點擊事件 (永遠有效，除非使用者進行了大幅度拖曳)
