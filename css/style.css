@@ -2699,3 +2699,61 @@ body:has(.universal-window.is-active) .left-capsule {
        width: 0 !important;
        height: 0 !important;
    }
+
+/* ==========================================================================
+   🚀 動作優先モード (Performance Mode)：實心背景替代方案 (拔除毛玻璃)
+   ========================================================================== */
+
+/* 1. 精準拔除特定懸浮 UI 的毛玻璃，替換為優雅的實心背景 */
+body.performance-mode .action-capsule,
+body.performance-mode .search-container,
+body.performance-mode .status-tag,
+body.performance-mode .center-status-island {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: #2C2C2E !important; /* 預設深色實心背景 */
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+/* 2. 詳情卡片展開時的背景遮罩：用純色高不透明度遮擋，取代原本的耗能模糊 */
+body.performance-mode .detail-overlay {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: rgba(0, 0, 0, 0.85) !important; 
+}
+
+/* 3. 淺色模式的實心背景對應 */
+@media (prefers-color-scheme: light) {
+    body.performance-mode .action-capsule,
+    body.performance-mode .search-container,
+    body.performance-mode .status-tag,
+    body.performance-mode .center-status-island {
+        background: #F2F2F7 !important; /* 淺色實心背景 (iOS 標準灰白) */
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    }
+    body.performance-mode .detail-overlay {
+        background: rgba(220, 220, 225, 0.9) !important; /* 淺色模式的遮罩 */
+    }
+}
+
+/* 4. 關閉 SVG 雙層發光 (耗效能) */
+body.performance-mode .status-tag svg.active {
+    filter: brightness(1.2) !important; 
+}
+
+/* 5. 凍結卡片反光層 (只鎖死光影 ::before，避開卡片本體的 3D 動畫) */
+body.performance-mode .card::before,
+body.performance-mode .detail-card-inner::before {
+    background: linear-gradient(
+        105deg, 
+        var(--dynamic-glare, rgba(255, 255, 255, 0.15)) 0%, 
+        transparent 35%
+    ) !important;
+    /* 只保留透明度漸變，拔掉耗能的角度重算，保證 3D 翻轉絕對順暢 */
+    transition: opacity 0.3s ease !important; 
+}
+
+/* 6. 關閉卡片退場時的鋼琴波浪延遲，減輕 CPU 同時計算多個動畫的負擔 */
+body.performance-mode .card.piano-ripple {
+    animation-delay: 0s !important;
+}
