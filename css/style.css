@@ -903,9 +903,9 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 }
 
 /* ==========================================================================
-   🟢 預覽魔法：永遠讓最底層（視覺最前面）的卡片顯示詳情內容
+   🟢 預覽魔法：永遠讓最底層（視覺最前面）的卡片顯示詳情內容 (受設定開關控制)
    ========================================================================== */
-.card-stack:not(.has-active) .card:last-child .card-content {
+   body.enable-bottom-preview .card-stack:not(.has-active) .card:last-child .card-content {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
