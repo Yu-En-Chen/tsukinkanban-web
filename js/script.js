@@ -1055,12 +1055,88 @@ function initBottomCard() {
 function filterCards(keyword) {
     isInitialLoad = false;
     const lowKeyword = keyword.toLowerCase().trim();
-    // 🟢 改用 window.appRailwayData
-    const filtered = window.appRailwayData.filter(line =>
-        line.name.toLowerCase().includes(lowKeyword) ||
-        (line.kana && line.kana.toLowerCase().includes(lowKeyword)) // 加了容錯避免 kana 沒填
-    );
-    renderCards(filtered);
+
+    // 🟢 1. 如果使用者清空搜尋框，立刻恢復原本的個人看板卡片
+    if (!lowKeyword) {
+        let hiddenIds = [];
+        try { hiddenIds = JSON.parse(localStorage.getItem('TsukinKanban_HiddenCards') || '[]'); } catch (e) {}
+        const visibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
+        renderCards(visibleData);
+        return;
+    }
+
+    // 🟢 2. 啟動混合搜尋引擎：同時搜尋「已加入的卡片」與「雲端字典的所有路線」
+    const dict = window.MasterRouteDictionary || {};
+    const liveStatus = window.GlobalLiveStatus || {};
+    const searchResults = [];
+    const seenNames = new Set(); // 用來防呆，避免新舊 ID 導致重複顯示同一條路線
+
+    // A. 遍歷雲端字典 (支援搜路線名與公司名)
+    for (const rw_id in dict) {
+        const route = dict[rw_id];
+        
+        if (route.name.toLowerCase().includes(lowKeyword) || route.company.toLowerCase().includes(lowKeyword)) {
+            
+            if (seenNames.has(route.name)) continue;
+            seenNames.add(route.name);
+
+            // 看看這條線是不是已經在看板上了（若有，直接用，這樣才會保留使用者自訂的顏色與名字）
+            const existingCard = window.appRailwayData.find(c => c.id === rw_id || c.name === route.name);
+            
+            if (existingCard) {
+                searchResults.push(existingCard);
+            } else {
+                // ✨ 核心魔法：使用者沒加這張卡片，但我們「即時動態生成」一張臨時卡片給他看！
+                const statusInfo = liveStatus[rw_id] || { 
+                    status_type: "監視中", 
+                    status_text: "情報なし", 
+                    message: "現在情報はありません。", 
+                    update_time: "--:--", 
+                    url: route.url || "" 
+                };
+
+                // 翻譯七燈號
+                let flags = [false, false, false, false, false, false, false];
+                if (statusInfo.status_text.includes("異常")) flags[6] = true;
+                else if (statusInfo.status_type.includes("エラー")) flags[3] = true;
+                else flags[5] = true; 
+
+                // 翻譯防呆膠囊
+                let delayCapsule = "遅延なし"; 
+                if (statusInfo.delay_minutes) delayCapsule = `最大遅延：${statusInfo.delay_minutes}分`;
+                else if (statusInfo.status_text.includes("異常") || statusInfo.message.includes("遅延")) delayCapsule = "遅延・ダイヤ乱れ";
+                else if (statusInfo.status_text.includes("見合わせ")) delayCapsule = "運転見合わせ";
+                else if (statusInfo.status_type.includes("エラー")) delayCapsule = "データ取得不可";
+
+                searchResults.push({
+                    id: rw_id, // 這是 ODPT 官方 ID
+                    name: route.name,
+                    hex: route.hex || '#2C2C2E',
+                    url: statusInfo.url,
+                    desc: statusInfo.message,
+                    statusFlags: flags,
+                    detail: [
+                        `状況：${statusInfo.status_type}`,
+                        `判定：${statusInfo.status_text.split('（')[0]}`,
+                        `更新：${statusInfo.update_time}`,
+                        delayCapsule
+                    ]
+                });
+            }
+        }
+    }
+
+    // B. 把使用者自己純手工建立的自訂卡片 (new-card-xxx) 也搜出來
+    const customCards = window.appRailwayData.filter(c => c.isCustom && c.name.toLowerCase().includes(lowKeyword));
+    customCards.forEach(c => {
+        if (!seenNames.has(c.name)) {
+            seenNames.add(c.name);
+            searchResults.push(c);
+        }
+    });
+
+    // 🟢 3. 將這些搜出來的路線，渲染成精美的卡片！
+    renderCards(searchResults);
 }
 
 function initDismissIcon() {
@@ -1171,6 +1247,9 @@ async function initApp() {
     const STATUS_API_URL = 'https://tsukinkanban-odpt.onrender.com/api/status';
     const statusRes = await fetch(STATUS_API_URL);
     const liveStatus = await statusRes.json();
+
+    // ✨ 新增這行：把狀態存到全域，這樣等一下搜尋時才能即時幫臨時卡片亮燈！
+    window.GlobalLiveStatus = liveStatus;
     
     window.appRailwayData = [];
 
