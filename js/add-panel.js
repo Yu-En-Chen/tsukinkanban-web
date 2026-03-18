@@ -28,8 +28,19 @@ window.openAddPanel = function () {
                 </button>
                 <div class="add-menu-content-wrapper">
                     <div class="add-menu-content">
-                        <div class="add-menu-inner">
-                            <p style="text-align: center; opacity: 0.6; padding-top: 40px;">ここに路線追加のUIが入ります</p>
+                        <div class="add-menu-inner" style="padding: 16px;">
+                            
+                            <div style="position: relative; margin-bottom: 12px;">
+                                <input type="text" id="dict-search-input" placeholder="路線名や会社名で検索..." 
+                                       oninput="window.handleDictSearch()"
+                                       style="width: 100%; padding: 12px 16px 12px 38px; border-radius: 12px; border: none; background: rgba(120, 120, 128, 0.12); color: inherit; font-size: 16px; outline: none; box-sizing: border-box;">
+                                <svg style="position: absolute; left: 12px; top: 12px; opacity: 0.5;" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            </div>
+                            
+                            <div id="dict-search-results" style="max-height: 45vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                                <p style="text-align: center; opacity: 0.5; padding: 20px 0; font-size: 0.9em;">追加したい路線を検索してください</p>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -62,76 +73,136 @@ window.openAddPanel = function () {
 
     window.openUniversalPage('新規追加', contentHTML);
 
-    // 🟢 第一次打開時：在背景偷偷初始化沙盒並拷貝主資料庫
     if (!isSandboxInitialized) {
         import('../data/db-add-panel.js').then(module => {
             return module.cloneFromMainDB();
         }).then(() => {
             isSandboxInitialized = true;
-            window.renderManagementCards(); // 拷貝完成，繪製膠囊！
+            window.renderManagementCards(); 
         }).catch(err => {
             console.error("[Sandbox] 初始化拷貝失敗:", err);
-            window.renderManagementCards(); // 就算失敗也用當前資料硬扛繪製
+            window.renderManagementCards(); 
         });
     } else {
-        // 如果之前打開過了，就直接繪製即可
         window.renderManagementCards();
     }
 };
 
-// ✨ 展開/收起與「隱藏其他人」的專屬控制器（外部滾動徹底凍結版）
+// ============================================================================
+// ✨ 雲端字典專屬：極速搜尋過濾引擎 (Dictionary Search)
+// ============================================================================
+window.handleDictSearch = function() {
+    const keyword = document.getElementById('dict-search-input').value.toLowerCase().trim();
+    const resultsContainer = document.getElementById('dict-search-results');
+
+    // 1. 如果輸入框是空的，顯示預設提示
+    if (!keyword) {
+        resultsContainer.innerHTML = '<p style="text-align: center; opacity: 0.5; padding: 20px 0; font-size: 0.9em;">追加したい路線を検索してください</p>';
+        return;
+    }
+
+    // 2. 防呆：檢查字典有沒有從雲端抓成功
+    if (!window.MasterRouteDictionary) {
+        resultsContainer.innerHTML = '<p style="text-align: center; color: #ff453a; padding: 20px 0;">サーバーから辞書データを取得できません</p>';
+        return;
+    }
+
+    const dict = window.MasterRouteDictionary;
+    const results = [];
+
+    // 3. 遍歷整個雲端字典進行關鍵字比對 (支援搜路線名、公司名、甚至是羅馬拼音如果有的話)
+    for (const rw_id in dict) {
+        const route = dict[rw_id];
+        
+        // 基礎全形轉半形/假名轉換可以在這裡做，目前先用最基礎的小寫比對
+        if (route.name.toLowerCase().includes(keyword) || 
+            route.company.toLowerCase().includes(keyword)) {
+            results.push(route);
+        }
+    }
+
+    // 4. 如果沒搜到東西
+    if (results.length === 0) {
+        resultsContainer.innerHTML = '<p style="text-align: center; opacity: 0.5; padding: 20px 0; font-size: 0.9em;">該当する路線が見つかりません</p>';
+        return;
+    }
+
+    // 5. 為了效能，最多只顯示前 30 筆結果，防止畫面卡頓
+    const displayResults = results.slice(0, 30);
+
+    resultsContainer.innerHTML = displayResults.map(route => `
+        <div style="padding: 12px 16px; background: rgba(120, 120, 128, 0.08); border-radius: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 4px;"
+             onclick="window.selectDictionaryRoute('${route.id}')">
+            <div style="font-weight: 600; font-size: 1.05em; display: flex; align-items: center; justify-content: space-between;">
+                ${route.name}
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.4;"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </div>
+            <div style="font-size: 0.8em; opacity: 0.6;">${route.company}</div>
+        </div>
+    `).join('');
+};
+
+// ============================================================================
+// ✨ 選擇路線後的行為 (未來將會把這個 ID 綁定到使用者的卡片上)
+// ============================================================================
+window.selectDictionaryRoute = async function(routeId) {
+    const route = window.MasterRouteDictionary[routeId];
+    if (!route) return;
+
+    // 先跳出確認視窗，讓使用者知道他選中了什麼
+    const confirm = await window.iosConfirm(
+        "路線の追加", 
+        `「${route.company} ${route.name}」を選択しました。\nこの路線をカードに追加しますか？\n(カードへの紐付け機能は次回実装予定です)`,
+        "OK", "キャンセル"
+    );
+    
+    if (confirm) {
+         console.log(`[準備綁定路線] ID: ${routeId}, Name: ${route.name}`);
+         // 未來這裡會呼叫 db.js 把 routeId 塞進目前卡片的 targetLineIds 裡面
+    }
+};
+
 window.toggleAddMenuItem = function (id) {
     const container = document.getElementById('add-panel-container');
     const item = document.getElementById(id);
     const isExpanded = item.classList.contains('is-expanded');
 
-    // 🟢 抓取外層所有可能產生滾動的容器
     const uniContent = document.getElementById('universal-page-content');
     const uniWrapper = document.getElementById('universal-page-wrapper');
 
     if (isExpanded) {
-        // 收合時：恢復原本狀態
         item.classList.remove('is-expanded');
         container.classList.remove('has-expanded');
 
-        // 🟢 歸還滾動權限（解除鎖定）
         if (uniContent) uniContent.style.overflowY = '';
         if (uniWrapper) uniWrapper.style.overflowY = '';
         document.body.style.overflow = '';
     } else {
-        // 展開時：關閉其他人並展開自己
         document.querySelectorAll('.add-menu-item').forEach(el => {
             el.classList.remove('is-expanded');
         });
         item.classList.add('is-expanded');
         container.classList.add('has-expanded');
 
-        // 🟢 徹底凍結：從外層 wrapper 到 body，把上下滾動權限全部沒收！
-        // 這樣在面板外部的上空或下方滑動時，畫面絕對不會再被拉扯。
         if (uniContent) uniContent.style.overflowY = 'hidden';
         if (uniWrapper) uniWrapper.style.overflowY = 'hidden';
         document.body.style.overflow = 'hidden';
     }
 };
 
-// 🟢 終極安全裝置：當使用者按「＜」或「Ｘ」直接關閉整個通用面板時，確保自動解鎖！
 if (!window.hasInjectedScrollLockHook) {
     const originalClose = window.closeUniversalPage;
     if (typeof originalClose === 'function') {
         window.closeUniversalPage = function (closeAll = false) {
-            // 面板關閉瞬間，強制解除 body 與 wrapper 的鎖定防呆
             document.body.style.overflow = '';
             const uniWrapper = document.getElementById('universal-page-wrapper');
             if (uniWrapper) uniWrapper.style.overflowY = '';
-
-            // 執行原本的關閉邏輯
             originalClose(closeAll);
         };
-        window.hasInjectedScrollLockHook = true; // 防止重複註冊
+        window.hasInjectedScrollLockHook = true; 
     }
 }
 
-// 🟢 渲染管理面板：區分可見與隱藏卡片
 window.renderManagementCards = async function() {
     const loading = document.getElementById('manage-cards-loading');
     const list = document.getElementById('manage-cards-list');
@@ -145,32 +216,23 @@ window.renderManagementCards = async function() {
     visibleList.innerHTML = ''; 
     hiddenList.innerHTML = '';
 
-    // 取得隱藏名單
     const dbSandbox = await import('../data/db-add-panel.js');
     const hiddenIds = dbSandbox.getHiddenCards ? dbSandbox.getHiddenCards() : [];
     
-    // 只讓可見區的卡片可以被拖拉
     initDragAndDrop(visibleList);
 
-    // =========================================================
-    // ✨ 終極純物理自適應引擎：無視數量，完全以實際螢幕高度為準！
-    // =========================================================
     const innerContainer = list.closest('.add-menu-inner');
     if (innerContainer) {
-        // 必須使用 requestAnimationFrame，確保瀏覽器已經把剛剛生成的卡片都畫到畫面上，高度才量得準！
         requestAnimationFrame(() => {
-            // 如果「內容實際總高 (scrollHeight)」 大於 「容器可視高度 (clientHeight)」，代表被螢幕切到了！
             if (innerContainer.scrollHeight > innerContainer.clientHeight+ 50) {
                 innerContainer.style.overflowY = 'auto';
                 innerContainer.style.overscrollBehavior = 'contain';
             } else {
-                // 如果裝得下，就拉回頂部並完美鎖死維持手感
                 innerContainer.scrollTop = 0; 
                 innerContainer.style.overflowY = 'hidden';
             }
         });
     }
-    // =========================================================
     
     const currentCards = window.appRailwayData || [];
     let visibleCount = 0;
@@ -181,7 +243,6 @@ window.renderManagementCards = async function() {
         const capsule = document.createElement('div');
         capsule.dataset.id = card.id; 
 
-        // 共通色彩計算...
         let hex = card.hex.replace('#', '');
         if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
         const r = parseInt(hex.substring(0, 2), 16), g = parseInt(hex.substring(2, 4), 16), b = parseInt(hex.substring(4, 6), 16);
@@ -212,17 +273,14 @@ window.renderManagementCards = async function() {
         if (l > 95) capsule.style.border = '1px solid rgba(0,0,0,0.08)';
 
         if (isHidden) {
-            // ✨ 如果是被隱藏的卡片，變身為小膠囊並放入隱藏區
             capsule.className = 'manage-hidden-capsule';
-            capsule.textContent = card.name.substring(0, 2); // 縮短為兩個字元
+            capsule.textContent = card.name.substring(0, 2); 
             capsule.onclick = () => window.toggleVisibility(card.id);
             hiddenList.appendChild(capsule);
         } else {
-            // ✨ 如果是正常卡片，放入上方可見區
             visibleCount++;
             capsule.className = 'manage-card-capsule';
 
-            // personal防呆：不給眼睛、不給隱藏
             const eyeIconHTML = card.id === 'personal'
                 ? `<div style="width: 20px; height: 20px; pointer-events: none;"></div>`
                 : `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.9;"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>`;
@@ -247,9 +305,6 @@ window.renderManagementCards = async function() {
         }
     });
 
-    // =========================================================
-    // ✨ 如果隱藏區有「自訂卡片」，在最後面加上「一鍵刪除」空心按鈕
-    // =========================================================
     const hasCustomHidden = hiddenIds.some(hid => hid.startsWith('new-card-') || hid.startsWith('custom-'));
     
     if (hasCustomHidden) {
@@ -260,7 +315,6 @@ window.renderManagementCards = async function() {
         hiddenList.appendChild(deleteAllBtn);
     }
 
-    // ✨ 填補虛線空位：確保畫面上永遠有 5 格的位置
     for (let i = visibleCount; i < 5; i++) {
         const empty = document.createElement('div');
         empty.className = 'empty-slot';
@@ -268,11 +322,9 @@ window.renderManagementCards = async function() {
         visibleList.appendChild(empty);
     }
 
-    // 只讓可見區的卡片可以被拖拉
     initDragAndDrop(visibleList);
 };
 
-// 🟢 切換隱藏狀態的控制器 (保護內建卡片不被刪除版)
 window.toggleVisibility = async function(id) {
     if (id === 'personal') return; 
 
@@ -280,7 +332,6 @@ window.toggleVisibility = async function(id) {
     let hiddenIds = dbSandbox.getHiddenCards();
     
     if (hiddenIds.includes(id)) {
-        // 準備恢復顯示：檢查目前畫面上可見的卡片是否已經滿 5 張
         const visibleCount = window.appRailwayData.filter(r => !hiddenIds.includes(r.id)).length;
         if (visibleCount >= 5) {
             await window.iosConfirm(
@@ -292,17 +343,13 @@ window.toggleVisibility = async function(id) {
         }
         hiddenIds = hiddenIds.filter(hid => hid !== id);
     } else {
-        // 準備隱藏：判斷是否已達 5 張上限
         if (hiddenIds.length >= 5) {
-            // ✨ 智慧引擎：只尋找「自訂卡片」作為刪除目標
             const oldestCustomId = hiddenIds.find(hid => hid.startsWith('new-card-') || hid.startsWith('custom-'));
 
             if (oldestCustomId) {
-                // ✨ 抓出這張卡片的自訂名稱，讓使用者明確知道是誰要被殺掉！
                 const targetCard = window.appRailwayData.find(c => c.id === oldestCustomId);
                 const targetName = targetCard ? targetCard.name : 'カスタムカード';
 
-                // ✨ 文案優化：直接點名即將被刪除的卡片，不再提及「最舊的卡片」
                 const confirmDelete = await window.iosConfirm(
                     "非表示の上限に達しました", 
                     `非表示にできるカードは最大5枚です。\nこれ以上隠す場合、\n「${targetName}」\nが完全に削除されます。\n続行しますか？`,
@@ -310,7 +357,6 @@ window.toggleVisibility = async function(id) {
                 );
                 if (!confirmDelete) return; 
 
-                // 移除並銷毀該自訂卡片
                 hiddenIds = hiddenIds.filter(hid => hid !== oldestCustomId);
                 window.appRailwayData = window.appRailwayData.filter(r => r.id !== oldestCustomId);
                 const db = await import('../data/db.js');
@@ -318,7 +364,6 @@ window.toggleVisibility = async function(id) {
                 
                 hiddenIds.push(id);
             } else {
-                // 如果底下 5 張全部都是殺不死的內建卡片，直接擋下操作！
                 await window.iosConfirm(
                     "非表示の上限に達しました", 
                     "非表示にできるカードは最大5枚です。\n現在非表示のカードはすべて「初期カード」のため削除できません。\n先に他のカードを表示してください。",
@@ -344,12 +389,9 @@ window.toggleVisibility = async function(id) {
     });
 };
 
-// ============================================================================
-// 🟢 拖拉排序引擎 (純物理絕對跟手修正版)
-// ============================================================================
 function initDragAndDrop(list) {
     let dragEl = null, ghostEl = null, placeholder = null;
-    let startY = 0; // 拔除有缺陷的 initialTop
+    let startY = 0; 
 
     const handles = list.querySelectorAll('.manage-card-drag');
     
@@ -382,10 +424,7 @@ function initDragAndDrop(list) {
         
         handle.addEventListener('mousedown', e => {
             if (e.button !== 0) return; 
-            
-            // ✨ 阻止電腦版瀏覽器原生的 SVG/圖片拖曳干擾！
             e.preventDefault(); 
-            
             startDrag(capsule, e.clientY, e.clientX);
         });
     });
@@ -403,8 +442,6 @@ function initDragAndDrop(list) {
         
         dragEl.style.display = 'none';
 
-        // ✨ 核心修正：將父容器設為相對定位 (relative)，並計算絕對精準的內部偏移量！
-        // 這樣可以完美無視外層面板的所有 transform 縮放與位移動畫！
         dragEl.parentNode.style.position = 'relative';
         const parentRect = dragEl.parentNode.getBoundingClientRect();
         
@@ -412,7 +449,7 @@ function initDragAndDrop(list) {
         const relativeLeft = rect.left - parentRect.left + dragEl.parentNode.scrollLeft;
 
         ghostEl.style.display = 'flex';
-        ghostEl.style.position = 'absolute'; // ✨ 改為 absolute
+        ghostEl.style.position = 'absolute'; 
         ghostEl.style.top = `${relativeTop}px`;
         ghostEl.style.left = `${relativeLeft}px`;
         ghostEl.style.width = `${rect.width}px`;
@@ -438,27 +475,21 @@ function initDragAndDrop(list) {
         
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         
-        // 幽靈卡片純粹的物理位移
         const deltaY = clientY - startY;
         ghostEl.style.transform = `translateY(${deltaY}px) scale(1.08)`;
 
-        // ✨ 頂級水平雷射掃描引擎 (無視空隙，純算 Y 軸座標！)
         const listContainer = document.getElementById('manage-visible-list');
         const siblings = [...listContainer.querySelectorAll('.manage-card-capsule:not(.is-dragging-active)')];
         
-        // 從上到下掃描，找到第一張「中心點」在我們鼠標水平線下方的卡片
         const nextElement = siblings.find(sibling => {
             const rect = sibling.getBoundingClientRect();
             const siblingCenterY = rect.top + rect.height / 2;
-            // 如果鼠標高過這張卡片的中心點，代表我們想排在它前面！
             return clientY < siblingCenterY;
         });
 
-        // 執行雷射換位判定
         if (nextElement) {
             listContainer.insertBefore(placeholder, nextElement);
         } else {
-            // 如果鼠標比所有彩色卡片都低，就插在有效卡片的最後面（要避開虛線空格）
             const firstEmptySlot = listContainer.querySelector('.empty-slot');
             if (firstEmptySlot) {
                 listContainer.insertBefore(placeholder, firstEmptySlot);
@@ -476,7 +507,6 @@ function initDragAndDrop(list) {
         document.removeEventListener('touchend', onDragEnd);
         document.removeEventListener('mouseup', onDragEnd);
 
-        // ✨ 吸附時也必須相對於父容器計算目標位置
         const pRect = placeholder.getBoundingClientRect();
         const parentRect = placeholder.parentNode.getBoundingClientRect();
         
@@ -522,40 +552,30 @@ function initDragAndDrop(list) {
     }
 }
 
-// ============================================================================
-// 🟢 新增卡片：Native 級「新建 -> 捲動 -> 點開 -> 翻轉」連鎖運鏡引擎
-// ============================================================================
 window.createNewCardAndEdit = async function() {
-    // 1. 第一時間攔截防呆：檢查畫面上可見的卡片是否已經滿 5 張
     if (!window.appRailwayData) window.appRailwayData = [];
     const dbSandbox = await import('../data/db-add-panel.js');
     const hiddenIds = dbSandbox.getHiddenCards ? dbSandbox.getHiddenCards() : [];
     const visibleCount = window.appRailwayData.filter(r => !hiddenIds.includes(r.id)).length;
 
     if (visibleCount >= 5) {
-        // ✨ UX 升級：給予使用者直接前往管理介面的選擇
-        // ✨ UX 升級：使用頂級自訂視窗
         const goToManage = await window.iosConfirm(
             "表示上限に達しました", 
             "表示できるカードは最大5枚です。\nこれ以上追加する場合は、既存のカードを非表示にしてください。",
-            "管理画面へ", // 確定按鈕文字
-            "キャンセル" // 取消按鈕文字
+            "管理画面へ", 
+            "キャンセル" 
         );
 
         if (goToManage) {
             const manageItem = document.getElementById('add-item-3');
-            // 抓取會滾動的外層容器 (通用面板)
             const scrollContainer = document.getElementById('universal-page-content') || document.getElementById('universal-page-wrapper');
             
             if (manageItem && scrollContainer) {
-                // ✨ 核心修復：使用絕對座標計算，並「刻意扣掉 24px 的高度」作為頂部呼吸空間！
                 const targetY = scrollContainer.scrollTop + manageItem.getBoundingClientRect().top - scrollContainer.getBoundingClientRect().top - 24;
                 
-                // 確保外層允許滾動，執行平滑滑動
                 scrollContainer.style.overflowY = 'auto';
                 scrollContainer.scrollTo({ top: targetY, behavior: 'smooth' });
                 
-                // 等待畫面滑順到達定點後，再觸發面板展開 (展開時會自動把畫面重新鎖死，完美銜接！)
                 setTimeout(() => {
                     if (!manageItem.classList.contains('is-expanded')) {
                         window.toggleAddMenuItem('add-item-3');
@@ -565,16 +585,12 @@ window.createNewCardAndEdit = async function() {
                 window.toggleAddMenuItem('add-item-3');
             }
         }
-        return; // 🛑 擋下新增卡片的流程
+        return; 
     }
 
-    // 2. 數量安全，關閉目前的通用面板
     if (typeof window.closeUniversalPage === 'function') window.closeUniversalPage(true);
 
-    // 3. 等待面板收起 (約 300ms)
     setTimeout(async () => {
-        
-        // 智慧 ID 引擎：自動尋找 new-card-1, 2, 3... 的空位並遞增
         const existingNumbers = window.appRailwayData
             .map(c => c.id)
             .filter(id => id.startsWith('new-card-') || id.startsWith('custom-'))
@@ -602,7 +618,6 @@ window.createNewCardAndEdit = async function() {
 
         window.appRailwayData.unshift(newCard);
 
-        // 取得最新可見名單，並真實存入 DB
         const updatedVisibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
         const visibleIds = updatedVisibleData.map(c => c.id);
 
@@ -610,54 +625,42 @@ window.createNewCardAndEdit = async function() {
         if (db.saveDisplayOrder) db.saveDisplayOrder(visibleIds);
         if (db.saveRoutePreference) db.saveRoutePreference(newId, newCard.name, newCard.hex, null);
 
-        // 重新渲染首頁主畫面 (此時新卡片已經出現在最後面了！)
         if (typeof window.renderMainCards === 'function') {
             window.renderMainCards(updatedVisibleData);
         }
 
-        // ✨ 核心修復：使用 scrollIntoView 精準追蹤剛出爐的新卡片！
         setTimeout(() => {
             const targetCard = document.getElementById(`card-${newId}`);
             if (targetCard) {
-                // 確保視角平滑捲動到正中央
                 targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-                // 點開新卡片，進入運鏡下半場
                 setTimeout(() => {
-                    // 模擬手指點擊，觸發卡片升起！
                     targetCard.click(); 
 
-                    // 等待卡片升起動畫完成 (約 650ms) 後，立刻觸發翻轉引擎！
                     setTimeout(() => {
                         if (typeof window.openBlankOverlay === 'function') {
                             window.openBlankOverlay(newCard.hex);
                             
-                            // 終極細節：翻轉完成後，自動點擊「表示名」彈出鍵盤！
                             setTimeout(() => {
                                 const nameLabel = document.getElementById('p-btn-label');
                                 if (nameLabel) nameLabel.click();
                             }, 550); 
                         }
                     }, 650); 
-                }, 350); // 等待平滑捲動到定位
+                }, 350); 
             }
-        }, 100); // 給瀏覽器一點時間把 DOM 畫出來
+        }, 100); 
 
     }, 300);
 };
 
-// ============================================================================
-// 🟢 一鍵刪除所有隱藏自訂卡片引擎 (保護內建卡片版 + 自訂視窗)
-// ============================================================================
 window.deleteAllHiddenCards = async function() {
     const dbSandbox = await import('../data/db-add-panel.js');
     const hiddenIds = dbSandbox.getHiddenCards();
     
-    // ✨ 篩選出隱藏區中的「自訂卡片」
     const customHiddenIds = hiddenIds.filter(hid => hid.startsWith('new-card-') || hid.startsWith('custom-'));
     if (customHiddenIds.length === 0) return;
 
-    // 提示文字更明確，告知只會刪除自訂卡片
     const confirmDelete = await window.iosConfirm(
         "カスタムカードを削除", 
         "非表示の「カスタムカード」をすべて完全に削除します。\n(初期カードは削除されず残ります)\n\nこの操作は取り消せません。",
@@ -667,10 +670,8 @@ window.deleteAllHiddenCards = async function() {
     );
     if (!confirmDelete) return;
 
-    // 1. 從全域記憶體中徹底移除這些自訂卡片
     window.appRailwayData = window.appRailwayData.filter(r => !customHiddenIds.includes(r.id));
 
-    // 2. 呼叫 db.js 徹底刪除資料庫中的紀錄
     const db = await import('../data/db.js');
     if (db.deleteRoutePreference) {
         for (const id of customHiddenIds) {
@@ -678,7 +679,6 @@ window.deleteAllHiddenCards = async function() {
         }
     }
 
-    // 3. ✨ 更新隱藏名單，把內建卡片溫柔地保留下來！
     const remainingHiddenIds = hiddenIds.filter(hid => !customHiddenIds.includes(hid));
     dbSandbox.saveHiddenCards(remainingHiddenIds);
 
