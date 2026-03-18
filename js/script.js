@@ -519,16 +519,12 @@ function renderCards(data) {
         mainStack.classList.add('allow-hover');
     }
 }
+// ============================================================================
+// 🟢 點擊卡片彈出實心玻璃面板 (群組多路線清單版)
+// ============================================================================
 function handleCardClick(id) {
-    // 🟢 2. 點擊防禦鎖：防止在牌組還在「回彈飛行」的半空中時，誤觸打開卡片導致動畫錯亂
-    if (isAnimating ||
-        mainStack.classList.contains('dragging') ||
-        mainStack.classList.contains('bounce-back') ||
-        mainStack.classList.contains('bounce-back-wheel')) {
-        return;
-    }
+    if (isAnimating || mainStack.classList.contains('dragging') || mainStack.classList.contains('bounce-back') || mainStack.classList.contains('bounce-back-wheel')) return;
 
-    // 🟢 改用 window.appRailwayData
     const data = window.appRailwayData.find(l => l.id === id);
     if (!data) return;
 
@@ -548,35 +544,55 @@ function handleCardClick(id) {
     clone.querySelector('.status-tag').innerHTML = window.getStatusIconsHTML(data.statusFlags || []);
     clone.querySelector('.description').textContent = data.desc;
 
+    // ✨ 改造核心：把原本的 4 顆膠囊容器，替換成「多路線列表」
     const tagsContainer = clone.querySelector('.info-tags-container');
     if (tagsContainer) {
         tagsContainer.className = 'vertical-info-list';
         tagsContainer.innerHTML = '';
         
-        const dummyTexts = ['運行状況：平常運転', '現在の混雑度：ゆったり', '次の列車：快速', '車両編成：8両編成'];
-        const dummyCircles = ['◎', '空', '5分', '8両'];
+        // 為了讓內容滾動時不超出玻璃面板，加上滾動樣式
+        tagsContainer.style.cssText = 'max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-top: 16px; padding-bottom: 20px;';
 
-        for (let i = 0; i < 4; i++) {
-            const row = document.createElement('div');
-            row.className = 'info-list-row';
+        if (data.detailedLines && data.detailedLines.length > 0) {
+            data.detailedLines.forEach(line => {
+                const isDelayed = line.delay > 0 || line.status.includes("遅延") || line.status.includes("見合わせ");
+                const statusColor = isDelayed ? '#ff453a' : '#30d158';
+                const statusBg = isDelayed ? 'rgba(255, 69, 58, 0.15)' : 'rgba(48, 209, 88, 0.15)';
+                const delayText = line.delay > 0 ? ` (${line.delay}分)` : '';
 
-            const cap = document.createElement('div');
-            cap.className = 'info-capsule';
-            cap.textContent = data.detail[i] || dummyTexts[i];
+                const row = document.createElement('div');
+                // ✨ 實心玻璃質感的列表項目設計
+                row.style.cssText = 'background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);';
 
-            const cir = document.createElement('div');
-            cir.className = 'info-circle';
-            cir.textContent = dummyCircles[i];
-
-            row.appendChild(cap);
-            row.appendChild(cir);
-            tagsContainer.appendChild(row);
+                row.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="font-weight: 700; font-size: 1.05em; color: var(--card-text-color);">${line.name}</div>
+                        <div style="background: ${statusBg}; color: ${statusColor}; padding: 4px 8px; border-radius: 6px; font-size: 0.8em; font-weight: 800;">
+                            ${line.status}${delayText}
+                        </div>
+                    </div>
+                    <div style="font-size: 0.85em; color: var(--text-secondary); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        ${line.message}
+                    </div>
+                `;
+                tagsContainer.appendChild(row);
+            });
+        } else {
+            // 如果這張卡片裡面沒有指定路線
+            tagsContainer.innerHTML = `
+                <div style="text-align: center; padding: 30px 0; color: var(--text-secondary);">
+                    <div style="opacity: 0.6; margin-bottom: 12px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                    </div>
+                    <div style="font-size: 0.9em; font-weight: bold;">追跡している路線はありません</div>
+                    <div style="font-size: 0.8em; margin-top: 4px;">右上の「＋」から路線を追加してください</div>
+                </div>
+            `;
         }
     }
 
     detailContainer.appendChild(clone);
 
-    // 🟢 同步聯動：一展開卡片，膠囊的圖示就跟著上滑切換
     const capsule = document.getElementById('action-capsule');
     if (capsule) capsule.classList.add('detail-active');
 
@@ -590,9 +606,7 @@ function handleCardClick(id) {
                 dismissIcon.style.visibility = 'visible';
                 dismissIcon.style.opacity = '0';
                 setTimeout(() => {
-                    if (activeCardId && !document.body.classList.contains('searching')) {
-                        dismissIcon.style.opacity = '1';
-                    }
+                    if (activeCardId && !document.body.classList.contains('searching')) dismissIcon.style.opacity = '1';
                 }, 200);
             }
             if (originalCard) originalCard.classList.add('hidden-placeholder');
@@ -609,7 +623,6 @@ function handleCardClick(id) {
             originalCard.style.transform = 'translate3d(0, -100px, 0)';
             originalCard.classList.add('lifted-state');
         }
-
     }, 600);
 }
 
@@ -1355,81 +1368,139 @@ window.undoCardPreference = async function() {
     }
 };
 
-// 🟢 系統啟動引擎 (非同步合併資料與排序)
+// ============================================================================
+// 🟢 系統啟動引擎 (安全保留 ID 之群組化讀取版)
+// ============================================================================
 async function initApp() {
-    const userPrefs = await getAllUserPreferences();
+    try {
+        const userPrefs = await getAllUserPreferences();
+        const DICTIONARY_API_URL = 'https://tsukinkanban-odpt.onrender.com/api/dictionary';
+        const routeDict = await syncAndLoadDictionary(DICTIONARY_API_URL);
 
-    // 使用全新的 IndexedDB 引擎同步並載入路線字典 ✨
-    // 請將下面網址換成你 Render 的真實網址！
-    const DICTIONARY_API_URL = 'https://tsukinkanban-odpt.onrender.com/api/dictionary';
-    const routeDict = await syncAndLoadDictionary(DICTIONARY_API_URL);
+        console.log("📡 正在獲取最新運行狀態...");
+        const STATUS_API_URL = 'https://tsukinkanban-odpt.onrender.com/api/status';
+        const statusRes = await fetch(STATUS_API_URL);
+        const liveStatus = await statusRes.json();
+        
+        window.GlobalLiveStatus = liveStatus; 
+        window.appRailwayData = [];
 
-    // 獲取即時運行狀態
-    console.log("📡 正在獲取最新運行狀態...");
-    const STATUS_API_URL = 'https://tsukinkanban-odpt.onrender.com/api/status';
-    const statusRes = await fetch(STATUS_API_URL);
-    const liveStatus = await statusRes.json();
+        // 1. 直接拿 data.js 裡面的 5 張卡片當基底 (ID 完全不變！)
+        const baseCards = [...railwayData]; 
 
-    // ✨ 新增這行：把狀態存到全域，這樣等一下搜尋時才能即時幫臨時卡片亮燈！
-    window.GlobalLiveStatus = liveStatus;
-    
-    window.appRailwayData = [];
-
-    // 1. 合併原生路線的偏好設定
-    window.appRailwayData = railwayData.map(route => {
-        const pref = userPrefs[route.id];
-        if (pref) {
-            return {
-                ...route,
-                name: pref.customName || route.name,
-                hex: pref.customHex || route.hex
-            };
-        }
-        return { ...route };
-    });
-
-    // ✨ 2. 核心修復：找回那些被遺忘的新增卡片！
-    // 掃描 userPrefs，如果發現有 'new-card-' 開頭的 ID，就把它加回主陣列。
-    for (const key in userPrefs) {
-        if (key.startsWith('new-card-') || key.startsWith('custom-')) {
-            // 確保不重複加入
-            if (!window.appRailwayData.find(r => r.id === key)) {
-                const pref = userPrefs[key];
-                window.appRailwayData.push({
+        // 2. 將使用者的純手工自訂卡片 (new-card-) 也加入基底陣列
+        for (const key in userPrefs) {
+            if ((key.startsWith('new-card-') || key.startsWith('custom-')) && !baseCards.find(r => r.id === key)) {
+                baseCards.push({
                     id: key,
-                    name: pref.customName || '新規カード',
-                    kana: 'しんきかーど',
-                    status: 'カスタム',
-                    desc: 'カスタム追加されたカード',
-                    detail: ['カスタマイズ可能'],
-                    hex: pref.customHex || '#2C2C2E',
-                    isCustom: true
+                    name: '新規カード',
+                    hex: '#2C2C2E',
+                    targetLineIds: [], // 新卡片預設沒有追蹤路線
+                    detail: ['カスタマイズ可能', '-', '-', '-'] // ✨ 補上這行防呆！
                 });
             }
         }
-    }
 
-    // 3. 執行自訂排序
-    const orderData = userPrefs['__DISPLAY_ORDER__'];
-    if (orderData && orderData.order) {
-        window.appRailwayData.sort((a, b) => {
-            let indexA = orderData.order.indexOf(a.id);
-            let indexB = orderData.order.indexOf(b.id);
-            if (indexA === -1) indexA = 999; 
-            if (indexB === -1) indexB = 999;
-            return indexA - indexB;
+        // 3. 核心魔法：計算每張卡片肚子裡那些路線的「綜合狀態」
+        baseCards.forEach(card => {
+            const pref = userPrefs[card.id];
+            const finalName = pref && pref.customName ? pref.customName : card.name;
+            const finalHex = pref && pref.customHex ? pref.customHex : card.hex;
+            
+            // 優先使用資料庫裡存的追蹤清單，沒有的話就用我們剛剛在 data.js 寫的
+            const finalTargetIds = pref && pref.targetLineIds ? pref.targetLineIds : (card.targetLineIds || []);
+
+            let groupStatusText = "登録路線なし";
+            let groupDesc = "路線を追加してください";
+            let groupFlags = [false, false, false, false, false, false, false];
+            let worstDelay = 0;
+            let hasError = false;
+            let hasDelay = false;
+
+            const detailedLines = []; // 存下這群組裡所有路線的詳細資料，給面板用！
+
+            if (finalTargetIds.length > 0) {
+                groupStatusText = "平常運転";
+                groupDesc = "すべての路線は平常通り運転しています。";
+                groupFlags[5] = true; // 亮起平常運轉綠燈
+
+                finalTargetIds.forEach(lineId => {
+                    const dictInfo = routeDict[lineId] || { name: "未知の路線", company: "不明" };
+                    const statusInfo = liveStatus[lineId] || { status_type: "監視中", message: "情報なし", delay_minutes: 0, status_text: "" };
+
+                    // 只要有一條線出事，整張卡片就出事
+                    if (statusInfo.status_text.includes("異常") || statusInfo.message.includes("遅延") || statusInfo.delay_minutes > 0 || statusInfo.status_type.includes("見合わせ")) {
+                        hasDelay = true;
+                        if (statusInfo.delay_minutes > worstDelay) worstDelay = statusInfo.delay_minutes;
+                    }
+                    if (statusInfo.status_type.includes("エラー")) hasError = true;
+
+                    // 把這條線的真實資料打包，準備給點開後的玻璃面板用
+                    detailedLines.push({
+                        id: lineId,
+                        name: dictInfo.name,
+                        company: dictInfo.company,
+                        status: statusInfo.status_type,
+                        message: statusInfo.message,
+                        delay: statusInfo.delay_minutes,
+                        url: statusInfo.url || dictInfo.url
+                    });
+                });
+
+                // 決定這張群組卡片「外觀」要顯示的警告文字與燈號
+                if (hasError) {
+                    groupDesc = "一部の路線の情報を取得できません。";
+                    groupFlags = [false, false, false, true, false, false, false]; 
+                } else if (hasDelay) {
+                    groupDesc = `一部の路線で遅延やダイヤ乱れが発生しています。`;
+                    groupFlags = [false, false, false, false, false, false, true]; 
+                }
+            } else {
+                // 如果這張卡片沒有設定任何路線 (例如剛新增的自訂卡片)
+                // 就退回去用 data.js 寫的假資料墊檔，才不會太難看
+                groupDesc = card.desc || groupDesc;
+                groupFlags = card.statusFlags || groupFlags;
+            }
+
+            // 存入全域陣列，準備繪製！
+            window.appRailwayData.push({
+                id: card.id,               // 依然是 'tokyo', 'personal' 等安全的 ID
+                name: finalName,           // 依然是 '東京都'
+                hex: finalHex,
+                desc: groupDesc,           // 變成 API 綜合狀態文字
+                statusFlags: groupFlags,   // 變成 API 綜合燈號
+                targetLineIds: finalTargetIds,
+                detailedLines: detailedLines, // 把詳細清單綁定在卡片上！
+                isCustom: card.id.startsWith('new-card-'),
+                detail: card.detail || ['情報なし', '-', '-', '-']
+            });
         });
-    }
 
-    // 4. 讀取隱藏清單並過濾
-    let hiddenIds = [];
-    try { hiddenIds = JSON.parse(localStorage.getItem('TsukinKanban_HiddenCards') || '[]'); } catch (e) {}
-    
-    const visibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
-    
-    renderCards(visibleData);
-    initBottomCard();
-    initDismissIcon();
+        // 4. 執行自訂排序
+        const orderData = userPrefs['__DISPLAY_ORDER__'];
+        if (orderData && orderData.order) {
+            window.appRailwayData.sort((a, b) => {
+                let indexA = orderData.order.indexOf(a.id);
+                let indexB = orderData.order.indexOf(b.id);
+                if (indexA === -1) indexA = 999; 
+                if (indexB === -1) indexB = 999;
+                return indexA - indexB;
+            });
+        }
+
+        // 5. 隱藏過濾與渲染
+        let hiddenIds = [];
+        try { hiddenIds = JSON.parse(localStorage.getItem('TsukinKanban_HiddenCards') || '[]'); } catch (e) {}
+        const visibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
+        
+        renderCards(visibleData);
+        initBottomCard();
+        initDismissIcon();
+
+    } catch (error) {
+        console.error("系統初始化失敗:", error);
+        mainStack.innerHTML = '<p style="text-align:center; padding:40px; color:#666;">資料載入失敗，請檢查網路連線或 API 狀態</p>';
+    }
 }
 
 // 因為 script type="module" 會延遲執行，這裡可以直接呼叫啟動
