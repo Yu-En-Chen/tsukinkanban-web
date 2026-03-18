@@ -1052,92 +1052,214 @@ function initBottomCard() {
     if (tag) tag.style.background = `rgba(255, 255, 255, ${bottomCardConfig.tagBgOpacity})`;
 }
 
+// ============================================================================
+// 🟢 首頁專屬：全域混合搜尋引擎 (懸浮膠囊下拉選單版)
+// ============================================================================
 function filterCards(keyword) {
     isInitialLoad = false;
     const lowKeyword = keyword.toLowerCase().trim();
+    const mainStack = document.getElementById('main-stack');
 
-    // 🟢 1. 如果使用者清空搜尋框，立刻恢復原本的個人看板卡片
+    // 1. 確保懸浮下拉選單容器存在 (掛載在 body 上確保不被切掉)
+    let dropdown = document.getElementById('home-search-dropdown');
+    if (!dropdown) {
+        dropdown = document.createElement('div');
+        dropdown.id = 'home-search-dropdown';
+        // ✨ 注入頂級 iOS 風格毛玻璃懸浮選單 CSS
+        dropdown.style.cssText = `
+            position: fixed;
+            top: calc(env(safe-area-inset-top) + 110px);
+            left: 16px;
+            right: 16px;
+            max-height: calc(100vh - 150px);
+            overflow-y: auto;
+            background: rgba(30, 30, 32, 0.85);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-radius: 20px;
+            padding: 12px;
+            box-sizing: border-box;
+            z-index: 99999;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        `;
+        document.body.appendChild(dropdown);
+    }
+
+    // 2. 如果清空搜尋框，隱藏選單、恢復主畫面
     if (!lowKeyword) {
-        let hiddenIds = [];
-        try { hiddenIds = JSON.parse(localStorage.getItem('TsukinKanban_HiddenCards') || '[]'); } catch (e) {}
-        const visibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
-        renderCards(visibleData);
+        dropdown.style.display = 'none';
+        mainStack.style.opacity = '1';
+        mainStack.style.pointerEvents = 'auto';
+        mainStack.style.filter = 'none';
+        mainStack.style.transition = 'opacity 0.3s ease, filter 0.3s ease';
         return;
     }
 
-    // 🟢 2. 啟動混合搜尋引擎：同時搜尋「已加入的卡片」與「雲端字典的所有路線」
+    // 3. 啟動搜尋引擎
     const dict = window.MasterRouteDictionary || {};
     const liveStatus = window.GlobalLiveStatus || {};
     const searchResults = [];
-    const seenNames = new Set(); // 用來防呆，避免新舊 ID 導致重複顯示同一條路線
+    const seenNames = new Set();
 
-    // A. 遍歷雲端字典 (支援搜路線名與公司名)
+    // A. 遍歷雲端字典
     for (const rw_id in dict) {
         const route = dict[rw_id];
-        
         if (route.name.toLowerCase().includes(lowKeyword) || route.company.toLowerCase().includes(lowKeyword)) {
-            
             if (seenNames.has(route.name)) continue;
             seenNames.add(route.name);
 
-            // 看看這條線是不是已經在看板上了（若有，直接用，這樣才會保留使用者自訂的顏色與名字）
-            const existingCard = window.appRailwayData.find(c => c.id === rw_id || c.name === route.name);
-            
-            if (existingCard) {
-                searchResults.push(existingCard);
-            } else {
-                // ✨ 核心魔法：使用者沒加這張卡片，但我們「即時動態生成」一張臨時卡片給他看！
-                const statusInfo = liveStatus[rw_id] || { 
-                    status_type: "監視中", 
-                    status_text: "情報なし", 
-                    message: "現在情報はありません。", 
-                    update_time: "--:--", 
-                    url: route.url || "" 
-                };
+            const statusInfo = liveStatus[rw_id] || { status_type: "監視中", delay_minutes: 0 };
+            let isDelayed = statusInfo.delay_minutes > 0 || statusInfo.status_type.includes("遅延") || statusInfo.status_type.includes("見合わせ") || statusInfo.status_type.includes("運転変更");
 
-                // 翻譯七燈號
-                let flags = [false, false, false, false, false, false, false];
-                if (statusInfo.status_text.includes("異常")) flags[6] = true;
-                else if (statusInfo.status_type.includes("エラー")) flags[3] = true;
-                else flags[5] = true; 
-
-                // 翻譯防呆膠囊
-                let delayCapsule = "遅延なし"; 
-                if (statusInfo.delay_minutes) delayCapsule = `最大遅延：${statusInfo.delay_minutes}分`;
-                else if (statusInfo.status_text.includes("異常") || statusInfo.message.includes("遅延")) delayCapsule = "遅延・ダイヤ乱れ";
-                else if (statusInfo.status_text.includes("見合わせ")) delayCapsule = "運転見合わせ";
-                else if (statusInfo.status_type.includes("エラー")) delayCapsule = "データ取得不可";
-
-                searchResults.push({
-                    id: rw_id, // 這是 ODPT 官方 ID
-                    name: route.name,
-                    hex: route.hex || '#2C2C2E',
-                    url: statusInfo.url,
-                    desc: statusInfo.message,
-                    statusFlags: flags,
-                    detail: [
-                        `状況：${statusInfo.status_type}`,
-                        `判定：${statusInfo.status_text.split('（')[0]}`,
-                        `更新：${statusInfo.update_time}`,
-                        delayCapsule
-                    ]
-                });
-            }
+            searchResults.push({
+                id: rw_id,
+                name: route.name,
+                company: route.company,
+                hex: route.hex || '#2C2C2E',
+                isDelayed: isDelayed,
+                delayMinutes: statusInfo.delay_minutes
+            });
         }
     }
 
-    // B. 把使用者自己純手工建立的自訂卡片 (new-card-xxx) 也搜出來
+    // B. 遍歷自訂卡片
     const customCards = window.appRailwayData.filter(c => c.isCustom && c.name.toLowerCase().includes(lowKeyword));
     customCards.forEach(c => {
         if (!seenNames.has(c.name)) {
             seenNames.add(c.name);
-            searchResults.push(c);
+            searchResults.push({
+                id: c.id,
+                name: c.name,
+                company: 'カスタムカード',
+                hex: c.hex,
+                isDelayed: false,
+                delayMinutes: 0
+            });
         }
     });
 
-    // 🟢 3. 將這些搜出來的路線，渲染成精美的卡片！
-    renderCards(searchResults);
+    // 4. 渲染長條膠囊
+    if (searchResults.length === 0) {
+        dropdown.innerHTML = '<p style="text-align: center; opacity: 0.5; padding: 30px 0; margin: 0; color: white; font-weight: bold;">該当する路線が見つかりません</p>';
+    } else {
+        dropdown.innerHTML = searchResults.slice(0, 30).map(route => {
+            // 動態計算膠囊顏色 (稍微調暗一點當作底色)
+            let gradient = route.hex;
+            if (gradient.startsWith('#')) {
+                gradient = `linear-gradient(135deg, ${route.hex}, #1a1a1a)`;
+            }
+
+            // 動態狀態徽章
+            let statusBadge = route.isDelayed 
+                ? `<span style="background: rgba(255, 69, 58, 0.2); color: #ff453a; padding: 6px 10px; border-radius: 8px; font-size: 0.85em; font-weight: 800; border: 1px solid rgba(255, 69, 58, 0.4); box-shadow: 0 2px 8px rgba(255, 69, 58, 0.2);">遅延 ${route.delayMinutes ? route.delayMinutes+'分' : ''}</span>`
+                : `<span style="background: rgba(48, 209, 88, 0.2); color: #30d158; padding: 6px 10px; border-radius: 8px; font-size: 0.85em; font-weight: 800; border: 1px solid rgba(48, 209, 88, 0.4);">平常運転</span>`;
+
+            return `
+                <div style="background: ${gradient}; padding: 16px 20px; border-radius: 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), 0 4px 12px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);"
+                     onclick="window.previewRouteFromSearch('${route.id}')">
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <div style="color: #fff; font-weight: 800; font-size: 1.15em; letter-spacing: 0.5px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">${route.name}</div>
+                        <div style="color: rgba(255,255,255,0.8); font-size: 0.8em; font-weight: 600;">${route.company}</div>
+                    </div>
+                    <div>
+                        ${statusBadge}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // 5. 顯示下拉選單，並將主畫面霧化/弱化，強勢凸顯搜尋結果！
+    dropdown.style.display = 'flex';
+    mainStack.style.transition = 'opacity 0.4s ease, filter 0.4s ease';
+    mainStack.style.opacity = '0.15';
+    mainStack.style.pointerEvents = 'none';
+    mainStack.style.filter = 'blur(8px) grayscale(50%)';
 }
+
+// 🟢 點擊搜尋結果的預覽功能：直接彈出該路線的即時狀態卡片！
+window.previewRouteFromSearch = function(routeId) {
+    // 1. 先關閉搜尋列與下拉選單
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.blur(); // 收起手機鍵盤
+    }
+    filterCards(''); // 清空搜尋結果並恢復主畫面
+    
+    const cancelBtn = document.querySelector('.cancel-circle-btn');
+    if (cancelBtn) cancelBtn.click();
+
+    // 2. 如果這張卡片已經在首頁看板上了，直接觸發點擊打開它！
+    const existingCard = window.appRailwayData.find(c => c.id === routeId);
+    if (existingCard) {
+        const cardEl = document.getElementById(`card-${routeId}`);
+        if (cardEl) {
+            setTimeout(() => cardEl.click(), 300); // 等待主畫面動畫恢復後再點擊
+            return;
+        }
+    }
+
+    // 3. 如果是還沒加入看板的路線，我們使用「獨立資訊卡片彈窗引擎 (openInfoOverlay)」來預覽它！
+    const dict = window.MasterRouteDictionary || {};
+    const liveStatus = window.GlobalLiveStatus || {};
+    
+    const route = dict[routeId];
+    const statusInfo = liveStatus[routeId] || { 
+        status_type: "監視中", 
+        status_text: "情報なし", 
+        message: "現在情報はありません。", 
+        update_time: "--:--", 
+        delay_minutes: 0 
+    };
+
+    if (!route) return;
+
+    // 翻譯燈號
+    let flags = [false, false, false, false, false, false, false];
+    if (statusInfo.status_text.includes("異常")) flags[6] = true;
+    else if (statusInfo.status_type.includes("エラー")) flags[3] = true;
+    else flags[5] = true; 
+
+    let delayCapsule = statusInfo.delay_minutes > 0 ? `最大遅延：${statusInfo.delay_minutes}分` : "遅延なし";
+
+    // 組合精美的預覽卡片內容，甚至加上「新增至看板」的快捷鍵！
+    const contentHTML = `
+        <div class="line-name">${route.name}</div>
+        <div class="status-tag">${window.getStatusIconsHTML(flags)}</div>
+        <div class="description">${statusInfo.message}</div>
+        <div class="vertical-info-list" style="margin-top: 16px;">
+            <div class="info-list-row">
+                <div class="info-capsule">状況：${statusInfo.status_type}</div>
+                <div class="info-circle">◎</div>
+            </div>
+            <div class="info-list-row">
+                <div class="info-capsule">判定：${statusInfo.status_text.split('（')[0]}</div>
+                <div class="info-circle">ー</div>
+            </div>
+            <div class="info-list-row">
+                <div class="info-capsule">更新：${statusInfo.update_time}</div>
+                <div class="info-circle">ー</div>
+            </div>
+            <div class="info-list-row">
+                <div class="info-capsule">${delayCapsule}</div>
+                <div class="info-circle">${statusInfo.delay_minutes > 0 ? statusInfo.delay_minutes+'分' : '0分'}</div>
+            </div>
+        </div>
+        <button onclick="window.closeInfoOverlay(); setTimeout(() => window.openAddPanel(), 400);" 
+                style="margin-top: 24px; width: 100%; padding: 16px; background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.3); border-radius: 14px; color: white; font-weight: 800; font-size: 16px; cursor: pointer; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            看板に追加する
+        </button>
+    `;
+
+    setTimeout(() => {
+        window.openInfoOverlay(route.hex || '#2C2C2E', contentHTML);
+    }, 250);
+};
 
 function initDismissIcon() {
     if (document.getElementById('dismiss-icon')) return;
