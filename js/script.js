@@ -520,7 +520,7 @@ function renderCards(data) {
     }
 }
 // ============================================================================
-// 🟢 點擊卡片彈出實心玻璃面板 (群組多路線清單版)
+// 🟢 點擊卡片彈出實心玻璃面板 (極簡主卡片 + 全圓角詳細膠囊版)
 // ============================================================================
 function handleCardClick(id) {
     if (isAnimating || mainStack.classList.contains('dragging') || mainStack.classList.contains('bounce-back') || mainStack.classList.contains('bounce-back-wheel')) return;
@@ -531,10 +531,10 @@ function handleCardClick(id) {
     const originalCard = document.getElementById(`card-${id}`);
     activeCardId = id;
     isAnimating = true;
-
     history.pushState({ cardActive: true }, '');
-
     detailContainer.innerHTML = '';
+
+    // 1. 繪製「極簡化」的詳情主卡片
     const template = document.getElementById('detail-card-template');
     const clone = template.content.cloneNode(true);
     const inner = clone.querySelector('.detail-card-inner');
@@ -544,54 +544,81 @@ function handleCardClick(id) {
     clone.querySelector('.status-tag').innerHTML = window.getStatusIconsHTML(data.statusFlags || []);
     clone.querySelector('.description').textContent = data.desc;
 
-    // ✨ 改造核心：把原本的 4 顆膠囊容器，替換成「多路線列表」
+    // ✨ 將卡片本體內部的 info-tags 徹底隱藏，保持主卡片極致乾淨！
     const tagsContainer = clone.querySelector('.info-tags-container');
-    if (tagsContainer) {
-        tagsContainer.className = 'vertical-info-list';
-        tagsContainer.innerHTML = '';
-        
-        // 為了讓內容滾動時不超出玻璃面板，加上滾動樣式
-        tagsContainer.style.cssText = 'max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-top: 16px; padding-bottom: 20px;';
-
-        if (data.detailedLines && data.detailedLines.length > 0) {
-            data.detailedLines.forEach(line => {
-                const isDelayed = line.delay > 0 || line.status.includes("遅延") || line.status.includes("見合わせ");
-                const statusColor = isDelayed ? '#ff453a' : '#30d158';
-                const statusBg = isDelayed ? 'rgba(255, 69, 58, 0.15)' : 'rgba(48, 209, 88, 0.15)';
-                const delayText = line.delay > 0 ? ` (${line.delay}分)` : '';
-
-                const row = document.createElement('div');
-                // ✨ 實心玻璃質感的列表項目設計
-                row.style.cssText = 'background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);';
-
-                row.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div style="font-weight: 700; font-size: 1.05em; color: var(--card-text-color);">${line.name}</div>
-                        <div style="background: ${statusBg}; color: ${statusColor}; padding: 4px 8px; border-radius: 6px; font-size: 0.8em; font-weight: 800;">
-                            ${line.status}${delayText}
-                        </div>
-                    </div>
-                    <div style="font-size: 0.85em; color: var(--text-secondary); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                        ${line.message}
-                    </div>
-                `;
-                tagsContainer.appendChild(row);
-            });
-        } else {
-            // 如果這張卡片裡面沒有指定路線
-            tagsContainer.innerHTML = `
-                <div style="text-align: center; padding: 30px 0; color: var(--text-secondary);">
-                    <div style="opacity: 0.6; margin-bottom: 12px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                    </div>
-                    <div style="font-size: 0.9em; font-weight: bold;">追跡している路線はありません</div>
-                    <div style="font-size: 0.8em; margin-top: 4px;">右上の「＋」から路線を追加してください</div>
-                </div>
-            `;
-        }
-    }
+    if (tagsContainer) tagsContainer.style.display = 'none'; 
 
     detailContainer.appendChild(clone);
+
+    // 2. ✨ 動態生成底部的「詳細資訊實心玻璃面板 (Extension Panel)」
+    const extension = document.createElement('div');
+    extension.className = 'detail-extension-card';
+    extension.style.cssText = 'margin-top: 16px; display: flex; flex-direction: column; gap: 14px; padding-bottom: 40px;';
+
+    if (data.detailedLines && data.detailedLines.length > 0) {
+        data.detailedLines.forEach(line => {
+            let statusColor = '#30d158'; 
+            let statusBg = 'rgba(48, 209, 88, 0.15)';
+            let statusBorder = 'rgba(48, 209, 88, 0.3)';
+
+            if (line.isError) {
+                statusColor = '#ff9f0a'; 
+                statusBg = 'rgba(255, 159, 10, 0.15)';
+                statusBorder = 'rgba(255, 159, 10, 0.3)';
+            } else if (line.isAttention) {
+                statusColor = '#ffffff'; 
+                statusBg = 'rgba(255, 255, 255, 0.15)';
+                statusBorder = 'rgba(255, 255, 255, 0.3)';
+            } else if (line.isDelayed) {
+                statusColor = '#ff453a'; 
+                statusBg = 'rgba(255, 69, 58, 0.15)';
+                statusBorder = 'rgba(255, 69, 58, 0.3)';
+            }
+
+            const delayText = line.delay > 0 ? ` (${line.delay}分)` : '';
+
+            const row = document.createElement('div');
+            // ✨ 頂級 UI：全圓角 (24px) 實心毛玻璃膠囊設計
+            row.style.cssText = `
+                background: rgba(30, 30, 32, 0.65);
+                backdrop-filter: blur(25px);
+                -webkit-backdrop-filter: blur(25px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 24px; 
+                padding: 16px 20px;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            `;
+
+            row.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <div style="font-weight: 800; font-size: 1.15em; color: #fff; letter-spacing: 0.5px;">${line.name}</div>
+                        <div style="font-size: 0.75em; color: rgba(255,255,255,0.5); font-weight: 600;">${line.company}</div>
+                    </div>
+                    <div style="background: ${statusBg}; color: ${statusColor}; border: 1px solid ${statusBorder}; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 800; white-space: nowrap;">
+                        ${line.status}${delayText}
+                    </div>
+                </div>
+                <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.08);"></div>
+                <div style="font-size: 0.9em; color: rgba(255,255,255,0.85); line-height: 1.5; font-weight: 500;">
+                    ${line.message}
+                </div>
+                <div style="display: flex; justify-content: flex-end; align-items: center; margin-top: -4px;">
+                    <span style="font-size: 0.75em; color: rgba(255,255,255,0.4); font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        更新: ${line.updateTime}
+                    </span>
+                </div>
+            `;
+            extension.appendChild(row);
+        });
+    }
+    
+    // 將玻璃面板附加到容器中
+    detailContainer.appendChild(extension);
 
     const capsule = document.getElementById('action-capsule');
     if (capsule) capsule.classList.add('detail-active');
@@ -1125,8 +1152,15 @@ function filterCards(keyword) {
             if (seenNames.has(route.name)) continue;
             seenNames.add(route.name);
 
-            const statusInfo = liveStatus[rw_id] || { status_type: "監視中", delay_minutes: 0 };
-            let isDelayed = statusInfo.delay_minutes > 0 || statusInfo.status_type.includes("遅延") || statusInfo.status_type.includes("見合わせ") || statusInfo.status_type.includes("運転変更");
+            const statusInfo = liveStatus[rw_id] || { status_type: "監視中", message: "", delay_minutes: 0, status_text: "" };
+            const msg = statusInfo.message || "";
+            const isNormalMsg = msg.includes("ありません") || msg.includes("平常") || msg.includes("正常");
+            
+            // ✨ 套用最新的安全判斷邏輯
+            let isDelayed = false;
+            if (!isNormalMsg && (statusInfo.delay_minutes > 0 || statusInfo.status_text.includes("異常") || msg.includes("遅延") || statusInfo.status_type.includes("見合わせ") || statusInfo.status_type.includes("運転変更"))) {
+                isDelayed = true;
+            }
 
             searchResults.push({
                 id: rw_id,
@@ -1401,13 +1435,12 @@ async function initApp() {
             }
         }
 
-        // 3. 核心魔法：計算每張卡片肚子裡那些路線的「綜合狀態」
+        // 💡 3. 核心魔法：計算每張群組卡片的「綜合狀態」
         baseCards.forEach(card => {
             const pref = userPrefs[card.id];
             const finalName = pref && pref.customName ? pref.customName : card.name;
             const finalHex = pref && pref.customHex ? pref.customHex : card.hex;
             
-            // 優先使用資料庫裡存的追蹤清單，沒有的話就用我們剛剛在 data.js 寫的
             const finalTargetIds = pref && pref.targetLineIds ? pref.targetLineIds : (card.targetLineIds || []);
 
             let groupStatusText = "登録路線なし";
@@ -1416,63 +1449,82 @@ async function initApp() {
             let worstDelay = 0;
             let hasError = false;
             let hasDelay = false;
+            let hasAttention = false; // ✨ 新增：監視中/無資料的注意狀態
 
-            const detailedLines = []; // 存下這群組裡所有路線的詳細資料，給面板用！
+            const detailedLines = [];
 
             if (finalTargetIds.length > 0) {
                 groupStatusText = "平常運転";
                 groupDesc = "すべての路線は平常通り運転しています。";
-                groupFlags[5] = true; // 亮起平常運轉綠燈
-
+                
                 finalTargetIds.forEach(lineId => {
                     const dictInfo = routeDict[lineId] || { name: "未知の路線", company: "不明" };
-                    const statusInfo = liveStatus[lineId] || { status_type: "監視中", message: "情報なし", delay_minutes: 0, status_text: "" };
+                    const statusInfo = liveStatus[lineId] || { status_type: "監視中", message: "現在情報はありません。", delay_minutes: 0, status_text: "公式発表なし", update_time: "--:--" };
 
-                    // 只要有一條線出事，整張卡片就出事
-                    if (statusInfo.status_text.includes("異常") || statusInfo.message.includes("遅延") || statusInfo.delay_minutes > 0 || statusInfo.status_type.includes("見合わせ")) {
+                    const msg = statusInfo.message || "";
+                    // ✨ 修正邏輯：如果文字裡有「ありません(沒有)」，就絕對不是延誤！
+                    const isNormalMsg = msg.includes("ありません") || msg.includes("平常") || msg.includes("正常");
+
+                    let isDelayedLocal = false;
+                    let isErrorLocal = false;
+                    let isAttentionLocal = false;
+
+                    // 判斷該路線的個別狀態
+                    if (statusInfo.status_type.includes("エラー")) {
+                        isErrorLocal = true;
+                        hasError = true;
+                    } else if (statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし") {
+                        isAttentionLocal = true;
+                        hasAttention = true;
+                    } else if (!isNormalMsg && (statusInfo.status_text.includes("異常") || msg.includes("遅延") || statusInfo.delay_minutes > 0 || statusInfo.status_type.includes("見合わせ") || statusInfo.status_type.includes("運転変更"))) {
+                        isDelayedLocal = true;
                         hasDelay = true;
                         if (statusInfo.delay_minutes > worstDelay) worstDelay = statusInfo.delay_minutes;
                     }
-                    if (statusInfo.status_type.includes("エラー")) hasError = true;
 
-                    // 把這條線的真實資料打包，準備給點開後的玻璃面板用
                     detailedLines.push({
                         id: lineId,
                         name: dictInfo.name,
                         company: dictInfo.company,
                         status: statusInfo.status_type,
-                        message: statusInfo.message,
+                        message: msg,
                         delay: statusInfo.delay_minutes,
-                        url: statusInfo.url || dictInfo.url
+                        updateTime: statusInfo.update_time, // 傳遞更新時間給面板
+                        url: statusInfo.url || dictInfo.url,
+                        isDelayed: isDelayedLocal,
+                        isError: isErrorLocal,
+                        isAttention: isAttentionLocal
                     });
                 });
 
-                // 決定這張群組卡片「外觀」要顯示的警告文字與燈號
+                // ✨ 決定群組主卡片的「外觀燈號與文字」
                 if (hasError) {
                     groupDesc = "一部の路線の情報を取得できません。";
-                    groupFlags = [false, false, false, true, false, false, false]; 
+                    groupFlags = [false, false, false, true, false, false, false]; // 亮第4顆 (打叉錯誤)
                 } else if (hasDelay) {
                     groupDesc = `一部の路線で遅延やダイヤ乱れが発生しています。`;
-                    groupFlags = [false, false, false, false, false, false, true]; 
+                    groupFlags = [false, false, false, false, true, false, false]; // 亮第5顆 (三角形延誤)
+                } else if (hasAttention) {
+                    groupDesc = "現在監視中、または公式情報がありません。";
+                    groupFlags = [false, false, false, false, false, false, true]; // ✨ 亮最後一顆 (白色驚嘆號/注意)
+                } else {
+                    groupFlags[5] = true; // 亮第6顆 (圓形正常)
                 }
             } else {
-                // 如果這張卡片沒有設定任何路線 (例如剛新增的自訂卡片)
-                // 就退回去用 data.js 寫的假資料墊檔，才不會太難看
                 groupDesc = card.desc || groupDesc;
                 groupFlags = card.statusFlags || groupFlags;
             }
 
-            // 存入全域陣列，準備繪製！
             window.appRailwayData.push({
-                id: card.id,               // 依然是 'tokyo', 'personal' 等安全的 ID
-                name: finalName,           // 依然是 '東京都'
+                id: card.id,               
+                name: finalName,           
                 hex: finalHex,
-                desc: groupDesc,           // 變成 API 綜合狀態文字
-                statusFlags: groupFlags,   // 變成 API 綜合燈號
+                desc: groupDesc,           
+                statusFlags: groupFlags,   
                 targetLineIds: finalTargetIds,
-                detailedLines: detailedLines, // 把詳細清單綁定在卡片上！
+                detailedLines: detailedLines, 
                 isCustom: card.id.startsWith('new-card-'),
-                detail: card.detail || ['情報なし', '-', '-', '-']
+                detail: card.detail || ['情報なし', '-', '-', '-'] 
             });
         });
 
