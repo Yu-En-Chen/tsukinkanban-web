@@ -22,6 +22,7 @@ import { initHeader } from './header.js';
 import { getAllUserPreferences, restorePreviousPreference } from '../data/db.js';
 import { initPersonalization } from './personalization.js';
 import { initDynamicClock } from './clock.js';
+import { syncAndLoadDictionary } from '../data/dictionary-db.js';
 
 // 🟢 宣告全域變數，作為整個 App 實際渲染、搜尋、點擊的唯一資料來源
 window.appRailwayData = [];
@@ -1159,6 +1160,19 @@ window.undoCardPreference = async function() {
 // 🟢 系統啟動引擎 (非同步合併資料與排序)
 async function initApp() {
     const userPrefs = await getAllUserPreferences();
+
+    // 使用全新的 IndexedDB 引擎同步並載入路線字典 ✨
+    // 請將下面網址換成你 Render 的真實網址！
+    const DICTIONARY_API_URL = 'https://tsukinkanban-odpt.onrender.com/api/dictionary';
+    const routeDict = await syncAndLoadDictionary(DICTIONARY_API_URL);
+
+    // 獲取即時運行狀態
+    console.log("📡 正在獲取最新運行狀態...");
+    const STATUS_API_URL = 'https://tsukinkanban-odpt.onrender.com/api/status';
+    const statusRes = await fetch(STATUS_API_URL);
+    const liveStatus = await statusRes.json();
+    
+    window.appRailwayData = [];
 
     // 1. 合併原生路線的偏好設定
     window.appRailwayData = railwayData.map(route => {
