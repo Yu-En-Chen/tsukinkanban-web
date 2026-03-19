@@ -1047,38 +1047,34 @@ function initBottomCard() {
 }
 
 // ============================================================================
-// 🟢 首頁專屬：全域混合搜尋引擎 (懸浮膠囊下拉選單版)
+// 🟢 首頁專屬：全域混合搜尋引擎 (懸浮獨立玻璃膠囊版)
 // ============================================================================
 function filterCards(keyword) {
     isInitialLoad = false;
     const lowKeyword = keyword.toLowerCase().trim();
     const mainStack = document.getElementById('main-stack');
 
-    // 1. 確保懸浮下拉選單容器存在 (掛載在 body 上確保不被切掉)
+    // 1. 確保懸浮下拉選單容器存在
     let dropdown = document.getElementById('home-search-dropdown');
     if (!dropdown) {
         dropdown = document.createElement('div');
         dropdown.id = 'home-search-dropdown';
-        // ✨ 注入頂級 iOS 風格毛玻璃懸浮選單 CSS
+        // ✨ 修改點 1：拔除大塊背景，改為純容器，並加上 max-width: 400px 防止電腦版炸開！
         dropdown.style.cssText = `
             position: fixed;
-            top: calc(env(safe-area-inset-top) + 110px);
-            left: 16px;
-            right: 16px;
-            max-height: calc(100vh - 150px);
+            top: calc(env(safe-area-inset-top) + 100px);
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 32px);
+            max-width: 400px;
+            max-height: calc(100vh - 120px);
             overflow-y: auto;
-            background: rgba(30, 30, 32, 0.85);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            border-radius: 20px;
-            padding: 12px;
-            box-sizing: border-box;
+            overscroll-behavior: contain;
             z-index: 99999;
             display: none;
             flex-direction: column;
-            gap: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            gap: 16px;
+            padding-bottom: 40px;
         `;
         document.body.appendChild(dropdown);
     }
@@ -1110,9 +1106,15 @@ function filterCards(keyword) {
             const msg = statusInfo.message || "";
             const isNormalMsg = msg.includes("ありません") || msg.includes("平常") || msg.includes("正常");
             
-            // ✨ 套用最新的安全判斷邏輯
             let isDelayed = false;
-            if (!isNormalMsg && (statusInfo.delay_minutes > 0 || statusInfo.status_text.includes("異常") || msg.includes("遅延") || statusInfo.status_type.includes("見合わせ") || statusInfo.status_type.includes("運転変更"))) {
+            let isError = false;
+            let isAttention = false;
+
+            if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
+                isError = true;
+            } else if (statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし") {
+                isAttention = true;
+            } else if (!isNormalMsg && (statusInfo.delay_minutes > 0 || statusInfo.status_text.includes("異常") || msg.includes("遅延") || (statusInfo.status_type && statusInfo.status_type.includes("見合わせ")) || (statusInfo.status_type && statusInfo.status_type.includes("運転変更")))) {
                 isDelayed = true;
             }
 
@@ -1120,9 +1122,11 @@ function filterCards(keyword) {
                 id: rw_id,
                 name: route.name,
                 company: route.company,
-                hex: route.hex || '#2C2C2E',
+                status: statusInfo.status_type || "情報なし",
                 isDelayed: isDelayed,
-                delayMinutes: statusInfo.delay_minutes
+                isError: isError,
+                isAttention: isAttention,
+                delayMinutes: statusInfo.delay_minutes || 0
             });
         }
     }
@@ -1136,38 +1140,61 @@ function filterCards(keyword) {
                 id: c.id,
                 name: c.name,
                 company: 'カスタムカード',
-                hex: c.hex,
+                status: 'カスタム',
                 isDelayed: false,
+                isError: false,
+                isAttention: false,
                 delayMinutes: 0
             });
         }
     });
 
-    // 4. 渲染長條膠囊
+    // 4. 渲染獨立玻璃膠囊
     if (searchResults.length === 0) {
-        dropdown.innerHTML = '<p style="text-align: center; opacity: 0.5; padding: 30px 0; margin: 0; color: white; font-weight: bold;">該当する路線が見つかりません</p>';
+        dropdown.innerHTML = `
+            <div style="background: rgba(30, 30, 32, 0.65); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 30px; text-align: center; color: rgba(255,255,255,0.6); font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
+                該当する路線が見つかりません
+            </div>`;
     } else {
         dropdown.innerHTML = searchResults.slice(0, 30).map(route => {
-            // 動態計算膠囊顏色 (稍微調暗一點當作底色)
-            let gradient = route.hex;
-            if (gradient.startsWith('#')) {
-                gradient = `linear-gradient(135deg, ${route.hex}, #1a1a1a)`;
+            // ✨ 修改點 2：完全套用玻璃清單的動態燈號顏色
+            let statusColor = '#30d158'; 
+            let statusBg = 'rgba(48, 209, 88, 0.15)';
+            let statusBorder = 'rgba(48, 209, 88, 0.3)';
+
+            if (route.isError) {
+                statusColor = '#ff9f0a'; statusBg = 'rgba(255, 159, 10, 0.15)'; statusBorder = 'rgba(255, 159, 10, 0.3)';
+            } else if (route.isAttention) {
+                statusColor = '#ffffff'; statusBg = 'rgba(255, 255, 255, 0.15)'; statusBorder = 'rgba(255, 255, 255, 0.3)';
+            } else if (route.isDelayed) {
+                statusColor = '#ff453a'; statusBg = 'rgba(255, 69, 58, 0.15)'; statusBorder = 'rgba(255, 69, 58, 0.3)';
             }
 
-            // 動態狀態徽章
-            let statusBadge = route.isDelayed 
-                ? `<span style="background: rgba(255, 69, 58, 0.2); color: #ff453a; padding: 6px 10px; border-radius: 8px; font-size: 0.85em; font-weight: 800; border: 1px solid rgba(255, 69, 58, 0.4); box-shadow: 0 2px 8px rgba(255, 69, 58, 0.2);">遅延 ${route.delayMinutes ? route.delayMinutes+'分' : ''}</span>`
-                : `<span style="background: rgba(48, 209, 88, 0.2); color: #30d158; padding: 6px 10px; border-radius: 8px; font-size: 0.85em; font-weight: 800; border: 1px solid rgba(48, 209, 88, 0.4);">平常運転</span>`;
+            const delayText = route.delayMinutes > 0 ? ` (${route.delayMinutes}分)` : '';
 
             return `
-                <div style="background: ${gradient}; padding: 16px 20px; border-radius: 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), 0 4px 12px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);"
-                     onclick="window.previewRouteFromSearch('${route.id}')">
-                    <div style="display: flex; flex-direction: column; gap: 6px;">
-                        <div style="color: #fff; font-weight: 800; font-size: 1.15em; letter-spacing: 0.5px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">${route.name}</div>
-                        <div style="color: rgba(255,255,255,0.8); font-size: 0.8em; font-weight: 600;">${route.company}</div>
-                    </div>
-                    <div>
-                        ${statusBadge}
+                <div style="
+                    background: rgba(30, 30, 32, 0.65);
+                    backdrop-filter: blur(25px);
+                    -webkit-backdrop-filter: blur(25px);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 24px; 
+                    padding: 18px 24px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+                    flex-shrink: 0;
+                    cursor: pointer;
+                " onclick="window.previewRouteFromSearch('${route.id}')">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <div style="font-weight: 800; font-size: 1.15em; color: #fff; letter-spacing: 0.5px;">${route.name}</div>
+                            <div style="font-size: 0.75em; color: rgba(255,255,255,0.5); font-weight: 600;">${route.company}</div>
+                        </div>
+                        <div style="background: ${statusBg}; color: ${statusColor}; border: 1px solid ${statusBorder}; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 800; white-space: nowrap;">
+                            ${route.status}${delayText}
+                        </div>
                     </div>
                 </div>
             `;
