@@ -19,12 +19,12 @@ export const railwayData = [
     { 
         id: 'kanagawa', name: '神奈川県', kana: 'kanagawa kanagawa', status: '正常運転', hex: '#007979', desc: '港灣部を含め、順調に運行されています。', detail: ['標誌: 海洋藍', '主要站: 橫濱、川崎'],
         // ✨ 新增：這張卡片追蹤 2 條線 (湘南新宿線、東海道線)
-        targetLineIds: ['odpt.Railway:JR-East.ShonanShinjuku', 'odpt.Railway:JR-East.Tokaido']
+        targetLineIds: ['odpt.Railway:YokohamaMunicipal.Blue', 'odpt.Railway:YokohamaMunicipal.Green']
     },
     { 
         id: 'saitama', name: '埼玉県', kana: 'saitama saitama', status: '正常運転', hex: '#BB3D00', desc: '內陸各線、大きな混雜は見られません。', detail: ['標誌: 勾玉紅', '主要站: 大宮、浦和'],
         // ✨ 新增：這張卡片追蹤 1 條線 (西武池袋線)
-        targetLineIds: ['odpt.Railway:Seibu.Ikebukuro']
+        targetLineIds: ['odpt.Railway:Toei.Oedo']
     },
     { 
         id: 'chiba', name: '千葉県', kana: 'chiba chiba', status: '一部遅延', hex: '#FFD306', desc: '強風の影響により、一部路線で速度を落として運轉しています。', detail: ['代表色: 菜花黃', '主要站: 千葉、柏'],

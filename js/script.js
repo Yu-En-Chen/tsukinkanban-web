@@ -823,11 +823,13 @@ function closeAllCards(isPopState = false) {
     activeCardId = null;
     const inner = detailContainer.querySelector('.detail-card-inner');
     const extension = detailContainer.querySelector('.detail-extension-card');
+    
+    // ✨ 確保關閉時，裝著所有東西的大箱子也要歸位！
+    detailContainer.style.transition = '';
+    detailContainer.style.transform = '';
+    
     if (inner) {
-        // 🟢 救命關鍵：把滑動時鎖住的 transition 拔掉，恢復原本 CSS 寫好的彈簧動畫！
-        // 這樣卡片就不會瞬間瞬移，而是從你放手的地方滑順飛走
         inner.style.transition = '';
-
         inner.style.transform = '';
     }
 
@@ -863,43 +865,35 @@ function closeAllCards(isPopState = false) {
 }
 
 let overlayStartY = 0;
-
 function initOverlayGestures() {
     const inner = detailContainer.querySelector('.detail-card-inner');
-    const extension = detailContainer.querySelector('.detail-extension-card');
     if (!inner) return;
 
     const dismissIcon = document.getElementById('dismiss-icon');
     const extraElements = inner.querySelectorAll('.description, .info-tags-container, .status-tag');
     
-    // 🟢 1. 將 const 改成 let，並把搜尋按鈕也加進初始名單
     let defaultIcons = document.querySelectorAll('#action-capsule .icon-default, #search-trigger .icon-default');
     let hiddenIcons = document.querySelectorAll('#action-capsule .icon-hidden, #search-trigger .icon-hidden');
 
     detailOverlay.ontouchstart = e => {
-        // ✨ 2. 核心修復：每次手指碰到螢幕時，重新抓取最新的 DOM 節點！
         defaultIcons = document.querySelectorAll('#action-capsule .icon-default, #search-trigger .icon-default');
         hiddenIcons = document.querySelectorAll('#action-capsule .icon-hidden, #search-trigger .icon-hidden');
 
         overlayStartY = e.touches[0].pageY;
-        inner.style.transition = 'none';
-        if (extension) extension.style.transition = 'none'; // 👇 2. 拔除過渡
+        
+        // ✨ 新魔法：拔除整個箱子的過渡效果，準備拖曳！
+        detailContainer.style.transition = 'none';
 
         if (dismissIcon) {
             dismissIcon.style.transition = 'none';
-
-            // 🟢 1. 拔除 wrapper 可能殘留的強制不透明 (!important)
             dismissIcon.style.removeProperty('opacity');
             dismissIcon.style.opacity = '1';
-
-            // 🟢 2. 拔除內部 SVG 可能殘留的強制旋轉 (!important) 與過渡
             const dismissSvg = dismissIcon.querySelector('svg');
             if (dismissSvg) {
                 dismissSvg.style.removeProperty('transform');
                 dismissSvg.style.removeProperty('transition');
             }
         }
-
         extraElements.forEach(el => el.style.transition = 'none');
     };
 
@@ -908,25 +902,22 @@ function initOverlayGestures() {
         if (rawMoveY > 0) {
             if (rawMoveY > 10 && e.cancelable) e.preventDefault();
             const resistedY = rawMoveY * 0.5;
-            inner.style.transform = `translate3d(0, ${resistedY}px, 0)`;
-            if (extension) extension.style.transform = `translate3d(0, ${resistedY}px, 0)`;
+            
+            // ✨ 新魔法：直接拖曳裝著主卡跟面板的「大箱子」，保證 100% 一起移動！
+            detailContainer.style.transform = `translate3d(0, ${resistedY}px, 0)`;
 
             if (dismissIcon) dismissIcon.style.opacity = Math.max(0, 1 - (rawMoveY / 150));
 
             const progress = Math.min(rawMoveY / 200, 1);
-
-            // 預設圖示 (加號/點點)：從頂部 (-120%) 降回中央 (0%)，透明度從 0 變 0.8
             defaultIcons.forEach(icon => {
                 icon.style.setProperty('transform', `translateY(${-120 + (120 * progress)}%)`, 'important');
                 icon.style.setProperty('opacity', `${0.8 * progress}`, 'important');
             });
-            // 新圖示 (調色盤/連結)：從中央 (0%) 沉回底部 (120%)，透明度從 0.8 變 0
             hiddenIcons.forEach(icon => {
                 icon.style.setProperty('transform', `translateY(${120 * progress}%)`, 'important');
                 icon.style.setProperty('opacity', `${0.8 - (0.8 * progress)}`, 'important');
             });
 
-            // 🟢 100px~200px 線性淡化邏輯
             let textOpacity = 1;
             if (rawMoveY > 100) {
                 textOpacity = Math.max(0, 1 - ((rawMoveY - 100) / 100));
@@ -938,8 +929,6 @@ function initOverlayGestures() {
     };
 
     detailOverlay.ontouchend = e => {
-
-        // 🟢 第一優先：無論卡片最終是要關閉還是彈回，都必須立刻把膠囊按鈕的控制權還給 CSS！
         defaultIcons.forEach(icon => {
             icon.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
             icon.style.removeProperty('transform');
@@ -951,40 +940,20 @@ function initOverlayGestures() {
             icon.style.removeProperty('opacity');
         });
 
-        // 🟢 終極防禦鎖：如果下拉距離已經觸發了關閉流程，直接中斷，絕對不允許執行恢復動畫！
         if (!detailOverlay.classList.contains('active')) return;
 
-        // 1. 恢復卡片本體的彈簧動畫，並設定目的地為 0 (原點)
-        inner.style.transition = 'transform 0.55s var(--spring-release)';
-        inner.style.transform = 'translate3d(0, 0, 0)';
+        // ✨ 放手時，讓整個大箱子彈回去！
+        detailContainer.style.transition = 'transform 0.55s var(--spring-release)';
+        detailContainer.style.transform = 'translate3d(0, 0, 0)';
 
-        if (extension) { 
-            extension.style.transition = 'transform 0.55s var(--spring-release)';
-            extension.style.transform = 'translate3d(0, 0, 0)';
-        }
-
-        // 2. 恢復打叉圖示的淡入動畫與不透明度
         if (dismissIcon) {
             dismissIcon.style.transition = 'opacity 0.3s ease';
             dismissIcon.style.opacity = '1';
         }
 
-        // 3. 恢復內部文字的淡入動畫與不透明度
         extraElements.forEach(el => {
             el.style.transition = 'opacity 0.3s ease';
             el.style.opacity = '1';
-        });
-
-        // 🟢 圖示回彈
-        defaultIcons.forEach(icon => {
-            icon.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
-            icon.style.removeProperty('transform');
-            icon.style.removeProperty('opacity');
-        });
-        hiddenIcons.forEach(icon => {
-            icon.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
-            icon.style.removeProperty('transform');
-            icon.style.removeProperty('opacity');
         });
     };
 
@@ -995,32 +964,24 @@ function initOverlayGestures() {
         overlayWheelSum -= e.deltaY;
         if (overlayWheelSum < 0) overlayWheelSum = 0;
         const resistedY = overlayWheelSum * 0.2;
-        inner.style.transition = 'none';
-        inner.style.transform = `translate3d(0, ${resistedY}px, 0)`;
-
-        if (extension) {
-            extension.style.transition = 'none';
-            extension.style.transform = `translate3d(0, ${resistedY}px, 0)`;
-        }
+        
+        // ✨ 電腦版滾輪：同樣移動大箱子
+        detailContainer.style.transition = 'none';
+        detailContainer.style.transform = `translate3d(0, ${resistedY}px, 0)`;
 
         extraElements.forEach(el => el.style.transition = 'none');
 
         if (dismissIcon) {
             dismissIcon.style.transition = 'none';
-
-            // 🟢 滾輪觸發的瞬間，一樣先淨空殘留的霸王條款
             dismissIcon.style.removeProperty('opacity');
             const dismissSvg = dismissIcon.querySelector('svg');
             if (dismissSvg) {
                 dismissSvg.style.removeProperty('transform');
                 dismissSvg.style.removeProperty('transition');
             }
-
-            // 淨空後，再由手勢數學接管透明度
             dismissIcon.style.opacity = Math.max(0, 1 - (overlayWheelSum / 150));
         }
 
-        // 🟢 滾輪：100px~200px 線性淡化邏輯
         let textOpacity = 1;
         if (overlayWheelSum > 100) {
             textOpacity = Math.max(0, 1 - ((overlayWheelSum - 100) / 100));
@@ -1036,13 +997,9 @@ function initOverlayGestures() {
         clearTimeout(overlayWheelTimer);
         overlayWheelTimer = setTimeout(() => {
             if (activeCardId && overlayWheelSum <= 200) {
-                inner.style.transition = 'transform 0.6s var(--active-bounce)';
-                inner.style.transform = 'translate3d(0, 0, 0)';
-
-                if (extension) {
-                    extension.style.transition = 'transform 0.6s var(--active-bounce)';
-                    extension.style.transform = 'translate3d(0, 0, 0)';
-                }
+                // ✨ 滾輪停止時彈回
+                detailContainer.style.transition = 'transform 0.6s var(--active-bounce)';
+                detailContainer.style.transform = 'translate3d(0, 0, 0)';
 
                 extraElements.forEach(el => {
                     el.style.transition = 'opacity 0.3s ease';
