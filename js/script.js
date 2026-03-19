@@ -663,7 +663,7 @@ function handleCardClick(id) {
 
         // ✨ 背景重繪時，也要記得把墊片加回去！
         const scrollSpacer = document.createElement('div');
-        scrollSpacer.style.cssText = 'height: 40px; min-height: 40px; flex-shrink: 0; pointer-events: none;';
+        scrollSpacer.style.cssText = 'height: 50px; min-height: 50px; flex-shrink: 0; pointer-events: none;';
         extension.appendChild(scrollSpacer);
     } else {
         extension.innerHTML = `
@@ -690,7 +690,7 @@ function handleCardClick(id) {
 
     // ✨ 終極防裁切武器：塞入一個實體的隱形墊片，強迫瀏覽器把捲動空間算進去！
     const scrollSpacer = document.createElement('div');
-    scrollSpacer.style.cssText = 'height: 40px; min-height: 40px; flex-shrink: 0; pointer-events: none;';
+    scrollSpacer.style.cssText = 'height: 50px; min-height: 50px; flex-shrink: 0; pointer-events: none;';
     extension.appendChild(scrollSpacer);
     
     detailContainer.appendChild(extension);
