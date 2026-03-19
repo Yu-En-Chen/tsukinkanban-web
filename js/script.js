@@ -575,7 +575,8 @@ function handleCardClick(id) {
     // ✨ 動態生成底部的詳細資訊玻璃面板 (加入 height: auto 讓它依內容縮放)
     const extension = document.createElement('div');
     extension.className = 'detail-extension-card';
-    extension.style.cssText = 'height: auto; margin-top: 16px; display: flex; flex-direction: column; gap: 16px; padding: 20px 16px 40px 16px; max-height: calc(100dvh - 340px); overflow-y: auto; overscroll-behavior: contain;';
+    // ✨ 把 padding 底部歸零，加上 -webkit-overflow-scrolling 確保 iOS 彈性滑動
+    extension.style.cssText = 'height: auto; margin-top: 16px; display: flex; flex-direction: column; gap: 16px; padding: 20px 16px 0px 16px; max-height: calc(100dvh - 320px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;';
 
     if (data.detailedLines && data.detailedLines.length > 0) {
         data.detailedLines.forEach(line => {
@@ -649,6 +650,21 @@ function handleCardClick(id) {
             `;
             extension.appendChild(row);
         });
+        if (data.isTemporarySearch) {
+            const addBtn = document.createElement('button');
+            addBtn.innerHTML = '看板に追加する';
+            addBtn.style.cssText = 'margin-top: 8px; width: 100%; padding: 16px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 18px; color: white; font-weight: 800; font-size: 16px; cursor: pointer; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); flex-shrink: 0; transition: transform 0.2s ease, opacity 0.2s ease;';
+            addBtn.onclick = () => {
+                closeAllCards(false);
+                setTimeout(() => { if(window.openAddPanel) window.openAddPanel(); }, 400);
+            };
+            extension.appendChild(addBtn);
+        }
+
+        // ✨ 背景重繪時，也要記得把墊片加回去！
+        const scrollSpacer = document.createElement('div');
+        scrollSpacer.style.cssText = 'height: 40px; min-height: 40px; flex-shrink: 0; pointer-events: none;';
+        extension.appendChild(scrollSpacer);
     } else {
         extension.innerHTML = `
             <div style="background: rgba(30, 30, 32, 0.65); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px 20px; text-align: center; color: var(--text-secondary); box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
@@ -671,6 +687,11 @@ function handleCardClick(id) {
         };
         extension.appendChild(addBtn);
     }
+
+    // ✨ 終極防裁切武器：塞入一個實體的隱形墊片，強迫瀏覽器把捲動空間算進去！
+    const scrollSpacer = document.createElement('div');
+    scrollSpacer.style.cssText = 'height: 40px; min-height: 40px; flex-shrink: 0; pointer-events: none;';
+    extension.appendChild(scrollSpacer);
     
     detailContainer.appendChild(extension);
 
