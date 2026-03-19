@@ -589,6 +589,31 @@ function handleCardClick(id) {
                 flex-shrink: 0;
             `;
 
+            // ✨ 判斷是否有各方向的詳細資料，如果有，就動態生成專屬的 HTML 區塊
+            let advancedHtml = '';
+            if (line.advancedDetails && line.advancedDetails.length > 0) {
+                advancedHtml = `
+                    <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px; margin-bottom: 6px;">
+                        ${line.advancedDetails.map(adv => {
+                            const isDirDelayed = adv.max_delay > 0;
+                            const dirDelayText = isDirDelayed ? `<span style="color: #ff453a; font-weight: 800;">${adv.max_delay}分遅れ</span>` : `<span style="color: #30d158; font-weight: 600;">平常</span>`;
+                            const trainCountText = adv.train_count > 0 ? `<span style="font-size: 0.85em; opacity: 0.5; margin-right: 8px;">(${adv.train_count}列車)</span>` : '';
+                            
+                            return `
+                                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; padding: 8px 12px; background: rgba(0, 0, 0, 0.25); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                                    <span style="color: rgba(255, 255, 255, 0.9); font-weight: 600;">${adv.direction_name}</span>
+                                    <div style="display: flex; align-items: center;">
+                                        ${trainCountText}
+                                        ${dirDelayText}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+
+            // 組合最終的玻璃膠囊
             row.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; flex-direction: column; gap: 4px;">
@@ -600,9 +625,13 @@ function handleCardClick(id) {
                     </div>
                 </div>
                 <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.08);"></div>
+                
                 <div style="font-size: 0.9em; color: rgba(255,255,255,0.85); line-height: 1.5; font-weight: 500;">
                     ${line.message}
                 </div>
+
+                ${advancedHtml}
+
                 <div style="display: flex; justify-content: flex-end; align-items: center; margin-top: -4px;">
                     <span style="font-size: 0.75em; color: rgba(255,255,255,0.4); font-weight: 600; display: flex; align-items: center; gap: 4px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -1482,11 +1511,13 @@ async function initApp() {
                         status: statusInfo.status_type,
                         message: msg,
                         delay: statusInfo.delay_minutes,
-                        updateTime: statusInfo.update_time, // 傳遞更新時間給面板
+                        updateTime: statusInfo.update_time,
                         url: statusInfo.url || dictInfo.url,
                         isDelayed: isDelayedLocal,
                         isError: isErrorLocal,
-                        isAttention: isAttentionLocal
+                        isAttention: isAttentionLocal,
+                        // ✨ 補上這行：把後端傳來的各方向詳細資料接接起來！如果沒有就給空陣列
+                        advancedDetails: statusInfo.advanced_details || [] 
                     });
                 });
 
