@@ -554,7 +554,7 @@ function handleCardClick(id) {
     const extension = document.createElement('div');
     extension.className = 'detail-extension-card';
     // 💡 修改點 1：加上 padding 左右各 16px，加上 max-height 限制高度，並開啟 overflow-y: auto 捲動
-    extension.style.cssText = 'margin-top: 16px; display: flex; flex-direction: column; gap: 14px; padding: 4px 16px 40px 16px; max-height: calc(100vh - 360px); overflow-y: auto; overscroll-behavior: contain;';
+    extension.style.cssText = 'margin-top: 16px; display: flex; flex-direction: column; gap: 16px; padding: 16px 16px 40px 16px; max-height: calc(100vh - 360px); overflow-y: auto; overscroll-behavior: contain;';
 
     if (data.detailedLines && data.detailedLines.length > 0) {
         data.detailedLines.forEach(line => {
