@@ -550,46 +550,43 @@ function handleCardClick(id) {
 
     detailContainer.appendChild(clone);
 
-    // 2. ✨ 動態生成底部的「詳細資訊實心玻璃面板 (Extension Panel)」
+    // ✨ 2. 動態生成底部的「詳細資訊實心玻璃面板 (Extension Panel)」
     const extension = document.createElement('div');
     extension.className = 'detail-extension-card';
-    extension.style.cssText = 'margin-top: 16px; display: flex; flex-direction: column; gap: 14px; padding-bottom: 40px;';
+    // 💡 修改點 1：加上 padding 左右各 16px，加上 max-height 限制高度，並開啟 overflow-y: auto 捲動
+    extension.style.cssText = 'margin-top: 16px; display: flex; flex-direction: column; gap: 14px; padding: 4px 16px 40px 16px; max-height: calc(100vh - 360px); overflow-y: auto; overscroll-behavior: contain;';
 
     if (data.detailedLines && data.detailedLines.length > 0) {
         data.detailedLines.forEach(line => {
+            // ... (中間的 statusColor 判斷維持原樣) ...
             let statusColor = '#30d158'; 
             let statusBg = 'rgba(48, 209, 88, 0.15)';
             let statusBorder = 'rgba(48, 209, 88, 0.3)';
 
             if (line.isError) {
-                statusColor = '#ff9f0a'; 
-                statusBg = 'rgba(255, 159, 10, 0.15)';
-                statusBorder = 'rgba(255, 159, 10, 0.3)';
+                statusColor = '#ff9f0a'; statusBg = 'rgba(255, 159, 10, 0.15)'; statusBorder = 'rgba(255, 159, 10, 0.3)';
             } else if (line.isAttention) {
-                statusColor = '#ffffff'; 
-                statusBg = 'rgba(255, 255, 255, 0.15)';
-                statusBorder = 'rgba(255, 255, 255, 0.3)';
+                statusColor = '#ffffff'; statusBg = 'rgba(255, 255, 255, 0.15)'; statusBorder = 'rgba(255, 255, 255, 0.3)';
             } else if (line.isDelayed) {
-                statusColor = '#ff453a'; 
-                statusBg = 'rgba(255, 69, 58, 0.15)';
-                statusBorder = 'rgba(255, 69, 58, 0.3)';
+                statusColor = '#ff453a'; statusBg = 'rgba(255, 69, 58, 0.15)'; statusBorder = 'rgba(255, 69, 58, 0.3)';
             }
 
             const delayText = line.delay > 0 ? ` (${line.delay}分)` : '';
 
+            // 💡 修改點：這裡也要同步加上 flex-shrink: 0 跟 18px 24px 的 padding
             const row = document.createElement('div');
-            // ✨ 頂級 UI：全圓角 (24px) 實心毛玻璃膠囊設計
             row.style.cssText = `
                 background: rgba(30, 30, 32, 0.65);
                 backdrop-filter: blur(25px);
                 -webkit-backdrop-filter: blur(25px);
                 border: 1px solid rgba(255, 255, 255, 0.1);
                 border-radius: 24px; 
-                padding: 16px 20px;
+                padding: 18px 24px;
                 display: flex;
                 flex-direction: column;
                 gap: 12px;
                 box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+                flex-shrink: 0;
             `;
 
             row.innerHTML = `
