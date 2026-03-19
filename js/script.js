@@ -520,7 +520,7 @@ function renderCards(data) {
     }
 }
 // ============================================================================
-// 🟢 點擊卡片彈出實心玻璃面板 (極簡主卡片 + 全圓角詳細膠囊版)
+// 🟢 點擊卡片彈出實心玻璃面板 (防幽靈位移 + 高度物理支撐版)
 // ============================================================================
 function handleCardClick(id) {
     if (isAnimating || mainStack.classList.contains('dragging') || mainStack.classList.contains('bounce-back') || mainStack.classList.contains('bounce-back-wheel')) return;
@@ -532,9 +532,12 @@ function handleCardClick(id) {
     activeCardId = id;
     isAnimating = true;
     history.pushState({ cardActive: true }, '');
-    detailContainer.innerHTML = '';
 
-    // 1. 繪製「極簡化」的詳情主卡片
+    // ✨ 殺蟲劑：打開卡片前，強制清空所有幽靈位移，保證從原點出發！
+    detailContainer.innerHTML = '';
+    detailContainer.style.transition = 'none';
+    detailContainer.style.transform = 'none';
+
     const template = document.getElementById('detail-card-template');
     const clone = template.content.cloneNode(true);
     const inner = clone.querySelector('.detail-card-inner');
@@ -544,21 +547,38 @@ function handleCardClick(id) {
     clone.querySelector('.status-tag').innerHTML = window.getStatusIconsHTML(data.statusFlags || []);
     clone.querySelector('.description').textContent = data.desc;
 
-    // ✨ 將卡片本體內部的 info-tags 徹底隱藏，保持主卡片極致乾淨！
+    // ✨ 高度支撐魔法：把膠囊變透明，但繼續把它們留在卡片裡撐住高度，卡片就不會塌陷了！
     const tagsContainer = clone.querySelector('.info-tags-container');
-    if (tagsContainer) tagsContainer.style.display = 'none'; 
+    if (tagsContainer) {
+        tagsContainer.className = 'vertical-info-list';
+        tagsContainer.innerHTML = '';
+        tagsContainer.style.visibility = 'hidden'; 
+        tagsContainer.style.opacity = '0';         
+        
+        for (let i = 0; i < 4; i++) {
+            const row = document.createElement('div');
+            row.className = 'info-list-row';
+            const cap = document.createElement('div');
+            cap.className = 'info-capsule';
+            cap.textContent = data.detail[i] || '-';
+            const cir = document.createElement('div');
+            cir.className = 'info-circle';
+            cir.textContent = '-';
+            row.appendChild(cap);
+            row.appendChild(cir);
+            tagsContainer.appendChild(row);
+        }
+    }
 
     detailContainer.appendChild(clone);
 
-    // ✨ 2. 動態生成底部的「詳細資訊實心玻璃面板 (Extension Panel)」
+    // ✨ 動態生成底部的詳細資訊玻璃面板 (加入 height: auto 讓它依內容縮放)
     const extension = document.createElement('div');
     extension.className = 'detail-extension-card';
-    // 💡 修改點 1：加上 padding 左右各 16px，加上 max-height 限制高度，並開啟 overflow-y: auto 捲動
-    extension.style.cssText = 'margin-top: 16px; display: flex; flex-direction: column; gap: 16px; padding: 16px 16px 40px 16px; max-height: calc(100vh - 360px); overflow-y: auto; overscroll-behavior: contain;';
+    extension.style.cssText = 'height: auto; margin-top: 16px; display: flex; flex-direction: column; gap: 16px; padding: 20px 16px 40px 16px; max-height: calc(100dvh - 340px); overflow-y: auto; overscroll-behavior: contain;';
 
     if (data.detailedLines && data.detailedLines.length > 0) {
         data.detailedLines.forEach(line => {
-            // ... (中間的 statusColor 判斷維持原樣) ...
             let statusColor = '#30d158'; 
             let statusBg = 'rgba(48, 209, 88, 0.15)';
             let statusBorder = 'rgba(48, 209, 88, 0.3)';
@@ -573,7 +593,6 @@ function handleCardClick(id) {
 
             const delayText = line.delay > 0 ? ` (${line.delay}分)` : '';
 
-            // 💡 修改點：這裡也要同步加上 flex-shrink: 0 跟 18px 24px 的 padding
             const row = document.createElement('div');
             row.style.cssText = `
                 background: rgba(30, 30, 32, 0.65);
@@ -589,7 +608,6 @@ function handleCardClick(id) {
                 flex-shrink: 0;
             `;
 
-            // ✨ 判斷是否有各方向的詳細資料，如果有，就動態生成專屬的 HTML 區塊
             let advancedHtml = '';
             if (line.advancedDetails && line.advancedDetails.length > 0) {
                 advancedHtml = `
@@ -598,14 +616,10 @@ function handleCardClick(id) {
                             const isDirDelayed = adv.max_delay > 0;
                             const dirDelayText = isDirDelayed ? `<span style="color: #ff453a; font-weight: 800;">${adv.max_delay}分遅れ</span>` : `<span style="color: #30d158; font-weight: 600;">平常</span>`;
                             const trainCountText = adv.train_count > 0 ? `<span style="font-size: 0.85em; opacity: 0.5; margin-right: 8px;">(${adv.train_count}列車)</span>` : '';
-                            
                             return `
                                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; padding: 8px 12px; background: rgba(0, 0, 0, 0.25); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);">
                                     <span style="color: rgba(255, 255, 255, 0.9); font-weight: 600;">${adv.direction_name}</span>
-                                    <div style="display: flex; align-items: center;">
-                                        ${trainCountText}
-                                        ${dirDelayText}
-                                    </div>
+                                    <div style="display: flex; align-items: center;">${trainCountText}${dirDelayText}</div>
                                 </div>
                             `;
                         }).join('')}
@@ -613,7 +627,6 @@ function handleCardClick(id) {
                 `;
             }
 
-            // 組合最終的玻璃膠囊
             row.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; flex-direction: column; gap: 4px;">
@@ -625,13 +638,8 @@ function handleCardClick(id) {
                     </div>
                 </div>
                 <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.08);"></div>
-                
-                <div style="font-size: 0.9em; color: rgba(255,255,255,0.85); line-height: 1.5; font-weight: 500;">
-                    ${line.message}
-                </div>
-
+                <div style="font-size: 0.9em; color: rgba(255,255,255,0.85); line-height: 1.5; font-weight: 500;">${line.message}</div>
                 ${advancedHtml}
-
                 <div style="display: flex; justify-content: flex-end; align-items: center; margin-top: -4px;">
                     <span style="font-size: 0.75em; color: rgba(255,255,255,0.4); font-weight: 600; display: flex; align-items: center; gap: 4px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -641,13 +649,39 @@ function handleCardClick(id) {
             `;
             extension.appendChild(row);
         });
+    } else {
+        extension.innerHTML = `
+            <div style="background: rgba(30, 30, 32, 0.65); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px 20px; text-align: center; color: var(--text-secondary); box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
+                <div style="opacity: 0.6; margin-bottom: 12px; display: flex; justify-content: center;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                </div>
+                <div style="font-size: 1.05em; font-weight: 800; color: #fff;">追跡している路線はありません</div>
+                <div style="font-size: 0.85em; margin-top: 8px; opacity: 0.7;">右上の「＋」から路線を追加してください</div>
+            </div>
+        `;
+    }
+
+    if (data.isTemporarySearch) {
+        const addBtn = document.createElement('button');
+        addBtn.innerHTML = '看板に追加する';
+        addBtn.style.cssText = 'margin-top: 8px; width: 100%; padding: 16px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 18px; color: white; font-weight: 800; font-size: 16px; cursor: pointer; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); flex-shrink: 0; transition: transform 0.2s ease, opacity 0.2s ease;';
+        addBtn.onclick = () => {
+            closeAllCards(false);
+            setTimeout(() => { if(window.openAddPanel) window.openAddPanel(); }, 400);
+        };
+        extension.appendChild(addBtn);
     }
     
-    // 將玻璃面板附加到容器中
     detailContainer.appendChild(extension);
 
     const capsule = document.getElementById('action-capsule');
     if (capsule) capsule.classList.add('detail-active');
+
+    // ✨ 暴力清除阻擋背景虛化的殘留樣式
+    mainStack.style.removeProperty('filter');
+    mainStack.style.removeProperty('opacity');
+    mainStack.style.removeProperty('pointer-events');
+    mainStack.style.removeProperty('transition');
 
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -902,12 +936,18 @@ function initOverlayGestures() {
     let hiddenIcons = document.querySelectorAll('#action-capsule .icon-hidden, #search-trigger .icon-hidden');
 
     detailOverlay.ontouchstart = e => {
+        // ✨ 防禦 1：如果正在播放動畫或沒選中卡片，絕對不准紀錄手指起點！
+        if (isAnimating || !activeCardId) return;
+
         defaultIcons = document.querySelectorAll('#action-capsule .icon-default, #search-trigger .icon-default');
         hiddenIcons = document.querySelectorAll('#action-capsule .icon-hidden, #search-trigger .icon-hidden');
 
         overlayStartY = e.touches[0].pageY;
         
-        // ✨ 新魔法：拔除整個箱子的過渡效果，準備拖曳！
+        // 判斷是否點擊在可捲動的實心玻璃面板上
+        const extension = detailContainer.querySelector('.detail-extension-card');
+        window.isTouchingScrollable = extension && extension.contains(e.target);
+
         detailContainer.style.transition = 'none';
 
         if (dismissIcon) {
@@ -924,12 +964,23 @@ function initOverlayGestures() {
     };
 
     detailOverlay.ontouchmove = e => {
+        // ✨ 防禦 2：幽靈位移終結者！卡片一開始關閉，立刻鎖死滑動事件，絕不殘留！
+        if (isAnimating || !activeCardId) return;
+
         const rawMoveY = e.touches[0].pageY - overlayStartY;
+
+        // 智慧防手震：如果在玻璃面板裡滑動，且還沒捲到底，放行內部捲動，不觸發關閉卡片！
+        if (window.isTouchingScrollable) {
+            const extension = detailContainer.querySelector('.detail-extension-card');
+            if (rawMoveY < 0 || (rawMoveY > 0 && extension.scrollTop > 0)) {
+                return; 
+            }
+        }
+
         if (rawMoveY > 0) {
             if (rawMoveY > 10 && e.cancelable) e.preventDefault();
             const resistedY = rawMoveY * 0.5;
             
-            // ✨ 新魔法：直接拖曳裝著主卡跟面板的「大箱子」，保證 100% 一起移動！
             detailContainer.style.transform = `translate3d(0, ${resistedY}px, 0)`;
 
             if (dismissIcon) dismissIcon.style.opacity = Math.max(0, 1 - (rawMoveY / 150));
@@ -955,6 +1006,8 @@ function initOverlayGestures() {
     };
 
     detailOverlay.ontouchend = e => {
+        if (isAnimating || !activeCardId) return;
+
         defaultIcons.forEach(icon => {
             icon.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
             icon.style.removeProperty('transform');
@@ -968,7 +1021,6 @@ function initOverlayGestures() {
 
         if (!detailOverlay.classList.contains('active')) return;
 
-        // ✨ 放手時，讓整個大箱子彈回去！
         detailContainer.style.transition = 'transform 0.55s var(--spring-release)';
         detailContainer.style.transform = 'translate3d(0, 0, 0)';
 
@@ -986,12 +1038,25 @@ function initOverlayGestures() {
     let overlayWheelSum = 0;
     let overlayWheelTimer;
     detailOverlay.onwheel = e => {
+        if (isAnimating || !activeCardId) return;
+
+        const extension = detailContainer.querySelector('.detail-extension-card');
+        if (extension && extension.contains(e.target)) {
+            const isScrollingDown = e.deltaY > 0;
+            const isScrollingUp = e.deltaY < 0;
+            const isAtTop = extension.scrollTop === 0;
+            const isAtBottom = extension.scrollHeight - extension.scrollTop <= extension.clientHeight + 1;
+
+            if ((isScrollingDown && !isAtBottom) || (isScrollingUp && !isAtTop)) {
+                return; // 放行電腦版滾輪捲動清單
+            }
+        }
+
         e.preventDefault();
         overlayWheelSum -= e.deltaY;
         if (overlayWheelSum < 0) overlayWheelSum = 0;
         const resistedY = overlayWheelSum * 0.2;
         
-        // ✨ 電腦版滾輪：同樣移動大箱子
         detailContainer.style.transition = 'none';
         detailContainer.style.transform = `translate3d(0, ${resistedY}px, 0)`;
 
@@ -1023,7 +1088,6 @@ function initOverlayGestures() {
         clearTimeout(overlayWheelTimer);
         overlayWheelTimer = setTimeout(() => {
             if (activeCardId && overlayWheelSum <= 200) {
-                // ✨ 滾輪停止時彈回
                 detailContainer.style.transition = 'transform 0.6s var(--active-bounce)';
                 detailContainer.style.transform = 'translate3d(0, 0, 0)';
 
