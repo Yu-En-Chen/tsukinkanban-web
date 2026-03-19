@@ -1047,7 +1047,7 @@ function initBottomCard() {
 }
 
 // ============================================================================
-// 🟢 首頁專屬：全域混合搜尋引擎 (懸浮獨立玻璃膠囊版)
+// 🟢 首頁專屬：全域混合搜尋引擎 (相容原生鍵盤鎖定 + 動態高度版)
 // ============================================================================
 function filterCards(keyword) {
     isInitialLoad = false;
@@ -1059,7 +1059,6 @@ function filterCards(keyword) {
     if (!dropdown) {
         dropdown = document.createElement('div');
         dropdown.id = 'home-search-dropdown';
-        // ✨ 修改點 1：拔除大塊背景，改為純容器，並加上 max-width: 400px 防止電腦版炸開！
         dropdown.style.cssText = `
             position: fixed;
             top: calc(env(safe-area-inset-top) + 100px);
@@ -1067,21 +1066,38 @@ function filterCards(keyword) {
             transform: translateX(-50%);
             width: calc(100% - 32px);
             max-width: 400px;
-            max-height: calc(100vh - 120px);
+            /* ✨ 高度不寫死，交給下方的 JS 動態計算鍵盤高度 */
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch; /* ✨ 確保 iOS 內部滑動極致順暢 */
             overscroll-behavior: contain;
             z-index: 99999;
             display: none;
             flex-direction: column;
             gap: 16px;
-            padding-bottom: 40px;
+            padding-bottom: 20px;
         `;
+        
+        // ✨ 防護網 1：阻止滑動事件往外傳遞，絕不干擾 header.js 的鎖定！
+        dropdown.addEventListener('touchmove', (e) => {
+            e.stopPropagation();
+        }, { passive: true });
+
+        // ✨ 防護網 2：監聽手機鍵盤彈出！動態縮小面板高度，保證絕不超出螢幕
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', () => {
+                if (dropdown.style.display === 'flex') {
+                    dropdown.style.maxHeight = `${window.visualViewport.height - 120}px`;
+                }
+            });
+        }
+
         document.body.appendChild(dropdown);
     }
 
-    // 2. 如果清空搜尋框，隱藏選單、恢復主畫面
+    // 2. 如果清空或取消搜尋框，隱藏選單、恢復主畫面
     if (!lowKeyword) {
         dropdown.style.display = 'none';
+        // ✨ 移除上一版的 document.body... 把鎖定/解鎖的權力完全還給你的 header.js！
         mainStack.style.opacity = '1';
         mainStack.style.pointerEvents = 'auto';
         mainStack.style.filter = 'none';
@@ -1118,14 +1134,18 @@ function filterCards(keyword) {
                 isDelayed = true;
             }
 
+            // 完美轉換七燈號
+            let flags = [false, false, false, false, false, false, false];
+            if (isError) flags[3] = true;
+            else if (isAttention) flags[6] = true;
+            else if (isDelayed) flags[4] = true;
+            else flags[5] = true;
+
             searchResults.push({
                 id: rw_id,
                 name: route.name,
                 company: route.company,
-                status: statusInfo.status_type || "情報なし",
-                isDelayed: isDelayed,
-                isError: isError,
-                isAttention: isAttention,
+                statusFlags: flags,
                 delayMinutes: statusInfo.delay_minutes || 0
             });
         }
@@ -1140,10 +1160,7 @@ function filterCards(keyword) {
                 id: c.id,
                 name: c.name,
                 company: 'カスタムカード',
-                status: 'カスタム',
-                isDelayed: false,
-                isError: false,
-                isAttention: false,
+                statusFlags: [false, false, false, false, false, false, false],
                 delayMinutes: 0
             });
         }
@@ -1157,20 +1174,7 @@ function filterCards(keyword) {
             </div>`;
     } else {
         dropdown.innerHTML = searchResults.slice(0, 30).map(route => {
-            // ✨ 修改點 2：完全套用玻璃清單的動態燈號顏色
-            let statusColor = '#30d158'; 
-            let statusBg = 'rgba(48, 209, 88, 0.15)';
-            let statusBorder = 'rgba(48, 209, 88, 0.3)';
-
-            if (route.isError) {
-                statusColor = '#ff9f0a'; statusBg = 'rgba(255, 159, 10, 0.15)'; statusBorder = 'rgba(255, 159, 10, 0.3)';
-            } else if (route.isAttention) {
-                statusColor = '#ffffff'; statusBg = 'rgba(255, 255, 255, 0.15)'; statusBorder = 'rgba(255, 255, 255, 0.3)';
-            } else if (route.isDelayed) {
-                statusColor = '#ff453a'; statusBg = 'rgba(255, 69, 58, 0.15)'; statusBorder = 'rgba(255, 69, 58, 0.3)';
-            }
-
-            const delayText = route.delayMinutes > 0 ? ` (${route.delayMinutes}分)` : '';
+            const delayText = route.delayMinutes > 0 ? `<div style="color: #ff453a; font-size: 0.75em; font-weight: 800; margin-top: 6px; text-align: right;">${route.delayMinutes}分遅れ</div>` : '';
 
             return `
                 <div style="
@@ -1179,7 +1183,7 @@ function filterCards(keyword) {
                     -webkit-backdrop-filter: blur(25px);
                     border: 1px solid rgba(255, 255, 255, 0.1);
                     border-radius: 24px; 
-                    padding: 18px 24px;
+                    padding: 16px 20px;
                     display: flex;
                     flex-direction: column;
                     gap: 12px;
@@ -1192,8 +1196,11 @@ function filterCards(keyword) {
                             <div style="font-weight: 800; font-size: 1.15em; color: #fff; letter-spacing: 0.5px;">${route.name}</div>
                             <div style="font-size: 0.75em; color: rgba(255,255,255,0.5); font-weight: 600;">${route.company}</div>
                         </div>
-                        <div style="background: ${statusBg}; color: ${statusColor}; border: 1px solid ${statusBorder}; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 800; white-space: nowrap;">
-                            ${route.status}${delayText}
+                        <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                            <div class="status-tag" style="position: relative; top: 0; right: 0; transform: none; display: flex; align-items: center;">
+                                ${window.getStatusIconsHTML(route.statusFlags)}
+                            </div>
+                            ${delayText}
                         </div>
                     </div>
                 </div>
@@ -1201,8 +1208,13 @@ function filterCards(keyword) {
         }).join('');
     }
 
-    // 5. 顯示下拉選單，並將主畫面霧化/弱化，強勢凸顯搜尋結果！
+    // ✨ 每次打字時，也主動抓取當下正確的鍵盤剩餘高度！
+    const currentVpHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    dropdown.style.maxHeight = `${currentVpHeight - 120}px`;
+
+    // 5. 顯示下拉選單
     dropdown.style.display = 'flex';
+    // ✨ 移除 document.body.style.overflow = 'hidden'; 完全尊重 header.js
     mainStack.style.transition = 'opacity 0.4s ease, filter 0.4s ease';
     mainStack.style.opacity = '0.15';
     mainStack.style.pointerEvents = 'none';
