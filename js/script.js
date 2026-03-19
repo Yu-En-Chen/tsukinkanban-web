@@ -973,6 +973,7 @@ function initOverlayGestures() {
         if (window.isTouchingScrollable) {
             const extension = detailContainer.querySelector('.detail-extension-card');
             if (rawMoveY < 0 || (rawMoveY > 0 && extension.scrollTop > 0)) {
+                e.stopPropagation(); // ✨ 加上這行：強力隔離！告訴系統「我正在內部滑動，外面卡片絕對不准動！」
                 return; 
             }
         }
@@ -1048,6 +1049,7 @@ function initOverlayGestures() {
             const isAtBottom = extension.scrollHeight - extension.scrollTop <= extension.clientHeight + 1;
 
             if ((isScrollingDown && !isAtBottom) || (isScrollingUp && !isAtTop)) {
+                e.stopPropagation(); // ✨ 加上這行：隔離電腦滑鼠滾輪
                 return; // 放行電腦版滾輪捲動清單
             }
         }

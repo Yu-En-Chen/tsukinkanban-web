@@ -1131,6 +1131,7 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 /* 隨主卡片一起升起 */
 .detail-overlay.active .detail-extension-card {
     transform: translate3d(0, 0, 0);
+    pointer-events: auto; /* ✨ 關鍵修復：解除觸控封印，讓實心玻璃面板可以接收手指滑動！ */
 }
 
 /* ==========================================================================
