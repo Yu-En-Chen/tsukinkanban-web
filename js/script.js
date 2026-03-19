@@ -1341,7 +1341,9 @@ function filterCards(keyword) {
     mainStack.style.filter = 'blur(8px) grayscale(50%)';
 }
 
-// 🟢 點擊搜尋結果的預覽功能：直接彈出該路線的即時狀態卡片！
+// ============================================================================
+// 🟢 點擊搜尋結果的預覽功能：無縫整合主卡片引擎 (幽靈卡片版)
+// ============================================================================
 window.previewRouteFromSearch = function(routeId) {
     // 1. 先關閉搜尋列與下拉選單
     const searchInput = document.getElementById('search-input');
@@ -1354,70 +1356,78 @@ window.previewRouteFromSearch = function(routeId) {
     const cancelBtn = document.querySelector('.cancel-circle-btn');
     if (cancelBtn) cancelBtn.click();
 
-    // 2. 如果這張卡片已經在首頁看板上了，直接觸發點擊打開它！
-    const existingCard = window.appRailwayData.find(c => c.id === routeId);
+    // 2. 如果這張卡片剛好是一張「獨立的看板卡片」，直接觸發點擊打開它
+    const existingCard = window.appRailwayData.find(c => c.id === routeId && !c.isTemporarySearch);
     if (existingCard) {
-        const cardEl = document.getElementById(`card-${routeId}`);
+        const cardEl = document.getElementById(`card-${existingCard.id}`);
         if (cardEl) {
             setTimeout(() => cardEl.click(), 300); // 等待主畫面動畫恢復後再點擊
             return;
         }
     }
 
-    // 3. 如果是還沒加入看板的路線，我們使用「獨立資訊卡片彈窗引擎 (openInfoOverlay)」來預覽它！
+    // 3. 核心魔法：建立一張「隱形的幽靈卡片」，直接餵給詳情面板引擎！
     const dict = window.MasterRouteDictionary || {};
     const liveStatus = window.GlobalLiveStatus || {};
-    
     const route = dict[routeId];
-    const statusInfo = liveStatus[routeId] || { 
-        status_type: "監視中", 
-        status_text: "情報なし", 
-        message: "現在情報はありません。", 
-        update_time: "--:--", 
-        delay_minutes: 0 
-    };
-
     if (!route) return;
 
-    // 翻譯燈號
+    const statusInfo = liveStatus[routeId] || { 
+        status_type: "監視中", 
+        message: "現在情報はありません。", 
+        delay_minutes: 0, 
+        status_text: "公式発表なし", 
+        update_time: "--:--" 
+    };
+
+    const msg = statusInfo.message || "";
+    const isNormalMsg = msg.includes("ありません") || msg.includes("平常") || msg.includes("正常");
+
+    let isDelayed = false, isError = false, isAttention = false;
     let flags = [false, false, false, false, false, false, false];
-    if (statusInfo.status_text.includes("異常")) flags[6] = true;
-    else if (statusInfo.status_type.includes("エラー")) flags[3] = true;
-    else flags[5] = true; 
 
-    let delayCapsule = statusInfo.delay_minutes > 0 ? `最大遅延：${statusInfo.delay_minutes}分` : "遅延なし";
+    if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
+        isError = true; flags[3] = true;
+    } else if (statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし") {
+        isAttention = true; flags[6] = true;
+    } else if (!isNormalMsg && (statusInfo.delay_minutes > 0 || statusInfo.status_text.includes("異常") || msg.includes("遅延") || (statusInfo.status_type && statusInfo.status_type.includes("見合わせ")) || (statusInfo.status_type && statusInfo.status_type.includes("運転変更")))) {
+        isDelayed = true; flags[4] = true;
+    } else {
+        flags[5] = true;
+    }
 
-    // 組合精美的預覽卡片內容，甚至加上「新增至看板」的快捷鍵！
-    const contentHTML = `
-        <div class="line-name">${route.name}</div>
-        <div class="status-tag">${window.getStatusIconsHTML(flags)}</div>
-        <div class="description">${statusInfo.message}</div>
-        <div class="vertical-info-list" style="margin-top: 16px;">
-            <div class="info-list-row">
-                <div class="info-capsule">状況：${statusInfo.status_type}</div>
-                <div class="info-circle">◎</div>
-            </div>
-            <div class="info-list-row">
-                <div class="info-capsule">判定：${statusInfo.status_text.split('（')[0]}</div>
-                <div class="info-circle">ー</div>
-            </div>
-            <div class="info-list-row">
-                <div class="info-capsule">更新：${statusInfo.update_time}</div>
-                <div class="info-circle">ー</div>
-            </div>
-            <div class="info-list-row">
-                <div class="info-capsule">${delayCapsule}</div>
-                <div class="info-circle">${statusInfo.delay_minutes > 0 ? statusInfo.delay_minutes+'分' : '0分'}</div>
-            </div>
-        </div>
-        <button onclick="window.closeInfoOverlay(); setTimeout(() => window.openAddPanel(), 400);" 
-                style="margin-top: 24px; width: 100%; padding: 16px; background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.3); border-radius: 14px; color: white; font-weight: 800; font-size: 16px; cursor: pointer; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-            看板に追加する
-        </button>
-    `;
+    // 打造幽靈卡片資料
+    const tempCard = {
+        id: 'temp-search-route', // 固定 ID
+        name: route.name,
+        hex: route.hex || '#2C2C2E',
+        desc: statusInfo.message || "現在監視中、または公式情報がありません。",
+        statusFlags: flags,
+        isTemporarySearch: true, // 🟢 標記為臨時搜尋卡片，讓面板知道要加上「新增按鈕」
+        detail: ['検索結果', '-', '-', '-'], // 產生隱形柱子撐住高度用的假資料
+        detailedLines: [{
+            id: routeId,
+            name: route.name,
+            company: route.company,
+            status: statusInfo.status_type || "情報なし",
+            message: msg,
+            delay: statusInfo.delay_minutes || 0,
+            updateTime: statusInfo.update_time || "--:--",
+            isDelayed: isDelayed,
+            isError: isError,
+            isAttention: isAttention,
+            advancedDetails: statusInfo.advanced_details || []
+        }]
+    };
 
+    // 寫入記憶體 (注意：我們沒有呼叫 renderCards()，所以首頁不會生出這張卡片)
+    const tempIndex = window.appRailwayData.findIndex(c => c.id === 'temp-search-route');
+    if (tempIndex !== -1) window.appRailwayData[tempIndex] = tempCard;
+    else window.appRailwayData.push(tempCard);
+
+    // 4. 等待 250ms，讓手機鍵盤完全縮下去、螢幕高度歸位後，呼叫卡片引擎彈出！
     setTimeout(() => {
-        window.openInfoOverlay(route.hex || '#2C2C2E', contentHTML);
+        handleCardClick('temp-search-route');
     }, 250);
 };
 
