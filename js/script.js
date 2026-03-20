@@ -580,47 +580,30 @@ function handleCardClick(id) {
 
     if (data.detailedLines && data.detailedLines.length > 0) {
         data.detailedLines.forEach(line => {
-            let statusColor = '#30d158'; 
-            let statusBg = 'rgba(48, 209, 88, 0.15)';
-            let statusBorder = 'rgba(48, 209, 88, 0.3)';
-
-            if (line.isError) {
-                statusColor = '#ff9f0a'; statusBg = 'rgba(255, 159, 10, 0.15)'; statusBorder = 'rgba(255, 159, 10, 0.3)';
-            } else if (line.isAttention) {
-                statusColor = '#ffffff'; statusBg = 'rgba(255, 255, 255, 0.15)'; statusBorder = 'rgba(255, 255, 255, 0.3)';
-            } else if (line.isDelayed) {
-                statusColor = '#ff453a'; statusBg = 'rgba(255, 69, 58, 0.15)'; statusBorder = 'rgba(255, 69, 58, 0.3)';
-            }
+            // 🟢 1. 用 Class 決定狀態顏色，取代原本寫死的色碼
+            let statusClass = 'status-normal';
+            if (line.isError) statusClass = 'status-error';
+            else if (line.isAttention) statusClass = 'status-attention';
+            else if (line.isDelayed) statusClass = 'status-delayed';
 
             const delayText = line.delay > 0 ? ` (${line.delay}分)` : '';
 
             const row = document.createElement('div');
-            row.style.cssText = `
-                background: rgba(30, 30, 32, 0.65);
-                backdrop-filter: blur(25px);
-                -webkit-backdrop-filter: blur(25px);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                border-radius: 24px; 
-                padding: 18px 24px;
-                display: flex;
-                flex-direction: column;
-                gap: 12px;
-                box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-                flex-shrink: 0;
-            `;
+            row.className = 'extension-route-card'; // 🟢 2. 掛上主卡片的 Class
 
             let advancedHtml = '';
             if (line.advancedDetails && line.advancedDetails.length > 0) {
                 advancedHtml = `
-                    <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px; margin-bottom: 6px;">
+                    <div class="adv-details-container">
                         ${line.advancedDetails.map(adv => {
                             const isDirDelayed = adv.max_delay > 0;
-                            const dirDelayText = isDirDelayed ? `<span style="color: #ff453a; font-weight: 800;">${adv.max_delay}分遅れ</span>` : `<span style="color: #30d158; font-weight: 600;">平常</span>`;
-                            const trainCountText = adv.train_count > 0 ? `<span style="font-size: 0.85em; opacity: 0.5; margin-right: 8px;">(${adv.train_count}列車)</span>` : '';
+                            // 🟢 3. 延誤與平常狀態也改用 Class
+                            const dirDelayHtml = isDirDelayed ? `<span class="adv-delay-text">${adv.max_delay}分遅れ</span>` : `<span class="adv-normal-text">平常</span>`;
+                            const trainCountHtml = adv.train_count > 0 ? `<span class="adv-train-count">(${adv.train_count}列車)</span>` : '';
                             return `
-                                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; padding: 8px 12px; background: rgba(0, 0, 0, 0.25); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);">
-                                    <span style="color: rgba(255, 255, 255, 0.9); font-weight: 600;">${adv.direction_name}</span>
-                                    <div style="display: flex; align-items: center;">${trainCountText}${dirDelayText}</div>
+                                <div class="adv-detail-capsule">
+                                    <span class="adv-dir-name">${adv.direction_name}</span>
+                                    <div class="adv-status-group">${trainCountHtml}${dirDelayHtml}</div>
                                 </div>
                             `;
                         }).join('')}
@@ -628,21 +611,22 @@ function handleCardClick(id) {
                 `;
             }
 
+            // 🟢 4. 畫面結構更乾淨，將所有樣式交給 CSS 管理
             row.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <div style="font-weight: 800; font-size: 1.15em; color: #fff; letter-spacing: 0.5px;">${line.name}</div>
-                        <div style="font-size: 0.75em; color: rgba(255,255,255,0.5); font-weight: 600;">${line.company}</div>
+                <div class="ext-card-header">
+                    <div class="ext-card-title-group">
+                        <div class="ext-route-name">${line.name}</div>
+                        <div class="ext-route-company">${line.company}</div>
                     </div>
-                    <div style="background: ${statusBg}; color: ${statusColor}; border: 1px solid ${statusBorder}; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 800; white-space: nowrap;">
+                    <div class="ext-status-badge ${statusClass}">
                         ${line.status}${delayText}
                     </div>
                 </div>
-                <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.08);"></div>
-                <div style="font-size: 0.9em; color: rgba(255,255,255,0.85); line-height: 1.5; font-weight: 500;">${line.message}</div>
+                <div class="ext-card-divider"></div>
+                <div class="ext-card-message">${line.message}</div>
                 ${advancedHtml}
-                <div style="display: flex; justify-content: flex-end; align-items: center; margin-top: -4px;">
-                    <span style="font-size: 0.75em; color: rgba(255,255,255,0.4); font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                <div class="ext-card-footer">
+                    <span class="ext-update-time">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                         更新: ${line.updateTime}
                     </span>
@@ -650,6 +634,7 @@ function handleCardClick(id) {
             `;
             extension.appendChild(row);
         });
+        
         if (data.isTemporarySearch) {
             const addBtn = document.createElement('button');
             addBtn.innerHTML = '看板に追加する';

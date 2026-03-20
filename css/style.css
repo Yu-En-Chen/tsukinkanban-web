@@ -2700,3 +2700,97 @@ body:has(.universal-window.is-active) .left-capsule {
        width: 0 !important;
        height: 0 !important;
    }
+
+   /* ==========================================================================
+   🟢 實心玻璃面板內的路線詳細卡片 (支援深淺模式自動適應)
+   ========================================================================== */
+
+/* 🌅 預設：淺色模式 (Light Mode) */
+.extension-route-card {
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 24px;
+    padding: 18px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04);
+    flex-shrink: 0;
+}
+
+.ext-card-header { display: flex; justify-content: space-between; align-items: center; }
+.ext-card-title-group { display: flex; flex-direction: column; gap: 4px; }
+
+.ext-route-name {
+    font-weight: 800; font-size: 1.15em;
+    color: rgba(0, 0, 0, 0.9); letter-spacing: 0.5px;
+}
+.ext-route-company { font-size: 0.75em; color: rgba(0, 0, 0, 0.5); font-weight: 600; }
+
+.ext-status-badge {
+    padding: 6px 12px; border-radius: 20px;
+    font-size: 0.85em; font-weight: 800; white-space: nowrap;
+}
+
+/* 淺色模式：狀態徽章顏色調校 */
+.status-normal { background: rgba(48, 209, 88, 0.15); color: #24a144; border: 1px solid rgba(48, 209, 88, 0.3); }
+.status-error { background: rgba(255, 159, 10, 0.15); color: #d07d00; border: 1px solid rgba(255, 159, 10, 0.3); }
+.status-delayed { background: rgba(255, 69, 58, 0.15); color: #d70015; border: 1px solid rgba(255, 69, 58, 0.3); }
+.status-attention { background: rgba(0, 0, 0, 0.08); color: rgba(0, 0, 0, 0.7); border: 1px solid rgba(0, 0, 0, 0.15); }
+
+.ext-card-divider { width: 100%; height: 1px; background: rgba(0, 0, 0, 0.08); }
+.ext-card-message { font-size: 0.9em; color: rgba(0, 0, 0, 0.85); line-height: 1.5; font-weight: 500; }
+.ext-card-footer { display: flex; justify-content: flex-end; align-items: center; margin-top: -4px; }
+.ext-update-time { font-size: 0.75em; color: rgba(0, 0, 0, 0.4); font-weight: 600; display: flex; align-items: center; gap: 4px; }
+
+/* ⬇️ 你最在意的部分：方向與延誤膠囊方塊 */
+.adv-details-container { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; margin-bottom: 6px; }
+
+.adv-detail-capsule {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.85em; padding: 8px 12px; border-radius: 8px;
+    /* 淺色模式：微透明的白/灰色底 */
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.adv-dir-name { color: rgba(0, 0, 0, 0.85); font-weight: 600; }
+.adv-status-group { display: flex; align-items: center; }
+.adv-train-count { font-size: 0.85em; opacity: 0.6; margin-right: 8px; color: rgba(0, 0, 0, 0.8); }
+.adv-delay-text { color: #d70015; font-weight: 800; } /* 淺色模式的深紅色更耐看 */
+.adv-normal-text { color: #24a144; font-weight: 600; }
+
+/* =========================================
+   🌃 深色模式自動覆蓋 (Dark Mode)
+   ========================================= */
+@media (prefers-color-scheme: dark) {
+    .extension-route-card {
+        background: rgba(30, 30, 32, 0.65);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+
+    .ext-route-name { color: #fff; }
+    .ext-route-company { color: rgba(255, 255, 255, 0.5); }
+    
+    .status-normal { color: #30d158; }
+    .status-error { color: #ff9f0a; }
+    .status-delayed { color: #ff453a; }
+    .status-attention { background: rgba(255, 255, 255, 0.15); color: #fff; border: 1px solid rgba(255, 255, 255, 0.3); }
+
+    .ext-card-divider { background: rgba(255, 255, 255, 0.08); }
+    .ext-card-message { color: rgba(255, 255, 255, 0.85); }
+    .ext-update-time { color: rgba(255, 255, 255, 0.4); }
+
+    /* 深色模式：方向與延誤膠囊方塊 */
+    .adv-detail-capsule {
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .adv-dir-name { color: rgba(255, 255, 255, 0.9); }
+    .adv-train-count { color: rgba(255, 255, 255, 0.8); }
+    .adv-delay-text { color: #ff453a; }
+    .adv-normal-text { color: #30d158; }
+}
