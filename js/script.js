@@ -407,65 +407,81 @@ mainStack.addEventListener('click', (e) => {
     if (activeCardId && e.target === mainStack) closeAllCards(false);
 });
 
+// ============================================================================
+// 🟢 智慧型局部渲染引擎 (保留 CSS 動畫與 DOM 狀態版)
+// ============================================================================
 function renderCards(data) {
     if (data.length === 0) {
         mainStack.innerHTML = '<p style="text-align:center; padding:40px; color:#666;">該当する駅・路線が見つかりません</p>';
         return;
     }
 
-    mainStack.innerHTML = '';
+    // 🚨 只有當目前畫面是「無資料的文字段落」時，我們才清空它
+    if (mainStack.querySelector('p')) {
+        mainStack.innerHTML = '';
+    }
+
     const template = document.getElementById('railway-card-template');
+    
+    // 紀錄這次拿到的所有合法卡片 ID，用來最後清理被刪除的卡片
+    const currentValidIds = data.map(line => `card-${line.id}`);
 
     data.forEach((line, index) => {
-        const clone = template.content.cloneNode(true);
-        const card = clone.querySelector('.card');
+        // 🟢 智慧比對：這張卡片的 DOM 已經存在畫面上嗎？
+        let card = document.getElementById(`card-${line.id}`);
+        let isNewCard = false;
 
-        card.id = `card-${line.id}`;
-        card.style.background = applyThemeToCard(card, line.hex);
-
-        if (isInitialLoad) {
-            card.classList.add('opening-pull');
-            card.style.animationDelay = `${(data.length - index) * 0.08}s`;
+        if (!card) {
+            // 👉 A. 如果不存在 (初次載入或新增卡片)，我們才「建立」新節點
+            isNewCard = true;
+            const clone = template.content.cloneNode(true);
+            card = clone.querySelector('.card');
+            card.id = `card-${line.id}`;
+            
+            // 綁定點擊事件
+            card.onclick = () => handleCardClick(line.id);
+            
+            // ⭐️ 動畫守護者：只有「全新建立」的卡片，才需要掛上波浪進場動畫
+            if (isInitialLoad) {
+                card.classList.add('opening-pull');
+                card.style.animationDelay = `${(data.length - index) * 0.08}s`;
+            }
+            
+            // 先放進畫面中 (這樣下面的 querySelector 才能修改它)
+            mainStack.appendChild(clone);
         }
 
-        // 🟢 核心修復：狀態繼承 (State Restoration)
-        // 檢查如果這張卡片正是現在打開的那張，強制讓它在重新渲染後依然保持隱形與升起待命的狀態
+        // 👉 B. 無縫資料更新 (無論新舊卡片都會執行，且「絕對不會」打斷 CSS 動畫)
+        
+        // 重新套用最新光影與背景色
+        applyThemeToCard(card, line.hex);
+
+        // 如果這張卡片正是現在展開的那張，維持它的隱形待命狀態
         if (activeCardId === line.id) {
             card.classList.add('hidden-placeholder', 'lifted-state');
             card.style.transform = 'translate3d(0, -100px, 0)';
         }
 
-        card.onclick = () => handleCardClick(line.id);
+        // 🟢 核心：精準替換文字與圖示 (完全不摧毀外層的 .card)
+        card.querySelector('.line-name').textContent = line.name;
+        card.querySelector('.status-tag').innerHTML = window.getStatusIconsHTML(line.statusFlags || []);
+        card.querySelector('.description').textContent = line.desc;
 
-        // --- 🟢 新增：手機/iPad 觸控螢幕的 Haptic Touch 長按浮起邏輯 ---
-        let pressTimer = null;
-        let startY = 0;
-        let isLifted = false;
-
-
-        // --- 結束新增 ---
-
-        clone.querySelector('.line-name').textContent = line.name;
-        clone.querySelector('.status-tag').innerHTML = window.getStatusIconsHTML(line.statusFlags || []);
-        clone.querySelector('.description').textContent = line.desc;
-
-        const tagsContainer = clone.querySelector('.info-tags-container');
+        // 更新底下的假資料與膠囊資訊 (完整保留你原本的假資料邏輯)
+        const tagsContainer = card.querySelector('.info-tags-container');
         if (tagsContainer) {
             tagsContainer.className = 'vertical-info-list';
-            tagsContainer.innerHTML = '';
+            tagsContainer.innerHTML = ''; // 這裡清空膠囊是安全的，因為不影響外層動畫
             
-            // ✨ 測試用假資料，強制生成 4 個「膠囊 + 圓形」
             const dummyTexts = ['運行状況：平常運転', '現在の混雑度：ゆったり', '次の列車：快速', '車両編成：8両編成'];
             const dummyCircles = ['◎', '空', '5分', '8両'];
 
-            // 👇 這裡的迴圈要改成 i < 4
             for (let i = 0; i < 4; i++) {
                 const row = document.createElement('div');
                 row.className = 'info-list-row';
 
                 const cap = document.createElement('div');
                 cap.className = 'info-capsule';
-                // 優先使用原本的 detail，如果沒有就用假資料墊檔
                 cap.textContent = line.detail[i] || dummyTexts[i];
 
                 const cir = document.createElement('div');
@@ -477,46 +493,48 @@ function renderCards(data) {
                 tagsContainer.appendChild(row);
             }
         }
-
-        mainStack.appendChild(clone);
     });
 
+    // 🟢 垃圾回收：如果畫面上有舊卡片不在最新 data 裡，把它移除
+    Array.from(mainStack.children).forEach(child => {
+        if (child.classList.contains('card') && !currentValidIds.includes(child.id)) {
+            child.remove();
+        }
+    });
+
+    // 🟢 開場動畫結束後的鎖定機制 (維持你原本的邏輯)
     if (isInitialLoad) {
         mainStack.classList.add('just-awoke');
-
-        // 👇 加上這一行，凍結開場的光影計算 👇
         mainStack.dataset.freezeGlare = 'true';
 
         setTimeout(() => {
             isInitialLoad = false;
             document.querySelectorAll('.card').forEach(c => {
                 c.classList.remove('opening-pull');
-                c.style.animationDelay = ''; // 🟢 修復 1：開場動畫結束後，徹底清除殘留的延遲時間
+                c.style.animationDelay = ''; 
             });
+            
             const fixedCard = document.getElementById('fixed-info-card');
             if (fixedCard) fixedCard.classList.remove('opening-pull-fixed');
 
-            // 👇 加上這一行，解除光影凍結，讓 Hover 可以正常運作 👇
             mainStack.dataset.freezeGlare = 'false';
 
-            // 等 1.5 秒鋼琴動畫「徹底播完」後，才開始監聽滑鼠移動！
-            // 這樣在動畫期間不管滑鼠怎麼動，allow-hover 都絕對處於「上鎖」狀態。
             window.addEventListener('mousemove', function unlockHover() {
                 if (!mainStack.classList.contains('allow-hover')) {
                     mainStack.classList.add('allow-hover');
                 }
-
                 window.removeEventListener('mousemove', unlockHover);
             }, { once: true });
 
         }, 1500);
 
-        // 依然保留 2 秒的甦醒護身符，確保解鎖後的第一次升起是柔和的
         setTimeout(() => {
             mainStack.classList.remove('just-awoke');
         }, 2000);
     } else {
-        mainStack.classList.add('allow-hover');
+        if (!mainStack.classList.contains('allow-hover')) {
+            mainStack.classList.add('allow-hover');
+        }
     }
 }
 // ============================================================================
@@ -1511,157 +1529,166 @@ window.undoCardPreference = async function() {
 };
 
 // ============================================================================
-// 🟢 系統啟動引擎 (安全保留 ID 之群組化讀取版)
+// 🟢 獨立出資料建構與渲染引擎 (方便重複呼叫不阻塞)
+// ============================================================================
+function buildAndRender(userPrefs, routeDict, liveStatus) {
+    window.GlobalLiveStatus = liveStatus; 
+    window.MasterRouteDictionary = routeDict; 
+    window.appRailwayData = [];
+
+    const baseCards = [...railwayData]; 
+
+    for (const key in userPrefs) {
+        if ((key.startsWith('new-card-') || key.startsWith('custom-')) && !baseCards.find(r => r.id === key)) {
+            baseCards.push({
+                id: key, name: '新規カード', hex: '#2C2C2E', targetLineIds: [], detail: ['カスタマイズ可能', '-', '-', '-'] 
+            });
+        }
+    }
+
+    baseCards.forEach(card => {
+        const pref = userPrefs[card.id];
+        const finalName = pref && pref.customName ? pref.customName : card.name;
+        const finalHex = pref && pref.customHex ? pref.customHex : card.hex;
+        const finalTargetIds = pref && pref.targetLineIds ? pref.targetLineIds : (card.targetLineIds || []);
+
+        let groupStatusText = "登録路線なし";
+        let groupDesc = "路線を追加してください";
+        let groupFlags = [false, false, false, false, false, false, false];
+        let worstDelay = 0;
+        let hasError = false; let hasDelay = false; let hasAttention = false; 
+
+        const detailedLines = [];
+
+        if (finalTargetIds.length > 0) {
+            groupStatusText = "平常運転";
+            groupDesc = "すべての路線は平常通り運転しています。";
+            
+            finalTargetIds.forEach(lineId => {
+                const dictInfo = routeDict[lineId] || { name: "未知の路線", company: "不明" };
+                
+                // ⚡️ 關鍵：如果快取或 API 沒資料，預設給予「更新中」狀態
+                const statusInfo = liveStatus[lineId] || { 
+                    status_type: "更新中...", message: "最新データを取得しています...", 
+                    delay_minutes: 0, status_text: "データ取得中", update_time: "--:--" 
+                };
+
+                const msg = statusInfo.message || "";
+                const isNormalMsg = msg.includes("ありません") || msg.includes("平常") || msg.includes("正常") || msg.includes("取得しています");
+
+                let isDelayedLocal = false; let isErrorLocal = false; let isAttentionLocal = false;
+
+                if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
+                    isErrorLocal = true; hasError = true;
+                } else if (statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし" || statusInfo.status_type === "更新中...") {
+                    isAttentionLocal = true; hasAttention = true;
+                } else if (!isNormalMsg && (statusInfo.status_text.includes("異常") || msg.includes("遅延") || statusInfo.delay_minutes > 0 || (statusInfo.status_type && statusInfo.status_type.includes("見合わせ")) || (statusInfo.status_type && statusInfo.status_type.includes("運転変更")))) {
+                    isDelayedLocal = true; hasDelay = true;
+                    if (statusInfo.delay_minutes > worstDelay) worstDelay = statusInfo.delay_minutes;
+                }
+
+                detailedLines.push({
+                    id: lineId, name: dictInfo.name, company: dictInfo.company,
+                    status: statusInfo.status_type || "情報なし", message: msg,
+                    delay: statusInfo.delay_minutes || 0, updateTime: statusInfo.update_time || "--:--",
+                    url: statusInfo.url || dictInfo.url || "",
+                    isDelayed: isDelayedLocal, isError: isErrorLocal, isAttention: isAttentionLocal,
+                    advancedDetails: statusInfo.advanced_details || [] 
+                });
+            });
+
+            if (hasError) {
+                groupDesc = "一部の路線の情報を取得できません。";
+                groupFlags = [false, false, false, true, false, false, false]; 
+            } else if (hasDelay) {
+                groupDesc = `一部の路線で遅延やダイヤ乱れが発生しています。`;
+                groupFlags = [false, false, false, false, true, false, false]; 
+            } else if (hasAttention) {
+                groupDesc = "現在監視中、または公式情報がありません。";
+                groupFlags = [false, false, false, false, false, false, true]; 
+            } else {
+                groupFlags[5] = true; 
+            }
+        } else {
+            groupDesc = card.desc || groupDesc;
+            groupFlags = card.statusFlags || groupFlags;
+        }
+
+        window.appRailwayData.push({
+            id: card.id, name: finalName, hex: finalHex, desc: groupDesc,           
+            statusFlags: groupFlags, targetLineIds: finalTargetIds, detailedLines: detailedLines, 
+            isCustom: card.id.startsWith('new-card-'), detail: card.detail || ['情報なし', '-', '-', '-'] 
+        });
+    });
+
+    const orderData = userPrefs['__DISPLAY_ORDER__'];
+    if (orderData && orderData.order) {
+        window.appRailwayData.sort((a, b) => {
+            let indexA = orderData.order.indexOf(a.id);
+            let indexB = orderData.order.indexOf(b.id);
+            if (indexA === -1) indexA = 999; 
+            if (indexB === -1) indexB = 999;
+            return indexA - indexB;
+        });
+    }
+
+    let hiddenIds = [];
+    try { hiddenIds = JSON.parse(localStorage.getItem('TsukinKanban_HiddenCards') || '[]'); } catch (e) {}
+    const visibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
+    
+    // 呼叫我們剛剛升級過的智慧型 renderCards
+    renderCards(visibleData);
+    initBottomCard();
+    initDismissIcon();
+}
+
+// ============================================================================
+// 🟢 系統啟動引擎 (秒開快取 + 背景非同步更新 API 版)
 // ============================================================================
 async function initApp() {
     try {
+        // 1. 取得使用者設定 (IndexedDB 讀取，基本上是 0 毫秒)
         const userPrefs = await getAllUserPreferences();
+        
+        // ⚡️ 2. 偷吃步：嘗試從 LocalStorage 撈出「上一次關閉前」的快取資料
+        let cachedDict = {};
+        let cachedLiveStatus = {};
+        try {
+            cachedDict = JSON.parse(localStorage.getItem('Tsukin_Cached_Dict') || '{}');
+            cachedLiveStatus = JSON.parse(localStorage.getItem('Tsukin_Cached_Status') || '{}');
+        } catch(e) {}
+
+        // ⚡️ 3. 瞬間渲染！不管 API 回來沒，先用舊資料畫出 DOM，觸發波浪進場動畫 (Zero-Latency)
+        buildAndRender(userPrefs, cachedDict, cachedLiveStatus);
+
+        // ⚡️ 4. 背景非同步抓取最新資料 (此時畫面上已經開始跑鋼琴動畫了，絕不會有白畫面)
+        console.log("📡 背景正在獲取最新運行狀態...");
+        
         const DICTIONARY_API_URL = 'https://tsukinkanban-odpt.onrender.com/api/dictionary';
-        const routeDict = await syncAndLoadDictionary(DICTIONARY_API_URL);
-
-        console.log("📡 正在獲取最新運行狀態...");
         const STATUS_API_URL = 'https://tsukinkanban-odpt.onrender.com/api/status';
-        const statusRes = await fetch(STATUS_API_URL);
-        const liveStatus = await statusRes.json();
-        
-        window.GlobalLiveStatus = liveStatus; 
-        window.appRailwayData = [];
 
-        // 1. 直接拿 data.js 裡面的 5 張卡片當基底 (ID 完全不變！)
-        const baseCards = [...railwayData]; 
+        // 同時發射兩個 API 請求，節省一半等待時間
+        const [routeDict, statusRes] = await Promise.all([
+            syncAndLoadDictionary(DICTIONARY_API_URL),
+            fetch(STATUS_API_URL).catch(() => null) // 防止 API 伺服器掛掉時炸毀整個網頁
+        ]);
 
-        // 2. 將使用者的純手工自訂卡片 (new-card-) 也加入基底陣列
-        for (const key in userPrefs) {
-            if ((key.startsWith('new-card-') || key.startsWith('custom-')) && !baseCards.find(r => r.id === key)) {
-                baseCards.push({
-                    id: key,
-                    name: '新規カード',
-                    hex: '#2C2C2E',
-                    targetLineIds: [], // 新卡片預設沒有追蹤路線
-                    detail: ['カスタマイズ可能', '-', '-', '-'] // ✨ 補上這行防呆！
-                });
-            }
-        }
-
-        // 💡 3. 核心魔法：計算每張群組卡片的「綜合狀態」
-        baseCards.forEach(card => {
-            const pref = userPrefs[card.id];
-            const finalName = pref && pref.customName ? pref.customName : card.name;
-            const finalHex = pref && pref.customHex ? pref.customHex : card.hex;
+        if (statusRes && statusRes.ok) {
+            const liveStatus = await statusRes.json();
             
-            const finalTargetIds = pref && pref.targetLineIds ? pref.targetLineIds : (card.targetLineIds || []);
-
-            let groupStatusText = "登録路線なし";
-            let groupDesc = "路線を追加してください";
-            let groupFlags = [false, false, false, false, false, false, false];
-            let worstDelay = 0;
-            let hasError = false;
-            let hasDelay = false;
-            let hasAttention = false; // ✨ 新增：監視中/無資料的注意狀態
-
-            const detailedLines = [];
-
-            if (finalTargetIds.length > 0) {
-                groupStatusText = "平常運転";
-                groupDesc = "すべての路線は平常通り運転しています。";
-                
-                finalTargetIds.forEach(lineId => {
-                    const dictInfo = routeDict[lineId] || { name: "未知の路線", company: "不明" };
-                    const statusInfo = liveStatus[lineId] || { status_type: "監視中", message: "現在情報はありません。", delay_minutes: 0, status_text: "公式発表なし", update_time: "--:--" };
-
-                    const msg = statusInfo.message || "";
-                    // ✨ 修正邏輯：如果文字裡有「ありません(沒有)」，就絕對不是延誤！
-                    const isNormalMsg = msg.includes("ありません") || msg.includes("平常") || msg.includes("正常");
-
-                    let isDelayedLocal = false;
-                    let isErrorLocal = false;
-                    let isAttentionLocal = false;
-
-                    // 判斷該路線的個別狀態
-                    if (statusInfo.status_type.includes("エラー")) {
-                        isErrorLocal = true;
-                        hasError = true;
-                    } else if (statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし") {
-                        isAttentionLocal = true;
-                        hasAttention = true;
-                    } else if (!isNormalMsg && (statusInfo.status_text.includes("異常") || msg.includes("遅延") || statusInfo.delay_minutes > 0 || statusInfo.status_type.includes("見合わせ") || statusInfo.status_type.includes("運転変更"))) {
-                        isDelayedLocal = true;
-                        hasDelay = true;
-                        if (statusInfo.delay_minutes > worstDelay) worstDelay = statusInfo.delay_minutes;
-                    }
-
-                    detailedLines.push({
-                        id: lineId,
-                        name: dictInfo.name,
-                        company: dictInfo.company,
-                        status: statusInfo.status_type,
-                        message: msg,
-                        delay: statusInfo.delay_minutes,
-                        updateTime: statusInfo.update_time,
-                        url: statusInfo.url || dictInfo.url,
-                        isDelayed: isDelayedLocal,
-                        isError: isErrorLocal,
-                        isAttention: isAttentionLocal,
-                        // ✨ 補上這行：把後端傳來的各方向詳細資料接接起來！如果沒有就給空陣列
-                        advancedDetails: statusInfo.advanced_details || [] 
-                    });
-                });
-
-                // ✨ 決定群組主卡片的「外觀燈號與文字」
-                if (hasError) {
-                    groupDesc = "一部の路線の情報を取得できません。";
-                    groupFlags = [false, false, false, true, false, false, false]; // 亮第4顆 (打叉錯誤)
-                } else if (hasDelay) {
-                    groupDesc = `一部の路線で遅延やダイヤ乱れが発生しています。`;
-                    groupFlags = [false, false, false, false, true, false, false]; // 亮第5顆 (三角形延誤)
-                } else if (hasAttention) {
-                    groupDesc = "現在監視中、または公式情報がありません。";
-                    groupFlags = [false, false, false, false, false, false, true]; // ✨ 亮最後一顆 (白色驚嘆號/注意)
-                } else {
-                    groupFlags[5] = true; // 亮第6顆 (圓形正常)
-                }
-            } else {
-                groupDesc = card.desc || groupDesc;
-                groupFlags = card.statusFlags || groupFlags;
-            }
-
-            window.appRailwayData.push({
-                id: card.id,               
-                name: finalName,           
-                hex: finalHex,
-                desc: groupDesc,           
-                statusFlags: groupFlags,   
-                targetLineIds: finalTargetIds,
-                detailedLines: detailedLines, 
-                isCustom: card.id.startsWith('new-card-'),
-                detail: card.detail || ['情報なし', '-', '-', '-'] 
-            });
-        });
-
-        // 4. 執行自訂排序
-        const orderData = userPrefs['__DISPLAY_ORDER__'];
-        if (orderData && orderData.order) {
-            window.appRailwayData.sort((a, b) => {
-                let indexA = orderData.order.indexOf(a.id);
-                let indexB = orderData.order.indexOf(b.id);
-                if (indexA === -1) indexA = 999; 
-                if (indexB === -1) indexB = 999;
-                return indexA - indexB;
-            });
+            // 寫入快取，供下一次使用者打開網頁時秒開使用
+            localStorage.setItem('Tsukin_Cached_Dict', JSON.stringify(routeDict));
+            localStorage.setItem('Tsukin_Cached_Status', JSON.stringify(liveStatus));
+            
+            // ⚡️ 5. 拿到真實資料了，無縫重繪畫面！(智慧渲染引擎會確保動畫不中斷)
+            console.log("✅ 最新狀態獲取成功，更新畫面！");
+            buildAndRender(userPrefs, routeDict, liveStatus);
+        } else {
+            console.warn("⚠️ 背景狀態 API 獲取失敗，維持快取畫面");
         }
-
-        // 5. 隱藏過濾與渲染
-        let hiddenIds = [];
-        try { hiddenIds = JSON.parse(localStorage.getItem('TsukinKanban_HiddenCards') || '[]'); } catch (e) {}
-        const visibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
-        
-        renderCards(visibleData);
-        initBottomCard();
-        initDismissIcon();
 
     } catch (error) {
-        console.error("系統初始化失敗:", error);
-        mainStack.innerHTML = '<p style="text-align:center; padding:40px; color:#666;">資料載入失敗，請檢查網路連線或 API 狀態</p>';
+        console.error("系統初始化發生非預期錯誤:", error);
     }
 }
 
