@@ -2376,6 +2376,13 @@ window.triggerBackgroundUpdate = async function() {
 
         // 3. ✨ 只有在首頁閒置時，才觸發華麗的漣漪進場動畫
         if (isIdleOnMainPage) {
+            const mainStack = document.getElementById('main-stack');
+            
+            // 🚨 核心防護 1：動畫期間暫時鎖住 JS 物理光影引擎，並關閉 Hover 避免打架
+            mainStack.classList.add('just-awoke');
+            mainStack.dataset.freezeGlare = 'true';
+            mainStack.classList.remove('allow-hover'); 
+
             const cards = Array.from(document.querySelectorAll('.card'));
             cards.forEach((c, index) => {
                 c.classList.remove('opening-pull');
@@ -2390,6 +2397,33 @@ window.triggerBackgroundUpdate = async function() {
                 void fixedCard.offsetWidth;
                 fixedCard.classList.add('opening-pull-fixed');
             }
+
+            // 🚨 核心防護 2：1.5 秒動畫結束後，拔除 CSS 動畫標籤，並重新解鎖互動！
+            setTimeout(() => {
+                cards.forEach(c => {
+                    c.classList.remove('opening-pull'); // 拔掉動畫標籤，歸還控制權
+                    c.style.animationDelay = '';
+                });
+                if (fixedCard) {
+                    fixedCard.classList.remove('opening-pull-fixed');
+                }
+                
+                mainStack.dataset.freezeGlare = 'false'; // 解鎖物理光影引擎
+                
+                // 重新綁定滑鼠移動解鎖 hover (完美復刻初次載入時的防呆機制)
+                window.addEventListener('mousemove', function unlockHover() {
+                    if (!mainStack.classList.contains('allow-hover')) {
+                        mainStack.classList.add('allow-hover');
+                    }
+                    window.removeEventListener('mousemove', unlockHover);
+                }, { once: true });
+                
+            }, 1500);
+
+            // 移除剛甦醒的狀態標籤
+            setTimeout(() => {
+                mainStack.classList.remove('just-awoke');
+            }, 2000);
         }
 
     } catch (error) {
