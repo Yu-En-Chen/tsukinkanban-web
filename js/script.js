@@ -1574,15 +1574,16 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
 
         let groupStatusText = "登録路線なし";
         let groupDesc = "路線を追加してください";
-        // 預設全部暗燈
         let groupFlags = [false, false, false, false, false, false, false];
         let worstDelay = 0;
         
-        // 🟢 核心修改：新增 hasNormal 變數，用來獨立記錄「是否有正常的路線」
-        let hasError = false; 
-        let hasDelay = false; 
-        let hasAttention = false; 
-        let hasNormal = false; 
+        let hasError = false;     // 系統連線錯誤
+        let hasSevere = false;    // ✨ 新增：嚴重異常 (>15分 或 停駛無時間)
+        let hasDelay = false;     // 一般延誤 (6~15分)
+        let hasAttention = false; // 監視中
+        let hasNormal = false;    // 正常 (0~5分)
+        
+        let groupUpdateTime = ""; 
 
         const detailedLines = [];
 
@@ -1608,57 +1609,87 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                 const msg = statusInfo.message || "";
                 const isNormalMsg = msg.includes("ありません") || msg.includes("平常") || msg.includes("正常") || msg.includes("取得しています");
 
-                let isDelayedLocal = false; let isErrorLocal = false; let isAttentionLocal = false;
+                // 🟢 狀態變數宣告
+                let isDelayedLocal = false; 
+                let isSevereLocal = false;
+                let isErrorLocal = false; 
+                let isAttentionLocal = false;
+                let delay = statusInfo.delay_minutes || 0;
 
-                // 判斷單一路線狀態
+                // 判斷是否為「無回報時間，但文字顯示異常/停駛」
+                let isTextAbnormal = !isNormalMsg && (statusInfo.status_text.includes("異常") || msg.includes("遅延") || (statusInfo.status_type && statusInfo.status_type.includes("見合わせ")) || (statusInfo.status_type && statusInfo.status_type.includes("運転変更")));
+
+                // 🌟 新版精準燈號判定邏輯
                 if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
                     isErrorLocal = true; hasError = true;
                 } else if (statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし" || statusInfo.status_type === "更新中...") {
                     isAttentionLocal = true; hasAttention = true;
-                } else if (!isNormalMsg && (statusInfo.status_text.includes("異常") || msg.includes("遅延") || statusInfo.delay_minutes > 0 || (statusInfo.status_type && statusInfo.status_type.includes("見合わせ")) || (statusInfo.status_type && statusInfo.status_type.includes("運転変更")))) {
-                    isDelayedLocal = true; hasDelay = true;
-                    if (statusInfo.delay_minutes > worstDelay) worstDelay = statusInfo.delay_minutes;
+                } else if (delay > 0) {
+                    // 👉 有具體延遲分鐘數時的判斷：
+                    if (delay <= 5) {
+                        isDelayedLocal = true; // 讓詳細卡片內保持黃色輕微延誤字眼
+                        hasNormal = true;      // ✨ 5分(含)以內：主卡片亮綠燈 (圓形)
+                    } else if (delay <= 15) {
+                        isDelayedLocal = true; 
+                        hasDelay = true;       // ✨ 6~15分：主卡片亮紅燈 (三角形)
+                    } else {
+                        isSevereLocal = true;
+                        hasSevere = true;      // ✨ 超過15分：主卡片亮叉叉
+                    }
+                    if (delay > worstDelay) worstDelay = delay;
+                    
+                } else if (isTextAbnormal) {
+                    // 👉 沒回報分鐘數，但官方宣佈異常/停駛：
+                    isSevereLocal = true;
+                    hasSevere = true;          // ✨ 一律視為嚴重狀態：亮叉叉
                 } else {
-                    // 🟢 如果以上都不是，代表這條線是正常的！
-                    hasNormal = true;
+                    // 👉 沒回報分鐘數，且文字顯示平常：
+                    hasNormal = true;          // ✨ 亮綠燈 (圓形)
                 }
+
+                // ✨ 時間萃取邏輯
+                let timeStr = statusInfo.update_time;
+                if (!timeStr || timeStr === "" || timeStr === "--:--") {
+                    timeStr = "--:--";
+                } else if (timeStr === "----" || timeStr === "本日公式発表なし") {
+                    timeStr = "公式発表なし"; 
+                }
+
+                if (groupUpdateTime === "") groupUpdateTime = timeStr; 
+                if (isDelayedLocal || isSevereLocal || isErrorLocal || isAttentionLocal) groupUpdateTime = timeStr; 
 
                 detailedLines.push({
                     id: lineId, name: dictInfo.name, company: dictInfo.company,
                     status: statusInfo.status_type || "情報なし", message: msg,
-                    delay: statusInfo.delay_minutes || 0, updateTime: statusInfo.update_time || "--:--",
-                    url: statusInfo.url || dictInfo.url || "",
-                    isDelayed: isDelayedLocal, isError: isErrorLocal, isAttention: isAttentionLocal,
+                    delay: delay, updateTime: timeStr, url: statusInfo.url || dictInfo.url || "",
+                    
+                    // 將 Severe 狀態視為 Delayed 傳給詳細卡片，確保它顯示醒目的紅色
+                    isDelayed: isDelayedLocal || isSevereLocal, 
+                    isError: isErrorLocal, isAttention: isAttentionLocal,
                     advancedDetails: statusInfo.advanced_details || [] 
                 });
             });
 
-            // ====================================================
-            // ✨ 魔法發生的地方：多重燈號共存邏輯 (Additive Flags)
-            // 不再使用 else if，只要該狀態存在，對應的燈就強制點亮！
-            // ====================================================
-            if (hasError)     groupFlags[3] = true; // 第4顆：打叉 (錯誤)
-            if (hasDelay)     groupFlags[4] = true; // 第5顆：三角形 (延誤)
-            if (hasNormal)    groupFlags[5] = true; // 第6顆：圓形 (正常)
-            if (hasAttention) groupFlags[6] = true; // 第7顆：驚嘆號 (注意/更新中)
+            // 🟢 多重燈號共存寫入陣列
+            if (hasError || hasSevere) groupFlags[3] = true; // 第4顆：打叉 ❌ (系統錯誤 或 嚴重延誤停駛)
+            if (hasDelay)              groupFlags[4] = true; // 第5顆：三角形 ⚠️ (6~15分延誤)
+            if (hasNormal)             groupFlags[5] = true; // 第6顆：圓形 🟢 (0~5分正常)
+            if (hasAttention)          groupFlags[6] = true; // 第7顆：驚嘆號 ❕ (監視中)
 
-            // ====================================================
-            // ✨ 智慧文字描述生成：因為燈號可以多重亮起，文字說明需依照「嚴重程度」給出最適合的結論
-            // ====================================================
+            // ✨ 智慧文字描述生成 (依照嚴重程度給予精準說明)
             if (isOffline) {
                 groupDesc = "サーバーとの通信に失敗しました。ネットワークを確認してください。";
             } else if (hasError) {
                 groupDesc = "一部の路線の情報を取得できません。";
+            } else if (hasSevere) {
+                groupDesc = "一部の路線で大幅な遅延、または運転見合わせが発生しています。"; // ✨ 新增：嚴重延誤說明
             } else if (hasDelay) {
-                groupDesc = `一部の路線で遅延やダイヤ乱れが発生しています。`;
-            } else if (hasNormal && hasAttention && !hasError && !hasDelay) {
-                // 🟢 特殊混和狀態：有的正常，有的還在讀取/無資料
+                groupDesc = "一部の路線で遅延やダイヤ乱れが発生しています。";
+            } else if (hasNormal && hasAttention && !hasError && !hasSevere && !hasDelay) {
                 groupDesc = "一部の路線は平常運転、その他は情報確認中です。";
-            } else if (hasAttention && !hasNormal && !hasError && !hasDelay) {
-                // 只有注意狀態
+            } else if (hasAttention && !hasNormal && !hasError && !hasSevere && !hasDelay) {
                 groupDesc = "現在監視中、または公式情報がありません。";
-            } else if (hasNormal && !hasError && !hasDelay && !hasAttention) {
-                // 完美狀態
+            } else if (hasNormal && !hasError && !hasSevere && !hasDelay && !hasAttention) {
                 groupDesc = "すべての路線は平常通り運転しています。";
             }
 
@@ -1670,7 +1701,8 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
         window.appRailwayData.push({
             id: card.id, name: finalName, hex: finalHex, desc: groupDesc,           
             statusFlags: groupFlags, targetLineIds: finalTargetIds, detailedLines: detailedLines, 
-            isCustom: card.id.startsWith('new-card-'), detail: card.detail || ['情報なし', '-', '-', '-'] 
+            isCustom: card.id.startsWith('new-card-'), detail: card.detail || ['情報なし', '-', '-', '-'],
+            updateTime: groupUpdateTime 
         });
     });
 
