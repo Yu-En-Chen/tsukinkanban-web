@@ -1184,11 +1184,10 @@ function initBottomCard() {
 }
 
 // ============================================================================
-// 🟢 首頁專屬：全域混合搜尋引擎 (相容原生鍵盤鎖定 + 動態高度版)
+// 🟢 首頁專屬：全域混合搜尋引擎 (相容原生鍵盤鎖定 + 動態高度版 + 暴力無視減號)
 // ============================================================================
 function filterCards(keyword) {
     isInitialLoad = false;
-    const lowKeyword = keyword.toLowerCase().trim();
     const mainStack = document.getElementById('main-stack');
 
     // 1. 確保懸浮下拉選單容器存在
@@ -1203,9 +1202,8 @@ function filterCards(keyword) {
             transform: translateX(-50%);
             width: calc(100% - 32px);
             max-width: 400px;
-            /* ✨ 高度不寫死，交給下方的 JS 動態計算鍵盤高度 */
             overflow-y: auto;
-            -webkit-overflow-scrolling: touch; /* ✨ 確保 iOS 內部滑動極致順暢 */
+            -webkit-overflow-scrolling: touch; 
             overscroll-behavior: contain;
             z-index: 99999;
             display: none;
@@ -1214,12 +1212,10 @@ function filterCards(keyword) {
             padding-bottom: 20px;
         `;
         
-        // ✨ 防護網 1：阻止滑動事件往外傳遞，絕不干擾 header.js 的鎖定！
         dropdown.addEventListener('touchmove', (e) => {
             e.stopPropagation();
         }, { passive: true });
 
-        // ✨ 防護網 2：監聽手機鍵盤彈出！動態縮小面板高度，保證絕不超出螢幕
         if (window.visualViewport) {
             window.visualViewport.addEventListener('resize', () => {
                 if (dropdown.style.display === 'flex') {
@@ -1227,18 +1223,21 @@ function filterCards(keyword) {
                 }
             });
         }
-
         document.body.appendChild(dropdown);
     }
 
+    // ✨ 終極暴力破解：支援頓號多重搜尋，且絕對無視「-」與空白
+    const searchKeywords = keyword.split('、')
+                                  .map(k => k.toLowerCase().replace(/[- ]/g, '').trim()) // 暴力把 - 跟空白拔光！
+                                  .filter(k => k.length > 0);
+
     // 2. 如果清空或取消搜尋框，隱藏選單、恢復主畫面
-    if (!lowKeyword) {
+    if (searchKeywords.length === 0) {
         dropdown.style.display = 'none';
-        // ✨ 移除上一版的 document.body... 把鎖定/解鎖的權力完全還給你的 header.js！
+        mainStack.style.transition = 'opacity 0.3s ease, filter 0.3s ease';
         mainStack.style.opacity = '1';
         mainStack.style.pointerEvents = 'auto';
         mainStack.style.filter = 'none';
-        mainStack.style.transition = 'opacity 0.3s ease, filter 0.3s ease';
         return;
     }
 
@@ -1246,68 +1245,81 @@ function filterCards(keyword) {
     const dict = window.MasterRouteDictionary || {};
     const liveStatus = window.GlobalLiveStatus || {};
     const searchResults = [];
-    const seenNames = new Set();
+    const seenNames = new Set(); // 防止多重搜尋時跑出重複路線
 
-    // A. 遍歷雲端字典
-    for (const rw_id in dict) {
-        const route = dict[rw_id];
-        if (route.name.toLowerCase().includes(lowKeyword) || route.company.toLowerCase().includes(lowKeyword)) {
-            if (seenNames.has(route.name)) continue;
-            seenNames.add(route.name);
-
-            const statusInfo = liveStatus[rw_id] || { status_type: "監視中", message: "", delay_minutes: 0, status_text: "" };
-            const msg = statusInfo.message || "";
-            const isNormalMsg = msg.includes("ありません") || msg.includes("平常") || msg.includes("正常");
+    // ✨ 迴圈啟動：針對每一個被頓號切開的詞獨立搜尋
+    searchKeywords.forEach(lowKeyword => {
+        
+        // A. 遍歷雲端鐵道字典
+        for (const rw_id in dict) {
+            const route = dict[rw_id];
             
-            let isDelayed = false;
-            let isError = false;
-            let isAttention = false;
+            // ✨ 把目標名稱裡的「-」也暴力拔除，兩邊都光溜溜的一定對得上！
+            const rName = (route.name || '').toLowerCase().replace(/[- ]/g, '');
+            const rComp = (route.company || '').toLowerCase().replace(/[- ]/g, '');
+            const rKana = (route.kana || '').toLowerCase().replace(/[- ]/g, '');
+            const rEn = (route.en || '').toLowerCase().replace(/[- ]/g, '');
 
-            if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
-                isError = true;
-            } else if (statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし") {
-                isAttention = true;
-            } else if (!isNormalMsg && (statusInfo.delay_minutes > 0 || statusInfo.status_text.includes("異常") || msg.includes("遅延") || (statusInfo.status_type && statusInfo.status_type.includes("見合わせ")) || (statusInfo.status_type && statusInfo.status_type.includes("運転変更")))) {
-                isDelayed = true;
+            if (rName.includes(lowKeyword) || rComp.includes(lowKeyword) || rKana.includes(lowKeyword) || rEn.includes(lowKeyword)) {
+                if (seenNames.has(route.name)) continue;
+                seenNames.add(route.name);
+
+                const statusInfo = liveStatus[rw_id] || { status_type: "監視中", message: "", delay_minutes: 0, status_text: "" };
+                const msg = statusInfo.message || "";
+                const isNormalMsg = msg.includes("ありません") || msg.includes("平常") || msg.includes("正常");
+                
+                let isDelayed = false, isError = false, isAttention = false;
+
+                if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
+                    isError = true;
+                } else if (statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし") {
+                    isAttention = true;
+                } else if (!isNormalMsg && (statusInfo.delay_minutes > 0 || statusInfo.status_text.includes("異常") || msg.includes("遅延") || (statusInfo.status_type && statusInfo.status_type.includes("見合わせ")) || (statusInfo.status_type && statusInfo.status_type.includes("運転変更")))) {
+                    isDelayed = true;
+                }
+
+                let flags = [false, false, false, false, false, false, false];
+                if (isError) flags[3] = true;
+                else if (isAttention) flags[6] = true;
+                else if (isDelayed) flags[4] = true;
+                else flags[5] = true;
+
+                searchResults.push({
+                    id: rw_id,
+                    name: route.name,
+                    company: route.company,
+                    statusFlags: flags,
+                    delayMinutes: statusInfo.delay_minutes || 0
+                });
             }
-
-            // 完美轉換七燈號
-            let flags = [false, false, false, false, false, false, false];
-            if (isError) flags[3] = true;
-            else if (isAttention) flags[6] = true;
-            else if (isDelayed) flags[4] = true;
-            else flags[5] = true;
-
-            searchResults.push({
-                id: rw_id,
-                name: route.name,
-                company: route.company,
-                statusFlags: flags,
-                delayMinutes: statusInfo.delay_minutes || 0
-            });
         }
-    }
 
-    // B. 遍歷自訂卡片
-    const customCards = window.appRailwayData.filter(c => c.isCustom && c.name.toLowerCase().includes(lowKeyword));
-    customCards.forEach(c => {
-        if (!seenNames.has(c.name)) {
-            seenNames.add(c.name);
-            searchResults.push({
-                id: c.id,
-                name: c.name,
-                company: 'カスタムカード',
-                statusFlags: [false, false, false, false, false, false, false],
-                delayMinutes: 0
+        // B. 遍歷自訂卡片
+        const customCards = window.appRailwayData.filter(c => c.isCustom && c.name.toLowerCase().replace(/[- ]/g, '').includes(lowKeyword));
+        customCards.forEach(c => {
+            if (!seenNames.has(c.name)) {
+                seenNames.add(c.name);
+                searchResults.push({
+                    id: c.id,
+                    name: c.name,
+                    company: 'カスタムカード',
+                    statusFlags: [false, false, false, false, false, false, false],
+                    delayMinutes: 0
+                });
+            }
+        });
+
+        // C. ✈️ 呼叫航班搜尋
+        if (typeof searchFlights === 'function') {
+            const flightResults = searchFlights(lowKeyword);
+            flightResults.forEach(f => {
+                if (!seenNames.has(f.name)) {
+                    seenNames.add(f.name);
+                    searchResults.push(f);
+                }
             });
         }
     });
-
-    // ✨ C. 航班資料搜尋 (呼叫外包的搜尋引擎)
-    if (typeof searchFlights === 'function') {
-        const flightResults = searchFlights(lowKeyword);
-        searchResults.push(...flightResults);
-    }
 
     // 4. 渲染獨立玻璃膠囊
     if (searchResults.length === 0) {
