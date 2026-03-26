@@ -2912,3 +2912,30 @@ body:has(.universal-window.is-active) .left-capsule {
         color: rgba(255, 255, 255, 0.5);
     }
 }
+
+/* ==========================================================================
+   🟢 航班防呆警示標籤 (.flight-alert-badge)
+   ========================================================================= */
+
+   .flight-alert-badge {
+    display: inline-block;
+    font-weight: 800;
+    border-radius: 4px;
+    padding: 1px 5px; /* 稍微調整 padding，讓視覺更平衡 */
+    font-size: 0.9em; /* 稍微縮小一點點，更像一個 tag */
+    letter-spacing: 0.5px;
+    
+    /* 🌅 預設：淺色模式 BASE COLOR (為了對比度，使用深橄欖黃/琥珀色) */
+    color: #ff9600; /* Deep, readable olive/brown-yellow */
+    border: 1px solid rgba(102, 77, 0, 0.25);
+    background-color: rgba(255, 204, 0, 0.25); /* 稍微加深背景 tint */
+}
+
+/* 🌃 深色模式自動覆蓋 (切換回亮黃色 "發光" 效果) */
+@media (prefers-color-scheme: dark) {
+    .flight-alert-badge {
+        color: #ffcc00; /* 原本的亮黃色 */
+        border: 1px solid rgba(255, 204, 0, 0.5);
+        background-color: rgba(255, 204, 0, 0.1);
+    }
+}
