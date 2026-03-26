@@ -2794,3 +2794,52 @@ body:has(.universal-window.is-active) .left-capsule {
     .adv-delay-text { color: #ff453a; }
     .adv-normal-text { color: #30d158; }
 }
+
+/* ==========================================================================
+   🟢 延遲狀態顏色擴充：輕微延誤 (5分鐘含以內) 
+   ========================================================================== */
+
+/* 🌅 淺色模式 (Light Mode) */
+/* 使用深琥珀色/深橘黃，確保在白底上的對比度，不會刺眼也看得清楚 */
+.status-delayed-minor { 
+    background: rgba(255, 149, 0, 0.12); 
+    color: #c28500; 
+    border: 1px solid rgba(255, 149, 0, 0.3); 
+}
+.adv-delay-minor-text { 
+    color: #c28500; 
+    font-weight: 800; 
+}
+.search-delay-minor {
+    color: #c28500; 
+    font-size: 0.75em; 
+    font-weight: 800; 
+    margin-top: 6px; 
+    text-align: right;
+}
+.search-delay-major {
+    color: #d70015; /* 原本的紅色 */
+    font-size: 0.75em; 
+    font-weight: 800; 
+    margin-top: 6px; 
+    text-align: right;
+}
+
+/* 🌃 深色模式 (Dark Mode) 自動切換 */
+@media (prefers-color-scheme: dark) {
+    /* 使用亮黃色 (Apple iOS System Yellow) */
+    .status-delayed-minor { 
+        background: rgba(255, 214, 10, 0.15); 
+        color: #ffd60a; 
+        border: 1px solid rgba(255, 214, 10, 0.3); 
+    }
+    .adv-delay-minor-text { 
+        color: #ffd60a; 
+    }
+    .search-delay-minor {
+        color: #ffd60a; 
+    }
+    .search-delay-major {
+        color: #ff453a; 
+    }
+}

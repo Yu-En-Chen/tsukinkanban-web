@@ -598,25 +598,39 @@ function handleCardClick(id) {
 
     if (data.detailedLines && data.detailedLines.length > 0) {
         data.detailedLines.forEach(line => {
-            // 🟢 1. 用 Class 決定狀態顏色，取代原本寫死的色碼
+            // 🟢 1. 狀態徽章也支援 5 分鐘內的黃色警告
             let statusClass = 'status-normal';
             if (line.isError) statusClass = 'status-error';
             else if (line.isAttention) statusClass = 'status-attention';
-            else if (line.isDelayed) statusClass = 'status-delayed';
+            else if (line.isDelayed) {
+                // ✨ 新增：5分鐘（含）以內輕微延誤
+                if (line.delay > 0 && line.delay <= 5) {
+                    statusClass = 'status-delayed-minor'; 
+                } else {
+                    statusClass = 'status-delayed';
+                }
+            }
 
             const delayText = line.delay > 0 ? ` (${line.delay}分)` : '';
 
             const row = document.createElement('div');
-            row.className = 'extension-route-card'; // 🟢 2. 掛上主卡片的 Class
+            row.className = 'extension-route-card';
 
             let advancedHtml = '';
             if (line.advancedDetails && line.advancedDetails.length > 0) {
                 advancedHtml = `
                     <div class="adv-details-container">
                         ${line.advancedDetails.map(adv => {
-                            const isDirDelayed = adv.max_delay > 0;
-                            // 🟢 3. 延誤與平常狀態也改用 Class
-                            const dirDelayHtml = isDirDelayed ? `<span class="adv-delay-text">${adv.max_delay}分遅れ</span>` : `<span class="adv-normal-text">平常</span>`;
+                            // 🟢 2. 膠囊內的延遲文字判斷
+                            let dirDelayHtml = `<span class="adv-normal-text">平常</span>`;
+                            if (adv.max_delay > 0) {
+                                // ✨ 新增：判斷是否 <= 5 分鐘
+                                if (adv.max_delay <= 5) {
+                                    dirDelayHtml = `<span class="adv-delay-minor-text">${adv.max_delay}分遅れ</span>`;
+                                } else {
+                                    dirDelayHtml = `<span class="adv-delay-text">${adv.max_delay}分遅れ</span>`;
+                                }
+                            }
                             const trainCountHtml = adv.train_count > 0 ? `<span class="adv-train-count">(${adv.train_count}列車)</span>` : '';
                             return `
                                 <div class="adv-detail-capsule">
@@ -629,7 +643,6 @@ function handleCardClick(id) {
                 `;
             }
 
-            // 🟢 4. 畫面結構更乾淨，將所有樣式交給 CSS 管理
             row.innerHTML = `
                 <div class="ext-card-header">
                     <div class="ext-card-title-group">
@@ -1297,8 +1310,16 @@ function filterCards(keyword) {
             </div>`;
     } else {
         dropdown.innerHTML = searchResults.slice(0, 30).map(route => {
-            const delayText = route.delayMinutes > 0 ? `<div style="color: #ff453a; font-size: 0.75em; font-weight: 800; margin-top: 6px; text-align: right;">${route.delayMinutes}分遅れ</div>` : '';
-
+            // 🟢 3. 搜尋列表的延遲文字判斷，改用 CSS Class 支援深淺色
+            let delayHtml = '';
+            if (route.delayMinutes > 0) {
+                if (route.delayMinutes <= 5) {
+                    delayHtml = `<div class="search-delay-minor">${route.delayMinutes}分遅れ</div>`;
+                } else {
+                    delayHtml = `<div class="search-delay-major">${route.delayMinutes}分遅れ</div>`;
+                }
+            }
+    
             return `
                 <div style="
                     background: rgba(30, 30, 32, 0.65);
@@ -1323,8 +1344,7 @@ function filterCards(keyword) {
                             <div class="status-tag" style="position: relative; top: 0; right: 0; transform: none; display: flex; align-items: center;">
                                 ${window.getStatusIconsHTML(route.statusFlags)}
                             </div>
-                            ${delayText}
-                        </div>
+                            ${delayHtml} </div>
                     </div>
                 </div>
             `;
