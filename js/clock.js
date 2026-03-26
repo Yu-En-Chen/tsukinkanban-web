@@ -124,6 +124,11 @@ export function initDynamicClock() {
                     easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)' // 母艦級變速曲線
                 });
             }
+            // 在每分鐘的第 0 秒（膠囊回彈、Icon旋轉時）精準觸發背景 API 更新
+            if (window.triggerBackgroundUpdate) {
+                window.triggerBackgroundUpdate();
+            }
+            
         } else if (s === 1) {
             // 第 1 秒：彈簧動畫剛結束，下達「接下來 59 秒請慢慢縮小到 50px」的長期指令
             leftCapsule.style.setProperty('--capsule-dur', '59s');

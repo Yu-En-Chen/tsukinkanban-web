@@ -2326,3 +2326,74 @@ window.addEventListener('keydown', (e) => {
 // 🟢 左舷母艦：進階機械滾動時鐘引擎 (Dynamic Clock)
 // ============================================================================
 document.addEventListener('DOMContentLoaded', initDynamicClock);
+
+// ============================================================================
+// 🟢 時鐘膠囊連動：背景靜默更新引擎
+// ============================================================================
+window.triggerBackgroundUpdate = async function() {
+    // ✨ 判斷是否「停留在首頁且閒置」：沒有展開卡片、沒打開選單、沒打開搜尋
+    const isIdleOnMainPage = !window.activeCardId && 
+                             !document.body.classList.contains('menu-open') &&
+                             !document.body.classList.contains('search-active');
+
+    try {
+        console.log("⏱️ 時鐘膠囊收縮：觸發背景 API 狀態檢查...");
+        const STATUS_API_URL = 'https://tsukinkanban-odpt.onrender.com/api/status';
+        
+        // 1. 先去敲 API 檢查伺服器是否活著
+        const statusRes = await fetch(STATUS_API_URL).catch(() => null);
+
+        if (!statusRes || !statusRes.ok) {
+            console.warn("⚠️ 背景更新取消：API 伺服器無回應或斷線。");
+            return; // 埋著不做事，維持畫面上舊有的狀態
+        }
+
+        const liveStatus = await statusRes.json();
+
+        // 2. 檢查伺服器是否正在「冷啟動/初始化」
+        if (liveStatus.error) {
+            console.warn("⚠️ 背景更新取消：伺服器初始化中 (" + liveStatus.error + ")");
+            return; // 埋著不做事
+        }
+
+        // 3. 取得最新資料成功，準備無縫重繪
+        console.log("✅ 背景更新成功，獲取到最新資料！");
+        
+        // 讀取字典與使用者設定 (這些都在 script.js 裡可以呼叫)
+        const cachedDict = JSON.parse(localStorage.getItem('Tsukin_Cached_Dict') || '{}');
+        const userPrefs = await getAllUserPreferences(); 
+
+        // 更新手機快取
+        localStorage.setItem('Tsukin_Cached_Status', JSON.stringify(liveStatus));
+
+        // 4. 呼叫我們之前寫好的「智慧渲染引擎」(只換文字，不閃爍)
+        buildAndRender(userPrefs, cachedDict, liveStatus, false);
+
+        // 5. ✨ 閒置判定：如果在首頁閒置，觸發一次優雅的漣漪進場動畫！
+        if (isIdleOnMainPage) {
+            const cards = Array.from(document.querySelectorAll('.card'));
+            cards.forEach((c, index) => {
+                // 拔掉舊動畫
+                c.classList.remove('opening-pull');
+                
+                // 🪄 核心魔法：強制觸發瀏覽器 Reflow (重繪)，讓動畫可以被重新播放
+                void c.offsetWidth; 
+                
+                // 重新掛上動畫與貝茲曲線延遲
+                c.style.animationDelay = `${(cards.length - index) * 0.08}s`;
+                c.classList.add('opening-pull');
+            });
+            
+            // 如果你有頂部的置頂卡片 (fixed-info-card)，也一併觸發
+            const fixedCard = document.getElementById('fixed-info-card');
+            if (fixedCard) {
+                fixedCard.classList.remove('opening-pull-fixed');
+                void fixedCard.offsetWidth;
+                fixedCard.classList.add('opening-pull-fixed');
+            }
+        }
+
+    } catch (error) {
+        console.error("背景更新時發生未預期錯誤:", error);
+    }
+};
