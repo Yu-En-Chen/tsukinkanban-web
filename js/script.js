@@ -593,9 +593,9 @@ function handleCardClick(id) {
     // ✨ 動態生成底部的詳細資訊玻璃面板 (加入 height: auto 讓它依內容縮放)
     const extension = document.createElement('div');
     extension.className = 'detail-extension-card';
-    // ✨ 把 padding 底部歸零，加上 -webkit-overflow-scrolling 確保 iOS 彈性滑動
-    extension.style.cssText = 'height: auto; margin-top: 16px; display: flex; flex-direction: column; gap: 16px; padding: 20px 16px 0px 16px; max-height: calc(100dvh - 320px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;';
-
+    // ✨ 將 padding 頂部也改為 16px，達成完美的上下左右等距視覺
+    extension.style.cssText = 'height: auto; margin-top: 16px; display: flex; flex-direction: column; gap: 16px; padding: 16px 16px 0px 16px; max-height: calc(100dvh - 320px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;';
+    
     if (data.detailedLines && data.detailedLines.length > 0) {
         data.detailedLines.forEach(line => {
             // 🟢 1. 狀態徽章也支援 5 分鐘內的黃色警告
