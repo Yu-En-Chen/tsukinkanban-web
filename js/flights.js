@@ -83,19 +83,26 @@ export function searchFlights(lowKeyword) {
                     flags[5] = true; // ✅ 準點正常燈號
                 }
 
-                // ✨ 4. 完美換行排版：上下兩行對齊，超過30分用紅色 (search-delay-major)
+                // ✨ 4. 寬版換行排版：修正 CSS 縮水問題，讓變更時間更大更霸氣
                 let flightTimeHtml = '';
                 if (isTimeChanged) {
                     const delayClass = delayMins > 30 ? 'search-delay-major' : 'search-delay-minor';
                     flightTimeHtml = `
-                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; margin-top: 4px; font-size: 0.85em;">
-                            <div style="text-decoration: line-through; opacity: 0.5; font-weight: 600;">定刻 ${f.scheduled}</div>
-                            <div class="${delayClass}" style="margin: 0; font-size: inherit; font-weight: 800;">変更 ${f.latest}</div>
+                        <div style="display: flex; align-items: center; gap: 16px; margin-top: 4px; padding-top: 12px; border-top: 1px dashed rgba(128,128,128,0.25); font-size: 0.95em;">
+                            <div style="display: flex; align-items: center; gap: 6px; opacity: 0.5;">
+                                <span style="font-weight: 600;">定刻</span>
+                                <span style="text-decoration: line-through; font-family: monospace; font-size: 1.1em;">${f.scheduled}</span>
+                            </div>
+                            <div class="${delayClass}" style="display: flex; align-items: center; gap: 6px; font-size: 1em; margin: 0;">
+                                <span style="font-weight: 800;">変更</span>
+                                <span style="font-weight: 800; font-family: monospace; font-size: 1.25em;">${f.latest}</span>
+                            </div>
                         </div>`;
                 } else {
                     flightTimeHtml = `
-                        <div style="text-align: right; margin-top: 4px; opacity: 0.6; font-weight: 600; font-size: 0.85em;">
-                            定刻 ${f.scheduled}
+                        <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; padding-top: 12px; border-top: 1px dashed rgba(128,128,128,0.25); font-size: 0.95em; opacity: 0.65;">
+                            <span style="font-weight: 600;">定刻</span>
+                            <span style="font-family: monospace; font-size: 1.1em; font-weight: 600;">${f.scheduled}</span>
                         </div>`;
                 }
 
@@ -115,9 +122,13 @@ export function searchFlights(lowKeyword) {
 
                 let companyHtml = '';
                 if (f.type === 'Departure') {
-                    companyHtml = `${airportBadge} <span style="font-weight: 600; opacity: 0.7; margin: 0 4px;">出発 ➔</span> ${f.location} <span style="opacity: 0.7;">(${f.airline})</span>`;
+                    // 🛫 出發：使用 SVG 右箭頭 (加粗線條並微調置中)
+                    const arrowRightSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px; margin-left: 2px;"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
+                    companyHtml = `${airportBadge} <span style="font-weight: 800; opacity: 0.7; margin: 0 4px;">出発${arrowRightSvg}</span> ${f.location} <span style="opacity: 0.7;">(${f.airline})</span>`;
                 } else {
-                    companyHtml = `${airportBadge} <span style="font-weight: 600; opacity: 0.7; margin: 0 4px;">← 到着</span> ${f.location} <span style="opacity: 0.7;">(${f.airline})</span>`;
+                    // 🛬 抵達：使用 SVG 左箭頭 (加粗線條並微調置中)
+                    const arrowLeftSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px; margin-right: 2px;"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>`;
+                    companyHtml = `${airportBadge} <span style="font-weight: 800; opacity: 0.7; margin: 0 4px;">${arrowLeftSvg}到着</span> ${f.location} <span style="opacity: 0.7;">(${f.airline})</span>`;
                 }
 
                 results.push({
@@ -125,7 +136,8 @@ export function searchFlights(lowKeyword) {
                     name: `${flightTypeIcon} ${displayFid}`, 
                     company: companyHtml, 
                     statusFlags: flags,
-                    customRightHtml: flightTimeHtml, 
+                    // ✨ 核心修正：從 customRightHtml 改塞進 customBottomHtml
+                    customBottomHtml: flightTimeHtml, 
                     isFlight: true 
                 });
             }

@@ -1340,7 +1340,7 @@ function filterCards(keyword) {
             const cursorStyle = route.isFlight ? 'cursor: default; opacity: 0.9;' : 'cursor: pointer;';
             const clickAction = route.isFlight ? '' : `onclick="window.previewRouteFromSearch('${route.id}')"`;
     
-            // ✨ 直接套用 CSS class，自動跟隨系統切換深淺色！
+            // ✨ 直接套用 CSS class，並在結尾處加入 ${route.customBottomHtml || ''} 支援底部換行排版！
             return `
                 <div class="search-result-item" style="${cursorStyle}" ${clickAction}>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -1355,6 +1355,7 @@ function filterCards(keyword) {
                             ${delayHtml} 
                         </div>
                     </div>
+                    ${route.customBottomHtml || ''} 
                 </div>
             `;
         }).join('');
