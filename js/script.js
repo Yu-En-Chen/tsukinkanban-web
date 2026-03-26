@@ -1323,13 +1323,10 @@ function filterCards(keyword) {
 
     // 4. 渲染獨立玻璃膠囊
     if (searchResults.length === 0) {
-        dropdown.innerHTML = `
-            <div style="background: rgba(30, 30, 32, 0.65); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 30px; text-align: center; color: rgba(255,255,255,0.6); font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
-                該当する路線が見つかりません
-            </div>`;
+        // ✨ 直接套用 CSS class，不再把樣式寫死
+        dropdown.innerHTML = `<div class="search-empty-state">該当する路線が見つかりません</div>`;
     } else {
         dropdown.innerHTML = searchResults.slice(0, 30).map(route => {
-            // 🟢 智慧判斷：如果是飛機就用飛機的專屬時間排版，火車就用原本的延誤排版
             let delayHtml = route.customRightHtml || ''; 
             
             if (!route.customRightHtml && route.delayMinutes > 0) {
@@ -1340,29 +1337,16 @@ function filterCards(keyword) {
                 }
             }
             
-            // 🟢 滑鼠指標與點擊防護：飛機禁止點擊，火車才可以點擊加入卡片
             const cursorStyle = route.isFlight ? 'cursor: default; opacity: 0.9;' : 'cursor: pointer;';
             const clickAction = route.isFlight ? '' : `onclick="window.previewRouteFromSearch('${route.id}')"`;
     
+            // ✨ 直接套用 CSS class，自動跟隨系統切換深淺色！
             return `
-                <div style="
-                    background: rgba(30, 30, 32, 0.65);
-                    backdrop-filter: blur(25px);
-                    -webkit-backdrop-filter: blur(25px);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    border-radius: 24px; 
-                    padding: 16px 20px;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 12px;
-                    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-                    flex-shrink: 0;
-                    ${cursorStyle}
-                " ${clickAction}>
+                <div class="search-result-item" style="${cursorStyle}" ${clickAction}>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div style="display: flex; flex-direction: column; gap: 4px;">
-                            <div style="font-weight: 800; font-size: 1.15em; color: #fff; letter-spacing: 0.5px;">${route.name}</div>
-                            <div style="font-size: 0.75em; color: rgba(255,255,255,0.5); font-weight: 600;">${route.company}</div>
+                            <div class="search-result-title">${route.name}</div>
+                            <div class="search-result-subtitle">${route.company}</div>
                         </div>
                         <div style="display: flex; flex-direction: column; align-items: flex-end;">
                             <div class="status-tag" style="position: relative; top: 0; right: 0; transform: none; display: flex; align-items: center;">

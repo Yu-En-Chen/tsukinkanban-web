@@ -2843,3 +2843,72 @@ body:has(.universal-window.is-active) .left-capsule {
         color: #ff453a; 
     }
 }
+
+/* ==========================================================================
+   🟢 搜尋下拉選單卡片 (支援深淺模式自動適應)
+   ========================================================================== */
+
+/* 🌅 預設：淺色模式 */
+.search-empty-state {
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 24px;
+    padding: 30px;
+    text-align: center;
+    color: rgba(0, 0, 0, 0.6);
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.search-result-item {
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 24px;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
+}
+
+.search-result-title {
+    font-weight: 800;
+    font-size: 1.15em;
+    color: rgba(0, 0, 0, 0.9);
+    letter-spacing: 0.5px;
+}
+
+.search-result-subtitle {
+    font-size: 0.75em;
+    color: rgba(0, 0, 0, 0.5);
+    font-weight: 600;
+}
+
+/* 🌃 深色模式自動覆蓋 */
+@media (prefers-color-scheme: dark) {
+    .search-empty-state {
+        background: rgba(30, 30, 32, 0.65);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.6);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .search-result-item {
+        background: rgba(30, 30, 32, 0.65);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .search-result-title {
+        color: #ffffff;
+    }
+
+    .search-result-subtitle {
+        color: rgba(255, 255, 255, 0.5);
+    }
+}
