@@ -23,6 +23,7 @@ import { getAllUserPreferences, restorePreviousPreference } from '../data/db.js'
 import { initPersonalization } from './personalization.js';
 import { initDynamicClock } from './clock.js';
 import { syncAndLoadDictionary } from '../data/dictionary-db.js';
+import { initFlights, searchFlights } from './flights.js';
 
 // 🟢 宣告全域變數，作為整個 App 實際渲染、搜尋、點擊的唯一資料來源
 window.appRailwayData = [];
@@ -2229,14 +2230,40 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // =========================================
-// 🟢 搜尋框「智慧寬容輸入與自動分段」引擎 (Smart Forgiving Input)
+// 🟢 搜尋框「智慧寬容輸入與自動分段」引擎 (支援 IME 輸入法防干擾版)
 // =========================================
 document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('search-input');
     if (!searchInput) return;
 
+    let isComposing = false;
+
+    // 🟢 1. 監聽輸入法拼字開始 (例如剛打下第一個羅馬拼音字母)
+    searchInput.addEventListener('compositionstart', () => {
+        isComposing = true;
+    });
+
+    // 🟢 2. 監聽輸入法拼字結束 (使用者選好漢字，或按下 Enter)
+    searchInput.addEventListener('compositionend', function() {
+        isComposing = false;
+        // 拼字結束後，才手動觸發一次我們的過濾與格式化！
+        formatSearchInput.call(this);
+        
+        // 觸發實際的搜尋連動
+        this.dispatchEvent(new Event('input'));
+    });
+
+    // 🟢 3. 攔截原生的 input 事件
     searchInput.addEventListener('input', function (e) {
-        // 紀錄目前的游標位置，避免替換字串後游標亂跳
+        // ✨ 核心修復：如果正在用羅馬拼音組合日文，這時候絕對不去改它的值，直接放行！
+        if (isComposing) return; 
+        
+        // 如果是正常打英文/數字，或已經拼完字了，才進行過濾
+        formatSearchInput.call(this);
+    });
+
+    // 將原本的過濾邏輯獨立抽成一個函數
+    function formatSearchInput() {
         const originalStart = this.selectionStart;
         const originalLength = this.value.length;
 
@@ -2256,28 +2283,26 @@ document.addEventListener('DOMContentLoaded', () => {
         // 4. 剔除非法字元 (僅保留英數、日文、- 與 、)
         val = val.replace(/[^A-Z0-9\u3005\u3040-\u30FF\u4E00-\u9FAF\u3400-\u4DBF\uFF65-\uFF9F\-\、]/g, '');
 
-        // 5. 符號防呆處理 (處理連續按空白鍵或打錯的情況)
-        val = val.replace(/-+/g, '-');        // 連續的 ---- 縮減成單一個 -
-        val = val.replace(/、+/g, '、');        // 連續的 、、、、 縮減成單一個 、
-        val = val.replace(/-、/g, '、');        // 如果 - 和 、 撞在一起，保留分段用的 、
+        // 5. 符號防呆處理
+        val = val.replace(/-+/g, '-');        
+        val = val.replace(/、+/g, '、');        
+        val = val.replace(/-、/g, '、');        
         val = val.replace(/、-/g, '、');
-        val = val.replace(/^[、-]+/, '');     // 🟢 確保最前面沒有字元時，無法輸入符號/空白
+        val = val.replace(/^[、-]+/, '');     
 
-        // 6. 🟢 核心智慧分段邏輯：「兩個 - 之間一定有 、 分開」
+        // 6. 核心智慧分段邏輯
         let finalVal = '';
-        let hasDash = false; // 用來追蹤目前區段是否已經出現過 -
+        let hasDash = false; 
 
         for (let char of val) {
             if (char === '、') {
-                hasDash = false; // 遇到 、 代表進入新區段，重置記號
+                hasDash = false; 
                 finalVal += char;
             } else if (char === '-') {
                 if (!hasDash) {
-                    hasDash = true; // 區段內第一次出現 -，放行
+                    hasDash = true; 
                     finalVal += char;
                 } else {
-                    // 區段內已經有 - 了 (例如出現 xxx-xxx-)
-                    // 強制將這個 - 轉換成 、，並重置記號開啟下一個新區段
                     hasDash = false;
                     finalVal += '、';
                 }
@@ -2290,14 +2315,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // 7. 如果數值有變更，才進行替換與游標精準校正
         if (this.value !== val) {
             this.value = val;
-
-            // 計算長度差異，讓游標能準確留在使用者剛剛打字的地方
             const lengthDiff = val.length - originalLength;
             const newCursorPos = Math.max(0, originalStart + lengthDiff);
-
             this.setSelectionRange(newCursorPos, newCursorPos);
         }
-    });
+    }
 });
 
 // ============================================================================
