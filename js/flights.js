@@ -52,36 +52,45 @@ export function searchFlights(lowKeyword) {
                 const flightTypeIcon = f.type === 'Departure' ? takeoffIconSvg : landingIconSvg;
                 const isTimeChanged = f.scheduled !== f.latest;
 
-                // ✨ 1. 航班淨化：精準抓出使用者搜尋的那個航班編號
-                let matchedFid = f.fid[0]; // 預設顯示第一個
+                // ✨ 1. 航班淨化：只顯示搜尋命中的那個航班編號，拔除突兀的 "..."
+                let matchedFid = f.fid[0]; 
                 for (let id of f.fid) {
                     if (id.toLowerCase().replace(/[\s-]/g, '').includes(lowKeyword)) {
                         matchedFid = id;
                         break;
                     }
                 }
-                // 如果這架飛機有多個共掛航班，加上 ... 提示
-                const displayFid = f.fid.length > 1 ? `${matchedFid}...` : matchedFid;
+                const displayFid = matchedFid;
 
-                // ✨ 2. 智慧燈號：根據時間變更與狀態亮燈
+                // ✨ 2. 時間差計算器：算出實際延誤分鐘數 (處理半夜跨日問題)
+                let delayMins = 0;
+                if (isTimeChanged && f.scheduled !== '--:--' && f.latest !== '--:--') {
+                    const [sh, sm] = f.scheduled.split(':').map(Number);
+                    const [lh, lm] = f.latest.split(':').map(Number);
+                    delayMins = (lh * 60 + lm) - (sh * 60 + sm);
+                    if (delayMins < -720) delayMins += 24 * 60; // 跨日防呆 (例如 23:50 改到 00:30)
+                }
+
+                // ✨ 3. 智慧燈號：改用三角形 (flags[4]) 取代原本的驚嘆號
                 let flags = [false, false, false, false, false, false, false];
                 if (sClass === 'status-error') {
                     flags[3] = true; // ❌ 嚴重錯誤 (欠航)
-                } else if (sClass === 'status-delayed') {
-                    flags[4] = true; // 🔴 延遲燈號
+                } else if (sClass === 'status-delayed' || delayMins > 30) {
+                    flags[4] = true; // 🔴 嚴重延遲 (三角形)
                 } else if (isTimeChanged) {
-                    flags[6] = true; // ⚠️ 只要時間有變更，亮起黃色三角形注意燈！
+                    flags[4] = true; // ⚠️ 時間有變更，一樣亮三角形燈
                 } else {
                     flags[5] = true; // ✅ 準點正常燈號
                 }
 
-                // ✨ 3. 時間排版：畫上刪除線，並套用自動適應日夜模式的警告色 (.search-delay-minor)
+                // ✨ 4. 完美換行排版：上下兩行對齊，超過30分用紅色 (search-delay-major)
                 let flightTimeHtml = '';
                 if (isTimeChanged) {
+                    const delayClass = delayMins > 30 ? 'search-delay-major' : 'search-delay-minor';
                     flightTimeHtml = `
-                        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-top: 4px; font-size: 0.85em;">
-                            <span style="text-decoration: line-through; opacity: 0.5; font-weight: 600;">${f.scheduled}</span>
-                            <span class="search-delay-minor" style="margin: 0; font-size: inherit;">変更 ${f.latest}</span>
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; margin-top: 4px; font-size: 0.85em;">
+                            <div style="text-decoration: line-through; opacity: 0.5; font-weight: 600;">定刻 ${f.scheduled}</div>
+                            <div class="${delayClass}" style="margin: 0; font-size: inherit; font-weight: 800;">変更 ${f.latest}</div>
                         </div>`;
                 } else {
                     flightTimeHtml = `
