@@ -1748,11 +1748,14 @@ async function initApp() {
         // 3. 背景非同步抓取最新資料
         console.log("📡 背景正在獲取最新運行狀態...");
         const DICTIONARY_API_URL = 'https://tsukinkanban-odpt.onrender.com/api/dictionary';
-        const STATUS_API_URL = 'https://tsukinkanban-odpt.onrender.com/api/status';
+        
+        // ✨ 這裡也加上相同的快取破壞者！
+        const timestamp = new Date().getTime();
+        const STATUS_API_URL = `https://tsukinkanban-odpt.onrender.com/api/status?t=${timestamp}`;
 
         const [routeDict, statusRes] = await Promise.all([
             syncAndLoadDictionary(DICTIONARY_API_URL).catch(() => null),
-            fetch(STATUS_API_URL).catch(() => null) // 防止網路全斷時炸毀
+            fetch(STATUS_API_URL, { cache: 'no-store' }).catch(() => null) // 防止網路全斷時炸毀
         ]);
 
         // 🚨 4. 判斷 API 是否活著
@@ -2338,10 +2341,13 @@ window.triggerBackgroundUpdate = async function() {
 
     try {
         console.log("⏱️ 時鐘膠囊收縮：觸發背景 API 靜默更新...");
-        const STATUS_API_URL = 'https://tsukinkanban-odpt.onrender.com/api/status';
         
-        // 先去敲 API 檢查伺服器是否活著
-        const statusRes = await fetch(STATUS_API_URL).catch(() => null);
+        // ✨ 加入時間戳防禦魔法：確保每次網址都長得不一樣，破解瀏覽器快取！
+        const timestamp = new Date().getTime();
+        const STATUS_API_URL = `https://tsukinkanban-odpt.onrender.com/api/status?t=${timestamp}`;
+        
+        // ✨ 強制宣告 no-store，嚴禁瀏覽器從硬碟拿資料
+        const statusRes = await fetch(STATUS_API_URL, { cache: 'no-store' }).catch(() => null);
 
         if (!statusRes || !statusRes.ok) return; // 沒回應就埋著不做事
 
