@@ -42,54 +42,78 @@ export function searchFlights(lowKeyword) {
             
             if (flightStr.includes(lowKeyword)) {
                 let sClass = 'status-normal';
-                let sText = f.status;
                 
                 if (f.status === 'Cancelled' || f.status === '欠航') {
                     sClass = 'status-error';
-                    sText = '欠航';
                 } else if (f.status === 'Delayed' || f.status === '遅延') {
                     sClass = 'status-delayed';
-                    sText = '遅延';
                 }
 
-                const timeText = f.scheduled !== f.latest ? `変更 ${f.latest}` : `定刻 ${f.scheduled}`;
                 const flightTypeIcon = f.type === 'Departure' ? takeoffIconSvg : landingIconSvg;
+                const isTimeChanged = f.scheduled !== f.latest;
 
+                // ✨ 1. 航班淨化：精準抓出使用者搜尋的那個航班編號
+                let matchedFid = f.fid[0]; // 預設顯示第一個
+                for (let id of f.fid) {
+                    if (id.toLowerCase().replace(/[\s-]/g, '').includes(lowKeyword)) {
+                        matchedFid = id;
+                        break;
+                    }
+                }
+                // 如果這架飛機有多個共掛航班，加上 ... 提示
+                const displayFid = f.fid.length > 1 ? `${matchedFid}...` : matchedFid;
+
+                // ✨ 2. 智慧燈號：根據時間變更與狀態亮燈
                 let flags = [false, false, false, false, false, false, false];
-                if (sClass === 'status-error') flags[3] = true;
-                else if (sClass === 'status-delayed') flags[4] = true;
-                else flags[5] = true;
+                if (sClass === 'status-error') {
+                    flags[3] = true; // ❌ 嚴重錯誤 (欠航)
+                } else if (sClass === 'status-delayed') {
+                    flags[4] = true; // 🔴 延遲燈號
+                } else if (isTimeChanged) {
+                    flags[6] = true; // ⚠️ 只要時間有變更，亮起黃色三角形注意燈！
+                } else {
+                    flags[5] = true; // ✅ 準點正常燈號
+                }
 
-                const flightTimeHtml = `<div class="${sClass === 'status-normal' ? 'search-delay-minor' : 'search-delay-major'}" style="color: ${sClass === 'status-normal' ? 'inherit' : ''}; opacity: ${sClass === 'status-normal' ? '0.7' : '1'};">${timeText}</div>`;
+                // ✨ 3. 時間排版：畫上刪除線，並套用自動適應日夜模式的警告色 (.search-delay-minor)
+                let flightTimeHtml = '';
+                if (isTimeChanged) {
+                    flightTimeHtml = `
+                        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-top: 4px; font-size: 0.85em;">
+                            <span style="text-decoration: line-through; opacity: 0.5; font-weight: 600;">${f.scheduled}</span>
+                            <span class="search-delay-minor" style="margin: 0; font-size: inherit;">変更 ${f.latest}</span>
+                        </div>`;
+                } else {
+                    flightTimeHtml = `
+                        <div style="text-align: right; margin-top: 4px; opacity: 0.6; font-weight: 600; font-size: 0.85em;">
+                            定刻 ${f.scheduled}
+                        </div>`;
+                }
 
-                // ✨ 1. 判斷這班飛機的對手機場，是不是在日本國內？
+                // 判斷這班飛機的對手機場，是不是在日本國內
                 const locMatch = f.location.match(/[A-Z]{3}/);
                 const locCode = locMatch ? locMatch[0] : '';
                 const isDomestic = locCode ? domesticCodes.includes(locCode) : false;
 
                 let airportBadge = airportNamesJa[f.airport] || f.airport;
                 
-                // ✨ 2. 觸發防呆標籤 (成田國內線 / 羽田國際線)
-                // 這裡已經把 style="..." 徹底殺掉，只留下 class="flight-alert-badge"！
+                // 觸發防呆標籤
                 if (f.airport === 'NRT' && isDomestic) {
                     airportBadge = `<span class="flight-alert-badge">成田（NRT）国内線</span>`;
                 } else if (f.airport === 'HND' && !isDomestic) {
                     airportBadge = `<span class="flight-alert-badge">羽田（HND）国際線</span>`;
                 }
 
-                // ✨ 3. 動態箭頭方向與副標題組合
                 let companyHtml = '';
                 if (f.type === 'Departure') {
-                    // 出發：成田 ➔ 台北
                     companyHtml = `${airportBadge} <span style="font-weight: 600; opacity: 0.7; margin: 0 4px;">出発 ➔</span> ${f.location} <span style="opacity: 0.7;">(${f.airline})</span>`;
                 } else {
-                    // 抵達：成田 ← 到着 台北
-                    companyHtml = `${airportBadge} <span style="font-weight: 600; opacity: 0.7; margin: 0 4px;">到着 ←</span> ${f.location} <span style="opacity: 0.7;">(${f.airline})</span>`;
+                    companyHtml = `${airportBadge} <span style="font-weight: 600; opacity: 0.7; margin: 0 4px;">← 到着</span> ${f.location} <span style="opacity: 0.7;">(${f.airline})</span>`;
                 }
 
                 results.push({
                     id: 'flight-' + f.fid[0],
-                    name: `${flightTypeIcon} ${f.fid.join('/')}`, 
+                    name: `${flightTypeIcon} ${displayFid}`, 
                     company: companyHtml, 
                     statusFlags: flags,
                     customRightHtml: flightTimeHtml, 
