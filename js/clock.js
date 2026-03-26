@@ -42,10 +42,14 @@ export function initDynamicClock() {
     // 🟢 2. 開場立即執行一次同步
     resyncCapsule();
 
-    // 🟢 3. 監聽網頁可視狀態：從背景切回前景時，重新校準膠囊進度！
+    // 🟢 3. 監聽網頁可視狀態：從背景切回前景時，重新校準！
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
             resyncCapsule();
+            // ✨ 核心防護：切回畫面時，不囉唆立刻強制更新一次 API，確保資料最新！
+            if (window.triggerBackgroundUpdate) {
+                window.triggerBackgroundUpdate();
+            }
         }
     });
 
@@ -107,33 +111,35 @@ export function initDynamicClock() {
         updateDigit('min-tens', m[0]);
         updateDigit('min-units', m[1]);
 
-        // --- 🟢 2. CSS 連續引擎指揮中心 ---
-        if (s === 0) {
-            // 第 0 秒：賦予蘋果彈簧曲線，瞬間 Q 彈回滿 (95px)
+        // --- 🟢 終極防漏秒引擎：依賴「分鐘的改變」，而不依賴脆弱的「第 0 秒」 ---
+        if (lastMinute !== -1 && m !== lastMinute) {
+            
+            // 分鐘正式跳動的那一刻 (相當於原本的第 0 秒)
             leftCapsule.style.setProperty('--capsule-dur', '0.8s');
             leftCapsule.style.setProperty('--capsule-ease', 'var(--apple-spring)');
             leftCapsule.style.setProperty('--capsule-width', `${MAX_W}px`);
 
-            // 🟢 終極 API 旋轉法：不用 class 切換，保證 100% 不抽搐！
             if (syncIcon) {
                 syncIcon.animate([
                     { transform: 'translate(50%, -50%) rotate(0deg)' },
                     { transform: 'translate(50%, -50%) rotate(-360deg)' }
                 ], {
-                    duration: 1000, // 精準 1 秒鐘
-                    easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)' // 母艦級變速曲線
+                    duration: 1000, 
+                    easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)' 
                 });
             }
-            // 在每分鐘的第 0 秒（膠囊回彈、Icon旋轉時）精準觸發背景 API 更新
+
+            // ⏱️ ✨ 不管瀏覽器怎麼 lag，只要分鐘變了，就絕對能觸發背景 API 更新！
             if (window.triggerBackgroundUpdate) {
                 window.triggerBackgroundUpdate();
             }
-            
-        } else if (s === 1) {
-            // 第 1 秒：彈簧動畫剛結束，下達「接下來 59 秒請慢慢縮小到 50px」的長期指令
-            leftCapsule.style.setProperty('--capsule-dur', '59s');
-            leftCapsule.style.setProperty('--capsule-ease', 'linear');
-            leftCapsule.style.setProperty('--capsule-width', `${MIN_W}px`);
+
+            // 預約 1 秒後才接續長期的收縮指令 (取代原本的 s === 1)
+            setTimeout(() => {
+                leftCapsule.style.setProperty('--capsule-dur', '59s');
+                leftCapsule.style.setProperty('--capsule-ease', 'linear');
+                leftCapsule.style.setProperty('--capsule-width', `${MIN_W}px`);
+            }, 1000);
         }
 
         lastMinute = m; 
