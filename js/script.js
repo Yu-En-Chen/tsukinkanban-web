@@ -2328,63 +2328,56 @@ window.addEventListener('keydown', (e) => {
 document.addEventListener('DOMContentLoaded', initDynamicClock);
 
 // ============================================================================
-// 🟢 時鐘膠囊連動：背景靜默更新引擎
+// 🟢 時鐘膠囊連動：背景靜默更新引擎 (無干擾極致版)
 // ============================================================================
 window.triggerBackgroundUpdate = async function() {
-    // ✨ 判斷是否「停留在首頁且閒置」：沒有展開卡片、沒打開選單、沒打開搜尋
+    // 判斷是否「停留在首頁且閒置」：沒有展開卡片、沒打開選單、沒打開搜尋
     const isIdleOnMainPage = !window.activeCardId && 
                              !document.body.classList.contains('menu-open') &&
                              !document.body.classList.contains('search-active');
 
     try {
-        console.log("⏱️ 時鐘膠囊收縮：觸發背景 API 狀態檢查...");
+        console.log("⏱️ 時鐘膠囊收縮：觸發背景 API 靜默更新...");
         const STATUS_API_URL = 'https://tsukinkanban-odpt.onrender.com/api/status';
         
-        // 1. 先去敲 API 檢查伺服器是否活著
+        // 先去敲 API 檢查伺服器是否活著
         const statusRes = await fetch(STATUS_API_URL).catch(() => null);
 
-        if (!statusRes || !statusRes.ok) {
-            console.warn("⚠️ 背景更新取消：API 伺服器無回應或斷線。");
-            return; // 埋著不做事，維持畫面上舊有的狀態
-        }
+        if (!statusRes || !statusRes.ok) return; // 沒回應就埋著不做事
 
         const liveStatus = await statusRes.json();
+        if (liveStatus.error) return; // 初始化中也埋著不做事
 
-        // 2. 檢查伺服器是否正在「冷啟動/初始化」
-        if (liveStatus.error) {
-            console.warn("⚠️ 背景更新取消：伺服器初始化中 (" + liveStatus.error + ")");
-            return; // 埋著不做事
-        }
-
-        // 3. 取得最新資料成功，準備無縫重繪
-        console.log("✅ 背景更新成功，獲取到最新資料！");
-        
-        // 讀取字典與使用者設定 (這些都在 script.js 裡可以呼叫)
+        // 取得最新資料成功，準備無縫重繪
         const cachedDict = JSON.parse(localStorage.getItem('Tsukin_Cached_Dict') || '{}');
         const userPrefs = await getAllUserPreferences(); 
-
-        // 更新手機快取
         localStorage.setItem('Tsukin_Cached_Status', JSON.stringify(liveStatus));
 
-        // 4. 呼叫我們之前寫好的「智慧渲染引擎」(只換文字，不閃爍)
+        // 1. 永遠默默更新底層資料與主畫面卡片 (我們之前寫的局部更新引擎，保證不閃爍)
         buildAndRender(userPrefs, cachedDict, liveStatus, false);
 
-        // 5. ✨ 閒置判定：如果在首頁閒置，觸發一次優雅的漣漪進場動畫！
+        // 2. ✨ 終極無干擾處理：如果使用者正在操作其他介面，我們只偷偷換掉裡面的字！
+        if (window.activeCardId) {
+            // 偷偷重繪實心玻璃面板，且記住滾動位置不亂跳
+            silentUpdateExtensionPanel(window.activeCardId);
+        }
+
+        if (document.body.classList.contains('search-active')) {
+            // 偷偷重新觸發搜尋，讓下拉選單的延誤分鐘數瞬間更新
+            const searchInput = document.getElementById('route-search');
+            if (searchInput) searchInput.dispatchEvent(new Event('input'));
+        }
+
+        // 3. ✨ 只有在首頁閒置時，才觸發華麗的漣漪進場動畫
         if (isIdleOnMainPage) {
             const cards = Array.from(document.querySelectorAll('.card'));
             cards.forEach((c, index) => {
-                // 拔掉舊動畫
                 c.classList.remove('opening-pull');
-                
-                // 🪄 核心魔法：強制觸發瀏覽器 Reflow (重繪)，讓動畫可以被重新播放
-                void c.offsetWidth; 
-                
-                // 重新掛上動畫與貝茲曲線延遲
+                void c.offsetWidth; // 強制重繪
                 c.style.animationDelay = `${(cards.length - index) * 0.08}s`;
                 c.classList.add('opening-pull');
             });
             
-            // 如果你有頂部的置頂卡片 (fixed-info-card)，也一併觸發
             const fixedCard = document.getElementById('fixed-info-card');
             if (fixedCard) {
                 fixedCard.classList.remove('opening-pull-fixed');
@@ -2397,3 +2390,81 @@ window.triggerBackgroundUpdate = async function() {
         console.error("背景更新時發生未預期錯誤:", error);
     }
 };
+
+// ============================================================================
+// 🟢 專為實心玻璃面板打造的「無縫抽換引擎」
+// ============================================================================
+function silentUpdateExtensionPanel(cardId) {
+    const extension = document.getElementById('card-extension-container');
+    if (!extension) return;
+
+    const data = window.appRailwayData.find(r => r.id === cardId);
+    if (!data) return;
+
+    // ✨ 核心魔法：記住使用者目前的滑動位置 (Scroll Position)
+    const currentScroll = extension.scrollTop;
+    
+    // 清空並瞬間重組內容
+    extension.innerHTML = '';
+    
+    data.detailedLines.forEach(line => {
+        let statusClass = 'status-normal';
+        if (line.isError) statusClass = 'status-error';
+        else if (line.isAttention) statusClass = 'status-attention';
+        else if (line.isDelayed) {
+            if (line.delay > 0 && line.delay <= 5) statusClass = 'status-delayed-minor'; 
+            else statusClass = 'status-delayed';
+        }
+
+        const delayText = line.delay > 0 ? ` (${line.delay}分)` : '';
+        const row = document.createElement('div');
+        row.className = 'extension-route-card';
+
+        let advancedHtml = '';
+        if (line.advancedDetails && line.advancedDetails.length > 0) {
+            advancedHtml = `
+                <div class="adv-details-container">
+                    ${line.advancedDetails.map(adv => {
+                        let dirDelayHtml = `<span class="adv-normal-text">平常</span>`;
+                        if (adv.max_delay > 0) {
+                            if (adv.max_delay <= 5) dirDelayHtml = `<span class="adv-delay-minor-text">${adv.max_delay}分遅れ</span>`;
+                            else dirDelayHtml = `<span class="adv-delay-text">${adv.max_delay}分遅れ</span>`;
+                        }
+                        const trainCountHtml = adv.train_count > 0 ? `<span class="adv-train-count">(${adv.train_count}列車)</span>` : '';
+                        return `
+                            <div class="adv-detail-capsule">
+                                <span class="adv-dir-name">${adv.direction_name}</span>
+                                <div class="adv-status-group">${trainCountHtml}${dirDelayHtml}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        row.innerHTML = `
+            <div class="ext-card-header">
+                <div class="ext-card-title-group">
+                    <div class="ext-route-name">${line.name}</div>
+                    <div class="ext-route-company">${line.company}</div>
+                </div>
+                <div class="ext-status-badge ${statusClass}">
+                    ${line.status}${delayText}
+                </div>
+            </div>
+            <div class="ext-card-divider"></div>
+            <div class="ext-card-message">${line.message}</div>
+            ${advancedHtml}
+            <div class="ext-card-footer">
+                <span class="ext-update-time">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    更新: ${line.updateTime}
+                </span>
+            </div>
+        `;
+        extension.appendChild(row);
+    });
+
+    // ✨ 核心魔法：瞬間把滑動位置設定回去，肉眼完全看不出畫面有被清空過
+    extension.scrollTop = currentScroll;
+}
