@@ -1529,9 +1529,9 @@ window.undoCardPreference = async function() {
 };
 
 // ============================================================================
-// 🟢 獨立出資料建構與渲染引擎 (方便重複呼叫不阻塞)
+// 🟢 獨立出資料建構與渲染引擎 (支援斷線強制覆寫)
 // ============================================================================
-function buildAndRender(userPrefs, routeDict, liveStatus) {
+function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
     window.GlobalLiveStatus = liveStatus; 
     window.MasterRouteDictionary = routeDict; 
     window.appRailwayData = [];
@@ -1567,11 +1567,21 @@ function buildAndRender(userPrefs, routeDict, liveStatus) {
             finalTargetIds.forEach(lineId => {
                 const dictInfo = routeDict[lineId] || { name: "未知の路線", company: "不明" };
                 
-                // ⚡️ 關鍵：如果快取或 API 沒資料，預設給予「更新中」狀態
-                const statusInfo = liveStatus[lineId] || { 
+                let statusInfo = liveStatus[lineId] || { 
                     status_type: "更新中...", message: "最新データを取得しています...", 
                     delay_minutes: 0, status_text: "データ取得中", update_time: "--:--" 
                 };
+
+                // 🚨 核心防護：如果觸發斷線模式，強制將所有狀態覆寫為錯誤！
+                if (isOffline) {
+                    statusInfo = {
+                        status_type: "通信エラー",
+                        message: "APIサーバーに接続できません。オフライン状態、またはサーバーがメンテナンス中の可能性があります。",
+                        delay_minutes: 0,
+                        status_text: "接続失敗",
+                        update_time: "--:--"
+                    };
+                }
 
                 const msg = statusInfo.message || "";
                 const isNormalMsg = msg.includes("ありません") || msg.includes("平常") || msg.includes("正常") || msg.includes("取得しています");
@@ -1598,8 +1608,9 @@ function buildAndRender(userPrefs, routeDict, liveStatus) {
             });
 
             if (hasError) {
-                groupDesc = "一部の路線の情報を取得できません。";
-                groupFlags = [false, false, false, true, false, false, false]; 
+                // 🚨 根據是否為斷線，給予主卡片更精準的說明
+                groupDesc = isOffline ? "サーバーとの通信に失敗しました。ネットワークを確認してください。" : "一部の路線の情報を取得できません。";
+                groupFlags = [false, false, false, true, false, false, false]; // 亮第四顆燈 (X 錯誤)
             } else if (hasDelay) {
                 groupDesc = `一部の路線で遅延やダイヤ乱れが発生しています。`;
                 groupFlags = [false, false, false, false, true, false, false]; 
@@ -1636,59 +1647,59 @@ function buildAndRender(userPrefs, routeDict, liveStatus) {
     try { hiddenIds = JSON.parse(localStorage.getItem('TsukinKanban_HiddenCards') || '[]'); } catch (e) {}
     const visibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
     
-    // 呼叫我們剛剛升級過的智慧型 renderCards
     renderCards(visibleData);
     initBottomCard();
     initDismissIcon();
 }
 
 // ============================================================================
-// 🟢 系統啟動引擎 (秒開快取 + 背景非同步更新 API 版)
+// 🟢 系統啟動引擎 (秒開快取 + 背景非同步更新 API 版 + 斷線捕捉)
 // ============================================================================
 async function initApp() {
+    let userPrefs = {};
+    let cachedDict = {};
+    let cachedLiveStatus = {};
+
     try {
-        // 1. 取得使用者設定 (IndexedDB 讀取，基本上是 0 毫秒)
-        const userPrefs = await getAllUserPreferences();
-        
-        // ⚡️ 2. 偷吃步：嘗試從 LocalStorage 撈出「上一次關閉前」的快取資料
-        let cachedDict = {};
-        let cachedLiveStatus = {};
+        // 1. 取得使用者設定與快取
+        userPrefs = await getAllUserPreferences();
         try {
             cachedDict = JSON.parse(localStorage.getItem('Tsukin_Cached_Dict') || '{}');
             cachedLiveStatus = JSON.parse(localStorage.getItem('Tsukin_Cached_Status') || '{}');
         } catch(e) {}
 
-        // ⚡️ 3. 瞬間渲染！不管 API 回來沒，先用舊資料畫出 DOM，觸發波浪進場動畫 (Zero-Latency)
-        buildAndRender(userPrefs, cachedDict, cachedLiveStatus);
+        // ⚡️ 2. 瞬間渲染！(先用快取畫出 DOM，不會有白畫面，動畫正常執行)
+        buildAndRender(userPrefs, cachedDict, cachedLiveStatus, false);
 
-        // ⚡️ 4. 背景非同步抓取最新資料 (此時畫面上已經開始跑鋼琴動畫了，絕不會有白畫面)
+        // 3. 背景非同步抓取最新資料
         console.log("📡 背景正在獲取最新運行狀態...");
-        
         const DICTIONARY_API_URL = 'https://tsukinkanban-odpt.onrender.com/api/dictionary';
         const STATUS_API_URL = 'https://tsukinkanban-odpt.onrender.com/api/status';
 
-        // 同時發射兩個 API 請求，節省一半等待時間
         const [routeDict, statusRes] = await Promise.all([
-            syncAndLoadDictionary(DICTIONARY_API_URL),
-            fetch(STATUS_API_URL).catch(() => null) // 防止 API 伺服器掛掉時炸毀整個網頁
+            syncAndLoadDictionary(DICTIONARY_API_URL).catch(() => null),
+            fetch(STATUS_API_URL).catch(() => null) // 防止網路全斷時炸毀
         ]);
 
+        // 🚨 4. 判斷 API 是否活著
         if (statusRes && statusRes.ok) {
             const liveStatus = await statusRes.json();
             
-            // 寫入快取，供下一次使用者打開網頁時秒開使用
-            localStorage.setItem('Tsukin_Cached_Dict', JSON.stringify(routeDict));
+            localStorage.setItem('Tsukin_Cached_Dict', JSON.stringify(routeDict || cachedDict));
             localStorage.setItem('Tsukin_Cached_Status', JSON.stringify(liveStatus));
             
-            // ⚡️ 5. 拿到真實資料了，無縫重繪畫面！(智慧渲染引擎會確保動畫不中斷)
             console.log("✅ 最新狀態獲取成功，更新畫面！");
-            buildAndRender(userPrefs, routeDict, liveStatus);
+            buildAndRender(userPrefs, routeDict || cachedDict, liveStatus, false);
         } else {
-            console.warn("⚠️ 背景狀態 API 獲取失敗，維持快取畫面");
+            // 🚨 API 伺服器回傳 500、502，或是休眠叫不醒
+            console.warn("⚠️ 狀態 API 伺服器無回應，強制切換至斷線異常狀態");
+            buildAndRender(userPrefs, cachedDict, cachedLiveStatus, true); // 傳入 isOffline = true
         }
 
     } catch (error) {
-        console.error("系統初始化發生非預期錯誤:", error);
+        // 🚨 發生無法預期的底層錯誤 (如 DNS 解析失敗、網路完全斷開)
+        console.error("系統遭遇嚴重連線錯誤:", error);
+        buildAndRender(userPrefs, cachedDict, cachedLiveStatus, true); // 依然強制渲染出錯誤燈號
     }
 }
 
