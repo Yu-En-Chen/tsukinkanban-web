@@ -70,10 +70,11 @@ export function searchFlights(lowKeyword) {
                 let airportBadge = airportNamesJa[f.airport] || f.airport;
                 
                 // ✨ 2. 觸發防呆標籤 (成田國內線 / 羽田國際線)
+                // 這裡已經把 style="..." 徹底殺掉，只留下 class="flight-alert-badge"！
                 if (f.airport === 'NRT' && isDomestic) {
-                    airportBadge = `<span style="color: #ffcc00; font-weight: 800; border: 1px solid rgba(255,204,0,0.5); padding: 0px 4px; border-radius: 4px; background: rgba(255,204,0,0.1); display: inline-block;">成田（NRT）国内線</span>`;
+                    airportBadge = `<span class="flight-alert-badge">成田（NRT）国内線</span>`;
                 } else if (f.airport === 'HND' && !isDomestic) {
-                    airportBadge = `<span style="color: #ffcc00; font-weight: 800; border: 1px solid rgba(255,204,0,0.5); padding: 0px 4px; border-radius: 4px; background: rgba(255,204,0,0.1); display: inline-block;">羽田（HND）国際線</span>`;
+                    airportBadge = `<span class="flight-alert-badge">羽田（HND）国際線</span>`;
                 }
 
                 // ✨ 3. 動態箭頭方向與副標題組合
