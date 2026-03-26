@@ -1303,6 +1303,12 @@ function filterCards(keyword) {
         }
     });
 
+    // ✨ C. 航班資料搜尋 (呼叫外包的搜尋引擎)
+    if (typeof searchFlights === 'function') {
+        const flightResults = searchFlights(lowKeyword);
+        searchResults.push(...flightResults);
+    }
+
     // 4. 渲染獨立玻璃膠囊
     if (searchResults.length === 0) {
         dropdown.innerHTML = `
@@ -1311,15 +1317,20 @@ function filterCards(keyword) {
             </div>`;
     } else {
         dropdown.innerHTML = searchResults.slice(0, 30).map(route => {
-            // 🟢 3. 搜尋列表的延遲文字判斷，改用 CSS Class 支援深淺色
-            let delayHtml = '';
-            if (route.delayMinutes > 0) {
+            // 🟢 智慧判斷：如果是飛機就用飛機的專屬時間排版，火車就用原本的延誤排版
+            let delayHtml = route.customRightHtml || ''; 
+            
+            if (!route.customRightHtml && route.delayMinutes > 0) {
                 if (route.delayMinutes <= 5) {
                     delayHtml = `<div class="search-delay-minor">${route.delayMinutes}分遅れ</div>`;
                 } else {
                     delayHtml = `<div class="search-delay-major">${route.delayMinutes}分遅れ</div>`;
                 }
             }
+            
+            // 🟢 滑鼠指標與點擊防護：飛機禁止點擊，火車才可以點擊加入卡片
+            const cursorStyle = route.isFlight ? 'cursor: default; opacity: 0.9;' : 'cursor: pointer;';
+            const clickAction = route.isFlight ? '' : `onclick="window.previewRouteFromSearch('${route.id}')"`;
     
             return `
                 <div style="
@@ -1334,8 +1345,8 @@ function filterCards(keyword) {
                     gap: 12px;
                     box-shadow: 0 8px 24px rgba(0,0,0,0.15);
                     flex-shrink: 0;
-                    cursor: pointer;
-                " onclick="window.previewRouteFromSearch('${route.id}')">
+                    ${cursorStyle}
+                " ${clickAction}>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div style="display: flex; flex-direction: column; gap: 4px;">
                             <div style="font-weight: 800; font-size: 1.15em; color: #fff; letter-spacing: 0.5px;">${route.name}</div>
@@ -1345,7 +1356,8 @@ function filterCards(keyword) {
                             <div class="status-tag" style="position: relative; top: 0; right: 0; transform: none; display: flex; align-items: center;">
                                 ${window.getStatusIconsHTML(route.statusFlags)}
                             </div>
-                            ${delayHtml} </div>
+                            ${delayHtml} 
+                        </div>
                     </div>
                 </div>
             `;
@@ -1779,6 +1791,7 @@ async function initApp() {
         console.error("系統遭遇嚴重連線錯誤:", error);
         buildAndRender(userPrefs, cachedDict, cachedLiveStatus, true); // 依然強制渲染出錯誤燈號
     }
+    initFlights();
 }
 
 // 因為 script type="module" 會延遲執行，這裡可以直接呼叫啟動
