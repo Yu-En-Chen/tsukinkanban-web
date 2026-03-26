@@ -1549,7 +1549,7 @@ window.undoCardPreference = async function() {
 };
 
 // ============================================================================
-// 🟢 獨立出資料建構與渲染引擎 (支援斷線強制覆寫)
+// 🟢 獨立出資料建構與渲染引擎 (支援斷線強制覆寫 + 多重燈號共存版)
 // ============================================================================
 function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
     window.GlobalLiveStatus = liveStatus; 
@@ -1574,16 +1574,19 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
 
         let groupStatusText = "登録路線なし";
         let groupDesc = "路線を追加してください";
+        // 預設全部暗燈
         let groupFlags = [false, false, false, false, false, false, false];
         let worstDelay = 0;
-        let hasError = false; let hasDelay = false; let hasAttention = false; 
+        
+        // 🟢 核心修改：新增 hasNormal 變數，用來獨立記錄「是否有正常的路線」
+        let hasError = false; 
+        let hasDelay = false; 
+        let hasAttention = false; 
+        let hasNormal = false; 
 
         const detailedLines = [];
 
         if (finalTargetIds.length > 0) {
-            groupStatusText = "平常運転";
-            groupDesc = "すべての路線は平常通り運転しています。";
-            
             finalTargetIds.forEach(lineId => {
                 const dictInfo = routeDict[lineId] || { name: "未知の路線", company: "不明" };
                 
@@ -1592,7 +1595,6 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                     delay_minutes: 0, status_text: "データ取得中", update_time: "--:--" 
                 };
 
-                // 🚨 核心防護：如果觸發斷線模式，強制將所有狀態覆寫為錯誤！
                 if (isOffline) {
                     statusInfo = {
                         status_type: "通信エラー",
@@ -1608,6 +1610,7 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
 
                 let isDelayedLocal = false; let isErrorLocal = false; let isAttentionLocal = false;
 
+                // 判斷單一路線狀態
                 if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
                     isErrorLocal = true; hasError = true;
                 } else if (statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし" || statusInfo.status_type === "更新中...") {
@@ -1615,6 +1618,9 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                 } else if (!isNormalMsg && (statusInfo.status_text.includes("異常") || msg.includes("遅延") || statusInfo.delay_minutes > 0 || (statusInfo.status_type && statusInfo.status_type.includes("見合わせ")) || (statusInfo.status_type && statusInfo.status_type.includes("運転変更")))) {
                     isDelayedLocal = true; hasDelay = true;
                     if (statusInfo.delay_minutes > worstDelay) worstDelay = statusInfo.delay_minutes;
+                } else {
+                    // 🟢 如果以上都不是，代表這條線是正常的！
+                    hasNormal = true;
                 }
 
                 detailedLines.push({
@@ -1627,19 +1633,35 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                 });
             });
 
-            if (hasError) {
-                // 🚨 根據是否為斷線，給予主卡片更精準的說明
-                groupDesc = isOffline ? "サーバーとの通信に失敗しました。ネットワークを確認してください。" : "一部の路線の情報を取得できません。";
-                groupFlags = [false, false, false, true, false, false, false]; // 亮第四顆燈 (X 錯誤)
+            // ====================================================
+            // ✨ 魔法發生的地方：多重燈號共存邏輯 (Additive Flags)
+            // 不再使用 else if，只要該狀態存在，對應的燈就強制點亮！
+            // ====================================================
+            if (hasError)     groupFlags[3] = true; // 第4顆：打叉 (錯誤)
+            if (hasDelay)     groupFlags[4] = true; // 第5顆：三角形 (延誤)
+            if (hasNormal)    groupFlags[5] = true; // 第6顆：圓形 (正常)
+            if (hasAttention) groupFlags[6] = true; // 第7顆：驚嘆號 (注意/更新中)
+
+            // ====================================================
+            // ✨ 智慧文字描述生成：因為燈號可以多重亮起，文字說明需依照「嚴重程度」給出最適合的結論
+            // ====================================================
+            if (isOffline) {
+                groupDesc = "サーバーとの通信に失敗しました。ネットワークを確認してください。";
+            } else if (hasError) {
+                groupDesc = "一部の路線の情報を取得できません。";
             } else if (hasDelay) {
                 groupDesc = `一部の路線で遅延やダイヤ乱れが発生しています。`;
-                groupFlags = [false, false, false, false, true, false, false]; 
-            } else if (hasAttention) {
+            } else if (hasNormal && hasAttention && !hasError && !hasDelay) {
+                // 🟢 特殊混和狀態：有的正常，有的還在讀取/無資料
+                groupDesc = "一部の路線は平常運転、その他は情報確認中です。";
+            } else if (hasAttention && !hasNormal && !hasError && !hasDelay) {
+                // 只有注意狀態
                 groupDesc = "現在監視中、または公式情報がありません。";
-                groupFlags = [false, false, false, false, false, false, true]; 
-            } else {
-                groupFlags[5] = true; 
+            } else if (hasNormal && !hasError && !hasDelay && !hasAttention) {
+                // 完美狀態
+                groupDesc = "すべての路線は平常通り運転しています。";
             }
+
         } else {
             groupDesc = card.desc || groupDesc;
             groupFlags = card.statusFlags || groupFlags;
