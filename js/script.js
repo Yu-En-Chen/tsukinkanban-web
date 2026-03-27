@@ -547,6 +547,18 @@ function handleCardClick(id) {
     const data = window.appRailwayData.find(l => l.id === id);
     if (!data) return;
 
+    // ✨ 狀態機防呆修復：如果已經有一張卡片在展開狀態（例如：卡片沒關就去按搜尋），
+    // 我們必須先把舊卡片「瞬間復原」到背景，再讓新卡片接管畫面！
+    if (activeCardId && activeCardId !== id) {
+        const prevCard = activeCardId === 'fixed-bottom' ? document.getElementById('fixed-info-card') : document.getElementById(`card-${activeCardId}`);
+        if (prevCard) {
+            // 瞬間拔除所有隱形與位移狀態，肉眼看不出切換破綻
+            prevCard.classList.remove('hidden-placeholder', 'lifted-state', 'returning');
+            prevCard.style.transform = '';
+            prevCard.style.animationDelay = '';
+        }
+    }
+
     const originalCard = document.getElementById(`card-${id}`);
     activeCardId = id;
     isAnimating = true;
@@ -936,12 +948,21 @@ function handleCardClick(id) {
 function handleBottomCardClick() {
     if (isAnimating) return;
 
+    // ✨ 狀態機防呆修復：保護置底卡片被點開時的舊狀態
+    if (activeCardId && activeCardId !== 'fixed-bottom') {
+        const prevCard = document.getElementById(`card-${activeCardId}`);
+        if (prevCard) {
+            prevCard.classList.remove('hidden-placeholder', 'lifted-state', 'returning');
+            prevCard.style.transform = '';
+            prevCard.style.animationDelay = '';
+        }
+    }
+
     const id = 'fixed-bottom';
     const originalCard = document.getElementById('fixed-info-card');
 
     activeCardId = id;
     isAnimating = true;
-
     history.pushState({ cardActive: true }, '');
 
     let bgStyle = '';
