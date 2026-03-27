@@ -80,7 +80,6 @@ export function searchFlights(lowKeyword) {
                     flags[5] = true; 
                 }
 
-                // ✨ 1. 狀態翻譯蒟蒻
                 const statusMap = {
                     'Normal': '通常', 'Delayed': '遅延', 'Cancelled': '欠航',
                     'Takeoff': '出発済', 'Landed': '着陸済', 'Arrived': '到着済',
@@ -89,7 +88,6 @@ export function searchFlights(lowKeyword) {
                 };
                 const statusText = statusMap[f.status] || f.status;
 
-                // ✨ 2. 純文字分色系統 (更新：欠航紅、關櫃黃、報到/完成綠)
                 let statusColor = 'inherit';
                 let statusOpacity = '0.6';
 
@@ -98,36 +96,39 @@ export function searchFlights(lowKeyword) {
                 const normalStatuses = ['通常', '新規到着'];
 
                 if (greenStatuses.includes(statusText)) {
-                    statusColor = '#32d74b'; // 🟢 綠色：已起飛/降落、報到手續中
+                    statusColor = '#32d74b'; 
                     statusOpacity = '1';
                 } else if (redStatuses.includes(statusText)) {
-                    statusColor = '#ff3b30'; // 🔴 紅色：欠航
+                    statusColor = '#ff3b30'; 
                     statusOpacity = '1';
                 } else if (normalStatuses.includes(statusText)) {
-                    statusColor = 'inherit'; // ⚪ 普通色：還沒開放 checkin
+                    statusColor = 'inherit'; 
                     statusOpacity = '0.5';
                 } else {
-                    statusColor = '#ff9500'; // 🟡 黃橘色：搭乘中、最終案內、延遲等已關櫃狀態
+                    statusColor = '#ff9500'; 
                     statusOpacity = '1';
                 }
 
-                // 產出無外框的純文字狀態標籤
                 const statusHtml = `<div style="color: ${statusColor}; opacity: ${statusOpacity}; font-weight: 800; font-size: 1.15em; letter-spacing: 1px;">${statusText}</div>`;
 
-                // ✨ 3. 底部排版組合
+                // ✨ 加入與主卡片相同的欠航與劃線判斷
+                const isCancelled = statusText === '欠航';
+                const strikeScheduled = isTimeChanged || isCancelled;
+
                 let flightTimeHtml = '';
-                if (isTimeChanged) {
-                    const delayClass = delayMins > 30 ? 'search-delay-major' : 'search-delay-minor';
+                if (strikeScheduled && !isCancelled) {
+                    // ✨ 拔除舊的 class 樣式，統一強制指定為亮橘色或紅色！
+                    const delayColor = delayMins > 30 ? '#ff3b30' : '#ff9500';
                     flightTimeHtml = `
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; padding-top: 12px; border-top: 1px dashed rgba(128,128,128,0.25);">
                             <div style="display: flex; align-items: center; gap: 16px; font-size: 0.95em;">
-                                <div style="display: flex; align-items: center; gap: 6px; opacity: 0.5;">
+                                <div style="display: flex; align-items: baseline; gap: 6px; opacity: 0.5;">
                                     <span style="font-weight: 600;">定刻</span>
-                                    <span style="text-decoration: line-through; font-family: monospace; font-size: 1.1em;">${f.scheduled}</span>
+                                    <span style="text-decoration: line-through; font-family: monospace; font-size: 1.15em; line-height: 1;">${f.scheduled}</span>
                                 </div>
-                                <div class="${delayClass}" style="display: flex; align-items: center; gap: 6px; font-size: 1em; margin: 0;">
-                                    <span style="font-weight: 800;">変更</span>
-                                    <span style="font-weight: 800; font-family: monospace; font-size: 1.25em;">${f.latest}</span>
+                                <div style="display: flex; align-items: baseline; gap: 6px; font-size: 1em; margin: 0;">
+                                    <span style="font-weight: 800; color: ${delayColor};">変更</span>
+                                    <span style="font-weight: 800; font-family: monospace; font-size: 1.25em; line-height: 1; color: ${delayColor};">${f.latest}</span>
                                 </div>
                             </div>
                             ${statusHtml}
@@ -135,9 +136,9 @@ export function searchFlights(lowKeyword) {
                 } else {
                     flightTimeHtml = `
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; padding-top: 12px; border-top: 1px dashed rgba(128,128,128,0.25);">
-                            <div style="display: flex; align-items: center; gap: 6px; font-size: 0.95em; opacity: 0.65;">
+                            <div style="display: flex; align-items: baseline; gap: 6px; font-size: 0.95em; opacity: ${strikeScheduled ? '0.5' : '0.65'};">
                                 <span style="font-weight: 600;">定刻</span>
-                                <span style="font-family: monospace; font-size: 1.1em; font-weight: 600;">${f.scheduled}</span>
+                                <span style="font-family: monospace; font-size: 1.15em; line-height: 1; font-weight: 600; ${strikeScheduled ? 'text-decoration: line-through;' : ''}">${f.scheduled}</span>
                             </div>
                             ${statusHtml}
                         </div>`;
@@ -155,13 +156,14 @@ export function searchFlights(lowKeyword) {
                     airportBadge = `<span class="flight-alert-badge">羽田（HND）国際線</span>`;
                 }
 
+                // ✨ 徹底拔除航空公司文字，並把地點換成與前方相同的 800 粗體
                 let companyHtml = '';
                 if (f.type === 'Departure') {
                     const arrowRightSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px; margin-left: 2px;"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
-                    companyHtml = `${airportBadge} <span style="font-weight: 800; opacity: 0.7; margin: 0 4px;">出発${arrowRightSvg}</span> ${f.location} <span style="opacity: 0.7;">(${f.airline})</span>`;
+                    companyHtml = `${airportBadge} <span style="font-weight: 800; opacity: 0.7; margin: 0 4px;">出発${arrowRightSvg}</span> <span style="font-weight: 800;">${f.location}</span>`;
                 } else {
                     const arrowLeftSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px; margin-right: 2px;"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>`;
-                    companyHtml = `${airportBadge} <span style="font-weight: 800; opacity: 0.7; margin: 0 4px;">${arrowLeftSvg}到着</span> ${f.location} <span style="opacity: 0.7;">(${f.airline})</span>`;
+                    companyHtml = `${airportBadge} <span style="font-weight: 800; opacity: 0.7; margin: 0 4px;">${arrowLeftSvg}到着</span> <span style="font-weight: 800;">${f.location}</span>`;
                 }
 
                 results.push({
