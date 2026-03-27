@@ -597,15 +597,15 @@ function handleCardClick(id) {
                     
                     <div style="display: flex; flex-direction: column; justify-content: center; gap: 4px;">
                         
-                        <div style="display: flex; align-items: center; gap: 8px; opacity: ${strikeScheduled ? '0.5' : '0.9'};">
+                        <div style="display: flex; align-items: baseline; gap: 8px; opacity: ${strikeScheduled ? '0.5' : '0.9'};">
                             <span style="font-weight: 600; font-size: 1.05em;">定刻</span>
-                            <span style="font-family: monospace; font-size: 1.45em; font-weight: 800; ${strikeScheduled ? 'text-decoration: line-through;' : ''}">${data.flightData.scheduled}</span>
+                            <span style="font-family: monospace; font-size: 1.45em; font-weight: 800; line-height: 1; ${strikeScheduled ? 'text-decoration: line-through;' : ''}">${data.flightData.scheduled}</span>
                         </div>
                         
                         ${(!isCancelled && isTimeChangedLocal) ? `
-                        <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="display: flex; align-items: baseline; gap: 8px;">
                             <span style="font-weight: 800; color: inherit; text-shadow: none; font-size: 1.05em;">変更</span>
-                            <span style="font-family: monospace; font-size: 1.45em; font-weight: 800; color: inherit;">${data.flightData.latest}</span>
+                            <span style="font-family: monospace; font-size: 1.45em; font-weight: 800; color: inherit; line-height: 1;">${data.flightData.latest}</span>
                             <span style="font-weight: 800; font-size: 0.95em; color: ${data.flightData.delayColor}; text-shadow: ${data.flightData.delayShadow}; margin-left: 2px;">${data.flightData.delayText}</span>
                         </div>` : ''}
 
