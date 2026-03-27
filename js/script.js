@@ -574,14 +574,15 @@ function handleCardClick(id) {
         // ✨ 加入欠航與時間劃線判斷
         // ✨ 加入欠航與時間劃線判斷
         // ✨ 加入欠航與時間劃線判斷
+        // ✨ 加入欠航與時間劃線判斷
         const isCancelled = data.flightData.isCancelled;
         const isTimeChangedLocal = data.flightData.scheduled !== data.flightData.latest;
         const strikeScheduled = isTimeChangedLocal || isCancelled; // 只要有變更或欠航，就劃掉舊時間！
 
         cardContent.innerHTML = `
-            <div style="display: flex; flex-direction: column; height: 100%; min-height: 125px; margin-top: 4px;">
+            <div style="display: flex; flex-direction: column; margin-top: 4px;">
                 
-                <div style="flex-shrink: 0;">
+                <div>
                     <div style="font-size: 1.15em; font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
                         ${data.flightData.routeHtml}
                     </div>
@@ -590,9 +591,9 @@ function handleCardClick(id) {
                     </div>
                 </div>
 
-                <div style="width: 100%; border-top: 1px dashed rgba(255,255,255,0.25); margin: 14px 0; flex-shrink: 0;"></div>
+                <div style="width: 100%; border-top: 1px dashed rgba(255,255,255,0.25); margin: 20px 0;"></div>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-grow: 1; padding-bottom: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
                     
                     <div style="display: flex; flex-direction: column; justify-content: center; gap: 4px;">
                         
@@ -601,17 +602,12 @@ function handleCardClick(id) {
                             <span style="font-family: monospace; font-size: 1.45em; font-weight: 800; ${strikeScheduled ? 'text-decoration: line-through;' : ''}">${data.flightData.scheduled}</span>
                         </div>
                         
-                        ${isCancelled ? `
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="font-weight: 800; color: ${data.flightData.statusColor}; text-shadow: ${data.flightData.statusShadow}; font-size: 1.35em; letter-spacing: 2px;">欠航</span>
-                        </div>
-                        ` : (isTimeChangedLocal ? `
+                        ${(!isCancelled && isTimeChangedLocal) ? `
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <span style="font-weight: 800; color: inherit; text-shadow: none; font-size: 1.05em;">変更</span>
                             <span style="font-family: monospace; font-size: 1.45em; font-weight: 800; color: inherit;">${data.flightData.latest}</span>
-                            
                             <span style="font-weight: 800; font-size: 0.95em; color: ${data.flightData.delayColor}; text-shadow: ${data.flightData.delayShadow}; margin-left: 2px;">${data.flightData.delayText}</span>
-                        </div>` : '')}
+                        </div>` : ''}
 
                     </div>
 
