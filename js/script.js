@@ -638,7 +638,67 @@ function handleCardClick(id) {
         `;
 
         // ✨ 改變對象：全部改為塞入 scrollWrapper 裡面
-        scrollWrapper.innerHTML = `<div class="extension-route-card" style="min-height: 120px;"></div>`;
+        // ✨ 動態抓取航廈與登機口資訊 (如果 API 沒給或為 undefined 就用 '-')
+        const fData = data.flightData;
+        const isDep = fData.type === 'Departure';
+        
+        // 辨識主要機場名稱 (優化 HND/NRT 的顯示)
+        let mainAirport = fData.airport;
+        if (mainAirport === 'HND') mainAirport = '羽田(HND)';
+        else if (mainAirport === 'NRT') mainAirport = '成田(NRT)';
+        else mainAirport = mainAirport || '-';
+
+        const otherAirport = fData.location || '-';
+        
+        // 判斷出發與抵達的名稱
+        const depAirport = isDep ? mainAirport : otherAirport;
+        const arrAirport = !isDep ? mainAirport : otherAirport;
+        
+        // API (ODPT) 通常只會提供「東京端(主機場)」的航廈與登機口資料
+        const depTerminal = isDep ? (fData.terminal || '-') : '-';
+        const depGate     = isDep ? (fData.gate || '-') : '-';
+        
+        const arrTerminal = !isDep ? (fData.terminal || '-') : '-';
+        const arrGate     = !isDep ? (fData.gate || '-') : '-';
+
+        // ✨ 改變對象：塞入精緻的 Native 雙欄風格卡片
+        scrollWrapper.innerHTML = `
+            <div class="extension-route-card" style="padding: 18px 16px;">
+                <div style="font-weight: 800; font-size: 1.05em; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M12 13v8"/><path d="M12 3v3"/><path d="M2.354 10.354a1.207 1.207 0 0 1 0-1.708l2.06-2.06A2 2 0 0 1 5.828 6h12.344a2 2 0 0 1 1.414.586l2.06 2.06a1.207 1.207 0 0 1 0 1.708l-2.06 2.06a2 2 0 0 1-1.414.586H5.828a2 2 0 0 1-1.414-.586z"/></svg>
+                    搭乗口・ターミナル情報（Beta）
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <div style="flex: 1; background: rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="font-size: 0.8em; opacity: 0.7; font-weight: 800; display: flex; align-items: center; gap: 4px; padding-bottom: 6px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+                            出発 <span style="font-family: monospace; font-size: 1.15em; opacity: 0.9;">${depAirport}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 0.85em; font-weight: 600; opacity: 0.8;">ターミナル</span>
+                            <span style="font-weight: 800; font-size: 1.2em; font-family: monospace;">${depTerminal}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 0.85em; font-weight: 600; opacity: 0.8;">搭乗口</span>
+                            <span style="font-weight: 800; font-size: 1.2em; font-family: monospace; color: ${depGate !== '-' ? '#ffcc00' : 'inherit'};">${depGate}</span>
+                        </div>
+                    </div>
+                    
+                    <div style="flex: 1; background: rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="font-size: 0.8em; opacity: 0.7; font-weight: 800; display: flex; align-items: center; gap: 4px; padding-bottom: 6px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+                            到着 <span style="font-family: monospace; font-size: 1.15em; opacity: 0.9;">${arrAirport}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 0.85em; font-weight: 600; opacity: 0.8;">ターミナル</span>
+                            <span style="font-weight: 800; font-size: 1.2em; font-family: monospace;">${arrTerminal}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 0.85em; font-weight: 600; opacity: 0.8;">搭乗口</span>
+                            <span style="font-weight: 800; font-size: 1.2em; font-family: monospace; color: ${arrGate !== '-' ? '#ffcc00' : 'inherit'};">${arrGate}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
         
         const scrollSpacer = document.createElement('div');
         // 🛡️ 完美對稱排版：

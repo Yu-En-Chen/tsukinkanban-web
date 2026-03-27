@@ -320,7 +320,12 @@ window.previewFlightFromSearch = function(routeId) {
             delayColor: delayColor,         
             delayShadow: delayShadow,
             delayText: delayText,
-            isCancelled: statusText === '欠航'
+            isCancelled: statusText === '欠航',
+            type: flight.type,
+            airport: flight.airport,
+            location: flight.location,
+            terminal: flight.terminal,
+            gate: flight.gate
         }
     };
 
