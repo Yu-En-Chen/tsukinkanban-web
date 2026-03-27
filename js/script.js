@@ -573,10 +573,22 @@ function handleCardClick(id) {
     extension.style.height = exactRemainingHeight; 
     extension.innerHTML = ''; 
     
-    // ✨ 內層滾動容器：直接繼承外層玻璃的 100% 高度
+    // ✨ 建立透明的內層滾動容器
     const scrollWrapper = document.createElement('div');
     scrollWrapper.id = 'card-extension-container'; 
-    scrollWrapper.style.cssText = 'width: 100%; height: 100%; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; gap: 16px; padding: 16px 16px 0px 16px;';
+    
+    // 📐 物理級精準高度：176px 修改為 178px (多預留 2px 作為邊框與螢幕邊緣的緩衝，防止邊框被切掉)
+    scrollWrapper.style.cssText = `
+        width: 100%; 
+        height: calc(100dvh - env(safe-area-inset-top) - 178px - (var(--card-width) / var(--card-ratio))); 
+        overflow-y: auto; 
+        overscroll-behavior: contain; 
+        -webkit-overflow-scrolling: touch; 
+        display: flex; 
+        flex-direction: column; 
+        gap: 16px; 
+        padding: 16px 16px 0px 16px;
+    `;
     extension.appendChild(scrollWrapper);
 
     inner.style.background = applyThemeToCard(inner, data.hex);
@@ -629,8 +641,10 @@ function handleCardClick(id) {
         scrollWrapper.innerHTML = `<div class="extension-route-card" style="min-height: 120px;"></div>`;
         
         const scrollSpacer = document.createElement('div');
-        // 🛡️ 加大底部墊片，並引入 iPhone 底部橫條安全區 (safe-area-inset-bottom)，保證最後一行字絕對不會被擋住
-        scrollSpacer.style.cssText = 'height: calc(env(safe-area-inset-bottom) + 80px); min-height: 80px; flex-shrink: 0; pointer-events: none;';
+        // 🛡️ 完美對稱排版：
+        // 利用 Flexbox 內建的 gap: 16px，這裡只要單純補上 iPhone 底部安全區的高度即可！
+        // 最終視覺上的底部留白，會精準等於左右邊距的 16px。
+        scrollSpacer.style.cssText = 'height: env(safe-area-inset-bottom); flex-shrink: 0; pointer-events: none;';
         scrollWrapper.appendChild(scrollSpacer);
 
     } else {
@@ -753,8 +767,10 @@ function handleCardClick(id) {
         }
         
         const scrollSpacer = document.createElement('div');
-        // 🛡️ 加大底部墊片，並引入 iPhone 底部橫條安全區 (safe-area-inset-bottom)，保證最後一行字絕對不會被擋住
-        scrollSpacer.style.cssText = 'height: calc(env(safe-area-inset-bottom) + 80px); min-height: 80px; flex-shrink: 0; pointer-events: none;';
+        // 🛡️ 完美對稱排版：
+        // 利用 Flexbox 內建的 gap: 16px，這裡只要單純補上 iPhone 底部安全區的高度即可！
+        // 最終視覺上的底部留白，會精準等於左右邊距的 16px。
+        scrollSpacer.style.cssText = 'height: env(safe-area-inset-bottom); flex-shrink: 0; pointer-events: none;';
         scrollWrapper.appendChild(scrollSpacer);
     }
 
