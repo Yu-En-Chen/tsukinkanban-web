@@ -564,6 +564,17 @@ function handleCardClick(id) {
     // ✨ 核心抓蟲 1：直接抓取 Template 內建的玻璃面板，絕對不准再 createElement 產生第二塊！
     const extension = clone.querySelector('.detail-extension-card'); 
 
+    // ✨ 完美修復：保留 extension 原有的 100vh 無限向下延伸高度，在內部建立專屬的「滾動容器」！
+    extension.style.marginTop = '16px';
+    extension.style.height = '100vh'; // 強制鎖死，保證永遠延伸到底部
+    extension.innerHTML = ''; // 清空模板預設
+    
+    // ✨ 建立透明的內層滾動容器，並賦予 ID 讓「背景靜默更新引擎」抓得到！
+    const scrollWrapper = document.createElement('div');
+    scrollWrapper.id = 'card-extension-container'; 
+    scrollWrapper.style.cssText = 'width: 100%; max-height: calc(100dvh - 320px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; gap: 16px; padding: 16px 16px 0px 16px;';
+    extension.appendChild(scrollWrapper);
+
     inner.style.background = applyThemeToCard(inner, data.hex);
     clone.querySelector('.line-name').innerHTML = data.name;
     clone.querySelector('.status-tag').innerHTML = window.getStatusIconsHTML(data.statusFlags || []);
@@ -610,17 +621,12 @@ function handleCardClick(id) {
             </div>
         `;
 
-        // ✨ 破案關鍵：其實外層容器是全透明的！
-        // 我們直接套用跟火車一模一樣的排版屬性，並在裡面塞入一塊「只有預設玻璃樣式 (extension-route-card) 但沒有字」的空區塊
-        extension.style.cssText = 'height: auto; margin-top: 16px; display: flex; flex-direction: column; gap: 16px; padding: 16px 16px 0px 16px; max-height: calc(100dvh - 320px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;';
+        // ✨ 改變對象：全部改為塞入 scrollWrapper 裡面
+        scrollWrapper.innerHTML = `<div class="extension-route-card" style="min-height: 120px;"></div>`;
         
-        // 給它 120px 的基本高度，完美呈現一塊有質感的留白玻璃面板
-        extension.innerHTML = `<div class="extension-route-card" style="min-height: 120px;"></div>`;
-        
-        // 加入透明墊片，確保滑到底部不會被裁切
         const scrollSpacer = document.createElement('div');
         scrollSpacer.style.cssText = 'height: 50px; min-height: 50px; flex-shrink: 0; pointer-events: none;';
-        extension.appendChild(scrollSpacer);
+        scrollWrapper.appendChild(scrollSpacer);
 
     } else {
         // 🚄 火車卡片邏輯
@@ -649,9 +655,6 @@ function handleCardClick(id) {
             }
         }
 
-        // ✨ 設定火車的實心玻璃面板
-        extension.style.cssText = 'height: auto; margin-top: 16px; display: flex; flex-direction: column; gap: 16px; padding: 16px 16px 0px 16px; max-height: calc(100dvh - 320px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;';
-        
         if (data.detailedLines && data.detailedLines.length > 0) {
             data.detailedLines.forEach(line => {
                 let statusClass = 'status-normal';
@@ -708,7 +711,8 @@ function handleCardClick(id) {
                         </span>
                     </div>
                 `;
-                extension.appendChild(row);
+                // ✨ 改變對象：附加到 scrollWrapper
+                scrollWrapper.appendChild(row);
             });
             
             if (data.isTemporarySearch) {
@@ -719,10 +723,10 @@ function handleCardClick(id) {
                     closeAllCards(false);
                     setTimeout(() => { if(window.openAddPanel) window.openAddPanel(); }, 400);
                 };
-                extension.appendChild(addBtn);
+                scrollWrapper.appendChild(addBtn);
             }
         } else {
-            extension.innerHTML = `
+            scrollWrapper.innerHTML = `
                 <div style="background: rgba(30, 30, 32, 0.65); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px 20px; text-align: center; color: var(--text-secondary); box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
                     <div style="opacity: 0.6; margin-bottom: 12px; display: flex; justify-content: center;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -739,16 +743,16 @@ function handleCardClick(id) {
                     closeAllCards(false);
                     setTimeout(() => { if(window.openAddPanel) window.openAddPanel(); }, 400);
                 };
-                extension.appendChild(addBtn);
+                scrollWrapper.appendChild(addBtn);
             }
         }
         
         const scrollSpacer = document.createElement('div');
         scrollSpacer.style.cssText = 'height: 50px; min-height: 50px; flex-shrink: 0; pointer-events: none;';
-        extension.appendChild(scrollSpacer);
+        scrollWrapper.appendChild(scrollSpacer);
     }
 
-    // ✨ 最終：一次把整組掛載上去！不再做重複 Append，確保 HTML 結構只有一套！
+    // ✨ 最終：一次把整組掛載上去！
     detailContainer.appendChild(clone);
 
     const capsule = document.getElementById('action-capsule');
