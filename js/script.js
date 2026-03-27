@@ -561,18 +561,22 @@ function handleCardClick(id) {
     const clone = template.content.cloneNode(true);
     const inner = clone.querySelector('.detail-card-inner');
     
-    // ✨ 核心抓蟲 1：直接抓取 Template 內建的玻璃面板，絕對不准再 createElement 產生第二塊！
+    // ✨ 核心抓蟲 1：直接抓取 Template 內建的玻璃面板
     const extension = clone.querySelector('.detail-extension-card'); 
 
-    // ✨ 完美修復：保留 extension 原有的 100vh 無限向下延伸高度，在內部建立專屬的「滾動容器」！
+    // 📐 終極物理公式：精算「螢幕下緣剩餘的絕對高度」
+    // 100dvh(全螢幕) - 160(頂部預留) - 16(卡片間距) - 主卡片高度
+    const exactRemainingHeight = 'calc(100dvh - env(safe-area-inset-top) - 176px - (var(--card-width) / var(--card-ratio)))';
+
+    // ✨ 完美修復：讓外層實心玻璃「剛好貼齊螢幕下緣」，不多也不少！
     extension.style.marginTop = '16px';
-    extension.style.height = '100vh'; // 強制鎖死，保證永遠延伸到底部
-    extension.innerHTML = ''; // 清空模板預設
+    extension.style.height = exactRemainingHeight; 
+    extension.innerHTML = ''; 
     
-    // ✨ 建立透明的內層滾動容器，並賦予 ID 讓「背景靜默更新引擎」抓得到！
+    // ✨ 內層滾動容器：直接繼承外層玻璃的 100% 高度
     const scrollWrapper = document.createElement('div');
     scrollWrapper.id = 'card-extension-container'; 
-    scrollWrapper.style.cssText = 'width: 100%; max-height: calc(100dvh - 320px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; gap: 16px; padding: 16px 16px 0px 16px;';
+    scrollWrapper.style.cssText = 'width: 100%; height: 100%; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; gap: 16px; padding: 16px 16px 0px 16px;';
     extension.appendChild(scrollWrapper);
 
     inner.style.background = applyThemeToCard(inner, data.hex);
@@ -625,7 +629,8 @@ function handleCardClick(id) {
         scrollWrapper.innerHTML = `<div class="extension-route-card" style="min-height: 120px;"></div>`;
         
         const scrollSpacer = document.createElement('div');
-        scrollSpacer.style.cssText = 'height: 50px; min-height: 50px; flex-shrink: 0; pointer-events: none;';
+        // 🛡️ 加大底部墊片，並引入 iPhone 底部橫條安全區 (safe-area-inset-bottom)，保證最後一行字絕對不會被擋住
+        scrollSpacer.style.cssText = 'height: calc(env(safe-area-inset-bottom) + 80px); min-height: 80px; flex-shrink: 0; pointer-events: none;';
         scrollWrapper.appendChild(scrollSpacer);
 
     } else {
@@ -748,7 +753,8 @@ function handleCardClick(id) {
         }
         
         const scrollSpacer = document.createElement('div');
-        scrollSpacer.style.cssText = 'height: 50px; min-height: 50px; flex-shrink: 0; pointer-events: none;';
+        // 🛡️ 加大底部墊片，並引入 iPhone 底部橫條安全區 (safe-area-inset-bottom)，保證最後一行字絕對不會被擋住
+        scrollSpacer.style.cssText = 'height: calc(env(safe-area-inset-bottom) + 80px); min-height: 80px; flex-shrink: 0; pointer-events: none;';
         scrollWrapper.appendChild(scrollSpacer);
     }
 
