@@ -163,7 +163,7 @@ export function searchFlights(lowKeyword) {
                     companyHtml = `${airportBadge} <span style="font-weight: 800; opacity: 0.7; margin: 0 4px;">出発${arrowRightSvg}</span> <span style="font-weight: 800;">${f.location}</span>`;
                 } else {
                     const arrowLeftSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px; margin-right: 2px;"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>`;
-                    companyHtml = `${airportBadge} <span style="font-weight: 800; opacity: 0.7; margin: 0 4px;">${arrowLeftSvg}到着</span> <span style="font-weight: 800;">${f.location}</span>`;
+                    companyHtml = `${airportBadge} <span style="font-weight: 800; opacity: 0.7; margin: 0 4px;">到着${arrowLeftSvg}</span> <span style="font-weight: 800;">${f.location}</span>`;
                 }
 
                 results.push({
