@@ -708,8 +708,8 @@ function handleCardClick(id) {
 
         // ✨ 替換為 Google Maps 經典地標 Pin 圖示 (Lucide Map-Pin)
         const iconMapPin = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 92.3 132.3" style="opacity: 0.95; transform: translateY(-1px);"><path fill="#1a73e8" d="M60.2 2.2C55.8.8 51 0 46.1 0 32 0 19.3 6.4 10.8 16.5l21.8 18.3L60.2 2.2z"/><path fill="#ea4335" d="M10.8 16.5C4.1 24.5 0 34.9 0 46.1c0 8.7 1.7 15.7 4.6 22l28-33.3-21.8-18.3z"/><path fill="#4285f4" d="M46.2 28.5c9.8 0 17.7 7.9 17.7 17.7 0 4.3-1.6 8.3-4.2 11.4 0 0 13.9-16.6 27.5-32.7-5.6-10.8-15.3-19-27-22.7L32.6 34.8c3.3-3.8 8.1-6.3 13.6-6.3"/><path fill="#fbbc04" d="M46.2 63.8c-9.8 0-17.7-7.9-17.7-17.7 0-4.3 1.5-8.3 4.1-11.3l-28 33.3c4.8 10.6 12.8 19.2 21 29.9l34.1-40.5c-3.3 3.9-8.1 6.3-13.5 6.3"/><path fill="#34a853" d="M59.1 109.2c15.4-24.1 33.3-35 33.3-63 0-7.7-1.9-14.9-5.2-21.3L25.6 98c2.6 3.4 5.3 7.3 7.9 11.3 9.4 14.5 6.8 23.1 12.8 23.1s3.4-8.7 12.8-23.2"/></svg>`;
-        const iconMap = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M14.1 6a2 2 0 0 1 3.8 0"/><path d="M20 9.7V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9.7"/><path d="M12 18s4-3.6 4-6c0-2.2-1.8-4-4-4s-4 1.8-4 4c0 2.4 4 6 4 6Z"/><circle cx="12" cy="12" r="1"/></svg>`;
-        const iconShare = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>`;
+        const iconMap = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg>`;
+        const iconShare = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`;
 
         // ✨ 升級按鈕建立工廠函式：支援第三個參數 onClickAction
         const createBtn = (iconHtml, text, onClickAction) => {
@@ -752,8 +752,8 @@ function handleCardClick(id) {
 
         // 綁定按鈕與事件
         btnContainer.appendChild(createBtn(iconMapPin, 'Google Map', handleGoogleMapClick)); // 綁定 Google Map 邏輯
-        btnContainer.appendChild(createBtn(iconMap, '空港マップ'));
-        btnContainer.appendChild(createBtn(iconShare, '共有'));
+        btnContainer.appendChild(createBtn(iconMap, '1日だけ追加'));
+        btnContainer.appendChild(createBtn(iconShare, 'カード追加'));
 
         scrollWrapper.appendChild(btnContainer);
 
