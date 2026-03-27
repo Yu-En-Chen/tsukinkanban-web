@@ -610,15 +610,12 @@ function handleCardClick(id) {
             </div>
         `;
 
-        // ✨ 核心抓蟲 2：徹底隱藏原本屬於火車的「文字區」與「膠囊區」，消除巨大的隱形空隙！
-        const descEl = clone.querySelector('.description');
-        const tagsContainer = clone.querySelector('.info-tags-container');
-        if (descEl) descEl.style.display = 'none';
-        if (tagsContainer) tagsContainer.style.display = 'none';
-
-        // ✨ 設定飛機的實心玻璃面板 (只給高度，不塞任何文字)
-        extension.innerHTML = '';
-        extension.style.cssText = 'min-height: 250px; margin-top: 16px;';
+        // ✨ 破案關鍵：其實外層容器是全透明的！
+        // 我們直接套用跟火車一模一樣的排版屬性，並在裡面塞入一塊「只有預設玻璃樣式 (extension-route-card) 但沒有字」的空區塊
+        extension.style.cssText = 'height: auto; margin-top: 16px; display: flex; flex-direction: column; gap: 16px; padding: 16px 16px 0px 16px; max-height: calc(100dvh - 320px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;';
+        
+        // 給它 120px 的基本高度，完美呈現一塊有質感的留白玻璃面板
+        extension.innerHTML = `<div class="extension-route-card" style="min-height: 120px;"></div>`;
         
         // 加入透明墊片，確保滑到底部不會被裁切
         const scrollSpacer = document.createElement('div');
@@ -753,128 +750,6 @@ function handleCardClick(id) {
 
     // ✨ 最終：一次把整組掛載上去！不再做重複 Append，確保 HTML 結構只有一套！
     detailContainer.appendChild(clone);
-
-    // ✨ 動態生成底部的詳細資訊玻璃面板 (飛機卡片直接跳過！)
-    if (!data.isFlightCard) {
-        const extension = document.createElement('div');
-        extension.className = 'detail-extension-card';
-        extension.style.cssText = 'height: auto; margin-top: 16px; display: flex; flex-direction: column; gap: 16px; padding: 16px 16px 0px 16px; max-height: calc(100dvh - 320px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;';
-        
-        if (data.detailedLines && data.detailedLines.length > 0) {
-            data.detailedLines.forEach(line => {
-                let statusClass = 'status-normal';
-                if (line.isError) statusClass = 'status-error';
-                else if (line.isAttention) statusClass = 'status-attention';
-                else if (line.isDelayed) {
-                    if (line.delay > 0 && line.delay <= 5) {
-                        statusClass = 'status-delayed-minor'; 
-                    } else {
-                        statusClass = 'status-delayed';
-                    }
-                }
-
-                const delayText = line.delay > 0 ? ` (${line.delay}分)` : '';
-                const row = document.createElement('div');
-                row.className = 'extension-route-card';
-
-                let advancedHtml = '';
-                if (line.advancedDetails && line.advancedDetails.length > 0) {
-                    advancedHtml = `
-                        <div class="adv-details-container">
-                            ${line.advancedDetails.map(adv => {
-                                let dirDelayHtml = `<span class="adv-normal-text">平常</span>`;
-                                if (adv.max_delay > 0) {
-                                    if (adv.max_delay <= 5) {
-                                        dirDelayHtml = `<span class="adv-delay-minor-text">${adv.max_delay}分遅れ</span>`;
-                                    } else {
-                                        dirDelayHtml = `<span class="adv-delay-text">${adv.max_delay}分遅れ</span>`;
-                                    }
-                                }
-                                const trainCountHtml = adv.train_count > 0 ? `<span class="adv-train-count">(${adv.train_count}列車)</span>` : '';
-                                return `
-                                    <div class="adv-detail-capsule">
-                                        <span class="adv-dir-name">${adv.direction_name}</span>
-                                        <div class="adv-status-group">${trainCountHtml}${dirDelayHtml}</div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    `;
-                }
-
-                row.innerHTML = `
-                    <div class="ext-card-header">
-                        <div class="ext-card-title-group">
-                            <div class="ext-route-name">${line.name}</div>
-                            <div class="ext-route-company">${line.company}</div>
-                        </div>
-                        <div class="ext-status-badge ${statusClass}">
-                            ${line.status}${delayText}
-                        </div>
-                    </div>
-                    <div class="ext-card-divider"></div>
-                    <div class="ext-card-message">${line.message}</div>
-                    ${advancedHtml}
-                    <div class="ext-card-footer">
-                        <span class="ext-update-time">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                            更新: ${line.updateTime}
-                        </span>
-                    </div>
-                `;
-                extension.appendChild(row);
-            });
-            
-            if (data.isTemporarySearch) {
-                const addBtn = document.createElement('button');
-                addBtn.innerHTML = '看板に追加する';
-                addBtn.style.cssText = 'margin-top: 8px; width: 100%; padding: 16px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 18px; color: white; font-weight: 800; font-size: 16px; cursor: pointer; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); flex-shrink: 0; transition: transform 0.2s ease, opacity 0.2s ease;';
-                addBtn.onclick = () => {
-                    closeAllCards(false);
-                    setTimeout(() => { if(window.openAddPanel) window.openAddPanel(); }, 400);
-                };
-                extension.appendChild(addBtn);
-            }
-        } else {
-            extension.innerHTML = `
-                <div style="background: rgba(30, 30, 32, 0.65); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px 20px; text-align: center; color: var(--text-secondary); box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
-                    <div style="opacity: 0.6; margin-bottom: 12px; display: flex; justify-content: center;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                    </div>
-                    <div style="font-size: 1.05em; font-weight: 800; color: #fff;">追跡している路線はありません</div>
-                    <div style="font-size: 0.85em; margin-top: 8px; opacity: 0.7;">右上の「＋」から路線を追加してください</div>
-                </div>
-            `;
-            if (data.isTemporarySearch) {
-                const addBtn = document.createElement('button');
-                addBtn.innerHTML = '看板に追加する';
-                addBtn.style.cssText = 'margin-top: 8px; width: 100%; padding: 16px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 18px; color: white; font-weight: 800; font-size: 16px; cursor: pointer; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); flex-shrink: 0; transition: transform 0.2s ease, opacity 0.2s ease;';
-                addBtn.onclick = () => {
-                    closeAllCards(false);
-                    setTimeout(() => { if(window.openAddPanel) window.openAddPanel(); }, 400);
-                };
-                extension.appendChild(addBtn);
-            }
-        }
-        
-        // 實體墊片
-        const scrollSpacer = document.createElement('div');
-        scrollSpacer.style.cssText = 'height: 50px; min-height: 50px; flex-shrink: 0; pointer-events: none;';
-        extension.appendChild(scrollSpacer);
-        
-        detailContainer.appendChild(extension);
-    } else {
-        // ✨ 飛機專屬空白玻璃：直接套用預設 class，只給高度撐開，不塞文字
-        const extension = document.createElement('div');
-        extension.className = 'detail-extension-card';
-        extension.style.cssText = 'min-height: 250px; margin-top: 16px;'; // 只留高度，剩下全吃預設 CSS！
-        detailContainer.appendChild(extension);
-
-        // 實體透明墊片
-        const scrollSpacer = document.createElement('div');
-        scrollSpacer.style.cssText = 'height: 50px; min-height: 50px; flex-shrink: 0; pointer-events: none;';
-        detailContainer.appendChild(scrollSpacer);
-    }
 
     const capsule = document.getElementById('action-capsule');
     if (capsule) capsule.classList.add('detail-active');
