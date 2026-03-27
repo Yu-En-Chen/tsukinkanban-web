@@ -52,7 +52,6 @@ export function searchFlights(lowKeyword) {
                 const flightTypeIcon = f.type === 'Departure' ? takeoffIconSvg : landingIconSvg;
                 const isTimeChanged = f.scheduled !== f.latest;
 
-                // ✨ 1. 航班淨化：只顯示搜尋命中的那個航班編號，拔除突兀的 "..."
                 let matchedFid = f.fid[0]; 
                 for (let id of f.fid) {
                     if (id.toLowerCase().replace(/[\s-]/g, '').includes(lowKeyword)) {
@@ -62,58 +61,94 @@ export function searchFlights(lowKeyword) {
                 }
                 const displayFid = matchedFid;
 
-                // ✨ 2. 時間差計算器：算出實際延誤分鐘數 (處理半夜跨日問題)
                 let delayMins = 0;
                 if (isTimeChanged && f.scheduled !== '--:--' && f.latest !== '--:--') {
                     const [sh, sm] = f.scheduled.split(':').map(Number);
                     const [lh, lm] = f.latest.split(':').map(Number);
                     delayMins = (lh * 60 + lm) - (sh * 60 + sm);
-                    if (delayMins < -720) delayMins += 24 * 60; // 跨日防呆 (例如 23:50 改到 00:30)
+                    if (delayMins < -720) delayMins += 24 * 60; 
                 }
 
-                // ✨ 3. 智慧燈號：改用三角形 (flags[4]) 取代原本的驚嘆號
                 let flags = [false, false, false, false, false, false, false];
                 if (sClass === 'status-error') {
-                    flags[3] = true; // ❌ 嚴重錯誤 (欠航)
+                    flags[3] = true; 
                 } else if (sClass === 'status-delayed' || delayMins > 30) {
-                    flags[4] = true; // 🔴 嚴重延遲 (三角形)
+                    flags[4] = true; 
                 } else if (isTimeChanged) {
-                    flags[4] = true; // ⚠️ 時間有變更，一樣亮三角形燈
+                    flags[4] = true; 
                 } else {
-                    flags[5] = true; // ✅ 準點正常燈號
+                    flags[5] = true; 
                 }
 
-                // ✨ 4. 寬版換行排版：修正 CSS 縮水問題，讓變更時間更大更霸氣
+                // ✨ 1. 狀態翻譯蒟蒻
+                const statusMap = {
+                    'Normal': '通常', 'Delayed': '遅延', 'Cancelled': '欠航',
+                    'Takeoff': '出発済', 'Landed': '着陸済', 'Arrived': '到着済',
+                    'Departed': '出発済', 'NewArrival': '新規到着', 'CheckIn': '搭乗手続中',
+                    'NowBoarding': '搭乗中', 'FinalCall': '最終案内'
+                };
+                const statusText = statusMap[f.status] || f.status;
+
+                // ✨ 2. 純文字分色系統 (更新：欠航紅、關櫃黃、報到/完成綠)
+                let statusColor = 'inherit';
+                let statusOpacity = '0.6';
+
+                const greenStatuses = ['出発済', '到着済', '着陸済', '搭乗手続中'];
+                const redStatuses = ['欠航'];
+                const normalStatuses = ['通常', '新規到着'];
+
+                if (greenStatuses.includes(statusText)) {
+                    statusColor = '#32d74b'; // 🟢 綠色：已起飛/降落、報到手續中
+                    statusOpacity = '1';
+                } else if (redStatuses.includes(statusText)) {
+                    statusColor = '#ff3b30'; // 🔴 紅色：欠航
+                    statusOpacity = '1';
+                } else if (normalStatuses.includes(statusText)) {
+                    statusColor = 'inherit'; // ⚪ 普通色：還沒開放 checkin
+                    statusOpacity = '0.5';
+                } else {
+                    statusColor = '#ff9500'; // 🟡 黃橘色：搭乘中、最終案內、延遲等已關櫃狀態
+                    statusOpacity = '1';
+                }
+
+                // 產出無外框的純文字狀態標籤
+                const statusHtml = `<div style="color: ${statusColor}; opacity: ${statusOpacity}; font-weight: 800; font-size: 1.15em; letter-spacing: 1px;">${statusText}</div>`;
+
+                // ✨ 3. 底部排版組合
                 let flightTimeHtml = '';
                 if (isTimeChanged) {
                     const delayClass = delayMins > 30 ? 'search-delay-major' : 'search-delay-minor';
                     flightTimeHtml = `
-                        <div style="display: flex; align-items: center; gap: 16px; margin-top: 4px; padding-top: 12px; border-top: 1px dashed rgba(128,128,128,0.25); font-size: 0.95em;">
-                            <div style="display: flex; align-items: center; gap: 6px; opacity: 0.5;">
-                                <span style="font-weight: 600;">定刻</span>
-                                <span style="text-decoration: line-through; font-family: monospace; font-size: 1.1em;">${f.scheduled}</span>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; padding-top: 12px; border-top: 1px dashed rgba(128,128,128,0.25);">
+                            <div style="display: flex; align-items: center; gap: 16px; font-size: 0.95em;">
+                                <div style="display: flex; align-items: center; gap: 6px; opacity: 0.5;">
+                                    <span style="font-weight: 600;">定刻</span>
+                                    <span style="text-decoration: line-through; font-family: monospace; font-size: 1.1em;">${f.scheduled}</span>
+                                </div>
+                                <div class="${delayClass}" style="display: flex; align-items: center; gap: 6px; font-size: 1em; margin: 0;">
+                                    <span style="font-weight: 800;">変更</span>
+                                    <span style="font-weight: 800; font-family: monospace; font-size: 1.25em;">${f.latest}</span>
+                                </div>
                             </div>
-                            <div class="${delayClass}" style="display: flex; align-items: center; gap: 6px; font-size: 1em; margin: 0;">
-                                <span style="font-weight: 800;">変更</span>
-                                <span style="font-weight: 800; font-family: monospace; font-size: 1.25em;">${f.latest}</span>
-                            </div>
+                            ${statusHtml}
                         </div>`;
                 } else {
                     flightTimeHtml = `
-                        <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; padding-top: 12px; border-top: 1px dashed rgba(128,128,128,0.25); font-size: 0.95em; opacity: 0.65;">
-                            <span style="font-weight: 600;">定刻</span>
-                            <span style="font-family: monospace; font-size: 1.1em; font-weight: 600;">${f.scheduled}</span>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; padding-top: 12px; border-top: 1px dashed rgba(128,128,128,0.25);">
+                            <div style="display: flex; align-items: center; gap: 6px; font-size: 0.95em; opacity: 0.65;">
+                                <span style="font-weight: 600;">定刻</span>
+                                <span style="font-family: monospace; font-size: 1.1em; font-weight: 600;">${f.scheduled}</span>
+                            </div>
+                            ${statusHtml}
                         </div>`;
                 }
 
-                // 判斷這班飛機的對手機場，是不是在日本國內
                 const locMatch = f.location.match(/[A-Z]{3}/);
                 const locCode = locMatch ? locMatch[0] : '';
                 const isDomestic = locCode ? domesticCodes.includes(locCode) : false;
 
                 let airportBadge = airportNamesJa[f.airport] || f.airport;
                 
-                // 觸發防呆標籤
                 if (f.airport === 'NRT' && isDomestic) {
                     airportBadge = `<span class="flight-alert-badge">成田（NRT）国内線</span>`;
                 } else if (f.airport === 'HND' && !isDomestic) {
@@ -122,12 +157,10 @@ export function searchFlights(lowKeyword) {
 
                 let companyHtml = '';
                 if (f.type === 'Departure') {
-                    // 🛫 出發：使用 SVG 右箭頭 (加粗線條並微調置中)
-                    const arrowRightSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px; margin-left: 2px;"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
+                    const arrowRightSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px; margin-left: 2px;"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
                     companyHtml = `${airportBadge} <span style="font-weight: 800; opacity: 0.7; margin: 0 4px;">出発${arrowRightSvg}</span> ${f.location} <span style="opacity: 0.7;">(${f.airline})</span>`;
                 } else {
-                    // 🛬 抵達：使用 SVG 左箭頭 (加粗線條並微調置中)
-                    const arrowLeftSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px; margin-right: 2px;"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>`;
+                    const arrowLeftSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px; margin-right: 2px;"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>`;
                     companyHtml = `${airportBadge} <span style="font-weight: 800; opacity: 0.7; margin: 0 4px;">${arrowLeftSvg}到着</span> ${f.location} <span style="opacity: 0.7;">(${f.airline})</span>`;
                 }
 
@@ -136,7 +169,6 @@ export function searchFlights(lowKeyword) {
                     name: `${flightTypeIcon} ${displayFid}`, 
                     company: companyHtml, 
                     statusFlags: flags,
-                    // ✨ 核心修正：從 customRightHtml 改塞進 customBottomHtml
                     customBottomHtml: flightTimeHtml, 
                     isFlight: true 
                 });
