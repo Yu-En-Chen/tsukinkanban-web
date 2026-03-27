@@ -711,15 +711,47 @@ function handleCardClick(id) {
         const iconMap = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M14.1 6a2 2 0 0 1 3.8 0"/><path d="M20 9.7V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9.7"/><path d="M12 18s4-3.6 4-6c0-2.2-1.8-4-4-4s-4 1.8-4 4c0 2.4 4 6 4 6Z"/><circle cx="12" cy="12" r="1"/></svg>`;
         const iconShare = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>`;
 
-        const createBtn = (iconHtml, text) => {
+        // ✨ 升級按鈕建立工廠函式：支援第三個參數 onClickAction
+        const createBtn = (iconHtml, text, onClickAction) => {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'flight-action-btn';
             btn.innerHTML = `${iconHtml}<span>${text}</span>`;
+            
+            // 如果有傳入點擊事件，就綁定上去
+            if (onClickAction) {
+                btn.onclick = onClickAction;
+            }
             return btn;
         };
 
-        btnContainer.appendChild(createBtn(iconMapPin, 'Google Map'));
+        // 🧠 智慧判斷 Google Maps 搜尋關鍵字 (超越單純座標的完美做法)
+        let mapQuery = '';
+        if (fData.airport === 'HND') mapQuery = '羽田空港';
+        else if (fData.airport === 'NRT') mapQuery = '成田空港';
+        
+        // 💎 教授級 UX 細節：如果 API 有給航廈，直接幫使用者導航到「專屬航廈」！
+        // 這樣 Google Maps 會直接開啟該航廈的「室內地圖」
+        const mainTerminal = isDep ? depTerminal : arrTerminal;
+        if (mapQuery !== '' && mainTerminal !== '-') {
+            // 確保加上 "第Xターミナル" 讓 Google Maps 定位精準到棟
+            const terminalSuffix = mainTerminal.toString().includes('ターミナル') ? mainTerminal : `第${mainTerminal}ターミナル`;
+            mapQuery += ` ${terminalSuffix}`;
+        }
+
+        // 🗺️ 專屬 Google Maps 點擊事件
+        const handleGoogleMapClick = () => {
+            if (mapQuery) {
+                // 使用 Google Maps Universal URL，這在手機上會自動喚醒原生的 Google Maps App！
+                const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
+                window.open(url, '_blank', 'noopener,noreferrer');
+            } else {
+                alert('空港情報がありません'); // 防呆機制
+            }
+        };
+
+        // 綁定按鈕與事件
+        btnContainer.appendChild(createBtn(iconMapPin, 'Google Map', handleGoogleMapClick)); // 綁定 Google Map 邏輯
         btnContainer.appendChild(createBtn(iconMap, '空港マップ'));
         btnContainer.appendChild(createBtn(iconShare, '共有'));
 
