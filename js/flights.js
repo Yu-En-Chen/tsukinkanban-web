@@ -295,7 +295,7 @@ window.previewFlightFromSearch = function(routeId) {
         routeHtml = `<span style="font-weight: 800;">${airportBadge}</span> <span style="font-weight: 800; opacity: 0.7;">出発${arrowRightSvg}</span> <span style="font-weight: 800;">${flight.location}</span>`;
     } else {
         const arrowLeftSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin: 0 4px;"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>`;
-        routeHtml = `<span style="font-weight: 800;">${airportBadge}</span> <span style="font-weight: 800; opacity: 0.7;">${arrowLeftSvg}到着</span> <span style="font-weight: 800;">${flight.location}</span>`;
+        routeHtml = `<span style="font-weight: 800;">${airportBadge}</span> <span style="font-weight: 800; opacity: 0.7;">到着${arrowLeftSvg}</span> <span style="font-weight: 800;">${flight.location}</span>`;
     }
 
     const tempCard = {

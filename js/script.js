@@ -662,15 +662,16 @@ function handleCardClick(id) {
         const arrGate     = !isDep ? (fData.gate || '-') : '-';
 
         // ✨ 改變對象：塞入精緻的 Native 雙欄風格卡片
+        // ✨ 改變對象：塞入精緻的 Native 雙欄風格卡片 (引入 CSS Class 支援深淺模式)
         scrollWrapper.innerHTML = `
             <div class="extension-route-card" style="padding: 18px 16px;">
                 <div style="font-weight: 800; font-size: 1.05em; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M12 13v8"/><path d="M12 3v3"/><path d="M2.354 10.354a1.207 1.207 0 0 1 0-1.708l2.06-2.06A2 2 0 0 1 5.828 6h12.344a2 2 0 0 1 1.414.586l2.06 2.06a1.207 1.207 0 0 1 0 1.708l-2.06 2.06a2 2 0 0 1-1.414.586H5.828a2 2 0 0 1-1.414-.586z"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; transform: translateY(-1.5px);"><path d="M12 13v8"/><path d="M12 3v3"/><path d="M2.354 10.354a1.207 1.207 0 0 1 0-1.708l2.06-2.06A2 2 0 0 1 5.828 6h12.344a2 2 0 0 1 1.414.586l2.06 2.06a1.207 1.207 0 0 1 0 1.708l-2.06 2.06a2 2 0 0 1-1.414.586H5.828a2 2 0 0 1-1.414-.586z"/></svg>
                     搭乗口・ターミナル情報（Beta）
                 </div>
                 <div style="display: flex; gap: 12px;">
-                    <div style="flex: 1; background: rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
-                        <div style="font-size: 0.8em; opacity: 0.7; font-weight: 800; display: flex; align-items: center; gap: 4px; padding-bottom: 6px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+                    <div class="flight-terminal-block">
+                        <div class="flight-terminal-header">
                             出発 <span style="font-family: monospace; font-size: 1.15em; opacity: 0.9;">${depAirport}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: baseline;">
@@ -679,12 +680,12 @@ function handleCardClick(id) {
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: baseline;">
                             <span style="font-size: 0.85em; font-weight: 600; opacity: 0.8;">搭乗口</span>
-                            <span style="font-weight: 800; font-size: 1.2em; font-family: monospace; color: ${depGate !== '-' ? '#ffcc00' : 'inherit'};">${depGate}</span>
+                            <span style="font-weight: 800; font-size: 1.2em; font-family: monospace;" class="${depGate !== '-' ? 'flight-highlight-gate' : ''}">${depGate}</span>
                         </div>
                     </div>
                     
-                    <div style="flex: 1; background: rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
-                        <div style="font-size: 0.8em; opacity: 0.7; font-weight: 800; display: flex; align-items: center; gap: 4px; padding-bottom: 6px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+                    <div class="flight-terminal-block">
+                        <div class="flight-terminal-header">
                             到着 <span style="font-family: monospace; font-size: 1.15em; opacity: 0.9;">${arrAirport}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: baseline;">
@@ -693,7 +694,7 @@ function handleCardClick(id) {
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: baseline;">
                             <span style="font-size: 0.85em; font-weight: 600; opacity: 0.8;">搭乗口</span>
-                            <span style="font-weight: 800; font-size: 1.2em; font-family: monospace; color: ${arrGate !== '-' ? '#ffcc00' : 'inherit'};">${arrGate}</span>
+                            <span style="font-weight: 800; font-size: 1.2em; font-family: monospace;" class="${arrGate !== '-' ? 'flight-highlight-gate' : ''}">${arrGate}</span>
                         </div>
                     </div>
                 </div>

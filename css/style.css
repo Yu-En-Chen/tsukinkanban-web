@@ -2939,3 +2939,53 @@ body:has(.universal-window.is-active) .left-capsule {
         background-color: rgba(255, 204, 0, 0.1);
     }
 }
+
+/* ==========================================================================
+   🟢 飛機航班：航廈與登機口雙欄區塊 (深淺模式自動適應)
+   ========================================================================== */
+
+/* 🌅 淺色模式：純白底、淡灰邊框分隔 */
+.flight-terminal-block {
+    flex: 1;
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #ffffff; 
+    border: 1px solid rgba(0, 0, 0, 0.08); 
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.flight-terminal-header {
+    font-size: 0.8em;
+    opacity: 0.7;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.15);
+}
+
+/* 淺色模式下，亮黃色會看不清楚，改用深琥珀金 */
+.flight-highlight-gate {
+    color: #c28500 !important; 
+}
+
+/* 🌃 深色模式：自動覆蓋為玻璃透視感 */
+@media (prefers-color-scheme: dark) {
+    .flight-terminal-block {
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        box-shadow: none;
+    }
+    
+    .flight-terminal-header {
+        border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+    }
+    
+    .flight-highlight-gate {
+        color: #ffcc00 !important; /* 恢復原本的亮黃色 */
+    }
+}
