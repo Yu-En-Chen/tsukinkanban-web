@@ -30,7 +30,7 @@ export function initFlights() {
                 }
             })
             .catch(e => console.warn("⚠️ 航班資訊獲取失敗"));
-    }, 3000);
+    }, 1500);
 }
 
 export function searchFlights(lowKeyword) {
