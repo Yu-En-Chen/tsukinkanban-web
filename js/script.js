@@ -701,6 +701,32 @@ function handleCardClick(id) {
             </div>
         `;
         
+        // 5. [終極新增區塊] 增加三個水平排列的按鈕，圓角與間距維持跟搭乘口情報相同 (來自 CSS 定義)
+        const btnContainer = document.createElement('div');
+        btnContainer.className = 'flight-action-buttons-container';
+        btnContainer.style.marginTop = '16px'; // 分隔上方卡片
+
+        // 定義 Icons (使用 Lucide/Feather 風格)
+        const iconPlane = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.7 5.2c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>`;
+        const iconMap = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M14.1 6a2 2 0 0 1 3.8 0"/><path d="M20 9.7V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9.7"/><path d="M12 18s4-3.6 4-6c0-2.2-1.8-4-4-4s-4 1.8-4 4c0 2.4 4 6 4 6Z"/><circle cx="12" cy="12" r="1"/></svg>`;
+        const iconShare = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>`;
+
+        // 按鈕建立工廠函式
+        const createBtn = (iconHtml, text) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'flight-action-btn';
+            btn.innerHTML = `${iconHtml}<span>${text}</span>`;
+            return btn;
+        };
+
+        btnContainer.appendChild(createBtn(iconPlane, '飛行追跡'));
+        btnContainer.appendChild(createBtn(iconMap, '空港マップ'));
+        btnContainer.appendChild(createBtn(iconShare, '共有'));
+
+        // 塞入滾動區域
+        scrollWrapper.appendChild(btnContainer);
+
         const scrollSpacer = document.createElement('div');
         // 🛡️ 完美對稱排版：
         // 利用 Flexbox 內建的 gap: 16px，這裡只要單純補上 iPhone 底部安全區的高度即可！
