@@ -177,3 +177,80 @@ export function searchFlights(lowKeyword) {
     }
     return results;
 }
+// ==========================================
+// 🟢 航班專屬：無縫介接主卡片引擎 (幽靈卡片版)
+// ==========================================
+window.previewFlightFromSearch = function(routeId) {
+    // 1. 抓出飛機資料
+    const fid = routeId.replace('flight-', '');
+    const flight = window.GlobalFlights.find(f => f.fid.includes(fid));
+    if (!flight) return;
+
+    // 2. 收起搜尋介面與鍵盤
+    const searchInput = document.getElementById('search-input');
+    const dropdown = document.getElementById('home-search-dropdown');
+    if (searchInput) { searchInput.value = ''; searchInput.blur(); }
+    if (dropdown) dropdown.style.display = 'none';
+
+    // 如果有原生的返回鍵，模擬點擊它來徹底清空搜尋狀態
+    const cancelBtn = document.querySelector('.cancel-circle-btn');
+    if (cancelBtn) cancelBtn.click();
+
+    // 3. 狀態判定
+    const isTimeChanged = flight.scheduled !== flight.latest;
+    const statusMap = {
+        'Normal': '通常', 'Delayed': '遅延', 'Cancelled': '欠航',
+        'Takeoff': '出発済', 'Landed': '着陸済', 'Arrived': '到着済',
+        'Departed': '出発済', 'NewArrival': '新規到着', 'CheckIn': '搭乗手続中',
+        'NowBoarding': '搭乗中', 'FinalCall': '最終案内'
+    };
+    const statusText = statusMap[flight.status] || flight.status;
+
+    let isDelayed = false, isError = false, isAttention = false;
+    let flags = [false, false, false, false, false, false, false];
+
+    if (['欠航'].includes(statusText)) {
+        isError = true; flags[3] = true;
+    } else if (['搭乗中', '最終案内', '通常', '新規到着'].includes(statusText) || statusText === '情報なし') {
+        isAttention = true; flags[6] = true;
+    } else if (isTimeChanged || ['遅延'].includes(statusText)) {
+        isDelayed = true; flags[4] = true;
+    } else {
+        flags[5] = true;
+    }
+
+    // 4. ✨ 打造幽靈卡片：偽裝成火車卡片，硬塞給主程式！
+    const tempCard = {
+        id: 'temp-search-flight', 
+        name: `✈️ ${fid}`,
+        hex: '#0a84ff', // 航空藍色，會自動產生漂亮的光影漸層！
+        desc: `${flight.airline} / ${flight.location} 行き`,
+        statusFlags: flags,
+        isTemporarySearch: false, // 隱藏「加入看板」按鈕
+        detail: ['フライト', '-', '-', '-'], 
+        detailedLines: [{
+            id: routeId,
+            name: `${flight.airport} ➔ ${flight.location}`,
+            company: flight.airline,
+            status: statusText,
+            message: `定刻: ${flight.scheduled} / 変更: ${flight.latest}`, // 把時間藏在這裡傳給 script.js
+            delay: 0,
+            updateTime: flight.system_updated || "--:--",
+            isDelayed: isDelayed,
+            isError: isError,
+            isAttention: isAttention,
+            advancedDetails: [] 
+        }],
+        isFlightCard: true // 🟢 關鍵：讓 script.js 知道這是一架飛機！
+    };
+
+    // 5. 寫入全域記憶體
+    const tempIndex = window.appRailwayData.findIndex(c => c.id === 'temp-search-flight');
+    if (tempIndex !== -1) window.appRailwayData[tempIndex] = tempCard;
+    else window.appRailwayData.push(tempCard);
+
+    // 6. 等待 250ms 手機鍵盤縮回後，呼叫主引擎打開它！
+    setTimeout(() => {
+        if (window.handleCardClick) window.handleCardClick('temp-search-flight');
+    }, 250);
+};

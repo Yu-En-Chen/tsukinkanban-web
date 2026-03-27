@@ -617,15 +617,31 @@ function handleCardClick(id) {
             const row = document.createElement('div');
             row.className = 'extension-route-card';
 
+            // ✨ 判斷是否為飛機幽靈卡片，繪製專屬儀表板
             let advancedHtml = '';
-            if (line.advancedDetails && line.advancedDetails.length > 0) {
+            if (data.isFlightCard) {
+                const times = line.message.match(/定刻: (.*?) \/ 変更: (.*)/);
+                const schedTime = times ? times[1] : '--:--';
+                const latestTime = times ? times[2] : '--:--';
+                const isTimeChangedLocal = schedTime !== latestTime;
+                
+                advancedHtml = `
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(128,128,128,0.08); padding: 20px 32px; border-radius: 16px; margin: 16px 0;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                        <span style="font-size: 0.9em; font-weight: 600; opacity: 0.5;">定刻</span>
+                        <span style="font-family: monospace; font-size: 1.8em; font-weight: 600; ${isTimeChangedLocal ? 'text-decoration: line-through; opacity: 0.4;' : 'opacity: 0.9;'}">${schedTime}</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                        <span style="font-size: 0.9em; font-weight: 600; opacity: 0.5;">変更</span>
+                        <span style="font-family: monospace; font-size: 1.8em; font-weight: 800; color: ${isTimeChangedLocal ? 'var(--card-text-color)' : 'inherit'}; opacity: ${isTimeChangedLocal ? '1' : '0.2'};">${latestTime}</span>
+                    </div>
+                </div>`;
+            } else if (line.advancedDetails && line.advancedDetails.length > 0) {
                 advancedHtml = `
                     <div class="adv-details-container">
                         ${line.advancedDetails.map(adv => {
-                            // 🟢 2. 膠囊內的延遲文字判斷
                             let dirDelayHtml = `<span class="adv-normal-text">平常</span>`;
                             if (adv.max_delay > 0) {
-                                // ✨ 新增：判斷是否 <= 5 分鐘
                                 if (adv.max_delay <= 5) {
                                     dirDelayHtml = `<span class="adv-delay-minor-text">${adv.max_delay}分遅れ</span>`;
                                 } else {
@@ -655,7 +671,7 @@ function handleCardClick(id) {
                     </div>
                 </div>
                 <div class="ext-card-divider"></div>
-                <div class="ext-card-message">${line.message}</div>
+                <div class="ext-card-message" style="${data.isFlightCard ? 'display:none;' : ''}">${line.message}</div>
                 ${advancedHtml}
                 <div class="ext-card-footer">
                     <span class="ext-update-time">
@@ -1337,8 +1353,9 @@ function filterCards(keyword) {
                 }
             }
             
-            const cursorStyle = route.isFlight ? 'cursor: default; opacity: 0.9;' : 'cursor: pointer;';
-            const clickAction = route.isFlight ? '' : `onclick="window.previewRouteFromSearch('${route.id}')"`;
+            // ✨ 解除封印：讓飛機卡片也變成手指游標，並綁定專屬的點擊事件
+            const cursorStyle = 'cursor: pointer;';
+            const clickAction = route.isFlight ? `onclick="window.previewFlightFromSearch('${route.id}')"` : `onclick="window.previewRouteFromSearch('${route.id}')"`;
     
             // ✨ 直接套用 CSS class，並在結尾處加入 ${route.customBottomHtml || ''} 支援底部換行排版！
             return `
@@ -1800,7 +1817,7 @@ document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
 window.handleBottomCardClick = handleBottomCardClick;
 window.handleOverlayClick = handleOverlayClick;
 window.renderMainCards = renderCards;
-
+window.handleCardClick = handleCardClick; // ✨ 開放主引擎給飛機幽靈卡片呼叫
 
 // ============================================================================
 // 🟢 獨立資訊卡片彈窗引擎 (Info Overlay) - 移植自空白卡片並切離干擾
