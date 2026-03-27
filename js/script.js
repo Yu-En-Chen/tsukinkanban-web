@@ -758,7 +758,13 @@ function handleCardClick(id) {
         
         detailContainer.appendChild(extension);
     } else {
-        // ✨ 如果是飛機卡片，不建立實心玻璃，只墊一個透明高度防裁切！
+        // ✨ 飛機專屬空白玻璃：直接套用預設 class，只給高度撐開，不塞文字
+        const extension = document.createElement('div');
+        extension.className = 'detail-extension-card';
+        extension.style.cssText = 'min-height: 250px; margin-top: 16px;'; // 只留高度，剩下全吃預設 CSS！
+        detailContainer.appendChild(extension);
+
+        // 實體透明墊片
         const scrollSpacer = document.createElement('div');
         scrollSpacer.style.cssText = 'height: 50px; min-height: 50px; flex-shrink: 0; pointer-events: none;';
         detailContainer.appendChild(scrollSpacer);
