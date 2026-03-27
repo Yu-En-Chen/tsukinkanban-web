@@ -2990,74 +2990,61 @@ body:has(.universal-window.is-active) .left-capsule {
     }
 }
 /* ==========================================================================
-   🟢 飛機航班：詳情頁功能按鈕 (新增)
+   🟢 飛機航班：詳情頁功能按鈕 (與資訊卡片完美對齊版)
    ========================================================================== */
 
-/* 按鈕容器：間距設定為 12px，維持水平排列 */
+/* 按鈕容器：間距 16px，完美對齊外部卡片的垂直間距 */
 .flight-action-buttons-container {
     display: flex;
-    gap: 12px; 
+    gap: 16px; /* ✨ 對齊卡片間的 16px 標準間距 */
     width: 100%;
 }
 
-/* 功能按鈕基礎樣式：圓角設定為 12px */
+/* 功能按鈕基礎樣式：升級為 24px 圓角玻璃卡片 */
 .flight-action-btn {
     flex: 1;
-    border-radius: 12px; /* 圓角 12px */
-    padding: 14px 10px;
+    border-radius: 24px; /* ✨ 完美對齊上方卡片的 24px 圓角 */
+    padding: 16px 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    font-weight: 700;
+    gap: 8px;
+    font-weight: 800;
     font-size: 0.85em;
     cursor: pointer;
     transition: background 0.2s ease, transform 0.1s ease;
     outline: none;
     -webkit-tap-highlight-color: transparent;
 
-    /* 🌅 淺色模式：白底、灰字、淡灰邊框分隔 */
-    background: #ffffff;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    color: #333;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    /* 🌅 淺色模式：完美繼承 extension-route-card 的材質 */
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    color: rgba(0, 0, 0, 0.9);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04);
 }
 
 /* 按下時的縮小物理回饋 */
 .flight-action-btn:active {
-    transform: scale(0.97);
-    background: rgba(0, 0, 0, 0.05);
+    transform: scale(0.94);
+    background: rgba(255, 255, 255, 0.85);
 }
 
 .flight-action-btn svg {
     opacity: 0.8;
 }
 
-/* 🌃 深色模式：自動覆蓋為玻璃透視感 */
+/* 🌃 深色模式：自動覆蓋為深色玻璃 */
 @media (prefers-color-scheme: dark) {
-    .flight-terminal-block {
-        background: rgba(0, 0, 0, 0.25);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        box-shadow: none;
-    }
-    
-    .flight-terminal-header {
-        border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
-    }
-    
-    .flight-highlight-gate {
-        color: #ffcc00 !important; /* 恢復原本的亮黃色 */
-    }
-
-    /* 按鈕深色模式樣式：深色玻璃感 */
     .flight-action-btn {
-        background: rgba(255, 255, 255, 0.06); 
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        color: #fff;
-        box-shadow: none;
+        background: rgba(30, 30, 32, 0.65);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     }
     .flight-action-btn:active {
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(50, 50, 52, 0.65);
     }
 }

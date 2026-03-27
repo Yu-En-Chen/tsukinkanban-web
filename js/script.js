@@ -701,17 +701,16 @@ function handleCardClick(id) {
             </div>
         `;
         
-        // 5. [終極新增區塊] 增加三個水平排列的按鈕，圓角與間距維持跟搭乘口情報相同 (來自 CSS 定義)
+        // 5. [終極新增區塊] 增加三個水平排列的玻璃按鈕 (完美對齊版)
         const btnContainer = document.createElement('div');
         btnContainer.className = 'flight-action-buttons-container';
-        btnContainer.style.marginTop = '16px'; // 分隔上方卡片
+        // 🚨 移除了原本的 marginTop，完全交給外層 Flexbox 的 gap: 16px 處理，達成上下左右完美等距！
 
-        // 定義 Icons (使用 Lucide/Feather 風格)
-        const iconPlane = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.7 5.2c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>`;
-        const iconMap = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M14.1 6a2 2 0 0 1 3.8 0"/><path d="M20 9.7V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9.7"/><path d="M12 18s4-3.6 4-6c0-2.2-1.8-4-4-4s-4 1.8-4 4c0 2.4 4 6 4 6Z"/><circle cx="12" cy="12" r="1"/></svg>`;
-        const iconShare = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>`;
+        // ✨ 替換為 Google Maps 經典地標 Pin 圖示 (Lucide Map-Pin)
+        const iconMapPin = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 92.3 132.3" style="opacity: 0.95; transform: translateY(-1px);"><path fill="#1a73e8" d="M60.2 2.2C55.8.8 51 0 46.1 0 32 0 19.3 6.4 10.8 16.5l21.8 18.3L60.2 2.2z"/><path fill="#ea4335" d="M10.8 16.5C4.1 24.5 0 34.9 0 46.1c0 8.7 1.7 15.7 4.6 22l28-33.3-21.8-18.3z"/><path fill="#4285f4" d="M46.2 28.5c9.8 0 17.7 7.9 17.7 17.7 0 4.3-1.6 8.3-4.2 11.4 0 0 13.9-16.6 27.5-32.7-5.6-10.8-15.3-19-27-22.7L32.6 34.8c3.3-3.8 8.1-6.3 13.6-6.3"/><path fill="#fbbc04" d="M46.2 63.8c-9.8 0-17.7-7.9-17.7-17.7 0-4.3 1.5-8.3 4.1-11.3l-28 33.3c4.8 10.6 12.8 19.2 21 29.9l34.1-40.5c-3.3 3.9-8.1 6.3-13.5 6.3"/><path fill="#34a853" d="M59.1 109.2c15.4-24.1 33.3-35 33.3-63 0-7.7-1.9-14.9-5.2-21.3L25.6 98c2.6 3.4 5.3 7.3 7.9 11.3 9.4 14.5 6.8 23.1 12.8 23.1s3.4-8.7 12.8-23.2"/></svg>`;
+        const iconMap = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M14.1 6a2 2 0 0 1 3.8 0"/><path d="M20 9.7V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9.7"/><path d="M12 18s4-3.6 4-6c0-2.2-1.8-4-4-4s-4 1.8-4 4c0 2.4 4 6 4 6Z"/><circle cx="12" cy="12" r="1"/></svg>`;
+        const iconShare = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>`;
 
-        // 按鈕建立工廠函式
         const createBtn = (iconHtml, text) => {
             const btn = document.createElement('button');
             btn.type = 'button';
@@ -720,11 +719,10 @@ function handleCardClick(id) {
             return btn;
         };
 
-        btnContainer.appendChild(createBtn(iconPlane, '飛行追跡'));
+        btnContainer.appendChild(createBtn(iconMapPin, 'Google Map'));
         btnContainer.appendChild(createBtn(iconMap, '空港マップ'));
         btnContainer.appendChild(createBtn(iconShare, '共有'));
 
-        // 塞入滾動區域
         scrollWrapper.appendChild(btnContainer);
 
         const scrollSpacer = document.createElement('div');
