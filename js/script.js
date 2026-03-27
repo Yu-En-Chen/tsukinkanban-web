@@ -563,19 +563,19 @@ function handleCardClick(id) {
 
     inner.style.background = applyThemeToCard(inner, data.hex);
     // ✨ 改用 innerHTML，讓飛機標題的 SVG 圖示可以順利渲染
-    // ✨ 寫入卡片標題與右上角燈號
+    // 寫入卡片標題與右上角燈號
     clone.querySelector('.line-name').innerHTML = data.name;
     clone.querySelector('.status-tag').innerHTML = window.getStatusIconsHTML(data.statusFlags || []);
 
     const cardContent = clone.querySelector('.card-content');
 
     if (data.isFlightCard && data.flightData) {
-        // ✨ 飛機卡片專屬魔法：直接清空舊有火車的佈局與膠囊限制，把空間全部拿來畫專屬儀表板！
+        // ✨ 飛機卡片專屬：直接在卡片內部畫出航線與大字體發光儀表板
         const isTimeChangedLocal = data.flightData.scheduled !== data.flightData.latest;
         cardContent.innerHTML = `
             <div style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; min-height: 115px; margin-top: 4px;">
                 <div>
-                    <div style="font-size: 1.15em; font-weight: 800; margin-bottom: 4px; display: flex; align-items: center;">
+                    <div style="font-size: 1.15em; font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
                         ${data.flightData.routeHtml}
                     </div>
                     <div style="font-size: 0.85em; font-weight: 600; opacity: 0.7;">
@@ -585,19 +585,19 @@ function handleCardClick(id) {
 
                 <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 16px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.25);">
                     <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <div style="display: flex; align-items: center; gap: 8px; font-size: 0.9em; opacity: 0.6;">
+                        <div style="display: flex; align-items: center; gap: 8px; font-size: 1em; opacity: ${isTimeChangedLocal ? '0.6' : '0.9'};">
                             <span style="font-weight: 600;">定刻</span>
-                            <span style="font-family: monospace; font-size: 1.15em; ${isTimeChangedLocal ? 'text-decoration: line-through;' : ''}">${data.flightData.scheduled}</span>
+                            <span style="font-family: monospace; font-size: 1.35em; font-weight: 800; ${isTimeChangedLocal ? 'text-decoration: line-through;' : ''}">${data.flightData.scheduled}</span>
                         </div>
                         ${isTimeChangedLocal ? `
                         <div style="display: flex; align-items: center; gap: 8px; font-size: 1em;">
                             <span style="font-weight: 800;">変更</span>
-                            <span style="font-family: monospace; font-size: 1.35em; font-weight: 800;">${data.flightData.latest}</span>
+                            <span style="font-family: monospace; font-size: 1.35em; font-weight: 800; color: ${data.flightData.delayColor}; text-shadow: ${data.flightData.delayShadow};">${data.flightData.latest}</span>
                         </div>` : ''}
                     </div>
 
                     <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
-                        <div style="font-size: 1.15em; font-weight: 800; letter-spacing: 1px; color: var(--card-text-color);">${data.flightData.statusText}</div>
+                        <div style="font-size: 1.25em; font-weight: 800; letter-spacing: 1px; color: ${data.flightData.statusColor}; text-shadow: ${data.flightData.statusShadow};">${data.flightData.statusText}</div>
                         <div style="font-size: 0.7em; font-weight: 600; opacity: 0.5;">更新: ${data.flightData.updateTime}</div>
                     </div>
                 </div>
