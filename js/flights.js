@@ -315,7 +315,8 @@ window.previewFlightFromSearch = function(routeId) {
             statusShadow: statusShadow,     
             delayColor: delayColor,         
             delayShadow: delayShadow,
-            delayText: delayText // ✨ 這裡！把括號文字傳遞給主卡片        
+            delayText: delayText,
+            isCancelled: statusText === '欠航'      
         }
     };
 
