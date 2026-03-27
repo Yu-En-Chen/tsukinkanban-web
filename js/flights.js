@@ -221,7 +221,9 @@ window.previewFlightFromSearch = function(routeId) {
         flags[5] = true;
     }
 
-    // ✨ 顏色與發光陰影邏輯
+    // ✨ 收斂白光陰影：因為字體設定為 800 極粗體，我們把陰影擴散範圍縮小，讓光暈變得低調細緻
+    const subtleGlow = '0 0 5px rgba(255,255,255,0.4), 0 0 1px rgba(255,255,255,0.6)';
+
     let statusColor = 'inherit';
     let statusShadow = 'none';
     const greenStatuses = ['出発済', '到着済', '着陸済', '搭乗手続中'];
@@ -230,41 +232,40 @@ window.previewFlightFromSearch = function(routeId) {
 
     if (greenStatuses.includes(statusText)) {
         statusColor = '#32d74b'; 
-        statusShadow = '0 0 10px rgba(255,255,255,0.7), 0 0 2px rgba(255,255,255,0.9)';
+        statusShadow = subtleGlow;
     } else if (redStatuses.includes(statusText)) {
         statusColor = '#ff3b30';
-        statusShadow = '0 0 10px rgba(255,255,255,0.7), 0 0 2px rgba(255,255,255,0.9)';
+        statusShadow = subtleGlow;
     } else if (normalStatuses.includes(statusText)) {
         statusColor = 'inherit';
         statusShadow = 'none';
     } else {
         statusColor = '#ffcc00'; 
-        statusShadow = '0 0 10px rgba(255,255,255,0.7), 0 0 2px rgba(255,255,255,0.9)';
+        statusShadow = subtleGlow;
     }
 
     let delayColor = 'inherit';
     let delayShadow = 'none';
-    let delayText = ''; // ✨ 新增：用來裝「(+15分)」這串字的變數
+    let delayText = '';
 
     if (isTimeChanged) {
         if (delayMins > 30) {
-            delayColor = '#ff3b30'; // 超過30分：紅色 + 發光
-            delayShadow = '0 0 10px rgba(255,255,255,0.7), 0 0 2px rgba(255,255,255,0.9)';
+            delayColor = '#ff3b30';
+            delayShadow = subtleGlow;
             delayText = `(+${delayMins}分)`;
         } else if (delayMins > 0) {
-            delayColor = '#ffcc00'; // 延遲30分以內：黃色 + 發光
-            delayShadow = '0 0 10px rgba(255,255,255,0.7), 0 0 2px rgba(255,255,255,0.9)';
+            delayColor = '#ffcc00';
+            delayShadow = subtleGlow;
             delayText = `(+${delayMins}分)`;
         } else if (delayMins < 0) {
-            delayColor = '#32d74b'; // 提前：用讓人安心的綠色 + 發光
-            delayShadow = '0 0 10px rgba(255,255,255,0.7), 0 0 2px rgba(255,255,255,0.9)';
-            delayText = `(${delayMins}分)`; // delayMins 本身就是負數了
+            delayColor = '#32d74b';
+            delayShadow = subtleGlow;
+            delayText = `(${delayMins}分)`;
         } else {
             delayText = `(±0分)`;
         }
     }
 
-    // ✨ 更新時間去除秒數
     const formattedUpdateTime = flight.system_updated ? flight.system_updated.substring(0, 5) : "--:--";
 
     const takeoffIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; margin-right: 4px;"><path d="M2 22h20"/><path d="M6.36 17.4 4 17l-2-4 1.1-.55a2 2 0 0 1 1.8 0l.17.1a2 2 0 0 0 1.8 0L8 12 5 6l.9-.45a2 2 0 0 1 2.09.2l4.02 3a2 2 0 0 0 2.1.2l4.19-2.06a2.41 2.41 0 0 1 1.73-.17L21 7a1.4 1.4 0 0 1 .87 1.99l-.38.76c-.23.46-.6.84-1.07 1.08L7.58 17.2a2 2 0 0 1-1.22.18Z"/></svg>`;
@@ -275,23 +276,24 @@ window.previewFlightFromSearch = function(routeId) {
     const locCode = locMatch ? locMatch[0] : '';
     const isDomestic = locCode ? domesticCodes.includes(locCode) : false;
 
+    // ✨ 拔除機場警告外框：保留警示黃色，確保它跟後面的航線文字使用一樣的字體粗細
     let airportBadge = airportNamesJa[flight.airport] || flight.airport;
     if (flight.airport === 'NRT' && isDomestic) {
-        airportBadge = `<span class="flight-alert-badge" style="font-size: 0.8em; padding: 2px 6px;">成田国内線</span>`;
+        airportBadge = `<span style="color: #ffcc00;">成田国内線</span>`;
     } else if (flight.airport === 'HND' && !isDomestic) {
-        airportBadge = `<span class="flight-alert-badge" style="font-size: 0.8em; padding: 2px 6px;">羽田国際線</span>`;
+        airportBadge = `<span style="color: #ffcc00;">羽田国際線</span>`;
     } else {
         airportBadge = `<span>${airportBadge}</span>`;
     }
 
-    // ✨ 確保航線文字確實產生
+    // ✨ 統一全體粗細：將出發地、目的地全部加上 font-weight: 800
     let routeHtml = '';
     if (flight.type === 'Departure') {
         const arrowRightSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin: 0 4px;"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
-        routeHtml = `${airportBadge} <span style="font-weight: 800; opacity: 0.7;">出発${arrowRightSvg}</span> <span>${flight.location}</span>`;
+        routeHtml = `<span style="font-weight: 800;">${airportBadge}</span> <span style="font-weight: 800; opacity: 0.7;">出発${arrowRightSvg}</span> <span style="font-weight: 800;">${flight.location}</span>`;
     } else {
         const arrowLeftSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin: 0 4px;"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>`;
-        routeHtml = `${airportBadge} <span style="font-weight: 800; opacity: 0.7;">${arrowLeftSvg}到着</span> <span>${flight.location}</span>`;
+        routeHtml = `<span style="font-weight: 800;">${airportBadge}</span> <span style="font-weight: 800; opacity: 0.7;">${arrowLeftSvg}到着</span> <span style="font-weight: 800;">${flight.location}</span>`;
     }
 
     const tempCard = {
@@ -306,7 +308,7 @@ window.previewFlightFromSearch = function(routeId) {
         isFlightCard: true, 
         flightData: {
             airline: flight.airline,
-            routeHtml: routeHtml, // 這裡把剛剛做好的出發目的地傳送出去
+            routeHtml: routeHtml,
             scheduled: flight.scheduled,
             latest: flight.latest,
             updateTime: formattedUpdateTime, 
@@ -316,7 +318,7 @@ window.previewFlightFromSearch = function(routeId) {
             delayColor: delayColor,         
             delayShadow: delayShadow,
             delayText: delayText,
-            isCancelled: statusText === '欠航'      
+            isCancelled: statusText === '欠航'
         }
     };
 
