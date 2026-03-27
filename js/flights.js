@@ -244,13 +244,23 @@ window.previewFlightFromSearch = function(routeId) {
 
     let delayColor = 'inherit';
     let delayShadow = 'none';
+    let delayText = ''; // ✨ 新增：用來裝「(+15分)」這串字的變數
+
     if (isTimeChanged) {
         if (delayMins > 30) {
             delayColor = '#ff3b30'; // 超過30分：紅色 + 發光
             delayShadow = '0 0 10px rgba(255,255,255,0.7), 0 0 2px rgba(255,255,255,0.9)';
-        } else {
-            delayColor = '#ffcc00'; // 30分內：黃色 + 發光
+            delayText = `(+${delayMins}分)`;
+        } else if (delayMins > 0) {
+            delayColor = '#ffcc00'; // 延遲30分以內：黃色 + 發光
             delayShadow = '0 0 10px rgba(255,255,255,0.7), 0 0 2px rgba(255,255,255,0.9)';
+            delayText = `(+${delayMins}分)`;
+        } else if (delayMins < 0) {
+            delayColor = '#32d74b'; // 提前：用讓人安心的綠色 + 發光
+            delayShadow = '0 0 10px rgba(255,255,255,0.7), 0 0 2px rgba(255,255,255,0.9)';
+            delayText = `(${delayMins}分)`; // delayMins 本身就是負數了
+        } else {
+            delayText = `(±0分)`;
         }
     }
 
@@ -304,7 +314,8 @@ window.previewFlightFromSearch = function(routeId) {
             statusColor: statusColor,       
             statusShadow: statusShadow,     
             delayColor: delayColor,         
-            delayShadow: delayShadow        
+            delayShadow: delayShadow,
+            delayText: delayText // ✨ 這裡！把括號文字傳遞給主卡片        
         }
     };
 

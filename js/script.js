@@ -583,16 +583,20 @@ function handleCardClick(id) {
                     </div>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 16px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.25);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.25);">
+                    
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <div style="display: flex; align-items: center; gap: 8px; font-size: 1em; opacity: ${isTimeChangedLocal ? '0.6' : '0.9'};">
                             <span style="font-weight: 600;">定刻</span>
-                            <span style="font-family: monospace; font-size: 1.35em; font-weight: 800; ${isTimeChangedLocal ? 'text-decoration: line-through;' : ''}">${data.flightData.scheduled}</span>
+                            <span style="font-family: monospace; font-size: 1.25em; font-weight: 800; ${isTimeChangedLocal ? 'text-decoration: line-through;' : ''}">${data.flightData.scheduled}</span>
                         </div>
                         ${isTimeChangedLocal ? `
                         <div style="display: flex; align-items: center; gap: 8px; font-size: 1em;">
-                            <span style="font-weight: 800;">変更</span>
-                            <span style="font-family: monospace; font-size: 1.35em; font-weight: 800; color: ${data.flightData.delayColor}; text-shadow: ${data.flightData.delayShadow};">${data.flightData.latest}</span>
+                            <span style="font-weight: 800; color: ${data.flightData.delayColor}; text-shadow: ${data.flightData.delayShadow};">変更</span>
+                            
+                            <span style="font-family: monospace; font-size: 1.25em; font-weight: 800; color: inherit;">${data.flightData.latest}</span>
+                            
+                            <span style="font-weight: 800; font-size: 0.9em; color: ${data.flightData.delayColor}; text-shadow: ${data.flightData.delayShadow}; margin-left: 2px;">${data.flightData.delayText}</span>
                         </div>` : ''}
                     </div>
 
