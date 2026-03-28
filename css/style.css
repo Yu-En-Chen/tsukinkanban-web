@@ -614,7 +614,7 @@ body.searching .search-mask {
 /* =========================================
    🟢 空白/資訊/通知模式下專屬 SVG 設定
    ========================================= */
-   .capsule-btn-item svg.icon-menu-mode {
+.capsule-btn-item svg.icon-menu-mode {
     opacity: 0 !important;
     transform: translateY(120%) !important;
     pointer-events: none !important;
@@ -894,7 +894,7 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
    ========================================================================== */
 .card-content {
     /* ✨ 把第三個數值(底部留白)從 40px 改為 20px，釋放底部空間 */
-    padding: 0 24px 20px 24px; 
+    padding: 0 24px 20px 24px;
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -905,7 +905,7 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 /* ==========================================================================
    🟢 預覽魔法：永遠讓最底層（視覺最前面）的卡片顯示詳情內容 (受設定開關控制)
    ========================================================================== */
-   body.enable-bottom-preview .card-stack:not(.has-active) .card:last-child .card-content {
+body.enable-bottom-preview .card-stack:not(.has-active) .card:last-child .card-content {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
@@ -937,9 +937,10 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 /* ==========================================================================
    ✨ 描述文字：還原原始排版與顏色 (專供個性化面板維持原樣使用)
    ========================================================================== */
-   .description {
+.description {
     line-height: 1.6;
-    margin-top: 0; /* ✨ 關鍵：消除預設的巨大段落留白 */
+    margin-top: 0;
+    /* ✨ 關鍵：消除預設的巨大段落留白 */
     color: var(--text-secondary);
     background-image: var(--text-bg-gradient-secondary, none);
     -webkit-background-clip: var(--text-clip, border-box);
@@ -948,7 +949,7 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 }
 
 /* 🚀 精準打擊：只隱藏「主畫面」和「詳情面板」的文字，絕對不碰個性化面板 */
-.card > .card-content > .description,
+.card>.card-content>.description,
 #detail-card-container .description {
     display: none !important;
 }
@@ -959,9 +960,11 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 .info-tag-item {
     background: var(--tag-bg);
     border: 1px solid var(--border-color);
-    padding: 6px 14px; /* ✨ 還原原本小巧的內距 */
+    padding: 6px 14px;
+    /* ✨ 還原原本小巧的內距 */
     border-radius: 100px;
-    font-size: 0.9rem; /* ✨ 還原原本的字體大小 */
+    font-size: 0.9rem;
+    /* ✨ 還原原本的字體大小 */
     font-weight: 600;
     color: var(--card-text-color);
     text-shadow: var(--text-shadow-subtle);
@@ -981,39 +984,48 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 /* ==========================================================================
    🟢 垂直膠囊與圓形預覽排版 (置中自適應連動版)
    ========================================================================== */
-   .vertical-info-list {
+.vertical-info-list {
     display: flex;
     flex-direction: column;
-    align-items: flex-start; /* ✨ 1. 排列 */
-    gap: 8px;            /* 稍微縮小垂直間距，讓 4 排更緊湊 */
-    margin-bottom: 0;    /* 移除多餘的底部空間 */
+    align-items: flex-start;
+    /* ✨ 1. 排列 */
+    gap: 8px;
+    /* 稍微縮小垂直間距，讓 4 排更緊湊 */
+    margin-bottom: 0;
+    /* 移除多餘的底部空間 */
 
     /* 🚀 比例控制台：以後只要調這幾個數字，全體自動完美縮放！ */
-    --info-font-size: 1.1rem;     /* 👉 調整這個，膠囊與圓形會跟著自動放大縮小 */
-    --info-pad-y: 0.26em;          /* 👉 膠囊上下厚度 (em 代表以文字大小為基準) */
-    --info-pad-x: 1.2em;           /* 👉 膠囊左右留白 */
-    --info-circle-size: 2.1em;     /* 👉 後方圓形的直徑比例 */
+    --info-font-size: 1.1rem;
+    /* 👉 調整這個，膠囊與圓形會跟著自動放大縮小 */
+    --info-pad-y: 0.26em;
+    /* 👉 膠囊上下厚度 (em 代表以文字大小為基準) */
+    --info-pad-x: 1.2em;
+    /* 👉 膠囊左右留白 */
+    --info-circle-size: 2.1em;
+    /* 👉 後方圓形的直徑比例 */
 }
 
 .info-list-row {
     display: flex;
     align-items: center;
-    justify-content: center; /* 確保內部組合置中 */
-    gap: 8px; /* 膠囊跟後方正圓之間的距離 */
+    justify-content: center;
+    /* 確保內部組合置中 */
+    gap: 8px;
+    /* 膠囊跟後方正圓之間的距離 */
 }
 
 .info-capsule {
     background: var(--tag-bg);
     border: 1px solid var(--border-color);
-    
+
     /* ✨ 這裡使用 em 變數，它會自動拿文字大小來乘上比例！ */
-    padding: var(--info-pad-y) var(--info-pad-x); 
-    border-radius: 999px; 
-    
-    font-size: var(--info-font-size); 
+    padding: var(--info-pad-y) var(--info-pad-x);
+    border-radius: 999px;
+
+    font-size: var(--info-font-size);
     font-weight: 600;
-    line-height: 1.4; 
-    
+    line-height: 1.4;
+
     color: var(--card-text-color);
     text-shadow: var(--text-shadow-subtle);
     -webkit-backdrop-filter: blur(10px);
@@ -1023,19 +1035,19 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 
 .info-circle {
     /* ✨ 圓形直徑也綁定 em 比例，保證永遠是完美正圓，且跟文字等比例 */
-    width: var(--info-circle-size); 
+    width: var(--info-circle-size);
     height: var(--info-circle-size);
-    border-radius: 50%; 
+    border-radius: 50%;
     background: var(--tag-bg);
     border: 1px solid var(--border-color);
     display: flex;
     align-items: center;
     justify-content: center;
-    
+
     /* 圓形內的字體設定為膠囊文字的 90%，維持視覺平衡 */
-    font-size: calc(var(--info-font-size) * 0.9); 
+    font-size: calc(var(--info-font-size) * 0.9);
     font-weight: 700;
-    
+
     color: var(--card-text-color);
     text-shadow: var(--text-shadow-subtle);
     -webkit-backdrop-filter: blur(10px);
@@ -1047,7 +1059,7 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 /* ==========================================================================
    🟢 舊版共用膠囊按鈕 (負責修復個性化設定與新增面板的 UI)
    ========================================================================== */
-   .info-tag-item {
+.info-tag-item {
     background: var(--tag-bg);
     border: 1px solid var(--border-color);
     padding: 8px 16px;
@@ -1099,7 +1111,7 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 /* ==========================================================================
    🟢 詳情卡片：全透明延伸區塊 -> 改為實心毛玻璃版
    ========================================================================== */
-   .detail-extension-card {
+.detail-extension-card {
     position: absolute;
     top: 100%;
     left: 0;
@@ -1116,7 +1128,7 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
     background: rgba(245, 245, 247, 0.65);
     -webkit-backdrop-filter: blur(35px);
     backdrop-filter: blur(35px);
-    
+
     /* 柔和的邊框與層次陰影 */
     border: 1px solid rgba(0, 0, 0, 0.05);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
@@ -1131,7 +1143,8 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 /* 隨主卡片一起升起 */
 .detail-overlay.active .detail-extension-card {
     transform: translate3d(0, 0, 0);
-    pointer-events: auto; /* ✨ 關鍵修復：解除觸控封印，讓實心玻璃面板可以接收手指滑動！ */
+    pointer-events: auto;
+    /* ✨ 關鍵修復：解除觸控封印，讓實心玻璃面板可以接收手指滑動！ */
 }
 
 /* ==========================================================================
@@ -1671,7 +1684,7 @@ body.searching .dismiss-icon {
     width: 25px !important;
     height: 25px !important;
     /* 👇 在這裡調整設定(齒輪)的粗細，例如改為 1.5px (變細) 或 2.0px (變粗) */
-    stroke-width: 1.6px !important; 
+    stroke-width: 1.6px !important;
 }
 
 .capsule-btn-item svg.lucide-archive-x {
@@ -1679,7 +1692,7 @@ body.searching .dismiss-icon {
     height: 21px !important;
     /* 👇 在這裡調整封存(X)的粗細，例如改為 1.5px (變細) 或 2.0px (變粗) */
     stroke-width: 1.8px !important;
-    transform: translateY(-1px) !important; 
+    transform: translateY(-1px) !important;
 }
 
 /* ==========================================================================
@@ -1865,10 +1878,12 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 /* ==========================================================================
    高級反差色動態游標 (Custom Difference Cursor)
    ========================================================================== */
-   @media (pointer: fine) {
+@media (pointer: fine) {
 
     /* ✨ 修正 1：標準元件獨立一組，確保絕對生效 */
-    html, body, *,
+    html,
+    body,
+    *,
     *::before,
     *::after,
     input,
@@ -2140,7 +2155,7 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 
     /* 🟢 2. 核心魔法：利用 Margin 統一向內推 12px 的優雅空隙 */
     margin: 12px !important;
-    
+
     /* 🟢 3. 放棄所有寫死的高度與寬度，讓 top/bottom/margin 自己去拉扯 */
     height: auto !important;
     width: auto !important;
@@ -2149,7 +2164,8 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
 
     /* 🟢 手機版專屬魔法：依靠 left 和 right 撐開寬度，完美貼齊邊緣 12px */
     left: calc(env(safe-area-inset-left, 0px) + 12px) !important;
-    right: calc(env(safe-area-inset-right, 0px) + 12px) !important;width: auto !important;
+    right: calc(env(safe-area-inset-right, 0px) + 12px) !important;
+    width: auto !important;
     max-width: none !important;
     margin: 0 !important;
 
@@ -2157,7 +2173,8 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
     background: rgba(245, 245, 247, 0.85) !important;
     -webkit-backdrop-filter: blur(35px);
     backdrop-filter: blur(35px);
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12); /* 拿掉內發光，保留乾淨的外陰影 */
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+    /* 拿掉內發光，保留乾淨的外陰影 */
 
     z-index: 4000;
     opacity: 0;
@@ -2186,7 +2203,7 @@ html.is-android-blink .card-stack.bounce-back-wheel .card {
     .search-container::after {
         /* ✨ 深色模式：高不透明度實心深鈦灰玻璃 */
         background: rgba(28, 28, 30, 0.85) !important;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); 
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     }
 }
 
@@ -2336,30 +2353,32 @@ body.hamburger-active #left-capsule-bottom * {
 
 /* 2. 專門為絕對定位 SVG 圖示打造的彈出動畫 (保留 X 軸 50% 與 Y 軸 -50% 置中錨點) */
 @keyframes directPopUpIcon {
-    0% { 
-        transform: translate(50%, calc(-50% + 20px)) scale(0.6); 
-        opacity: 0; 
+    0% {
+        transform: translate(50%, calc(-50% + 20px)) scale(0.6);
+        opacity: 0;
     }
-    70% { 
-        transform: translate(50%, calc(-50% - 3px)) scale(1.05); 
-        opacity: 1; 
+
+    70% {
+        transform: translate(50%, calc(-50% - 3px)) scale(1.05);
+        opacity: 1;
     }
-    100% { 
-        transform: translate(50%, -50%) scale(1); 
-        opacity: 1; 
+
+    100% {
+        transform: translate(50%, -50%) scale(1);
+        opacity: 1;
     }
 }
 
 /* 3. 打開選單時觸發動畫與延遲 */
 body.hamburger-active .left-capsule.bottom-capsule #entry-time-display {
     animation: directPopUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both !important;
-    animation-delay: 0.25s !important; 
+    animation-delay: 0.25s !important;
 }
 
 body.hamburger-active .left-capsule.top-capsule .left-capsule-icon {
     /* 🟢 SVG 圖示改用專屬的 Icon 彈出動畫！ */
     animation: directPopUpIcon 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both !important;
-    animation-delay: 0.35s !important; 
+    animation-delay: 0.35s !important;
 }
 
 /* =========================================
@@ -2478,9 +2497,20 @@ body.hamburger-active .left-capsule.top-capsule .left-capsule-icon {
 
 /* 4. 與右側母艦同步的「通知選單彈出動畫」 */
 @keyframes directPopUpMatrixLeft {
-    0% { transform: translate(-50%, -50%) scale(0.6) translateY(20px); opacity: 0; }
-    70% { transform: translate(-50%, -50%) scale(1.05) translateY(-3px); opacity: 1; }
-    100% { transform: translate(-50%, -50%) scale(1) translateY(0); opacity: 1; }
+    0% {
+        transform: translate(-50%, -50%) scale(0.6) translateY(20px);
+        opacity: 0;
+    }
+
+    70% {
+        transform: translate(-50%, -50%) scale(1.05) translateY(-3px);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(1) translateY(0);
+        opacity: 1;
+    }
 }
 
 body.hamburger-active .search-container .left-capsule.top-capsule {
@@ -2535,19 +2565,21 @@ body:has(.universal-window.is-active) .left-capsule {
 /* =========================================
    🟢 左舷母艦：進場時間戳記字體設計
    ========================================= */
-   .slashed-time-font {
+.slashed-time-font {
     /* 1. 呼叫系統最高級的程式碼/色號等寬字體 */
     font-family: 'SF Mono', ui-monospace, 'Cascadia Mono', 'Roboto Mono', Menlo, Consolas, monospace !important;
-    
+
     /* 2. ✨ 核心魔法：強制啟動字體的「斜線零」特徵 */
     font-variant-numeric: slashed-zero !important;
-    
-    font-size: 17px; /* 完美填滿膠囊的大小 */
+
+    font-size: 17px;
+    /* 完美填滿膠囊的大小 */
     font-weight: 600;
-    letter-spacing: 0.5px; /* 讓全形冒號與數字之間保持呼吸空間 */
+    letter-spacing: 0.5px;
+    /* 讓全形冒號與數字之間保持呼吸空間 */
     color: var(--icon-color);
     opacity: 0.85;
-    
+
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2556,23 +2588,24 @@ body:has(.universal-window.is-active) .left-capsule {
 /* =========================================
    左舷母艦：內部右側圓心圖示
    ========================================= */
-   .left-capsule-icon {
+.left-capsule-icon {
     position: absolute;
     /* 膠囊高度是 44px (半徑22px)，right 設為 14px 能讓圖示完美座落在右側的幾何圓心 */
-    right: 14px; 
+    right: 14px;
     top: 50%;
     transform: translateY(-50%);
-    
+
     /* 🟢 參照右側母艦圖示的標準設定 */
-    width: 18px;  
+    width: 18px;
     height: 18px;
-    opacity: 0.8; 
+    opacity: 0.8;
     stroke-width: 2px !important;
-    color: currentColor; /* 自動繼承膠囊的文字/線條顏色 */
-    
+    color: currentColor;
+    /* 自動繼承膠囊的文字/線條顏色 */
+
     /* 防呆設定：讓圖示不會干擾到整個膠囊的點擊範圍 */
-    pointer-events: none; 
-    
+    pointer-events: none;
+
     /* 預留一點過渡動畫，方便未來你想做點擊旋轉效果 */
     transition: opacity 0.2s ease, transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
@@ -2583,24 +2616,24 @@ body:has(.universal-window.is-active) .left-capsule {
 
 /* 1. 智慧鎖死：只要「沒有在搜尋」且「沒有打開全螢幕選單」，霸王條款就會自動生效，絕對防止重整抽搐！ 
    一旦搜尋啟動 (.active)，它就會自動讓位給你的退場動畫。*/
-   body:not(.hamburger-active) .search-container:not(.active) .left-circle-btn,
-   body:not(.hamburger-active) .search-container:not(.active) .search-trigger,
-   body:not(.hamburger-active) .search-container:not(.active) .action-capsule,
-   body:not(.hamburger-active) .search-container:not(.active) .left-capsule {
-       opacity: 1 !important;
-       transform: translate3d(0, 0, 0) !important;
-       animation: none !important;
-   }
-   
-   body:not(.hamburger-active) .search-container:not(.active) .left-matrix-bg {
-       animation: none !important;
-   }
-   
-   /* 2. 搜尋框絕對壓制：賦予搜尋框與取消按鈕最高的 z-index，保證動畫期間絕對壓在所有人上面！ */
-   .search-container.active .search-input-box,
-   .search-container.active .cancel-circle-btn {
-       z-index: 6000 !important;
-   }
+body:not(.hamburger-active) .search-container:not(.active) .left-circle-btn,
+body:not(.hamburger-active) .search-container:not(.active) .search-trigger,
+body:not(.hamburger-active) .search-container:not(.active) .action-capsule,
+body:not(.hamburger-active) .search-container:not(.active) .left-capsule {
+    opacity: 1 !important;
+    transform: translate3d(0, 0, 0) !important;
+    animation: none !important;
+}
+
+body:not(.hamburger-active) .search-container:not(.active) .left-matrix-bg {
+    animation: none !important;
+}
+
+/* 2. 搜尋框絕對壓制：賦予搜尋框與取消按鈕最高的 z-index，保證動畫期間絕對壓在所有人上面！ */
+.search-container.active .search-input-box,
+.search-container.active .cancel-circle-btn {
+    z-index: 6000 !important;
+}
 
 /* ==========================================================================
    🟢 搜尋框展開動畫重構 (Apple-like 純粹 Transition 版)
@@ -2613,16 +2646,16 @@ body:has(.universal-window.is-active) .left-capsule {
     pointer-events: none !important;
     /* 藏在右邊 60px 處 */
     transform: translate3d(60px, 0, 0) !important;
-    
+
     /* 💡 核心修復：在退場的過程中，依然維持最高圖層！ */
     /* 這樣它就會像一片玻璃一樣，平順地從母艦「上方」滑過去，不會產生破圖碰撞 */
     z-index: 6000 !important;
-    
+
     /* 🟢 速度同步：把透明度跟位移的時間拉長，配合你系統原本的彈簧動畫節奏 */
     /* 這裡使用 0.4s 的淡出與 0.5s 的滑動，你可以隨意微調 */
     transition: opacity 0.6s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15) !important;
-    
-    animation: none !important; 
+
+    animation: none !important;
 }
 
 /* 2. 展開狀態 (搜尋框) */
@@ -2630,11 +2663,11 @@ body:has(.universal-window.is-active) .left-capsule {
     opacity: 1 !important;
     pointer-events: auto !important;
     transform: translate3d(0, 0, 0) !important;
-    
+
     /* 進場過渡：加上系統原本的等待時間 var(--delay-in) 與波浪彈簧感 */
     transition: opacity 0.4s ease var(--delay-in),
-                transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.15) var(--delay-in) !important;
-                
+        transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.15) var(--delay-in) !important;
+
     animation: none !important;
 }
 
@@ -2643,11 +2676,11 @@ body:has(.universal-window.is-active) .left-capsule {
     opacity: 1 !important;
     pointer-events: auto !important;
     transform: translate3d(0, 0, 0) !important;
-    
+
     /* ✨ 頂級細節：比搜尋框還要再晚 0.04 秒出來，製造極度細緻的跟隨感 */
     transition: opacity 0.4s ease calc(var(--delay-in) + 0.04s),
-                transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.15) calc(var(--delay-in) + 0.04s) !important;
-                
+        transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.15) calc(var(--delay-in) + 0.04s) !important;
+
     animation: none !important;
 }
 
@@ -2665,8 +2698,8 @@ body:has(.universal-window.is-active) .left-capsule {
 /* 完全展開後，才讓游標顯現 */
 .search-container.active .search-input-box input {
     /* 使用你全域設定好的文字顏色 */
-    caret-color: var(--text-main, #000) !important; 
-    
+    caret-color: var(--text-main, #000) !important;
+
     /* ✨ 終極魔法：等待前方所有動畫 (等待淨空 + 滑出時長 0.6s) 都結束後，才讓游標閃爍！ */
     transition: caret-color 0s calc(var(--delay-in) + 0.6s) !important;
 }
@@ -2674,34 +2707,34 @@ body:has(.universal-window.is-active) .left-capsule {
 /* =========================================================
    🟢 左上角時間母艦：重新整理圖示專屬控制權限 (絕對鎖死版)
    ========================================================= */
-   #left-capsule-top .left-capsule-icon {
+#left-capsule-top .left-capsule-icon {
     opacity: 0.7 !important;
-    stroke-width: 2px !important; 
+    stroke-width: 2px !important;
 }
 
 /* ==========================================================================
    🟢 使用者設定：強制恢復系統預設鼠標
    ========================================================================== */
-   body.use-system-cursor,
-   body.use-system-cursor *,
-   body.use-system-cursor *::before,
-   body.use-system-cursor *::after,
-   body.use-system-cursor input,
-   body.use-system-cursor textarea {
-       /* 🚀 強制所有元素恢復原生的滑鼠指標，並覆蓋原本的 cursor: none */
-       cursor: auto !important;
-   }
-   
-   body.use-system-cursor .custom-cursor {
-       /* 🚀 精準打擊：徹底銷毀你的「反差小圓點」 */
-       display: none !important;
-       opacity: 0 !important;
-       visibility: hidden !important;
-       width: 0 !important;
-       height: 0 !important;
-   }
+body.use-system-cursor,
+body.use-system-cursor *,
+body.use-system-cursor *::before,
+body.use-system-cursor *::after,
+body.use-system-cursor input,
+body.use-system-cursor textarea {
+    /* 🚀 強制所有元素恢復原生的滑鼠指標，並覆蓋原本的 cursor: none */
+    cursor: auto !important;
+}
 
-   /* ==========================================================================
+body.use-system-cursor .custom-cursor {
+    /* 🚀 精準打擊：徹底銷毀你的「反差小圓點」 */
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+/* ==========================================================================
    🟢 實心玻璃面板內的路線詳細卡片 (支援深淺模式自動適應)
    ========================================================================== */
 
@@ -2720,47 +2753,141 @@ body:has(.universal-window.is-active) .left-capsule {
     flex-shrink: 0;
 }
 
-.ext-card-header { display: flex; justify-content: space-between; align-items: center; }
-.ext-card-title-group { display: flex; flex-direction: column; gap: 4px; }
+.ext-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ext-card-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
 
 .ext-route-name {
-    font-weight: 800; font-size: 1.15em;
-    color: rgba(0, 0, 0, 0.9); letter-spacing: 0.5px;
+    font-weight: 800;
+    font-size: 1.15em;
+    color: rgba(0, 0, 0, 0.9);
+    letter-spacing: 0.5px;
 }
-.ext-route-company { font-size: 0.75em; color: rgba(0, 0, 0, 0.5); font-weight: 600; }
+
+.ext-route-company {
+    font-size: 0.75em;
+    color: rgba(0, 0, 0, 0.5);
+    font-weight: 600;
+}
 
 .ext-status-badge {
-    padding: 6px 12px; border-radius: 20px;
-    font-size: 0.85em; font-weight: 800; white-space: nowrap;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 800;
+    white-space: nowrap;
 }
 
 /* 淺色模式：狀態徽章顏色調校 */
-.status-normal { background: rgba(48, 209, 88, 0.15); color: #24a144; border: 1px solid rgba(48, 209, 88, 0.3); }
-.status-error { background: rgba(255, 159, 10, 0.15); color: #d07d00; border: 1px solid rgba(255, 159, 10, 0.3); }
-.status-delayed { background: rgba(255, 69, 58, 0.15); color: #d70015; border: 1px solid rgba(255, 69, 58, 0.3); }
-.status-attention { background: rgba(0, 0, 0, 0.08); color: rgba(0, 0, 0, 0.7); border: 1px solid rgba(0, 0, 0, 0.15); }
+.status-normal {
+    background: rgba(48, 209, 88, 0.15);
+    color: #24a144;
+    border: 1px solid rgba(48, 209, 88, 0.3);
+}
 
-.ext-card-divider { width: 100%; height: 1px; background: rgba(0, 0, 0, 0.08); }
-.ext-card-message { font-size: 0.9em; color: rgba(0, 0, 0, 0.85); line-height: 1.5; font-weight: 500; }
-.ext-card-footer { display: flex; justify-content: flex-end; align-items: center; margin-top: -4px; }
-.ext-update-time { font-size: 0.75em; color: rgba(0, 0, 0, 0.4); font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.status-error {
+    background: rgba(255, 159, 10, 0.15);
+    color: #d07d00;
+    border: 1px solid rgba(255, 159, 10, 0.3);
+}
+
+.status-delayed {
+    background: rgba(255, 69, 58, 0.15);
+    color: #d70015;
+    border: 1px solid rgba(255, 69, 58, 0.3);
+}
+
+.status-attention {
+    background: rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.ext-card-divider {
+    width: 100%;
+    height: 1px;
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.ext-card-message {
+    font-size: 0.9em;
+    color: rgba(0, 0, 0, 0.85);
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+.ext-card-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: -4px;
+}
+
+.ext-update-time {
+    font-size: 0.75em;
+    color: rgba(0, 0, 0, 0.4);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
 
 /* ⬇️ 你最在意的部分：方向與延誤膠囊方塊 */
-.adv-details-container { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; margin-bottom: 6px; }
+.adv-details-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 6px;
+    margin-bottom: 6px;
+}
 
 .adv-detail-capsule {
-    display: flex; justify-content: space-between; align-items: center;
-    font-size: 0.85em; padding: 8px 12px; border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85em;
+    padding: 8px 12px;
+    border-radius: 8px;
     /* 淺色模式：微透明的白/灰色底 */
     background: rgba(0, 0, 0, 0.04);
     border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-.adv-dir-name { color: rgba(0, 0, 0, 0.85); font-weight: 600; }
-.adv-status-group { display: flex; align-items: center; }
-.adv-train-count { font-size: 0.85em; opacity: 0.6; margin-right: 8px; color: rgba(0, 0, 0, 0.8); }
-.adv-delay-text { color: #d70015; font-weight: 800; } /* 淺色模式的深紅色更耐看 */
-.adv-normal-text { color: #24a144; font-weight: 600; }
+.adv-dir-name {
+    color: rgba(0, 0, 0, 0.85);
+    font-weight: 600;
+}
+
+.adv-status-group {
+    display: flex;
+    align-items: center;
+}
+
+.adv-train-count {
+    font-size: 0.85em;
+    opacity: 0.6;
+    margin-right: 8px;
+    color: rgba(0, 0, 0, 0.8);
+}
+
+.adv-delay-text {
+    color: #d70015;
+    font-weight: 800;
+}
+
+/* 淺色模式的深紅色更耐看 */
+.adv-normal-text {
+    color: #24a144;
+    font-weight: 600;
+}
 
 /* =========================================
    🌃 深色模式自動覆蓋 (Dark Mode)
@@ -2769,30 +2896,68 @@ body:has(.universal-window.is-active) .left-capsule {
     .extension-route-card {
         background: rgba(30, 30, 32, 0.65);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     }
 
-    .ext-route-name { color: #fff; }
-    .ext-route-company { color: rgba(255, 255, 255, 0.5); }
-    
-    .status-normal { color: #30d158; }
-    .status-error { color: #ff9f0a; }
-    .status-delayed { color: #ff453a; }
-    .status-attention { background: rgba(255, 255, 255, 0.15); color: #fff; border: 1px solid rgba(255, 255, 255, 0.3); }
+    .ext-route-name {
+        color: #fff;
+    }
 
-    .ext-card-divider { background: rgba(255, 255, 255, 0.08); }
-    .ext-card-message { color: rgba(255, 255, 255, 0.85); }
-    .ext-update-time { color: rgba(255, 255, 255, 0.4); }
+    .ext-route-company {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .status-normal {
+        color: #30d158;
+    }
+
+    .status-error {
+        color: #ff9f0a;
+    }
+
+    .status-delayed {
+        color: #ff453a;
+    }
+
+    .status-attention {
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .ext-card-divider {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .ext-card-message {
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+    .ext-update-time {
+        color: rgba(255, 255, 255, 0.4);
+    }
 
     /* 深色模式：方向與延誤膠囊方塊 */
     .adv-detail-capsule {
         background: rgba(0, 0, 0, 0.25);
         border: 1px solid rgba(255, 255, 255, 0.05);
     }
-    .adv-dir-name { color: rgba(255, 255, 255, 0.9); }
-    .adv-train-count { color: rgba(255, 255, 255, 0.8); }
-    .adv-delay-text { color: #ff453a; }
-    .adv-normal-text { color: #30d158; }
+
+    .adv-dir-name {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .adv-train-count {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .adv-delay-text {
+        color: #ff453a;
+    }
+
+    .adv-normal-text {
+        color: #30d158;
+    }
 }
 
 /* ==========================================================================
@@ -2801,46 +2966,54 @@ body:has(.universal-window.is-active) .left-capsule {
 
 /* 🌅 淺色模式 (Light Mode) */
 /* 使用深琥珀色/深橘黃，確保在白底上的對比度，不會刺眼也看得清楚 */
-.status-delayed-minor { 
-    background: rgba(255, 149, 0, 0.12); 
-    color: #c28500; 
-    border: 1px solid rgba(255, 149, 0, 0.3); 
+.status-delayed-minor {
+    background: rgba(255, 149, 0, 0.12);
+    color: #c28500;
+    border: 1px solid rgba(255, 149, 0, 0.3);
 }
-.adv-delay-minor-text { 
-    color: #c28500; 
-    font-weight: 800; 
+
+.adv-delay-minor-text {
+    color: #c28500;
+    font-weight: 800;
 }
+
 .search-delay-minor {
-    color: #c28500; 
-    font-size: 0.75em; 
-    font-weight: 800; 
-    margin-top: 6px; 
+    color: #c28500;
+    font-size: 0.75em;
+    font-weight: 800;
+    margin-top: 6px;
     text-align: right;
 }
+
 .search-delay-major {
-    color: #d70015; /* 原本的紅色 */
-    font-size: 0.75em; 
-    font-weight: 800; 
-    margin-top: 6px; 
+    color: #d70015;
+    /* 原本的紅色 */
+    font-size: 0.75em;
+    font-weight: 800;
+    margin-top: 6px;
     text-align: right;
 }
 
 /* 🌃 深色模式 (Dark Mode) 自動切換 */
 @media (prefers-color-scheme: dark) {
+
     /* 使用亮黃色 (Apple iOS System Yellow) */
-    .status-delayed-minor { 
-        background: rgba(255, 214, 10, 0.15); 
-        color: #ffd60a; 
-        border: 1px solid rgba(255, 214, 10, 0.3); 
+    .status-delayed-minor {
+        background: rgba(255, 214, 10, 0.15);
+        color: #ffd60a;
+        border: 1px solid rgba(255, 214, 10, 0.3);
     }
-    .adv-delay-minor-text { 
-        color: #ffd60a; 
+
+    .adv-delay-minor-text {
+        color: #ffd60a;
     }
+
     .search-delay-minor {
-        color: #ffd60a; 
+        color: #ffd60a;
     }
+
     .search-delay-major {
-        color: #ff453a; 
+        color: #ff453a;
     }
 }
 
@@ -2917,24 +3090,29 @@ body:has(.universal-window.is-active) .left-capsule {
    🟢 航班防呆警示標籤 (.flight-alert-badge)
    ========================================================================= */
 
-   .flight-alert-badge {
+.flight-alert-badge {
     display: inline-block;
     font-weight: 800;
     border-radius: 4px;
-    padding: 1px 5px; /* 稍微調整 padding，讓視覺更平衡 */
-    font-size: 0.9em; /* 稍微縮小一點點，更像一個 tag */
+    padding: 1px 5px;
+    /* 稍微調整 padding，讓視覺更平衡 */
+    font-size: 0.9em;
+    /* 稍微縮小一點點，更像一個 tag */
     letter-spacing: 0.5px;
-    
+
     /* 🌅 預設：淺色模式 BASE COLOR (為了對比度，使用深橄欖黃/琥珀色) */
-    color: #ff9600; /* Deep, readable olive/brown-yellow */
+    color: #ff9600;
+    /* Deep, readable olive/brown-yellow */
     border: 1px solid rgba(102, 77, 0, 0.25);
-    background-color: rgba(255, 204, 0, 0.25); /* 稍微加深背景 tint */
+    background-color: rgba(255, 204, 0, 0.25);
+    /* 稍微加深背景 tint */
 }
 
 /* 🌃 深色模式自動覆蓋 (切換回亮黃色 "發光" 效果) */
 @media (prefers-color-scheme: dark) {
     .flight-alert-badge {
-        color: #ffcc00; /* 原本的亮黃色 */
+        color: #ffcc00;
+        /* 原本的亮黃色 */
         border: 1px solid rgba(255, 204, 0, 0.5);
         background-color: rgba(255, 204, 0, 0.1);
     }
@@ -2952,8 +3130,8 @@ body:has(.universal-window.is-active) .left-capsule {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    background: #ffffff; 
-    border: 1px solid rgba(0, 0, 0, 0.08); 
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
 
@@ -2970,7 +3148,7 @@ body:has(.universal-window.is-active) .left-capsule {
 
 /* 淺色模式下，亮黃色會看不清楚，改用深琥珀金 */
 .flight-highlight-gate {
-    color: #c28500 !important; 
+    color: #c28500 !important;
 }
 
 /* 🌃 深色模式：自動覆蓋為玻璃透視感 */
@@ -2980,15 +3158,17 @@ body:has(.universal-window.is-active) .left-capsule {
         border: 1px solid rgba(255, 255, 255, 0.05);
         box-shadow: none;
     }
-    
+
     .flight-terminal-header {
         border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
     }
-    
+
     .flight-highlight-gate {
-        color: #ffcc00 !important; /* 恢復原本的亮黃色 */
+        color: #ffcc00 !important;
+        /* 恢復原本的亮黃色 */
     }
 }
+
 /* ==========================================================================
    🟢 飛機航班：詳情頁功能按鈕 (與資訊卡片完美對齊版)
    ========================================================================== */
@@ -2996,14 +3176,16 @@ body:has(.universal-window.is-active) .left-capsule {
 /* 按鈕容器：間距 16px，完美對齊外部卡片的垂直間距 */
 .flight-action-buttons-container {
     display: flex;
-    gap: 16px; /* ✨ 對齊卡片間的 16px 標準間距 */
+    gap: 16px;
+    /* ✨ 對齊卡片間的 16px 標準間距 */
     width: 100%;
 }
 
 /* 功能按鈕基礎樣式：升級為 24px 圓角玻璃卡片 */
 .flight-action-btn {
     flex: 1;
-    border-radius: 24px; /* ✨ 完美對齊上方卡片的 24px 圓角 */
+    border-radius: 24px;
+    /* ✨ 完美對齊上方卡片的 24px 圓角 */
     padding: 16px 10px;
     display: flex;
     flex-direction: column;
@@ -3044,6 +3226,7 @@ body:has(.universal-window.is-active) .left-capsule {
         color: #ffffff;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     }
+
     .flight-action-btn:active {
         background: rgba(50, 50, 52, 0.65);
     }
@@ -3052,13 +3235,29 @@ body:has(.universal-window.is-active) .left-capsule {
 /* ==========================================================================
    ⌨️ 鍵盤導航專屬狀態 (100% 完美還原原生 Hover 物理質感)
    ========================================================================== */
-   .card.keyboard-focus,
-   #fixed-info-card.keyboard-focus {
-       /* 1. 精準對齊原生 Hover 的 8px 懸浮高度，並強制啟用 3D 硬體加速 */
-       transform: translate3d(0, -8px, 0) !important;
-       
-       /* 2. 完美繼承你寫好的過渡曲線 */
-       transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
-       
-       /* 不寫 box-shadow！讓它自然繼承原先卡片完美的 var(--ray-shadow-resting) */
-   }
+.card.keyboard-focus,
+#fixed-info-card.keyboard-focus {
+    /* 1. 精準對齊原生 Hover 的 8px 懸浮高度，並強制啟用 3D 硬體加速 */
+    transform: translate3d(0, -8px, 0) !important;
+
+    /* 2. 完美繼承你寫好的過渡曲線 */
+    transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
+
+    /* 不寫 box-shadow！讓它自然繼承原先卡片完美的 var(--ray-shadow-resting) */
+}
+
+/* ==========================================================================
+   ⌨️ 鍵盤與滑鼠衝突處理：輸入權奪取機制 (終極防卡死版)
+   ========================================================================== */
+
+/* 1. 物理鎮壓：當鍵盤取得控制權時，強制抵銷所有「非鍵盤目標」的滑鼠 Hover 抬起效果！ */
+body.keyboard-active .card:not(.keyboard-focus):hover,
+body.keyboard-active #fixed-info-card:not(.keyboard-focus):hover {
+    transform: translate3d(0, 0, 0) !important;
+}
+
+/* 2. 事件封印：依然保留，防止滑鼠在此時誤觸發點擊事件 */
+body.keyboard-active .card,
+body.keyboard-active #fixed-info-card {
+    pointer-events: none !important;
+}

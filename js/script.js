@@ -2746,7 +2746,7 @@ function silentUpdateExtensionPanel(cardId) {
 }
 
 // ============================================================================
-// 🟢 桌面版鍵盤快捷鍵：方向鍵關閉卡片 & 首頁卡片焦點選擇 (全域整合版)
+// 🟢 桌面版鍵盤快捷鍵：方向鍵關閉卡片 & 首頁卡片焦點選擇 (輸入權自動爭奪版)
 // ============================================================================
 let keyboardFocusIndex = -1;
 
@@ -2755,20 +2755,22 @@ window.addEventListener('keydown', (e) => {
     const isTyping = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
     if (isTyping || window.isAnimating) return;
 
-    // 👉 情況 A：如果有打開詳情卡片，ArrowDown 負責「關閉卡片」
     if (window.activeCardId) {
         if (e.key === 'ArrowDown') {
             if (document.getElementById('dynamic-blank-overlay') || document.getElementById('dynamic-info-overlay')) return;
             e.preventDefault();
             closeAllCards(true);
         }
-        return; // 已經打開卡片時，絕對不觸發首頁的上下選擇！
+        return; 
     }
 
-    // 👉 情況 B：首頁閒置狀態，啟動「卡片選擇狀態機」
-    // ✨ 核心修復：精準抓取 .card，而不是 .route-card
     const cards = Array.from(document.querySelectorAll('#main-stack .card:not(.hidden-placeholder), #fixed-info-card'));
     if (cards.length === 0) return;
+
+    // ✨ 鍵盤奪權：按下方向鍵的瞬間，啟動滑鼠封印力場！
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        document.body.classList.add('keyboard-active'); 
+    }
 
     if (e.key === 'ArrowDown') {
         e.preventDefault(); 
@@ -2788,17 +2790,14 @@ window.addEventListener('keydown', (e) => {
         }
     } 
     else if (e.key === 'Escape') {
-        keyboardFocusIndex = -1;
-        updateKeyboardFocus(cards);
+        resetFocus(); // 按 ESC 直接放棄控制權
     }
 });
 
-// 負責更新畫面視覺與平滑捲動的引擎
 function updateKeyboardFocus(cards) {
     cards.forEach((card, index) => {
         if (index === keyboardFocusIndex) {
             card.classList.add('keyboard-focus');
-            // ✨ 黑魔法：讓畫面自動平滑捲動到被選中的卡片
             card.scrollIntoView({ behavior: 'smooth', block: 'center' });
         } else {
             card.classList.remove('keyboard-focus');
@@ -2806,12 +2805,23 @@ function updateKeyboardFocus(cards) {
     });
 }
 
-// 點擊畫面時自動清除鍵盤焦點
+// ✨ 統一退場機制：解除滑鼠封印、清除鍵盤抬起狀態
 const resetFocus = () => {
-    if (keyboardFocusIndex !== -1) {
+    if (keyboardFocusIndex !== -1 || document.body.classList.contains('keyboard-active')) {
         keyboardFocusIndex = -1;
+        document.body.classList.remove('keyboard-active'); // 釋放滑鼠封印
         document.querySelectorAll('.keyboard-focus').forEach(el => el.classList.remove('keyboard-focus'));
     }
 };
+
+// 點擊或觸控時，滑鼠奪權
 window.addEventListener('mousedown', resetFocus);
 window.addEventListener('touchstart', resetFocus, { passive: true });
+
+// ✨ 核心魔法：滑鼠移動偵測奪權
+window.addEventListener('mousemove', (e) => {
+    // 必須判斷滑鼠「真的有在物理移動 (movement > 0)」，避免網頁捲動造成的假訊號
+    if (Math.abs(e.movementX) > 0 || Math.abs(e.movementY) > 0) {
+        resetFocus(); // 滑鼠一動，瞬間消滅鍵盤的焦點，並恢復 Hover 能力！
+    }
+});
