@@ -77,8 +77,12 @@ export function startRouteEditMode(cardId, currentLineIds) {
             user-select: none; -webkit-user-select: none;
         `;
 
+        // ✨ 初始判定：如果只有一條，直接把手把隱藏 (opacity: 0) 並且鎖死點擊 (pointer-events: none)
+        const isSingle = currentLineIds.length <= 1;
+        const handleStyle = isSingle ? 'opacity: 0; pointer-events: none;' : 'opacity: 1; pointer-events: auto;';
+
         capsule.innerHTML = `
-            <div class="drag-handle" style="cursor: grab; padding-right: 12px; color: var(--text-secondary); touch-action: none; display: flex; align-items: center;">
+            <div class="drag-handle" style="cursor: grab; padding-right: 12px; color: var(--text-secondary); touch-action: none; display: flex; align-items: center; transition: opacity 0.3s ease; ${handleStyle}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-icon lucide-list"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>
             </div>
             <div style="flex: 1; min-width: 0; pointer-events: none; display: flex; align-items: center;">
@@ -87,7 +91,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
         `;
         capsulesCol.appendChild(capsule);
 
-        // 2. 生成垃圾桶 (放在右欄，與膠囊平行但互不干擾)
+        // 2. 生成垃圾桶 (放在右欄)
         const delBtn = document.createElement('button');
         delBtn.className = 'delete-route-btn';
         delBtn.style.cssText = `
@@ -98,16 +102,29 @@ export function startRouteEditMode(cardId, currentLineIds) {
         `;
         delBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`;
         
-        // 刪除邏輯：動態對應左欄的膠囊位置
+        // 刪除邏輯：動態對應並判定剩餘數量
         delBtn.onclick = () => {
             const index = Array.from(deleteBtnsCol.children).indexOf(delBtn);
             const targetCapsule = capsulesCol.children[index];
             
+            // ✨ 標記這個膠囊「正在被刪除」，這樣後面的計算才會準確
+            targetCapsule.classList.add('deleting');
+
             targetCapsule.style.transform = 'scale(0.95)';
             targetCapsule.style.opacity = '0';
             delBtn.style.transform = 'scale(0.95)';
             delBtn.style.opacity = '0';
             
+            // ✨ 動態淡出：檢查還剩下幾個沒被刪除的膠囊？如果只剩 1 個，就把它的手把淡出！
+            const remainingCapsules = Array.from(capsulesCol.children).filter(c => !c.classList.contains('deleting'));
+            if (remainingCapsules.length <= 1 && remainingCapsules[0]) {
+                const lastHandle = remainingCapsules[0].querySelector('.drag-handle');
+                if (lastHandle) {
+                    lastHandle.style.opacity = '0';
+                    lastHandle.style.pointerEvents = 'none'; // 物理鎖死
+                }
+            }
+
             setTimeout(() => {
                 targetCapsule.remove();
                 delBtn.remove();
