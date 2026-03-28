@@ -71,10 +71,11 @@ export function startRouteEditMode(cardId, currentLineIds) {
         
         capsule.style.cssText = `
             display: flex; align-items: center; 
-            background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.05); 
+            background: #2c2c2e; /* 實心 System Gray 6 */
             padding: 0 16px; border-radius: 999px; height: 48px; 
             transition: transform 0.2s, opacity 0.2s, background 0.2s; 
             user-select: none; -webkit-user-select: none;
+            box-sizing: border-box; /* 確保 padding 不會撐大膠囊 */
         `;
 
         // ✨ 初始判定：如果只有一條，直接把手把隱藏 (opacity: 0) 並且鎖死點擊 (pointer-events: none)
@@ -232,8 +233,7 @@ function initDragAndDrop(container) {
             const rect = item.getBoundingClientRect();
             ghost = item.cloneNode(true);
             
-            // ✨ 物理鎖死：強制把幽靈長寬設為當下測量到的像素值，杜絕變形！
-            // ✨ 核心修復：使用 Object.assign 保留原本的 flex 排版，只附加浮空的屬性
+            // ✨ 核心修復：使用 Object.assign 保留 Flex 排版
             Object.assign(ghost.style, {
                 position: 'fixed',
                 top: `${rect.top}px`,
@@ -241,14 +241,23 @@ function initDragAndDrop(container) {
                 width: `${rect.width}px`,
                 height: `${rect.height}px`,
                 zIndex: '9999',
-                opacity: '0.95',
+                opacity: '0.98', // 幾乎不透明，增加實心感
                 pointerEvents: 'none',
-                transform: 'scale(1.03)',
-                boxShadow: '0 12px 32px rgba(0,0,0,0.4)',
-                background: 'rgba(255, 255, 255, 0.15)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                boxSizing: 'border-box', // 確保 padding 計算正確
-                margin: '0'
+                transform: 'scale(1.04)', // 稍微放大，營動被拿起來的感覺
+                transition: 'transform 0.1s ease, box-shadow 0.1s ease', // 加上拿起時的微小過渡
+                
+                // ✨ 改動 3：幽靈物件也改為實心深灰色，徹底消除計算半透明時產生的殘影
+                background: '#3a3a3c', // 稍微提亮 System Gray 4，強調它浮起來了
+                border: 'none', // 不需要邊框
+
+                // ✨ 改動 4：加強陰影，強調空間感
+                boxShadow: '0 20px 50px rgba(0,0,0,0.5)', 
+                
+                boxSizing: 'border-box',
+                borderRadius: '999px', // 確保 clone 出來的圓角對齊
+                margin: '0',
+                display: 'flex', // 確保 Flex 排版被實體化
+                alignItems: 'center'
             });
             document.body.appendChild(ghost);
 
