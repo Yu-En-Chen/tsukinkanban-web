@@ -861,21 +861,11 @@ function handleCardClick(id) {
                         </span>
                     </div>
                 `;
-                // ✨ 改變對象：附加到 scrollWrapper
                 scrollWrapper.appendChild(row);
             });
             
-            if (data.isTemporarySearch) {
-                const addBtn = document.createElement('button');
-                addBtn.innerHTML = '看板に追加する';
-                addBtn.style.cssText = 'margin-top: 8px; width: 100%; padding: 16px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 18px; color: white; font-weight: 800; font-size: 16px; cursor: pointer; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); flex-shrink: 0; transition: transform 0.2s ease, opacity 0.2s ease;';
-                addBtn.onclick = () => {
-                    closeAllCards(false);
-                    setTimeout(() => { if(window.openAddPanel) window.openAddPanel(); }, 400);
-                };
-                scrollWrapper.appendChild(addBtn);
-            }
         } else {
+            // 無追蹤路線時的空狀態
             scrollWrapper.innerHTML = `
                 <div style="background: rgba(30, 30, 32, 0.65); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px 20px; text-align: center; color: var(--text-secondary); box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
                     <div style="opacity: 0.6; margin-bottom: 12px; display: flex; justify-content: center;">
@@ -885,16 +875,44 @@ function handleCardClick(id) {
                     <div style="font-size: 0.85em; margin-top: 8px; opacity: 0.7;">右上の「＋」から路線を追加してください</div>
                 </div>
             `;
-            if (data.isTemporarySearch) {
-                const addBtn = document.createElement('button');
-                addBtn.innerHTML = '看板に追加する';
-                addBtn.style.cssText = 'margin-top: 8px; width: 100%; padding: 16px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 18px; color: white; font-weight: 800; font-size: 16px; cursor: pointer; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); flex-shrink: 0; transition: transform 0.2s ease, opacity 0.2s ease;';
-                addBtn.onclick = () => {
-                    closeAllCards(false);
-                    setTimeout(() => { if(window.openAddPanel) window.openAddPanel(); }, 400);
-                };
-                scrollWrapper.appendChild(addBtn);
-            }
+        }
+
+        // ✨ 新增：統一在底部插入兩個漂亮的玻璃動作按鈕！
+        if (data.isTemporarySearch) {
+            const btnContainer = document.createElement('div');
+            // 直接借用飛機的 Class，因為它已經具備完美的 gap:16px 與 flex 排版
+            btnContainer.className = 'flight-action-buttons-container';
+
+            // 碼表圖示 (1日だけ追加) 與 加號圖示 (カード追加)
+            const iconTimer = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg>`;
+            const iconPlus = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`;
+
+            // 按鈕產生器工廠
+            const createBtn = (iconHtml, text, onClickAction) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'flight-action-btn'; // flex: 1 會確保兩個按鈕完美均分寬度
+                btn.innerHTML = `${iconHtml}<span>${text}</span>`;
+                if (onClickAction) btn.onclick = onClickAction;
+                return btn;
+            };
+
+            // 動作邏輯綁定
+            const handleTempAdd = () => {
+                // 這裡預留給你之後寫「1日だけ追加」的 LocalStorage 邏輯
+                console.log('1日だけ追加 clicked');
+            };
+
+            const handleAddCard = () => {
+                // 沿用你原本「加入看板」的點擊邏輯
+                closeAllCards(false);
+                setTimeout(() => { if(window.openAddPanel) window.openAddPanel(); }, 400);
+            };
+
+            btnContainer.appendChild(createBtn(iconTimer, '1日だけ追加', handleTempAdd));
+            btnContainer.appendChild(createBtn(iconPlus, 'カード追加', handleAddCard));
+
+            scrollWrapper.appendChild(btnContainer);
         }
         
         const scrollSpacer = document.createElement('div');
