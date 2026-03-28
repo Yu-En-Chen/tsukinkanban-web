@@ -88,17 +88,24 @@ export function startRouteEditMode(cardId, currentLineIds) {
         listWrapper.appendChild(item);
     });
 
-    // ✨ 核心修復 2：拔除詭異的漸層陰影與 sticky 定位，回歸純粹！
+    // ✨ 終極置底視覺微調 (純淨懸浮導覽列版)
     const btnContainer = document.createElement('div');
     btnContainer.className = 'flight-action-buttons-container';
     btnContainer.style.cssText = `
+        /* 加入 Sticky 讓它永遠吸附在底部，z-index 確保它浮在路線清單之上 */
+        position: sticky;
+        bottom: 0;
+        z-index: 100;
+        
         margin-top: auto; 
-        padding-top: 24px;
-        /* ✨ 視覺微調：利用 calc() 算式，把底部安全距離再往上推高 16px，完美配合間距！ */
-        padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 16px);
+        padding-top: 16px; /* 稍微縮小頂部間距，讓路線滑過去時更俐落 */
+        /* ✨ 完美契合：維持 16px 的邊距，永遠保持等距美學！ */
+        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
         opacity: 0;
         transition: opacity 0.4s ease;
         flex-shrink: 0;
+        
+        /* 💡 絕對不加漸層背景，保留原本最乾淨的玻璃質感與尺寸！ */
     `;
 
     const iconCancel = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>`;
