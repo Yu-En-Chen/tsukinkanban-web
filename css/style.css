@@ -3048,3 +3048,17 @@ body:has(.universal-window.is-active) .left-capsule {
         background: rgba(50, 50, 52, 0.65);
     }
 }
+
+/* ==========================================================================
+   ⌨️ 鍵盤導航專屬狀態 (100% 完美還原原生 Hover 物理質感)
+   ========================================================================== */
+   .card.keyboard-focus,
+   #fixed-info-card.keyboard-focus {
+       /* 1. 精準對齊原生 Hover 的 8px 懸浮高度，並強制啟用 3D 硬體加速 */
+       transform: translate3d(0, -8px, 0) !important;
+       
+       /* 2. 完美繼承你寫好的過渡曲線 */
+       transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
+       
+       /* 不寫 box-shadow！讓它自然繼承原先卡片完美的 var(--ray-shadow-resting) */
+   }

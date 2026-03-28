@@ -2744,3 +2744,74 @@ function silentUpdateExtensionPanel(cardId) {
     // ✨ 核心魔法：瞬間把滑動位置設定回去，肉眼完全看不出畫面有被清空過
     extension.scrollTop = currentScroll;
 }
+
+// ============================================================================
+// 🟢 桌面版鍵盤快捷鍵：方向鍵關閉卡片 & 首頁卡片焦點選擇 (全域整合版)
+// ============================================================================
+let keyboardFocusIndex = -1;
+
+window.addEventListener('keydown', (e) => {
+    const activeElement = document.activeElement;
+    const isTyping = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+    if (isTyping || window.isAnimating) return;
+
+    // 👉 情況 A：如果有打開詳情卡片，ArrowDown 負責「關閉卡片」
+    if (window.activeCardId) {
+        if (e.key === 'ArrowDown') {
+            if (document.getElementById('dynamic-blank-overlay') || document.getElementById('dynamic-info-overlay')) return;
+            e.preventDefault();
+            closeAllCards(true);
+        }
+        return; // 已經打開卡片時，絕對不觸發首頁的上下選擇！
+    }
+
+    // 👉 情況 B：首頁閒置狀態，啟動「卡片選擇狀態機」
+    // ✨ 核心修復：精準抓取 .card，而不是 .route-card
+    const cards = Array.from(document.querySelectorAll('#main-stack .card:not(.hidden-placeholder), #fixed-info-card'));
+    if (cards.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+        e.preventDefault(); 
+        keyboardFocusIndex = Math.min(keyboardFocusIndex + 1, cards.length - 1);
+        updateKeyboardFocus(cards);
+    } 
+    else if (e.key === 'ArrowUp') {
+        e.preventDefault(); 
+        if (keyboardFocusIndex === -1) keyboardFocusIndex = cards.length - 1;
+        else keyboardFocusIndex = Math.max(keyboardFocusIndex - 1, 0);
+        updateKeyboardFocus(cards);
+    } 
+    else if (e.key === 'Enter') {
+        if (keyboardFocusIndex >= 0 && keyboardFocusIndex < cards.length) {
+            e.preventDefault();
+            cards[keyboardFocusIndex].click();
+        }
+    } 
+    else if (e.key === 'Escape') {
+        keyboardFocusIndex = -1;
+        updateKeyboardFocus(cards);
+    }
+});
+
+// 負責更新畫面視覺與平滑捲動的引擎
+function updateKeyboardFocus(cards) {
+    cards.forEach((card, index) => {
+        if (index === keyboardFocusIndex) {
+            card.classList.add('keyboard-focus');
+            // ✨ 黑魔法：讓畫面自動平滑捲動到被選中的卡片
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            card.classList.remove('keyboard-focus');
+        }
+    });
+}
+
+// 點擊畫面時自動清除鍵盤焦點
+const resetFocus = () => {
+    if (keyboardFocusIndex !== -1) {
+        keyboardFocusIndex = -1;
+        document.querySelectorAll('.keyboard-focus').forEach(el => el.classList.remove('keyboard-focus'));
+    }
+};
+window.addEventListener('mousedown', resetFocus);
+window.addEventListener('touchstart', resetFocus, { passive: true });
