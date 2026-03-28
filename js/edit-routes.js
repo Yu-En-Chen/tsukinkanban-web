@@ -45,7 +45,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
     // ✨ 終極修復：拔除 min-height: 100%，讓它根據路線數量自然生長，並防止強制產生捲動軸！
     // 加上 flex-shrink: 0 防止被擠壓。底下的按鈕會靠著 margin-top: auto 自動沉底。
     editContainer.style.cssText = 'display: flex; flex-direction: column; gap: 8px; opacity: 0; transition: opacity 0.3s ease; flex-shrink: 0;';
-    
+
     const dict = window.MasterRouteDictionary || {};
     const cardName = window.appRailwayData?.find(c => c.id === cardId)?.name || 'カスタムカード';
     
@@ -67,22 +67,26 @@ export function startRouteEditMode(cardId, currentLineIds) {
         item.className = 'edit-route-item';
         item.setAttribute('data-line-id', lineId);
         
+        // ✨ 改動 1：將外層變成一個「透明的排版容器」，讓膠囊與按鈕能分開並保持 12px 的間距
         item.style.cssText = `
-            display: flex; align-items: center; background: rgba(255, 255, 255, 0.06); 
-            border: 1px solid rgba(255, 255, 255, 0.05); padding: 16px; border-radius: 16px; 
-            transition: transform 0.2s, opacity 0.2s, background 0.2s; 
+            display: flex; align-items: center; gap: 12px; 
+            transition: transform 0.2s, opacity 0.2s; 
             user-select: none; -webkit-user-select: none;
         `;
 
+        // ✨ 改動 2：
+        // - 左邊：全圓角膠囊 (border-radius: 999px)，高度縮減至 48px，只保留路線名稱
+        // - 右邊：正圓形刪除按鈕 (border-radius: 50%, width: 48px, height: 48px)，大小與膠囊完美等高
         item.innerHTML = `
-            <div class="drag-handle" style="cursor: grab; padding-right: 16px; color: var(--text-secondary); touch-action: none;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/></svg>
+            <div class="route-capsule" style="display: flex; align-items: center; flex: 1; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.05); padding: 0 16px; border-radius: 999px; height: 48px; min-width: 0;">
+                <div class="drag-handle" style="cursor: grab; padding-right: 12px; color: var(--text-secondary); touch-action: none; display: flex; align-items: center;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/></svg>
+                </div>
+                <div style="flex: 1; min-width: 0; pointer-events: none; display: flex; align-items: center;">
+                    <div style="font-weight: 800; font-size: 1.05em; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transform: translateY(-0.5px);">${lineData.name}</div>
+                </div>
             </div>
-            <div style="flex: 1; min-width: 0; pointer-events: none;">
-                <div style="font-weight: 800; font-size: 1.1em; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px;">${lineData.name}</div>
-                <div style="font-size: 0.8em; font-weight: 600; color: var(--text-secondary);">${lineData.company}</div>
-            </div>
-            <button class="delete-route-btn" style="background: rgba(255, 69, 58, 0.15); border: none; border-radius: 50%; width: 36px; height: 36px; margin: -8px -4px -8px 12px; color: #ff453a; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">
+            <button class="delete-route-btn" style="flex-shrink: 0; background: rgba(255, 69, 58, 0.15); border: none; border-radius: 50%; width: 48px; height: 48px; padding: 0; color: #ff453a; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
             </button>
         `;
@@ -209,14 +213,24 @@ function initDragAndDrop(container) {
             
             const rect = item.getBoundingClientRect();
             ghost = item.cloneNode(true);
+            
+            // ✨ 改動 3：幽靈外層保持透明，稍微放大
             ghost.style.cssText = `
                 position: fixed; top: ${rect.top}px; left: ${rect.left}px; 
                 width: ${rect.width}px; height: ${rect.height}px; 
                 z-index: 9999; opacity: 0.95; 
-                box-shadow: 0 20px 40px rgba(0,0,0,0.4); pointer-events: none; 
-                transform: scale(1.03); border: 1px solid rgba(255,255,255,0.2);
-                border-radius: 16px; background: rgba(40,40,42,0.9); backdrop-filter: blur(10px);
+                pointer-events: none; 
+                transform: scale(1.02);
             `;
+            
+            // ✨ 讓懸浮在空中的膠囊亮起並產生陰影，更有「被拿起來」的物理真實感
+            const ghostCapsule = ghost.querySelector('.route-capsule');
+            if (ghostCapsule) {
+                ghostCapsule.style.boxShadow = '0 12px 32px rgba(0,0,0,0.3)';
+                ghostCapsule.style.background = 'rgba(255, 255, 255, 0.15)'; // 提亮
+                ghostCapsule.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+            }
+            
             document.body.appendChild(ghost);
 
             item.style.opacity = '0.2'; 
