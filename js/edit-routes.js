@@ -54,7 +54,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
             <div style="font-size: 1.6em; font-weight: 800; color: #fff; letter-spacing: 0.5px;">路線の編集</div>
             <div style="font-size: 0.95em; color: var(--text-secondary); font-weight: 600;">${cardName}</div>
         </div>
-        <div id="edit-list-wrapper" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        <div id="edit-list-wrapper" style="display: flex; flex-direction: column; gap: 12px;"></div>
     `;
 
     const listWrapper = editContainer.querySelector('#edit-list-wrapper');
