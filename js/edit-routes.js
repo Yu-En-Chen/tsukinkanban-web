@@ -42,9 +42,10 @@ export function startRouteEditMode(cardId, currentLineIds) {
 
     const editContainer = document.createElement('div');
     editContainer.id = 'edit-mode-container';
-    // ✨ 核心修復 1：加入 min-height: 100%，確保容器撐滿，讓按鈕能自然被推到底部
-    editContainer.style.cssText = 'display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 100%; opacity: 0; transition: opacity 0.3s ease;';
-
+    // ✨ 終極修復：拔除 min-height: 100%，讓它根據路線數量自然生長，並防止強制產生捲動軸！
+    // 加上 flex-shrink: 0 防止被擠壓。底下的按鈕會靠著 margin-top: auto 自動沉底。
+    editContainer.style.cssText = 'display: flex; flex-direction: column; gap: 8px; opacity: 0; transition: opacity 0.3s ease; flex-shrink: 0;';
+    
     const dict = window.MasterRouteDictionary || {};
     const cardName = window.appRailwayData?.find(c => c.id === cardId)?.name || 'カスタムカード';
     
