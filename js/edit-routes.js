@@ -45,7 +45,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
     // ✨ 核心升級：建立包含「隱形地基」的雙欄排版
     editContainer.innerHTML = `
         <div style="padding: 12px 4px 20px 4px; display: flex; flex-direction: column; gap: 6px;">
-            <div style="font-size: 1.6em; font-weight: 800; color: #fff; letter-spacing: 0.5px;">路線の編集</div>
+            <div style="font-size: 1.6em; font-weight: 800; color: #fff; letter-spacing: 0.5px;">路線を編集</div>
             <div style="font-size: 0.95em; color: var(--text-secondary); font-weight: 600;">${cardName}</div>
         </div>
         <div id="edit-list-wrapper" style="position: relative; display: flex; gap: 12px;">
@@ -79,7 +79,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
 
         capsule.innerHTML = `
             <div class="drag-handle" style="cursor: grab; padding-right: 12px; color: var(--text-secondary); touch-action: none; display: flex; align-items: center;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-icon lucide-list"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>
             </div>
             <div style="flex: 1; min-width: 0; pointer-events: none; display: flex; align-items: center;">
                 <div style="font-weight: 800; font-size: 1.05em; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transform: translateY(-0.5px);">${lineData.name}</div>
@@ -216,16 +216,23 @@ function initDragAndDrop(container) {
             ghost = item.cloneNode(true);
             
             // ✨ 物理鎖死：強制把幽靈長寬設為當下測量到的像素值，杜絕變形！
-            ghost.style.cssText = `
-                position: fixed; top: ${rect.top}px; left: ${rect.left}px; 
-                width: ${rect.width}px; height: ${rect.height}px; 
-                z-index: 9999; opacity: 0.95; pointer-events: none; 
-                transform: scale(1.03);
-                box-shadow: 0 12px 32px rgba(0,0,0,0.4);
-                background: rgba(255, 255, 255, 0.15);
-                border: 1px solid rgba(255, 255, 255, 0.15);
-                border-radius: 999px;
-            `;
+            // ✨ 核心修復：使用 Object.assign 保留原本的 flex 排版，只附加浮空的屬性
+            Object.assign(ghost.style, {
+                position: 'fixed',
+                top: `${rect.top}px`,
+                left: `${rect.left}px`,
+                width: `${rect.width}px`,
+                height: `${rect.height}px`,
+                zIndex: '9999',
+                opacity: '0.95',
+                pointerEvents: 'none',
+                transform: 'scale(1.03)',
+                boxShadow: '0 12px 32px rgba(0,0,0,0.4)',
+                background: 'rgba(255, 255, 255, 0.15)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                boxSizing: 'border-box', // 確保 padding 計算正確
+                margin: '0'
+            });
             document.body.appendChild(ghost);
 
             // ✨ 將原本的膠囊設為 opacity: 0，它變成一塊完美的透明磚塊幫我們撐住排版！
