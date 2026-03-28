@@ -913,45 +913,53 @@ function handleCardClick(id) {
             scrollWrapper.appendChild(btnContainer);
 
         } else {
-            // 🏠 情境 B：這是「首頁原本就有的獨立卡片」 -> 顯示 2 個預留的空按鈕
+            // 🏠 情境 B：這是「首頁原本就有的獨立卡片」 -> 顯示 2 個專屬動作按鈕
             const btnContainer = document.createElement('div');
             btnContainer.className = 'flight-action-buttons-container';
 
-            // 預留兩個隱形的 SVG 佔位符，這樣能保持文字高度與搜尋按鈕完全一致
-            const iconPlaceholder1 = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-chevrons-up-down-icon lucide-list-chevrons-up-down"><path d="M3 5h8"/><path d="M3 12h8"/><path d="M3 19h8"/><path d="m15 8 3-3 3 3"/><path d="m15 16 3 3 3-3"/></svg>`; 
-            const iconPlaceholder2 = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-plus-icon lucide-list-plus"><path d="M16 5H3"/><path d="M11 12H3"/><path d="M16 19H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></svg>`; 
+            const iconEdit = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-chevrons-up-down-icon lucide-list-chevrons-up-down"><path d="M3 5h8"/><path d="M3 12h8"/><path d="M3 19h8"/><path d="m15 8 3-3 3 3"/><path d="m15 16 3 3 3-3"/></svg>`; 
+            const iconAdd = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-plus-icon lucide-list-plus"><path d="M16 5H3"/><path d="M11 12H3"/><path d="M16 19H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></svg>`; 
 
             const createBtn = (iconHtml, text, onClickAction) => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                // ✨ 重點魔法：因為 CSS 有 flex: 1，只有兩個按鈕時，它們會自動填滿各佔 50% 的寬度！
                 btn.className = 'flight-action-btn'; 
                 btn.innerHTML = `${iconHtml}<span style="font-size: 0.95em; letter-spacing: -0.5px;">${text}</span>`;
                 if (onClickAction) btn.onclick = onClickAction;
                 return btn;
             };
 
-            //   路線を編集
-            const handleBtn1Click = async () => {
-                const cardId = data.id; 
+            // ✨ 真正的核心魔法：放在這裡，它才能讀到當下這張卡片的 data 變數！
+            const handleEditRoutes = async () => {
+                try {
+                    // 1. 取得目前打開的這張卡片的 ID
+                    const cardId = data.id; 
 
-                // ✨ 修正：直接呼叫檔案頂部 import 進來的 getAllUserPreferences()
-                const prefs = await getAllUserPreferences(); 
-                const pref = prefs.find(p => p.id === cardId);
-                
-                const currentLineIds = pref && pref.targetLineIds ? pref.targetLineIds : (data.targetLineIds || []);
-                
-                startRouteEditMode(cardId, currentLineIds);
+                    // 2. 去 IndexedDB 抓取最新的卡片設定
+                    const prefs = await getAllUserPreferences(); 
+                    
+                    // 🚨 核心修正：prefs 是一個字典物件，不能用 .find()，必須直接用 ID 當鑰匙拿資料！
+                    const pref = prefs[cardId];
+                    
+                    // 3. 決定最終要編輯的路線陣列
+                    const currentLineIds = pref && pref.targetLineIds ? pref.targetLineIds : (data.targetLineIds || []);
+                    
+                    // 4. 啟動幽靈拖曳模組！
+                    startRouteEditMode(cardId, currentLineIds);
+                    
+                } catch (err) {
+                    console.error('啟動編輯模式發生錯誤:', err);
+                }
             };
 
-            //   路線を追加
-            const handleBtn2Click = () => {
-                console.log('首頁卡片：按鈕 2 被點擊了');
+            // 新增路線的按鈕預留
+            const handleAddRouteClick = () => {
+                console.log('首頁卡片：按鈕 2 準備新增路線');
             };
 
-            // 將兩個空按鈕塞入容器中
-            btnContainer.appendChild(createBtn(iconPlaceholder1, '路線を編集', handleBtn1Click));
-            btnContainer.appendChild(createBtn(iconPlaceholder2, '路線を追加', handleBtn2Click));
+            // 將兩個按鈕與點擊事件綁定起來並塞入容器
+            btnContainer.appendChild(createBtn(iconEdit, '路線を編集', handleEditRoutes));
+            btnContainer.appendChild(createBtn(iconAdd, '路線を追加', handleAddRouteClick));
 
             scrollWrapper.appendChild(btnContainer);
         }

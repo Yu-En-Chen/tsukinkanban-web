@@ -13,11 +13,12 @@ export function startRouteEditMode(cardId, currentLineIds) {
     editContainer.id = 'edit-mode-container';
     editContainer.style.cssText = 'display: flex; flex-direction: column; gap: 8px; flex: 1; padding-bottom: 24px; margin-top: 8px;';
     
+    // 🚨 核心修正：刪除舊的 window.dataSource.trainLines，改用你真正的全域字典！
     const dict = window.MasterRouteDictionary || {};
-
+    
     // 渲染目前的路線清單
     currentLineIds.forEach(lineId => {
-        // ✨ 替換成這樣：直接從字典裡拿資料
+        // ✨ 直接從字典裡用 ID 抓取路線資料
         const lineData = dict[lineId];
         if (!lineData) return;
 
