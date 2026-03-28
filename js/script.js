@@ -24,6 +24,7 @@ import { initPersonalization } from './personalization.js';
 import { initDynamicClock } from './clock.js';
 import { syncAndLoadDictionary } from '../data/dictionary-db.js';
 import { initFlights, searchFlights } from './flights.js';
+import { startRouteEditMode } from './edit-routes.js';
 
 // 🟢 宣告全域變數，作為整個 App 實際渲染、搜尋、點擊的唯一資料來源
 window.appRailwayData = [];
