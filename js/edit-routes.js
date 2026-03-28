@@ -12,12 +12,13 @@ export function startRouteEditMode(cardId, currentLineIds) {
     const editContainer = document.createElement('div');
     editContainer.id = 'edit-mode-container';
     editContainer.style.cssText = 'display: flex; flex-direction: column; gap: 8px; flex: 1; padding-bottom: 24px; margin-top: 8px;';
-
-    const trainLines = window.dataSource.trainLines;
     
+    const dict = window.MasterRouteDictionary || {};
+
     // 渲染目前的路線清單
     currentLineIds.forEach(lineId => {
-        const lineData = trainLines.find(l => l.id === lineId);
+        // ✨ 替換成這樣：直接從字典裡拿資料
+        const lineData = dict[lineId];
         if (!lineData) return;
 
         const item = document.createElement('div');

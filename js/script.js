@@ -931,10 +931,20 @@ function handleCardClick(id) {
                 return btn;
             };
 
-            const handleBtn1Click = () => {
-                console.log('首頁卡片：按鈕 1 被點擊了');
+            //   路線を編集
+            const handleBtn1Click = async () => {
+                const cardId = data.id; 
+
+                // ✨ 修正：直接呼叫檔案頂部 import 進來的 getAllUserPreferences()
+                const prefs = await getAllUserPreferences(); 
+                const pref = prefs.find(p => p.id === cardId);
+                
+                const currentLineIds = pref && pref.targetLineIds ? pref.targetLineIds : (data.targetLineIds || []);
+                
+                startRouteEditMode(cardId, currentLineIds);
             };
 
+            //   路線を追加
             const handleBtn2Click = () => {
                 console.log('首頁卡片：按鈕 2 被點擊了');
             };
