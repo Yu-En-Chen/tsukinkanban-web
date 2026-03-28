@@ -877,50 +877,70 @@ function handleCardClick(id) {
             `;
         }
 
-        // ✨ 新增：統一在底部插入三個漂亮的玻璃動作按鈕！
+        // =========================================================
+        // ✨ 底部動作按鈕區塊 (智慧判斷：搜尋結果 vs 首頁卡片)
+        // =========================================================
         if (data.isTemporarySearch) {
+            // 🔍 情境 A：這是從「搜尋」點開的暫時卡片 -> 顯示 3 個按鈕
             const btnContainer = document.createElement('div');
             btnContainer.className = 'flight-action-buttons-container';
 
-            // 圖示定義
-            // 1. 第一顆按鈕預留位子 (移除 Google Map 邏輯，留下隱形佔位符維持排版)
-            const iconPlaceholder = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-plus-icon lucide-list-plus"><path d="M16 5H3"/><path d="M11 12H3"/><path d="M16 19H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></svg>`; 
-            // 2. 碼表圖示 (1日だけ追加)
             const iconTimer = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg>`;
-            // 3. 加號圖示 (カード追加)
-            const iconPlus = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`;
+            const iconListPlus = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M11 12H3"/><path d="M16 6H3"/><path d="M16 18H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></svg>`;
+            const iconSquarePlus = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>`;
 
-            // 按鈕產生器工廠
             const createBtn = (iconHtml, text, onClickAction) => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'flight-action-btn'; 
-                btn.innerHTML = `${iconHtml}<span>${text}</span>`;
+                btn.innerHTML = `${iconHtml}<span style="font-size: 0.9em; letter-spacing: -0.5px;">${text}</span>`;
                 if (onClickAction) btn.onclick = onClickAction;
                 return btn;
             };
 
-            // 動作邏輯綁定
-            const handlePlaceholderClick = () => {
-                // 這裡預留給你之後加新功能！
-                console.log('第一個按鈕被點擊了');
-            };
-
-            const handleTempAdd = () => {
-                // 這裡預留給你之後寫「1日だけ追加」的 LocalStorage 邏輯
-                console.log('1日だけ追加 clicked');
-            };
-
-            const handleAddCard = () => {
-                // 沿用你原本「加入看板」的點擊邏輯
+            const handleTempAdd = () => { console.log('1日だけ追加 clicked'); };
+            const handleAddToExisting = () => { console.log('既存カード追加 clicked'); };
+            const handleCreateNew = () => {
                 closeAllCards(false);
                 setTimeout(() => { if(window.openAddPanel) window.openAddPanel(); }, 400);
             };
 
-            // 依序塞入三個按鈕，達成完美三等分！
-            btnContainer.appendChild(createBtn(iconPlaceholder, '既存カード追加', handlePlaceholderClick));
             btnContainer.appendChild(createBtn(iconTimer, '1日だけ追加', handleTempAdd));
-            btnContainer.appendChild(createBtn(iconPlus, '新規カード作成', handleAddCard));
+            btnContainer.appendChild(createBtn(iconListPlus, '既存カード追加', handleAddToExisting));
+            btnContainer.appendChild(createBtn(iconSquarePlus, '新規カード作成', handleCreateNew));
+
+            scrollWrapper.appendChild(btnContainer);
+
+        } else {
+            // 🏠 情境 B：這是「首頁原本就有的獨立卡片」 -> 顯示 2 個預留的空按鈕
+            const btnContainer = document.createElement('div');
+            btnContainer.className = 'flight-action-buttons-container';
+
+            // 預留兩個隱形的 SVG 佔位符，這樣能保持文字高度與搜尋按鈕完全一致
+            const iconPlaceholder1 = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-chevrons-up-down-icon lucide-list-chevrons-up-down"><path d="M3 5h8"/><path d="M3 12h8"/><path d="M3 19h8"/><path d="m15 8 3-3 3 3"/><path d="m15 16 3 3 3-3"/></svg>`; 
+            const iconPlaceholder2 = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-plus-icon lucide-list-plus"><path d="M16 5H3"/><path d="M11 12H3"/><path d="M16 19H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></svg>`; 
+
+            const createBtn = (iconHtml, text, onClickAction) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                // ✨ 重點魔法：因為 CSS 有 flex: 1，只有兩個按鈕時，它們會自動填滿各佔 50% 的寬度！
+                btn.className = 'flight-action-btn'; 
+                btn.innerHTML = `${iconHtml}<span style="font-size: 0.95em; letter-spacing: -0.5px;">${text}</span>`;
+                if (onClickAction) btn.onclick = onClickAction;
+                return btn;
+            };
+
+            const handleBtn1Click = () => {
+                console.log('首頁卡片：按鈕 1 被點擊了');
+            };
+
+            const handleBtn2Click = () => {
+                console.log('首頁卡片：按鈕 2 被點擊了');
+            };
+
+            // 將兩個空按鈕塞入容器中
+            btnContainer.appendChild(createBtn(iconPlaceholder1, '路線を編集', handleBtn1Click));
+            btnContainer.appendChild(createBtn(iconPlaceholder2, '路線を追加', handleBtn2Click));
 
             scrollWrapper.appendChild(btnContainer);
         }
