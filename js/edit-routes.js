@@ -94,7 +94,8 @@ export function startRouteEditMode(cardId, currentLineIds) {
     btnContainer.style.cssText = `
         margin-top: auto; 
         padding-top: 24px;
-        padding-bottom: env(safe-area-inset-bottom, 24px);
+        /* ✨ 視覺微調：利用 calc() 算式，把底部安全距離再往上推高 16px，完美配合間距！ */
+        padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 16px);
         opacity: 0;
         transition: opacity 0.4s ease;
         flex-shrink: 0;
