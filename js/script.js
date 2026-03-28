@@ -767,9 +767,9 @@ function handleCardClick(id) {
         };
 
         // 綁定按鈕與事件
-        btnContainer.appendChild(createBtn(iconMapPin, 'Google Map', handleGoogleMapClick)); // 綁定 Google Map 邏輯
+        btnContainer.appendChild(createBtn(iconMapPin, 'Google Maps', handleGoogleMapClick)); // 綁定 Google Map 邏輯
         btnContainer.appendChild(createBtn(iconMap, '1日だけ追加'));
-        btnContainer.appendChild(createBtn(iconShare, 'カード追加'));
+        btnContainer.appendChild(createBtn(iconShare, '新規カード作成'));
 
         scrollWrapper.appendChild(btnContainer);
 
@@ -877,27 +877,35 @@ function handleCardClick(id) {
             `;
         }
 
-        // ✨ 新增：統一在底部插入兩個漂亮的玻璃動作按鈕！
+        // ✨ 新增：統一在底部插入三個漂亮的玻璃動作按鈕！
         if (data.isTemporarySearch) {
             const btnContainer = document.createElement('div');
-            // 直接借用飛機的 Class，因為它已經具備完美的 gap:16px 與 flex 排版
             btnContainer.className = 'flight-action-buttons-container';
 
-            // 碼表圖示 (1日だけ追加) 與 加號圖示 (カード追加)
+            // 圖示定義
+            // 1. 第一顆按鈕預留位子 (移除 Google Map 邏輯，留下隱形佔位符維持排版)
+            const iconPlaceholder = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-plus-icon lucide-list-plus"><path d="M16 5H3"/><path d="M11 12H3"/><path d="M16 19H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></svg>`; 
+            // 2. 碼表圖示 (1日だけ追加)
             const iconTimer = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg>`;
+            // 3. 加號圖示 (カード追加)
             const iconPlus = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`;
 
             // 按鈕產生器工廠
             const createBtn = (iconHtml, text, onClickAction) => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = 'flight-action-btn'; // flex: 1 會確保兩個按鈕完美均分寬度
+                btn.className = 'flight-action-btn'; 
                 btn.innerHTML = `${iconHtml}<span>${text}</span>`;
                 if (onClickAction) btn.onclick = onClickAction;
                 return btn;
             };
 
             // 動作邏輯綁定
+            const handlePlaceholderClick = () => {
+                // 這裡預留給你之後加新功能！
+                console.log('第一個按鈕被點擊了');
+            };
+
             const handleTempAdd = () => {
                 // 這裡預留給你之後寫「1日だけ追加」的 LocalStorage 邏輯
                 console.log('1日だけ追加 clicked');
@@ -909,8 +917,10 @@ function handleCardClick(id) {
                 setTimeout(() => { if(window.openAddPanel) window.openAddPanel(); }, 400);
             };
 
+            // 依序塞入三個按鈕，達成完美三等分！
+            btnContainer.appendChild(createBtn(iconPlaceholder, '既存カード追加', handlePlaceholderClick));
             btnContainer.appendChild(createBtn(iconTimer, '1日だけ追加', handleTempAdd));
-            btnContainer.appendChild(createBtn(iconPlus, 'カード追加', handleAddCard));
+            btnContainer.appendChild(createBtn(iconPlus, '新規カード作成', handleAddCard));
 
             scrollWrapper.appendChild(btnContainer);
         }
