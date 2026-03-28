@@ -168,6 +168,8 @@ export function startRouteEditMode(cardId, currentLineIds) {
 
     scrollWrapper.appendChild(editContainer);
     scrollWrapper.appendChild(btnContainer);
+    // ✨ 核心修復：強制將捲動軸歸零到最頂部，防止瀏覽器的「捲動記憶」讓畫面置底！
+    scrollWrapper.scrollTop = 0;
 
     // 強制觸發瀏覽器重繪
     void editContainer.offsetWidth;
