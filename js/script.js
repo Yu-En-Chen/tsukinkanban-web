@@ -576,23 +576,22 @@ function handleCardClick(id) {
     // ✨ 核心抓蟲 1：直接抓取 Template 內建的玻璃面板
     const extension = clone.querySelector('.detail-extension-card'); 
 
-    // 📐 終極物理公式：精算「螢幕下緣剩餘的絕對高度」
-    // 100dvh(全螢幕) - 160(頂部預留) - 16(卡片間距) - 主卡片高度
-    const exactRemainingHeight = 'calc(100dvh - env(safe-area-inset-top) - 176px - (var(--card-width) / var(--card-ratio)))';
-
-    // ✨ 完美修復：讓外層實心玻璃「剛好貼齊螢幕下緣」，不多也不少！
+    // 💡 UX 完美解法：外層玻璃「無限向下延伸」，隱藏底部圓角並防止回彈穿幫！
     extension.style.marginTop = '16px';
-    extension.style.height = exactRemainingHeight; 
+    extension.style.height = '100vh'; 
     extension.innerHTML = ''; 
     
     // ✨ 建立透明的內層滾動容器
     const scrollWrapper = document.createElement('div');
     scrollWrapper.id = 'card-extension-container'; 
     
-    // 📐 物理級精準高度：176px 修改為 178px (多預留 2px 作為邊框與螢幕邊緣的緩衝，防止邊框被切掉)
+    // 📐 內層滾動軸的精準高度：100dvh - 160(頂部預留) - 16(卡片間隙) - 主卡片高度
+    // 加入 0px 防止電腦版 env() 報錯，並加入 min() 防止電腦版變數暴衝
+    const exactScrollHeight = 'calc(100dvh - env(safe-area-inset-top, 0px) - 176px - (min(var(--card-width), 420px) / var(--card-ratio)))';
+    const fallbackScrollHeight = 'calc(100vh - env(safe-area-inset-top, 0px) - 176px - (min(var(--card-width), 420px) / var(--card-ratio)))';
+
     scrollWrapper.style.cssText = `
         width: 100%; 
-        height: calc(100dvh - env(safe-area-inset-top) - 178px - (var(--card-width) / var(--card-ratio))); 
         overflow-y: auto; 
         overscroll-behavior: contain; 
         -webkit-overflow-scrolling: touch; 
@@ -601,6 +600,11 @@ function handleCardClick(id) {
         gap: 16px; 
         padding: 16px 16px 0px 16px;
     `;
+    
+    // 套用精準捲動高度 (保證滑到底部時，捲動軸 100% 貼齊螢幕下緣)
+    scrollWrapper.style.height = fallbackScrollHeight;
+    scrollWrapper.style.height = exactScrollHeight;
+    
     extension.appendChild(scrollWrapper);
 
     inner.style.background = applyThemeToCard(inner, data.hex);
@@ -770,10 +774,8 @@ function handleCardClick(id) {
         scrollWrapper.appendChild(btnContainer);
 
         const scrollSpacer = document.createElement('div');
-        // 🛡️ 完美對稱排版：
-        // 利用 Flexbox 內建的 gap: 16px，這裡只要單純補上 iPhone 底部安全區的高度即可！
-        // 最終視覺上的底部留白，會精準等於左右邊距的 16px。
-        scrollSpacer.style.cssText = 'height: env(safe-area-inset-bottom); flex-shrink: 0; pointer-events: none;';
+        // 🛡️ 完美對稱排版：加入 0px 備用值，配合 Flexbox 的 16px gap
+        scrollSpacer.style.cssText = 'height: env(safe-area-inset-bottom, 0px); flex-shrink: 0; pointer-events: none;';
         scrollWrapper.appendChild(scrollSpacer);
 
     } else {
@@ -896,10 +898,8 @@ function handleCardClick(id) {
         }
         
         const scrollSpacer = document.createElement('div');
-        // 🛡️ 完美對稱排版：
-        // 利用 Flexbox 內建的 gap: 16px，這裡只要單純補上 iPhone 底部安全區的高度即可！
-        // 最終視覺上的底部留白，會精準等於左右邊距的 16px。
-        scrollSpacer.style.cssText = 'height: env(safe-area-inset-bottom); flex-shrink: 0; pointer-events: none;';
+        // 🛡️ 完美對稱排版：加入 0px 備用值，配合 Flexbox 的 16px gap
+        scrollSpacer.style.cssText = 'height: env(safe-area-inset-bottom, 0px); flex-shrink: 0; pointer-events: none;';
         scrollWrapper.appendChild(scrollSpacer);
     }
 
