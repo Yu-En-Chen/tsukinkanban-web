@@ -879,10 +879,9 @@ function handleCardClick(id) {
         }
 
         // =========================================================
-        // ✨ 底部動作按鈕區塊 (智慧判斷：搜尋結果 vs 首頁卡片)
+        // ✨ 底部動作按鈕區塊 (搭載 Event Bubbling 阻擋護盾)
         // =========================================================
         if (data.isTemporarySearch) {
-            // 🔍 情境 A：這是從「搜尋」點開的暫時卡片 -> 顯示 3 個按鈕
             const btnContainer = document.createElement('div');
             btnContainer.className = 'flight-action-buttons-container';
 
@@ -895,7 +894,12 @@ function handleCardClick(id) {
                 btn.type = 'button';
                 btn.className = 'flight-action-btn'; 
                 btn.innerHTML = `${iconHtml}<span style="font-size: 0.9em; letter-spacing: -0.5px;">${text}</span>`;
-                if (onClickAction) btn.onclick = onClickAction;
+                if (onClickAction) {
+                    btn.onclick = (e) => {
+                        e.stopPropagation(); // 🛡️ 神級防護盾：阻止點擊事件穿透到背景引發關閉！
+                        onClickAction(e);
+                    };
+                }
                 return btn;
             };
 
@@ -913,7 +917,7 @@ function handleCardClick(id) {
             scrollWrapper.appendChild(btnContainer);
 
         } else {
-            // 🏠 情境 B：這是「首頁原本就有的獨立卡片」 -> 顯示 2 個專屬動作按鈕
+            // 🏠 情境 B：首頁常規卡片
             const btnContainer = document.createElement('div');
             btnContainer.className = 'flight-action-buttons-container';
 
@@ -925,39 +929,29 @@ function handleCardClick(id) {
                 btn.type = 'button';
                 btn.className = 'flight-action-btn'; 
                 btn.innerHTML = `${iconHtml}<span style="font-size: 0.95em; letter-spacing: -0.5px;">${text}</span>`;
-                if (onClickAction) btn.onclick = onClickAction;
+                if (onClickAction) {
+                    btn.onclick = (e) => {
+                        e.stopPropagation(); // 🛡️ 神級防護盾：阻止點擊事件穿透！
+                        onClickAction(e);
+                    };
+                }
                 return btn;
             };
 
-            // ✨ 真正的核心魔法：放在這裡，它才能讀到當下這張卡片的 data 變數！
             const handleEditRoutes = async () => {
                 try {
-                    // 1. 取得目前打開的這張卡片的 ID
                     const cardId = data.id; 
-
-                    // 2. 去 IndexedDB 抓取最新的卡片設定
                     const prefs = await getAllUserPreferences(); 
-                    
-                    // 🚨 核心修正：prefs 是一個字典物件，不能用 .find()，必須直接用 ID 當鑰匙拿資料！
                     const pref = prefs[cardId];
-                    
-                    // 3. 決定最終要編輯的路線陣列
                     const currentLineIds = pref && pref.targetLineIds ? pref.targetLineIds : (data.targetLineIds || []);
-                    
-                    // 4. 啟動幽靈拖曳模組！
                     startRouteEditMode(cardId, currentLineIds);
-                    
                 } catch (err) {
                     console.error('啟動編輯模式發生錯誤:', err);
                 }
             };
 
-            // 新增路線的按鈕預留
-            const handleAddRouteClick = () => {
-                console.log('首頁卡片：按鈕 2 準備新增路線');
-            };
+            const handleAddRouteClick = () => { console.log('首頁卡片：準備新增路線'); };
 
-            // 將兩個按鈕與點擊事件綁定起來並塞入容器
             btnContainer.appendChild(createBtn(iconEdit, '路線を編集', handleEditRoutes));
             btnContainer.appendChild(createBtn(iconAdd, '路線を追加', handleAddRouteClick));
 
@@ -965,7 +959,6 @@ function handleCardClick(id) {
         }
         
         const scrollSpacer = document.createElement('div');
-        // 🛡️ 完美對稱排版：加入 0px 備用值，配合 Flexbox 的 16px gap
         scrollSpacer.style.cssText = 'height: env(safe-area-inset-bottom, 0px); flex-shrink: 0; pointer-events: none;';
         scrollWrapper.appendChild(scrollSpacer);
     }
@@ -1095,9 +1088,8 @@ function handleBottomCardClick() {
 function handleOverlayClick(e) {
     if (isAnimating) return;
 
-    // 🟢 核心修復：使用 closest() 往上找父元素
-    // 意思是：「只要你點擊的地方，不包含實體卡片 (.detail-card-inner)，就一律關閉！」
-    if (!e.target.closest('.detail-card-inner')) {
+    // ✨ 核心修復：如果點擊的地方不是主卡片，"也不是"玻璃延伸面板，才關閉！
+    if (!e.target.closest('.detail-card-inner') && !e.target.closest('.detail-extension-card')) {
         closeAllCards(false);
     }
 }
