@@ -38,11 +38,15 @@ export function startRouteEditMode(cardId, currentLineIds) {
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             // 1. 主卡片：位移與遮罩
-            // ✨ 核心修正 3：同樣拔除去程的 opacity 漸變！讓卡片實心被碎紙機吃掉。
-            innerCard.style.transition = `transform ${duration} ${easeBezier}, -webkit-mask-position ${duration} ${easeBezier}`;
+            // ✨ 核心魔法 1：恢復「絕對靜止」的完美傳送門，拔除遮罩的超車！
+            // ✨ 核心魔法 2：壓秒消影！opacity 延遲 0.35s 才開始淡出，在卡片快到頂時完美融化最後的殘影！
+            innerCard.style.transition = `transform ${duration} ${easeBezier}, opacity 0.2s ease 0.35s, -webkit-mask-position ${duration} ${easeBezier}`;
             innerCard.style.transform = `translateY(-${moveUpDist}px)`;
             innerCard.style.pointerEvents = 'none';
+            
+            // 遮罩精準等比位移，將裁切線死死釘在螢幕上
             innerCard.style.WebkitMaskPosition = `0px ${moveUpDist - feather}px`;
+            innerCard.style.opacity = '0';
 
             // 2. 實心玻璃面板：
             extensionCard.style.transition = `transform ${duration} ${easeBezier}`;
@@ -55,12 +59,11 @@ export function startRouteEditMode(cardId, currentLineIds) {
         if (innerCard) {
             innerCard.style.willChange = 'auto';
             innerCard.style.WebkitBackfaceVisibility = '';
-            
-            // ✨ 抵達終點、且完全被遮罩隱藏後，再設為 opacity: 0 確保靜止時的安全
+            // 確保歸零
             innerCard.style.opacity = '0'; 
         }
         if (extensionCard) extensionCard.style.willChange = 'auto';
-    }, 850);
+    }, 550);
 
     // ==========================================
     // 🛠️ 第二階段：替換為編輯內容
