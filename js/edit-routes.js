@@ -71,11 +71,13 @@ export function startRouteEditMode(cardId, currentLineIds) {
         
         capsule.style.cssText = `
             display: flex; align-items: center; 
-            background: #2c2c2e; /* 實心 System Gray 6 */
+            background: var(--search-bg); /* ⬅️ 關鍵：使用與按鈕相同的背景變數 */
+            border: 1px solid var(--border-color); /* ⬅️ 自動切換深淺的邊框 */
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             padding: 0 16px; border-radius: 999px; height: 48px; 
             transition: transform 0.2s, opacity 0.2s, background 0.2s; 
             user-select: none; -webkit-user-select: none;
-            box-sizing: border-box; /* 確保 padding 不會撐大膠囊 */
+            box-sizing: border-box;
         `;
 
         // ✨ 初始判定：如果只有一條，直接把手把隱藏 (opacity: 0) 並且鎖死點擊 (pointer-events: none)
@@ -87,7 +89,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-icon lucide-list"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>
             </div>
             <div style="flex: 1; min-width: 0; pointer-events: none; display: flex; align-items: center;">
-                <div style="font-weight: 800; font-size: 1.05em; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transform: translateY(-0.5px);">${lineData.name}</div>
+                <div style="font-weight: 800; font-size: 1.05em; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transform: translateY(-0.5px);">${lineData.name}</div>
             </div>
         `;
         capsulesCol.appendChild(capsule);
@@ -96,10 +98,16 @@ export function startRouteEditMode(cardId, currentLineIds) {
         const delBtn = document.createElement('button');
         delBtn.className = 'delete-route-btn';
         delBtn.style.cssText = `
-            background: rgba(255, 69, 58, 0.15); border: none; border-radius: 50%; 
-            width: 48px; height: 48px; padding: 0; color: #ff453a; cursor: pointer; 
+            background: var(--search-bg); 
+            border: 1px solid var(--border-color); 
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-radius: 50%; 
+            width: 48px; height: 48px; padding: 0; 
+            color: #ff453a; 
+            cursor: pointer; 
             display: flex; align-items: center; justify-content: center; 
             transition: background 0.2s, transform 0.2s, opacity 0.2s;
+            box-sizing: border-box;
         `;
         delBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`;
         
@@ -144,16 +152,13 @@ export function startRouteEditMode(cardId, currentLineIds) {
     `;
 
     const iconCancel = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>`;
-    const iconSave = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`;
+    const iconSave = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`;
 
     const createBtn = (iconHtml, text, isPrimary, onClick) => {
         const btn = document.createElement('button');
         btn.className = 'flight-action-btn';
-        if (isPrimary) {
-            btn.style.background = 'rgba(255, 255, 255, 0.2)'; 
-            btn.style.color = '#fff';
-        }
-        btn.innerHTML = `${iconHtml}<span style="font-size: 0.95em; letter-spacing: -0.5px; font-weight: ${isPrimary ? '800' : 'normal'};">${text}</span>`;
+        btn.style.color = 'var(--text-main)';
+        btn.innerHTML = `${iconHtml}<span style="font-size: 0.95em; letter-spacing: -0.5px; font-weight: 800;">${text}</span>`;
         btn.onclick = (e) => { e.stopPropagation(); onClick(e); };
         return btn;
     };
@@ -233,7 +238,7 @@ function initDragAndDrop(container) {
             const rect = item.getBoundingClientRect();
             ghost = item.cloneNode(true);
             
-            // ✨ 核心修復：使用 Object.assign 保留 Flex 排版
+            // ✨ 核心修復：幽靈物件全面導入系統變數，質感完美對齊！
             Object.assign(ghost.style, {
                 position: 'fixed',
                 top: `${rect.top}px`,
@@ -241,22 +246,24 @@ function initDragAndDrop(container) {
                 width: `${rect.width}px`,
                 height: `${rect.height}px`,
                 zIndex: '9999',
-                opacity: '0.98', // 幾乎不透明，增加實心感
+                opacity: '1', 
                 pointerEvents: 'none',
-                transform: 'scale(1.04)', // 稍微放大，營動被拿起來的感覺
-                transition: 'transform 0.1s ease, box-shadow 0.1s ease', // 加上拿起時的微小過渡
+                transform: 'scale(1.04)',
+                transition: 'transform 0.1s ease, box-shadow 0.1s ease', 
                 
-                // ✨ 改動 3：幽靈物件也改為實心深灰色，徹底消除計算半透明時產生的殘影
-                background: '#3a3a3c', // 稍微提亮 System Gray 4，強調它浮起來了
-                border: 'none', // 不需要邊框
+                // ✨ 改動 3：拖曳時的顏色與邊框，完全跟隨系統變數
+                background: 'var(--search-bg)', 
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid var(--border-color)', 
 
-                // ✨ 改動 4：加強陰影，強調空間感
-                boxShadow: '0 20px 50px rgba(0,0,0,0.5)', 
+                // ✨ 改動 4：直接召喚你寫好的神級光追陰影！
+                boxShadow: 'var(--ray-shadow-active)', 
                 
                 boxSizing: 'border-box',
-                borderRadius: '999px', // 確保 clone 出來的圓角對齊
+                borderRadius: '999px',
                 margin: '0',
-                display: 'flex', // 確保 Flex 排版被實體化
+                display: 'flex',
                 alignItems: 'center'
             });
             document.body.appendChild(ghost);
