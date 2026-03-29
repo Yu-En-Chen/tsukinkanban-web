@@ -45,7 +45,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
     // ✨ 核心升級：建立包含「隱形地基」的雙欄排版
     editContainer.innerHTML = `
         <div style="padding: 12px 4px 20px 4px; display: flex; flex-direction: column; gap: 6px;">
-            <div style="font-size: 1.6em; font-weight: 800; color: #fff; letter-spacing: 0.5px;">路線を編集</div>
+            <div style="font-size: 1.6em; font-weight: 800; color: var(--text-main); opacity: 0.8; letter-spacing: 0.5px;">路線を編集</div>
             <div style="font-size: 0.95em; color: var(--text-secondary); font-weight: 600;">${cardName}</div>
         </div>
         <div id="edit-list-wrapper" style="position: relative; display: flex; gap: 12px;">
@@ -89,7 +89,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-icon lucide-list"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>
             </div>
             <div style="flex: 1; min-width: 0; pointer-events: none; display: flex; align-items: center;">
-                <div style="font-weight: 800; font-size: 1.05em; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transform: translateY(-0.5px);">${lineData.name}</div>
+                <div style="font-weight: 800; font-size: 1.05em; color: var(--text-main); opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transform: translateY(-0.5px);">${lineData.name}</div>
             </div>
         `;
         capsulesCol.appendChild(capsule);
