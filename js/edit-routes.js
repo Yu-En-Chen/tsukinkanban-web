@@ -158,7 +158,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
         const btn = document.createElement('button');
         btn.className = 'flight-action-btn';
         btn.style.color = 'var(--text-main)';
-        btn.innerHTML = `${iconHtml}<span style="font-size: 0.95em; letter-spacing: -0.5px; font-weight: 800;">${text}</span>`;
+        btn.innerHTML = `${iconHtml}<span style="font-size: 1.1em; letter-spacing: -0.5px; font-weight: 800;">${text}</span>`;
         btn.onclick = (e) => { e.stopPropagation(); onClick(e); };
         return btn;
     };
