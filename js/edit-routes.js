@@ -35,18 +35,16 @@ export function startRouteEditMode(cardId, currentLineIds) {
     const duration = '0.85s';
 
     // 🚀 效能解鎖 2：使用雙重 requestAnimationFrame！
-    // 確保瀏覽器把「建立 DOM」的繁重工作做完後，下一格才開始跑動畫，杜絕啟動卡頓 (Jank)！
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             // 1. 主卡片：位移與遮罩
-            innerCard.style.transition = `transform ${duration} ${easeBezier}, opacity 0.5s ease 0.35s, -webkit-mask-position ${duration} ${easeBezier}`;
+            // ✨ 核心修正 3：同樣拔除去程的 opacity 漸變！讓卡片實心被碎紙機吃掉。
+            innerCard.style.transition = `transform ${duration} ${easeBezier}, -webkit-mask-position ${duration} ${easeBezier}`;
             innerCard.style.transform = `translateY(-${moveUpDist}px)`;
             innerCard.style.pointerEvents = 'none';
             innerCard.style.WebkitMaskPosition = `0px ${moveUpDist - feather}px`;
-            innerCard.style.opacity = '0';
 
-            // 2. 實心玻璃面板：【完全不改變 height】！
-            // 利用它原本 100vh 的隱藏長度，只用 GPU 把它拉上來，徹底消滅 Layout Reflow！
+            // 2. 實心玻璃面板：
             extensionCard.style.transition = `transform ${duration} ${easeBezier}`;
             extensionCard.style.transform = `translateY(-${moveUpDist}px)`;
         });
@@ -57,6 +55,9 @@ export function startRouteEditMode(cardId, currentLineIds) {
         if (innerCard) {
             innerCard.style.willChange = 'auto';
             innerCard.style.WebkitBackfaceVisibility = '';
+            
+            // ✨ 抵達終點、且完全被遮罩隱藏後，再設為 opacity: 0 確保靜止時的安全
+            innerCard.style.opacity = '0'; 
         }
         if (extensionCard) extensionCard.style.willChange = 'auto';
     }, 850);
@@ -217,12 +218,17 @@ export function startRouteEditMode(cardId, currentLineIds) {
             scrollWrapper.style.height = originalScrollHeight;
             void innerCard.offsetHeight;
 
+            // ✨ 核心修正 1：在下滑前瞬間恢復實體透明度 (opacity: 1)
+            // 由於卡片目前完全位於虛擬界線上方（被遮罩完全隱藏），瞬間恢復為 1 絕對不會閃爍。
+            innerCard.style.transition = 'none';
+            innerCard.style.opacity = '1';
+
             // 雙重 RAF 確保回程也極度滑順
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
-                    innerCard.style.transition = `transform ${duration} ${easeBezier}, opacity 0.3s ease, -webkit-mask-position ${duration} ${easeBezier}`;
+                    // ✨ 核心修正 2：拔除 opacity 的漸變，讓卡片維持 100% 實心被遮罩「精準吐出來」
+                    innerCard.style.transition = `transform ${duration} ${easeBezier}, -webkit-mask-position ${duration} ${easeBezier}`;
                     innerCard.style.transform = '';
-                    innerCard.style.opacity = '1';
                     innerCard.style.pointerEvents = 'auto';
                     innerCard.style.WebkitMaskPosition = `0px -${feather}px`; 
                     
@@ -231,10 +237,16 @@ export function startRouteEditMode(cardId, currentLineIds) {
                 });
             });
             
+            // 🧹 850ms 動畫結束後
             setTimeout(() => {
-                innerCard.style.transition = '';
                 extensionCard.style.transition = '';
                 
+                // ✨ 完美整合：解除遮罩與陰影呼吸外擴
+                // 先將陰影設為透明，避免拔除遮罩時產生粗暴的爆閃
+                innerCard.style.transition = 'none'; 
+                innerCard.style.boxShadow = '0 0 0 rgba(0,0,0,0)'; 
+                
+                // 安全拔除遮罩
                 innerCard.style.WebkitMaskImage = '';
                 innerCard.style.WebkitMaskSize = '';
                 innerCard.style.WebkitMaskPosition = '';
@@ -244,6 +256,18 @@ export function startRouteEditMode(cardId, currentLineIds) {
                 innerCard.style.willChange = 'auto';
                 innerCard.style.WebkitBackfaceVisibility = '';
                 extensionCard.style.willChange = 'auto';
+
+                // ✨ 下一幀觸發陰影「像呼吸一樣」優雅舒展外擴
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        innerCard.style.transition = `box-shadow 0.4s ${easeBezier}`;
+                        innerCard.style.boxShadow = ''; // 恢復 CSS 中原本的高級陰影
+                        
+                        setTimeout(() => {
+                            innerCard.style.transition = '';
+                        }, 400);
+                    });
+                });
             }, 850); 
         }, 300);
     };
