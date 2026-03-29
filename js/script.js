@@ -928,7 +928,7 @@ function handleCardClick(id) {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'flight-action-btn'; 
-                btn.innerHTML = `${iconHtml}<span style="font-size: 0.95em; letter-spacing: -0.5px;">${text}</span>`;
+                btn.innerHTML = `${iconHtml}<span style="font-size: 1.1em; letter-spacing: -0.5px;">${text}</span>`;
                 if (onClickAction) {
                     btn.onclick = (e) => {
                         e.stopPropagation(); // 🛡️ 神級防護盾：阻止點擊事件穿透！
