@@ -8,21 +8,18 @@ export function startRouteEditMode(cardId, currentLineIds) {
     if (!innerCard || !extensionCard || !scrollWrapper) return;
 
     // ==========================================
-    // 🎬 第一階段：沈浸式過渡動畫 (Apple 級碎紙機羽化特效 + JIT 效能引擎)
+    // 🎬 第一階段：沈浸式過渡動畫 (純 GPU 零卡頓極致版)
     // ==========================================
     const innerRect = innerCard.getBoundingClientRect();
     const moveUpDist = innerRect.height + 16; 
     const exactNewHeight = window.innerHeight - innerRect.top;
     
     const originalScrollHeight = scrollWrapper.style.height;
-    const originalExtensionHeight = extensionCard.style.height;
 
-    // 🚀 效能魔法 1：即時分配 GPU 資源 (JIT Hardware Acceleration)
-    // 告訴瀏覽器我們即將高強度操作這些屬性，請準備好獨立顯存層
+    // 🚀 效能解鎖 1：只給予純 GPU 屬性的加速，【拔除對 Height 的依賴】！
     innerCard.style.willChange = 'transform, opacity, -webkit-mask-position';
-    innerCard.style.WebkitBackfaceVisibility = 'hidden'; // 穩定遮罩渲染邊緣，防閃爍
-    extensionCard.style.willChange = 'transform, height';
-    scrollWrapper.style.willChange = 'height';
+    innerCard.style.WebkitBackfaceVisibility = 'hidden';
+    extensionCard.style.willChange = 'transform'; // 只要位移就好，不准算高度
 
     const feather = 45; 
     innerCard.style.WebkitMaskImage = `linear-gradient(to bottom, transparent 0px, transparent 10px, black ${feather}px, black 100%)`;
@@ -30,34 +27,38 @@ export function startRouteEditMode(cardId, currentLineIds) {
     innerCard.style.WebkitMaskPosition = `0px -${feather}px`;
     innerCard.style.WebkitMaskRepeat = 'no-repeat';
 
-    // 強制瀏覽器重繪，確保 GPU 資源與遮罩已就位
-    void innerCard.offsetHeight;
+    // 🛑 瞬間完成，拒絕逐格運算：直接將內部容器高度設到位，因為它是透明的視覺不影響
+    scrollWrapper.style.height = `${exactNewHeight}px`;
+    void innerCard.offsetHeight; // 強制重繪
 
     const easeBezier = 'cubic-bezier(0.16, 1, 0.3, 1)';
     const duration = '0.85s';
 
-    // ... (維持原本的 transition 與 transform 設定) ...
-    innerCard.style.transition = `transform ${duration} ${easeBezier}, opacity 0.5s ease 0.35s, -webkit-mask-position ${duration} ${easeBezier}`;
-    innerCard.style.transform = `translateY(-${moveUpDist}px)`;
-    innerCard.style.pointerEvents = 'none';
-    innerCard.style.WebkitMaskPosition = `0px ${moveUpDist - feather}px`;
-    innerCard.style.opacity = '0';
+    // 🚀 效能解鎖 2：使用雙重 requestAnimationFrame！
+    // 確保瀏覽器把「建立 DOM」的繁重工作做完後，下一格才開始跑動畫，杜絕啟動卡頓 (Jank)！
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            // 1. 主卡片：位移與遮罩
+            innerCard.style.transition = `transform ${duration} ${easeBezier}, opacity 0.5s ease 0.35s, -webkit-mask-position ${duration} ${easeBezier}`;
+            innerCard.style.transform = `translateY(-${moveUpDist}px)`;
+            innerCard.style.pointerEvents = 'none';
+            innerCard.style.WebkitMaskPosition = `0px ${moveUpDist - feather}px`;
+            innerCard.style.opacity = '0';
 
-    extensionCard.style.transition = `transform ${duration} ${easeBezier}, height ${duration} ${easeBezier}`;
-    extensionCard.style.transform = `translateY(-${moveUpDist}px)`;
-    extensionCard.style.height = `${exactNewHeight}px`;
+            // 2. 實心玻璃面板：【完全不改變 height】！
+            // 利用它原本 100vh 的隱藏長度，只用 GPU 把它拉上來，徹底消滅 Layout Reflow！
+            extensionCard.style.transition = `transform ${duration} ${easeBezier}`;
+            extensionCard.style.transform = `translateY(-${moveUpDist}px)`;
+        });
+    });
 
-    scrollWrapper.style.transition = `height ${duration} ${easeBezier}`;
-    scrollWrapper.style.height = `${exactNewHeight}px`;
-
-    // 🧹 效能魔法 2：動畫結束後 (0.85s)，立刻回收 GPU 資源，避免記憶體洩漏與耗電
+    // 🧹 動畫結束後回收 GPU 資源
     setTimeout(() => {
         if (innerCard) {
             innerCard.style.willChange = 'auto';
             innerCard.style.WebkitBackfaceVisibility = '';
         }
         if (extensionCard) extensionCard.style.willChange = 'auto';
-        if (scrollWrapper) scrollWrapper.style.willChange = 'auto';
     }, 850);
 
     // ==========================================
@@ -207,41 +208,42 @@ export function startRouteEditMode(cardId, currentLineIds) {
             const duration = '0.85s';
             const feather = 45;
 
-            // 🚀 效能魔法 3：回程動畫的 JIT GPU 分配
+            // 重新分配 GPU
             innerCard.style.willChange = 'transform, opacity, -webkit-mask-position';
             innerCard.style.WebkitBackfaceVisibility = 'hidden';
-            extensionCard.style.willChange = 'transform, height';
-            scrollWrapper.style.willChange = 'height';
+            extensionCard.style.willChange = 'transform';
             
-            // 強制重繪確保 GPU 接手
+            // 瞬間把透明容器縮回
+            scrollWrapper.style.height = originalScrollHeight;
             void innerCard.offsetHeight;
 
-            innerCard.style.transition = `transform ${duration} ${easeBezier}, opacity 0.3s ease, -webkit-mask-position ${duration} ${easeBezier}`;
-            innerCard.style.transform = '';
-            innerCard.style.opacity = '1';
-            innerCard.style.pointerEvents = 'auto';
-            innerCard.style.WebkitMaskPosition = `0px -${feather}px`; 
-            
-            extensionCard.style.transform = '';
-            extensionCard.style.height = originalExtensionHeight;
-            scrollWrapper.style.height = originalScrollHeight;
+            // 雙重 RAF 確保回程也極度滑順
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    innerCard.style.transition = `transform ${duration} ${easeBezier}, opacity 0.3s ease, -webkit-mask-position ${duration} ${easeBezier}`;
+                    innerCard.style.transform = '';
+                    innerCard.style.opacity = '1';
+                    innerCard.style.pointerEvents = 'auto';
+                    innerCard.style.WebkitMaskPosition = `0px -${feather}px`; 
+                    
+                    extensionCard.style.transition = `transform ${duration} ${easeBezier}`;
+                    extensionCard.style.transform = '';
+                });
+            });
             
             setTimeout(() => {
                 innerCard.style.transition = '';
                 extensionCard.style.transition = '';
-                scrollWrapper.style.transition = '';
                 
-                // 徹底清除羽化遮罩
                 innerCard.style.WebkitMaskImage = '';
                 innerCard.style.WebkitMaskSize = '';
                 innerCard.style.WebkitMaskPosition = '';
                 innerCard.style.WebkitMaskRepeat = '';
 
-                // 🧹 效能魔法 4：回程動畫結束，回收 GPU 資源
+                // 回收 GPU
                 innerCard.style.willChange = 'auto';
                 innerCard.style.WebkitBackfaceVisibility = '';
                 extensionCard.style.willChange = 'auto';
-                scrollWrapper.style.willChange = 'auto';
             }, 850); 
         }, 300);
     };
