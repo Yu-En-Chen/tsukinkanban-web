@@ -8,7 +8,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
     if (!innerCard || !extensionCard || !scrollWrapper) return;
 
     // ==========================================
-    // 🎬 第一階段：沈浸式過渡動畫 (Apple 級碎紙機羽化特效)
+    // 🎬 第一階段：沈浸式過渡動畫 (Apple 級碎紙機羽化特效 + JIT 效能引擎)
     // ==========================================
     const innerRect = innerCard.getBoundingClientRect();
     const moveUpDist = innerRect.height + 16; 
@@ -17,44 +17,48 @@ export function startRouteEditMode(cardId, currentLineIds) {
     const originalScrollHeight = scrollWrapper.style.height;
     const originalExtensionHeight = extensionCard.style.height;
 
-    // ✨ 核心魔法 1：建立靜態的羽化遮罩 (Spatial Portal Mask)
-    const feather = 45; // 虛化邊緣的像素高度 (羽化區間)
-    
-    // 遮罩：頂部透明 -> 羽化過渡 -> 實心黑色 (保留卡片)
+    // 🚀 效能魔法 1：即時分配 GPU 資源 (JIT Hardware Acceleration)
+    // 告訴瀏覽器我們即將高強度操作這些屬性，請準備好獨立顯存層
+    innerCard.style.willChange = 'transform, opacity, -webkit-mask-position';
+    innerCard.style.WebkitBackfaceVisibility = 'hidden'; // 穩定遮罩渲染邊緣，防閃爍
+    extensionCard.style.willChange = 'transform, height';
+    scrollWrapper.style.willChange = 'height';
+
+    const feather = 45; 
     innerCard.style.WebkitMaskImage = `linear-gradient(to bottom, transparent 0px, transparent 10px, black ${feather}px, black 100%)`;
-    innerCard.style.WebkitMaskSize = '100% 3000px'; // 確保遮罩夠長，絕不穿幫
-    
-    // 初始定位：將遮罩往上拉，讓黑色實心區塊剛好對齊卡片的「最頂端」
+    innerCard.style.WebkitMaskSize = '100% 3000px'; 
     innerCard.style.WebkitMaskPosition = `0px -${feather}px`;
     innerCard.style.WebkitMaskRepeat = 'no-repeat';
 
-    // 強制瀏覽器重繪，確保遮罩物理就位
+    // 強制瀏覽器重繪，確保 GPU 資源與遮罩已就位
     void innerCard.offsetHeight;
 
-    // ⏳ 頂級物理時長與減速曲線
     const easeBezier = 'cubic-bezier(0.16, 1, 0.3, 1)';
     const duration = '0.85s';
 
-    // 1. 主卡片：往上平移 (拔除原本的 scale，確保與遮罩 1:1 像素完美貼合)
-    // 關鍵：卡片往上推的同時，遮罩等速往下滑，創造出「停留在原地的虛擬邊界」！
+    // ... (維持原本的 transition 與 transform 設定) ...
     innerCard.style.transition = `transform ${duration} ${easeBezier}, opacity 0.5s ease 0.35s, -webkit-mask-position ${duration} ${easeBezier}`;
     innerCard.style.transform = `translateY(-${moveUpDist}px)`;
     innerCard.style.pointerEvents = 'none';
-    
-    // 將遮罩等比往下滑動 (moveUpDist)，抵銷卡片的向上位移
     innerCard.style.WebkitMaskPosition = `0px ${moveUpDist - feather}px`;
-    
-    // 延遲 0.35s 才開始整體淡出，讓碎紙機的切除效果有充足時間展現
     innerCard.style.opacity = '0';
 
-    // 2. 實心玻璃面板：同步往上拉並加長，速度曲線完全對齊主卡片，絕不破圖
     extensionCard.style.transition = `transform ${duration} ${easeBezier}, height ${duration} ${easeBezier}`;
     extensionCard.style.transform = `translateY(-${moveUpDist}px)`;
     extensionCard.style.height = `${exactNewHeight}px`;
 
-    // 3. 內部滾動容器同步加長
     scrollWrapper.style.transition = `height ${duration} ${easeBezier}`;
     scrollWrapper.style.height = `${exactNewHeight}px`;
+
+    // 🧹 效能魔法 2：動畫結束後 (0.85s)，立刻回收 GPU 資源，避免記憶體洩漏與耗電
+    setTimeout(() => {
+        if (innerCard) {
+            innerCard.style.willChange = 'auto';
+            innerCard.style.WebkitBackfaceVisibility = '';
+        }
+        if (extensionCard) extensionCard.style.willChange = 'auto';
+        if (scrollWrapper) scrollWrapper.style.willChange = 'auto';
+    }, 850);
 
     // ==========================================
     // 🛠️ 第二階段：替換為編輯內容
@@ -203,16 +207,21 @@ export function startRouteEditMode(cardId, currentLineIds) {
             const duration = '0.85s';
             const feather = 45;
 
-            // ✨ 核心魔法 2：反向播放傳送門動畫，讓卡片從虛擬邊界慢慢浮現
+            // 🚀 效能魔法 3：回程動畫的 JIT GPU 分配
+            innerCard.style.willChange = 'transform, opacity, -webkit-mask-position';
+            innerCard.style.WebkitBackfaceVisibility = 'hidden';
+            extensionCard.style.willChange = 'transform, height';
+            scrollWrapper.style.willChange = 'height';
+            
+            // 強制重繪確保 GPU 接手
+            void innerCard.offsetHeight;
+
             innerCard.style.transition = `transform ${duration} ${easeBezier}, opacity 0.3s ease, -webkit-mask-position ${duration} ${easeBezier}`;
             innerCard.style.transform = '';
             innerCard.style.opacity = '1';
             innerCard.style.pointerEvents = 'auto';
-            
-            // 遮罩滑回原位，卡片完全重現
             innerCard.style.WebkitMaskPosition = `0px -${feather}px`; 
             
-            // 實心玻璃與容器同步縮回原位
             extensionCard.style.transform = '';
             extensionCard.style.height = originalExtensionHeight;
             scrollWrapper.style.height = originalScrollHeight;
@@ -222,12 +231,18 @@ export function startRouteEditMode(cardId, currentLineIds) {
                 extensionCard.style.transition = '';
                 scrollWrapper.style.transition = '';
                 
-                // 動畫結束後徹底清除羽化遮罩，還原乾淨的 DOM 結構
+                // 徹底清除羽化遮罩
                 innerCard.style.WebkitMaskImage = '';
                 innerCard.style.WebkitMaskSize = '';
                 innerCard.style.WebkitMaskPosition = '';
                 innerCard.style.WebkitMaskRepeat = '';
-            }, 850); // 對齊 0.85s 動畫總長度
+
+                // 🧹 效能魔法 4：回程動畫結束，回收 GPU 資源
+                innerCard.style.willChange = 'auto';
+                innerCard.style.WebkitBackfaceVisibility = '';
+                extensionCard.style.willChange = 'auto';
+                scrollWrapper.style.willChange = 'auto';
+            }, 850); 
         }, 300);
     };
 
