@@ -1133,6 +1133,8 @@ body.enable-bottom-preview .card-stack:not(.has-active) .card:last-child .card-c
     border: 1px solid rgba(0, 0, 0, 0.05);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
 
+    overflow: hidden;
+
     pointer-events: none;
     transform: translate3d(0, 100vh, 0);
     transition: transform 0.55s var(--spring-release), opacity 0.3s ease;
