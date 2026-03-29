@@ -928,13 +928,29 @@ function handleCardClick(id) {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'flight-action-btn'; 
+                // 這裡保留你上一回合設定的 1.1em
                 btn.innerHTML = `${iconHtml}<span style="font-size: 1.1em; letter-spacing: -0.5px;">${text}</span>`;
-                if (onClickAction) {
-                    btn.onclick = (e) => {
-                        e.stopPropagation(); // 🛡️ 神級防護盾：阻止點擊事件穿透！
-                        onClickAction(e);
-                    };
-                }
+                
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    if(navigator.vibrate) navigator.vibrate(50);
+                    
+                    // ✨ 核心魔法：智慧捲動偵測
+                    const isAtBottom = Math.abs(scrollWrapper.scrollHeight - scrollWrapper.scrollTop - scrollWrapper.clientHeight) <= 5;
+                    
+                    if (isAtBottom) {
+                        onClickAction();
+                    } else {
+                        scrollWrapper.scrollTo({
+                            top: scrollWrapper.scrollHeight,
+                            behavior: 'smooth'
+                        });
+                        
+                        setTimeout(() => {
+                            onClickAction();
+                        }, 400); // 等待鏡頭推進完成
+                    }
+                };
                 return btn;
             };
 
