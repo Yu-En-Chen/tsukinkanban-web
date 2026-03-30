@@ -278,8 +278,14 @@ export function startRouteEditMode(cardId, currentLineIds) {
         return btn;
     };
 
-    const restoreUI = () => {
-        if (shredderRafId) cancelAnimationFrame(shredderRafId);
+    // 加上 options 參數
+    const restoreUI = (options = {}) => {
+        const isSeamless = options.isSeamless || false;
+
+        // 🛑 只有「非手勢」的按鈕關閉時，才需要強制煞停 JS 引擎
+        if (!isSeamless && shredderRafId) {
+            cancelAnimationFrame(shredderRafId);
+        }
         editContainer.style.opacity = '0';
         btnContainer.style.opacity = '0';
         
@@ -314,17 +320,22 @@ export function startRouteEditMode(cardId, currentLineIds) {
             // 雙重 RAF 確保回程也極度滑順
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
-                    // ✨ 核心優化：給 opacity 一個 0.15s 的「極速淡入」，完美掩飾剛起步時的邊界漏光！
-                    innerCard.style.transition = `transform ${duration} ${easeBezier}, -webkit-mask-position ${duration} ${easeBezier}, opacity 0.15s ease-out`;
-                    innerCard.style.transform = '';
-                    innerCard.style.pointerEvents = 'auto';
-                    innerCard.style.WebkitMaskPosition = `0px -${feather}px`; 
-                    innerCard.style.opacity = '1'; // 在動畫開始時滑順浮現
-                    innerCard.style.pointerEvents = 'auto';
-                    innerCard.style.WebkitMaskPosition = `0px -${feather}px`; 
+                    if (!isSeamless) {
+                        // 🔘 點擊按鈕關閉：交給傳統 CSS 引擎處理
+                        innerCard.style.transition = `transform ${duration} ${easeBezier}, -webkit-mask-position ${duration} ${easeBezier}, opacity 0.15s ease-out`;
+                        innerCard.style.transform = '';
+                        innerCard.style.WebkitMaskPosition = `0px -${feather}px`; 
+                        
+                        extensionCard.style.transition = `transform ${duration} ${easeBezier}`;
+                        extensionCard.style.transform = '';
+                    } else {
+                        // 🚀 終極無縫魔法：手勢接力時，徹底拔除 CSS 位移干擾！
+                        // 讓卡片順著 JS 引擎的物理慣性滑落，這裡只補上透明度保護
+                        innerCard.style.transition = 'opacity 0.15s ease-out';
+                    }
                     
-                    extensionCard.style.transition = `transform ${duration} ${easeBezier}`;
-                    extensionCard.style.transform = '';
+                    innerCard.style.pointerEvents = 'auto';
+                    innerCard.style.opacity = '1';
 
                     // ✨ 右側所有 SVG 降落還原
                     const targetIds = ['action-capsule', 'left-menu-btn', 'search-trigger'];
@@ -344,6 +355,13 @@ export function startRouteEditMode(cardId, currentLineIds) {
             
             // 🧹 850ms 動畫結束後
             setTimeout(() => {
+                // ✨ 確保 JS 引擎降落完畢後，把內聯樣式擦乾淨，為下次打開做好準備
+                if (isSeamless) {
+                    innerCard.style.transform = '';
+                    innerCard.style.WebkitMaskPosition = '';
+                    innerCard.style.maskPosition = '';
+                    extensionCard.style.transform = '';
+                }
                 extensionCard.style.transition = '';
                 
                 // ✨ 動畫完全落地後，才把容器無縫縮回原本的尺寸 (此時底部已在螢幕外，絕對看不出破綻)
@@ -462,9 +480,15 @@ export function startRouteEditMode(cardId, currentLineIds) {
             
             // ✨ 一旦拉超過一半，立刻沒收控制權，系統無縫接手直接關閉！
             if (pullDelta > threshold) {
-                isDraggingModal = false; // 釋放手勢控制權，不再跟隨手指
-                restoreUI();             // 系統無縫接力，觸發退出降落動畫
-                return;                  // 終止後續的手勢計算，確保零卡頓！
+                isDraggingModal = false; 
+                
+                // 🚀 核心爆發：發射 JS 實體引擎！直接從指尖當下的位置，順滑重力降落到底部 (耗時約 350ms)
+                const currentY = moveUpDist - pullDelta;
+                runShredderAnimation(currentY, 0, 350);
+                
+                // 呼叫退出清理，並掛上「無縫接力」的免死金牌！
+                restoreUI({ isSeamless: true });             
+                return;                  
             }
             
             // 🚀 核心破解：使用 requestAnimationFrame 鎖定渲染幀
@@ -496,8 +520,12 @@ export function startRouteEditMode(cardId, currentLineIds) {
         if (!isDraggingModal) return; 
         isDraggingModal = false;
 
-        // 走到這裡代表「未達一半就放手」，一律視為反悔，觸發 Q 彈回彈動畫
-        if (pullDelta > 0) { 
+        if (pullDelta > 90) { 
+            // 💥 拉超過 90px 鬆手：同樣呼叫 JS 引擎順滑降落！
+            const currentY = moveUpDist - pullDelta;
+            runShredderAnimation(currentY, 0, 350);
+            restoreUI({ isSeamless: true }); 
+        } else if (pullDelta > 0) {
             // 拔除 CSS 位移過渡，只留 opacity
             innerCard.style.transition = `opacity 0.3s ease`;
             extensionCard.style.transition = 'none';
