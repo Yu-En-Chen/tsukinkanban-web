@@ -265,17 +265,18 @@ export function startRouteEditMode(cardId, currentLineIds) {
 
             void innerCard.offsetHeight;
 
-            // ✨ 核心修正 1：在下滑前瞬間恢復實體透明度 (opacity: 1)
-            // 由於卡片目前完全位於虛擬界線上方（被遮罩完全隱藏），瞬間恢復為 1 絕對不會閃爍。
             innerCard.style.transition = 'none';
-            innerCard.style.opacity = '1';
+            // 🚨 拔除瞬間設定 opacity = 1！保持它原本透明的狀態，避免底層渲染溢出漏光
 
             // 雙重 RAF 確保回程也極度滑順
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
-                    // ✨ 核心修正 2：拔除 opacity 的漸變，讓卡片維持 100% 實心被遮罩「精準吐出來」
-                    innerCard.style.transition = `transform ${duration} ${easeBezier}, -webkit-mask-position ${duration} ${easeBezier}`;
+                    // ✨ 核心優化：給 opacity 一個 0.15s 的「極速淡入」，完美掩飾剛起步時的邊界漏光！
+                    innerCard.style.transition = `transform ${duration} ${easeBezier}, -webkit-mask-position ${duration} ${easeBezier}, opacity 0.15s ease-out`;
                     innerCard.style.transform = '';
+                    innerCard.style.pointerEvents = 'auto';
+                    innerCard.style.WebkitMaskPosition = `0px -${feather}px`; 
+                    innerCard.style.opacity = '1'; // 在動畫開始時滑順浮現
                     innerCard.style.pointerEvents = 'auto';
                     innerCard.style.WebkitMaskPosition = `0px -${feather}px`; 
                     
@@ -398,8 +399,6 @@ export function startRouteEditMode(cardId, currentLineIds) {
         innerCard.style.transition = 'none';
         extensionCard.style.transition = 'none';
         
-        // 在手指觸碰的瞬間，喚醒卡片實體
-        innerCard.style.opacity = '1';
     }, { passive: true });
 
     scrollWrapper.addEventListener('touchmove', (e) => {
@@ -435,6 +434,11 @@ export function startRouteEditMode(cardId, currentLineIds) {
                     const currentMaskPos = `0px ${moveUpDist - feather - pullDelta}px`;
                     innerCard.style.setProperty('-webkit-mask-position', currentMaskPos);
                     innerCard.style.setProperty('mask-position', currentMaskPos);
+
+                    // ✨ 動態透明度魔法：在前 40px 的拉動距離內，透明度從 0 滑順過渡到 1
+                    // 這樣卡片就像是從「迷霧中」被拉出來一樣，絕對不會有生硬的閃現！
+                    const dynamicOpacity = Math.min(pullDelta / 40, 1);
+                    innerCard.style.opacity = dynamicOpacity.toString();
                     
                     rafTicking = false;
                 });
@@ -449,7 +453,9 @@ export function startRouteEditMode(cardId, currentLineIds) {
 
         // 走到這裡代表「未達一半就放手」，一律視為反悔，觸發 Q 彈回彈動畫
         if (pullDelta > 0) { 
-            innerCard.style.transition = `transform 0.4s ${easeBezier}, -webkit-mask-position 0.4s ${easeBezier}, mask-position 0.4s ${easeBezier}, opacity 0.2s ease 0.2s`;
+            // ✨ 核心優化：把原本的 opacity 0.2s ease 0.2s (延遲淡出) 
+            // 改成 0.3s ease (立即滑順淡出)，讓彈回去的過程一氣呵成消失
+            innerCard.style.transition = `transform 0.4s ${easeBezier}, -webkit-mask-position 0.4s ${easeBezier}, mask-position 0.4s ${easeBezier}, opacity 0.3s ease`;
             extensionCard.style.transition = `transform 0.4s ${easeBezier}`;
 
             innerCard.style.transform = `translateY(-${moveUpDist}px)`;
