@@ -45,18 +45,16 @@ export function startRouteEditMode(cardId, currentLineIds) {
     targetIds.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
-            // 第一時間物理鎖死，絕對不給按
             el.style.setProperty('pointer-events', 'none', 'important');
             
-            // 賦予按鈕物理裁切能力 (依據結構不同有不同的掛載點)
             if (id === 'action-capsule') {
                 el.querySelectorAll('.capsule-btn-item').forEach(btn => btn.style.setProperty('overflow', 'hidden', 'important'));
             } else {
                 el.style.setProperty('overflow', 'hidden', 'important');
             }
             
-            // 準備硬體加速
-            el.querySelectorAll('svg').forEach(svg => svg.style.setProperty('will-change', 'transform, opacity', 'important'));
+            // ✨ 核心修正 1：改為 translate，保護原本的 transform！
+            el.querySelectorAll('svg').forEach(svg => svg.style.setProperty('will-change', 'translate, opacity', 'important'));
         }
     });
 
@@ -83,8 +81,9 @@ export function startRouteEditMode(cardId, currentLineIds) {
                 const el = document.getElementById(id);
                 if (el) {
                     el.querySelectorAll('svg').forEach(svg => {
-                        svg.style.setProperty('transition', `transform ${duration} ${easeBezier}, opacity 0.3s ease 0.1s`, 'important');
-                        svg.style.setProperty('transform', 'translateY(-48px)', 'important');
+                        // ✨ 核心修正 2：動畫與位移全部改用 translate！絕對不破壞原生縮放與置中
+                        svg.style.setProperty('transition', `translate ${duration} ${easeBezier}, opacity 0.3s ease 0.1s`, 'important');
+                        svg.style.setProperty('translate', '0px -48px', 'important');
                         svg.style.setProperty('opacity', '0', 'important');
                     });
                 }
@@ -289,8 +288,9 @@ export function startRouteEditMode(cardId, currentLineIds) {
                         const el = document.getElementById(id);
                         if (el) {
                             el.querySelectorAll('svg').forEach(svg => {
-                                svg.style.setProperty('transition', `transform ${duration} ${easeBezier}, opacity 0.3s ease`, 'important');
-                                svg.style.removeProperty('transform');
+                                // ✨ 核心修正 3：降落動畫也改用 translate
+                                svg.style.setProperty('transition', `translate ${duration} ${easeBezier}, opacity 0.3s ease`, 'important');
+                                svg.style.removeProperty('translate');
                                 svg.style.removeProperty('opacity');
                             });
                         }
