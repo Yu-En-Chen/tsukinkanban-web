@@ -397,6 +397,10 @@ export function startRouteEditMode(cardId, currentLineIds) {
         // 拔除系統動畫
         innerCard.style.transition = 'none';
         extensionCard.style.transition = 'none';
+        
+        // ✨ 核心修復 1：在手指觸碰的瞬間，喚醒卡片實體！
+        // 因為此時卡片完全被遮罩隱藏，瞬間切換為 1 絕對不會閃爍，拉下來時就能看見它了！
+        innerCard.style.opacity = '1';
     }, { passive: true });
 
     scrollWrapper.addEventListener('touchmove', (e) => {
@@ -437,8 +441,8 @@ export function startRouteEditMode(cardId, currentLineIds) {
             // 💥 拉超過 90px：直接觸發關閉！
             restoreUI(); 
         } else if (pullDelta > 0) { 
-            // 🛑 放手回彈 (加入標準的 mask-position 確保回彈也完美同步)
-            innerCard.style.transition = `transform 0.4s ${easeBezier}, -webkit-mask-position 0.4s ${easeBezier}, mask-position 0.4s ${easeBezier}`;
+            // 🛑 放手回彈：加入 opacity 的漸變，讓它彈回去時再次優雅地隱形
+            innerCard.style.transition = `transform 0.4s ${easeBezier}, -webkit-mask-position 0.4s ${easeBezier}, mask-position 0.4s ${easeBezier}, opacity 0.2s ease 0.2s`;
             extensionCard.style.transition = `transform 0.4s ${easeBezier}`;
 
             innerCard.style.transform = `translateY(-${moveUpDist}px)`;
@@ -446,6 +450,9 @@ export function startRouteEditMode(cardId, currentLineIds) {
             const targetMaskPos = `0px ${moveUpDist - feather}px`;
             innerCard.style.setProperty('-webkit-mask-position', targetMaskPos);
             innerCard.style.setProperty('mask-position', targetMaskPos);
+            
+            // ✨ 核心修復 2：彈回頂部後，再次將它隱形確保無殘影
+            innerCard.style.opacity = '0';
         }
         pullDelta = 0;
     });
