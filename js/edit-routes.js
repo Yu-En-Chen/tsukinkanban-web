@@ -37,6 +37,18 @@ export function startRouteEditMode(cardId, currentLineIds) {
     const easeBezier = 'cubic-bezier(0.16, 1, 0.3, 1)';
     const duration = '0.85s';
 
+    // ==========================================
+    // 🛸 頂級防護：鎖死母艦，並讓圖示同步往上滑出
+    // ==========================================
+    const mainMenu = document.getElementById('main-menu');
+    // 抓取母艦裡面的所有 SVG 圖示
+    const menuIcons = mainMenu ? Array.from(mainMenu.querySelectorAll('svg')) : [];
+    
+    if (mainMenu) {
+        // ✨ 第一時間物理鎖死！編輯模式下母艦絕對不給按，杜絕所有 Bug
+        mainMenu.style.pointerEvents = 'none'; 
+    }
+
     // 🚀 效能解鎖 2：使用雙重 requestAnimationFrame！
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -54,6 +66,16 @@ export function startRouteEditMode(cardId, currentLineIds) {
             // 2. 實心玻璃面板：
             extensionCard.style.transition = `transform ${duration} ${easeBezier}`;
             extensionCard.style.transform = `translateY(-${moveUpDist}px)`;
+
+            // ✨ 讓母艦的 SVG 圖示跟著主卡片一起「往上滑並淡出」
+            menuIcons.forEach(icon => {
+                icon.style.willChange = 'transform, opacity';
+                // 同步時間與曲線，稍微延遲 0.1s 淡出看起來更自然
+                icon.style.transition = `transform ${duration} ${easeBezier}, opacity 0.3s ease 0.1s`;
+                // 往上滑動 24px (大約是圖示的高度)，製造被推出邊界的錯覺
+                icon.style.transform = `translateY(-24px)`; 
+                icon.style.opacity = '0';
+            });
         });
     });
 
@@ -247,6 +269,13 @@ export function startRouteEditMode(cardId, currentLineIds) {
                     
                     extensionCard.style.transition = `transform ${duration} ${easeBezier}`;
                     extensionCard.style.transform = '';
+
+                    // ✨ 母艦 SVG 圖示同步降落還原
+                    menuIcons.forEach(icon => {
+                        icon.style.transition = `transform ${duration} ${easeBezier}, opacity 0.3s ease`;
+                        icon.style.transform = '';
+                        icon.style.opacity = '1';
+                    });
                 });
             });
             
@@ -284,7 +313,13 @@ export function startRouteEditMode(cardId, currentLineIds) {
                         }, 400);
                     });
                 });
-            }, 850); 
+                // ✨ 動畫徹底結束後，解除母艦鎖定，並清理圖示的 transition
+                if (mainMenu) mainMenu.style.pointerEvents = ''; // 恢復可點擊狀態
+                menuIcons.forEach(icon => {
+                    icon.style.transition = '';
+                    icon.style.willChange = 'auto';
+                });
+            }, 850);
         }, 300);
     };
 
