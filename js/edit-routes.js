@@ -51,16 +51,19 @@ export function startRouteEditMode(cardId, currentLineIds) {
     const duration = '0.85s';
 
     // ==========================================
-    // ⚙️ 核心實體引擎：JS 幀同步動畫 (徹底消滅 Safari 遮罩殘影)
+    // ⚙️ 核心實體引擎：加入時空錯位與內容掉落
     // ==========================================
-    let shredderRafId = null; // 動畫中斷閥門
+    let shredderRafId = null; 
 
     const runShredderAnimation = (startY, targetY, durationMs) => {
-        if (shredderRafId) cancelAnimationFrame(shredderRafId); // 啟動前先清理舊動畫
+        if (shredderRafId) cancelAnimationFrame(shredderRafId); 
         
         const startTime = performance.now();
-        // 完美逼近 cubic-bezier(0.16, 1, 0.3, 1) 的數學阻尼曲線
         const easeOutQuint = t => 1 - Math.pow(1 - t, 5);
+
+        const isClosing = targetY === 0;
+        const startOpacity = parseFloat(editContainer.style.opacity) || (isClosing ? 1 : 0);
+        const targetOpacity = isClosing ? 0 : 1;
 
         const step = (now) => {
             let progress = (now - startTime) / durationMs;
@@ -68,13 +71,25 @@ export function startRouteEditMode(cardId, currentLineIds) {
 
             const currentY = startY + (targetY - startY) * easeOutQuint(progress);
 
-            // 🚀 100% 幀同步輸出：強迫 GPU 與 CPU 在同一毫秒渲染！
             innerCard.style.transform = `translateY(-${currentY}px)`;
             extensionCard.style.transform = `translateY(-${currentY}px)`;
 
             const currentMaskPos = `0px ${currentY - feather}px`;
             innerCard.style.setProperty('-webkit-mask-position', currentMaskPos, 'important');
             innerCard.style.setProperty('mask-position', currentMaskPos, 'important');
+
+            // ✨ 1. 時間錯位魔法：如果是關閉，讓舊內容在動畫前 40% 就「極速透明」，徹底解決殘影重疊！
+            let opacityProgress = isClosing ? (progress * 2.5) : progress;
+            if (opacityProgress > 1) opacityProgress = 1;
+            
+            const currentOpacity = startOpacity + (targetOpacity - startOpacity) * opacityProgress;
+            editContainer.style.opacity = currentOpacity.toString();
+            btnContainer.style.opacity = currentOpacity.toString();
+
+            // ✨ 2. 空間錯位魔法：讓內容完美貼附在背景上一起「物理掉落」！
+            const dropOffset = moveUpDist - currentY;
+            editContainer.style.transform = `translateY(${dropOffset}px)`;
+            btnContainer.style.transform = `translateY(${dropOffset}px)`;
 
             if (progress < 1) {
                 shredderRafId = requestAnimationFrame(step);
@@ -282,134 +297,183 @@ export function startRouteEditMode(cardId, currentLineIds) {
     const restoreUI = (options = {}) => {
         const isSeamless = options.isSeamless || false;
 
+        // 🛑 只有「非手勢」的按鈕關閉時，才需要強制煞停 JS 引擎
         if (!isSeamless && shredderRafId) {
             cancelAnimationFrame(shredderRafId);
         }
-        // ✨ 拔除 CSS，讓內容透明度完全跟隨 JS 實體引擎平滑淡出，不突兀！
+
+        // =========================================================
+        // 🚀 第一步：啟動十字交疊淡入淡出引擎 (Cross-fade Engine)
+        // =========================================================
+        // ✨ 暫時卸除物理位移，來獲取最純粹的底層排版座標
+        const currentEditTransform = editContainer.style.transform;
+        const currentBtnTransform = btnContainer.style.transform;
+        editContainer.style.transform = '';
+        btnContainer.style.transform = '';
+
+        const editRect = editContainer.getBoundingClientRect();
+        const btnRect = btnContainer.getBoundingClientRect();
+        const scrollRect = scrollWrapper.getBoundingClientRect();
+
+        const editTop = editRect.top - scrollRect.top + scrollWrapper.scrollTop;
+        const btnTop = btnRect.top - scrollRect.top + scrollWrapper.scrollTop;
+
         editContainer.style.transition = 'none';
         btnContainer.style.transition = 'none';
-        
-        setTimeout(() => {
-            editContainer.remove();
-            btnContainer.remove();
-            originalChildren.forEach(child => child.style.display = ''); 
-            
-            const easeBezier = 'cubic-bezier(0.16, 1, 0.3, 1)';
-            const duration = '0.85s';
-            const feather = 45;
 
-            // 重新分配 GPU
-            innerCard.style.willChange = 'transform, opacity, -webkit-mask-position';
-            innerCard.style.WebkitBackfaceVisibility = 'hidden';
-            extensionCard.style.willChange = 'transform';
-            
-            // ✨ 核心修復：在下滑期間，讓容器「往下長」抵銷位移，徹底消滅裁切斷層！
-            scrollWrapper.style.height = `${origClientHeight + moveUpDist}px`;
-            
-            // ✨ 新增細節：關閉時，觸發原生平滑捲動，讓清單優雅地洗牌回到最上方！
-            scrollWrapper.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
+        // 懸空編輯區塊
+        editContainer.style.position = 'absolute';
+        editContainer.style.top = `${editTop}px`;
+        editContainer.style.left = '0';
+        editContainer.style.width = '100%';
+        editContainer.style.pointerEvents = 'none';
+        editContainer.style.transform = currentEditTransform; // ✨ 座標量完，恢復掉落位移！
 
-            void innerCard.offsetHeight;
+        // 懸空底部按鈕
+        btnContainer.style.position = 'absolute';
+        btnContainer.style.top = `${btnTop}px`;
+        btnContainer.style.bottom = 'auto'; 
+        btnContainer.style.left = '0';
+        btnContainer.style.width = '100%';
+        btnContainer.style.marginTop = '0';
+        btnContainer.style.pointerEvents = 'none';
+        btnContainer.style.transform = currentBtnTransform; // ✨ 恢復掉落位移！
 
-            innerCard.style.transition = 'none';
-            // 🚨 拔除瞬間設定 opacity = 1！保持它原本透明的狀態，避免底層渲染溢出漏光
+        // 2. 喚醒原本的清單，放入排版中，但先保持完全透明 (opacity: 0)
+        originalChildren.forEach(child => {
+            child.style.transition = 'none';
+            child.style.opacity = '0';
+            child.style.display = '';
+        });
 
-            // 雙重 RAF 確保回程也極度滑順
+        const easeBezier = 'cubic-bezier(0.16, 1, 0.3, 1)';
+        const duration = '0.85s';
+        const feather = 45;
+
+        // 重新分配 GPU
+        innerCard.style.willChange = 'transform, opacity, -webkit-mask-position';
+        innerCard.style.WebkitBackfaceVisibility = 'hidden';
+        extensionCard.style.willChange = 'transform';
+
+        // 抵銷位移的撐高，防止排版坍塌
+        scrollWrapper.style.height = `${origClientHeight + moveUpDist}px`;
+
+        // ✨ 觸發原生平滑捲動，讓清單優雅地洗牌回到最上方
+        scrollWrapper.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+
+        // 3. 強制瀏覽器重繪 (Reflow)，確認隱形與排版已生效
+        void scrollWrapper.offsetHeight;
+
+        // 4. 發動原本清單的平滑淡入！(✨ 加入 0.15s 延遲，完美錯開舊內容的殘影)
+        originalChildren.forEach(child => {
+            child.style.transition = 'opacity 0.4s ease-out 0.15s';
+            child.style.opacity = '1';
+        });
+
+        // =========================================================
+        // 🚀 第二步：啟動降落引擎
+        // =========================================================
+        innerCard.style.transition = 'none';
+        extensionCard.style.transition = 'none';
+
+        requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    // 🚀 終極統一：全面廢除 CSS 位移引擎，保證遮罩絕對不抽搐！
-                    innerCard.style.transition = 'none';
-                    extensionCard.style.transition = 'none';
+                if (!isSeamless) {
+                    // 🔘 按鈕關閉：發射 JS 實體引擎接管降落！(耗時 850ms)
+                    // 💡 注意：引擎會自動把懸空的 editContainer 透明度平滑降到 0，達成完美交疊！
+                    runShredderAnimation(moveUpDist, 0, 850);
+                }
 
-                    if (!isSeamless) {
-                        // 🔘 點擊按鈕關閉：發射 JS 實體引擎接管降落！(從頂部降落到 0，耗時 850ms)
-                        runShredderAnimation(moveUpDist, 0, 850);
-                    }
+                innerCard.style.pointerEvents = 'auto';
+                innerCard.style.opacity = '1';
 
-                    innerCard.style.pointerEvents = 'auto';
-                    innerCard.style.opacity = '1'; // 確保底板實心
-
-                    // ✨ 右側所有 SVG 降落還原
-                    const targetIds = ['action-capsule', 'left-menu-btn', 'search-trigger'];
-                    targetIds.forEach(id => {
-                        const el = document.getElementById(id);
-                        if (el) {
-                            el.querySelectorAll('svg').forEach(svg => {
-                                // ✨ 核心修正 3：降落動畫也改用 translate
-                                svg.style.setProperty('transition', `translate ${duration} ${easeBezier}, opacity 0.3s ease`, 'important');
-                                svg.style.removeProperty('translate');
-                                svg.style.removeProperty('opacity');
-                            });
-                        }
-                    });
-                });
-            });
-            
-            // 🧹 850ms 動畫結束後
-            setTimeout(() => {
-                // ✨ 確保 JS 引擎降落完畢後，把內聯樣式擦乾淨，為下次打開做好準備
-                // (移除 if (isSeamless)，因為現在所有降落都由完美不抽搐的 JS 引擎負責了！)
-                innerCard.style.transform = '';
-                innerCard.style.WebkitMaskPosition = '';
-                innerCard.style.maskPosition = '';
-                extensionCard.style.transform = '';
-                extensionCard.style.transition = '';
-                
-                // ✨ 動畫完全落地後，才把容器無縫縮回原本的尺寸 (此時底部已在螢幕外，絕對看不出破綻)
-                scrollWrapper.style.height = originalScrollHeight;
-                
-                // ✨ 完美整合：解除遮罩與陰影呼吸外擴
-                // 先將陰影設為透明，避免拔除遮罩時產生粗暴的爆閃
-                innerCard.style.transition = 'none'; 
-                innerCard.style.boxShadow = '0 0 0 rgba(0,0,0,0)'; 
-                
-                // 安全拔除遮罩
-                innerCard.style.WebkitMaskImage = '';
-                innerCard.style.WebkitMaskSize = '';
-                innerCard.style.WebkitMaskPosition = '';
-                innerCard.style.WebkitMaskRepeat = '';
-
-                // 回收 GPU
-                innerCard.style.willChange = 'auto';
-                innerCard.style.WebkitBackfaceVisibility = '';
-                extensionCard.style.willChange = 'auto';
-
-                // ✨ 下一幀觸發陰影「像呼吸一樣」優雅舒展外擴
-                requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                        innerCard.style.transition = `box-shadow 0.4s ${easeBezier}`;
-                        innerCard.style.boxShadow = ''; // 恢復 CSS 中原本的高級陰影
-                        
-                        setTimeout(() => {
-                            innerCard.style.transition = '';
-                        }, 400);
-                    });
-                });
-                // ✨ 徹底解除右側按鈕的鎖定與清理過渡殘留
+                // ✨ 右側 SVG 按鈕降落還原
                 const targetIds = ['action-capsule', 'left-menu-btn', 'search-trigger'];
                 targetIds.forEach(id => {
                     const el = document.getElementById(id);
                     if (el) {
-                        el.style.removeProperty('pointer-events'); 
-                        
-                        if (id === 'action-capsule') {
-                            el.querySelectorAll('.capsule-btn-item').forEach(btn => btn.style.removeProperty('overflow'));
-                        } else {
-                            el.style.removeProperty('overflow');
-                        }
-                        
                         el.querySelectorAll('svg').forEach(svg => {
-                            svg.style.removeProperty('transition');
-                            svg.style.removeProperty('will-change');
+                            svg.style.setProperty('transition', `translate ${duration} ${easeBezier}, opacity 0.3s ease`, 'important');
+                            svg.style.removeProperty('translate');
+                            svg.style.removeProperty('opacity');
                         });
                     }
                 });
-            }, 850);
-        }, 300);
-    };
+            });
+        });
+
+        // =========================================================
+        // 🧹 850ms 動畫徹底落地後的現場清理
+        // =========================================================
+        setTimeout(() => {
+            // 1. 徹底移除已經淡出完畢的編輯容器
+            editContainer.remove();
+            btnContainer.remove();
+
+            // 2. 清理原本清單的 inline-style
+            originalChildren.forEach(child => {
+                child.style.transition = '';
+                child.style.opacity = '';
+            });
+
+            // 3. 擦乾淨降落引擎的痕跡
+            innerCard.style.transform = '';
+            innerCard.style.WebkitMaskPosition = '';
+            innerCard.style.maskPosition = '';
+            extensionCard.style.transform = '';
+            extensionCard.style.transition = '';
+
+            // 4. 恢復 scrollWrapper 原始高度
+            scrollWrapper.style.height = originalScrollHeight;
+
+            // 5. 陰影呼吸外擴復原
+            innerCard.style.transition = 'none';
+            innerCard.style.boxShadow = '0 0 0 rgba(0,0,0,0)';
+
+            innerCard.style.WebkitMaskImage = '';
+            innerCard.style.WebkitMaskSize = '';
+            innerCard.style.WebkitMaskPosition = '';
+            innerCard.style.WebkitMaskRepeat = '';
+
+            innerCard.style.willChange = 'auto';
+            innerCard.style.WebkitBackfaceVisibility = '';
+            extensionCard.style.willChange = 'auto';
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    innerCard.style.transition = `box-shadow 0.4s ${easeBezier}`;
+                    innerCard.style.boxShadow = '';
+
+                    setTimeout(() => {
+                        innerCard.style.transition = '';
+                    }, 400);
+                });
+            });
+
+            // 清理右側按鈕的鎖定殘留
+            const targetIds = ['action-capsule', 'left-menu-btn', 'search-trigger'];
+            targetIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.style.removeProperty('pointer-events');
+
+                    if (id === 'action-capsule') {
+                        el.querySelectorAll('.capsule-btn-item').forEach(btn => btn.style.removeProperty('overflow'));
+                    } else {
+                        el.style.removeProperty('overflow');
+                    }
+
+                    el.querySelectorAll('svg').forEach(svg => {
+                        svg.style.removeProperty('transition');
+                        svg.style.removeProperty('will-change');
+                    });
+                }
+            });
+        }, 850);
+    }; 
 
     btnContainer.appendChild(createBtn(iconCancel, 'キャンセル', false, restoreUI));
     btnContainer.appendChild(createBtn(iconSave, '保存', true, async () => {
@@ -494,6 +558,10 @@ export function startRouteEditMode(cardId, currentLineIds) {
                     innerCard.style.transform = `translateY(-${moveUpDist - pullDelta}px)`;
                     extensionCard.style.transform = `translateY(-${moveUpDist - pullDelta}px)`;
                     
+                    // ✨ 讓內容也同步貼死背景物理滑落，完全對齊原生 iOS 手感！
+                    editContainer.style.transform = `translateY(${pullDelta}px)`;
+                    btnContainer.style.transform = `translateY(${pullDelta}px)`;
+
                     const currentMaskPos = `0px ${moveUpDist - feather - pullDelta}px`;
                     innerCard.style.setProperty('-webkit-mask-position', currentMaskPos);
                     innerCard.style.setProperty('mask-position', currentMaskPos);
