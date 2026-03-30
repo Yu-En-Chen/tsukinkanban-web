@@ -134,21 +134,15 @@ export function startRouteEditMode(cardId, currentLineIds) {
     // 🚀 效能解鎖 2：使用雙重 requestAnimationFrame！
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-            // 1. 主卡片：位移與遮罩
-            // ✨ 讓卡片位移與遮罩全部交給 JS 引擎！這裡只保留 opacity 的過渡
-            innerCard.style.transition = `opacity 0.2s ease 0.35s`;
-            extensionCard.style.transition = 'none'; 
-            innerCard.style.pointerEvents = 'none';
-            innerCard.style.opacity = '0';
-            
-            // 🚀 發射！啟動 JS 幀同步碎紙機 (從 0 走到頂部，耗時 850ms)
-            runShredderAnimation(0, moveUpDist, 850);
-            // ✨ 讓右側所有 SVG 強制往上滑出，並完美裁切
+            // 🚨 請把這裡原本寫的 innerCard.style.transition... 等等全部刪除
+            // 🚨 請務必把這行刪除：runShredderAnimation(0, moveUpDist, 850); 
+            // (因為我們已經在上面 400ms 的 setTimeout 裡面發射過了！)
+
+            // ✨ 這個 RAF 裡面「只保留」右側母艦 SVG 的動畫：
             targetIds.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
                     el.querySelectorAll('svg').forEach(svg => {
-                        // ✨ 核心修正 2：動畫與位移全部改用 translate！絕對不破壞原生縮放與置中
                         svg.style.setProperty('transition', `translate ${duration} ${easeBezier}, opacity 0.3s ease 0.1s`, 'important');
                         svg.style.setProperty('translate', '0px -48px', 'important');
                         svg.style.setProperty('opacity', '0', 'important');
@@ -157,17 +151,6 @@ export function startRouteEditMode(cardId, currentLineIds) {
             });
         });
     });
-
-    // 🧹 動畫結束後回收 GPU 資源
-    setTimeout(() => {
-        if (innerCard) {
-            innerCard.style.willChange = 'auto';
-            innerCard.style.WebkitBackfaceVisibility = '';
-            // 確保歸零
-            innerCard.style.opacity = '0'; 
-        }
-        if (extensionCard) extensionCard.style.willChange = 'auto';
-    }, 550);
 
     // ==========================================
     // 🛠️ 第二階段：替換為編輯內容
