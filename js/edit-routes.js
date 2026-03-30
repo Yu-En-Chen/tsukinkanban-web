@@ -87,15 +87,24 @@ export function startRouteEditMode(cardId, currentLineIds) {
             editContainer.style.opacity = currentOpacity.toString();
             btnContainer.style.opacity = currentOpacity.toString();
 
-            // ✨ 2. 空間錯位魔法：讓內容完美貼附在背景上一起「物理掉落」！
-            const dropOffset = moveUpDist - currentY;
-            editContainer.style.transform = `translateY(${dropOffset}px)`;
-            btnContainer.style.transform = `translateY(${dropOffset}px)`;
+            // ✨ 2. 空間錯位魔法修復：
+            // 只有在「關閉(isClosing)」時，才讓舊內容貼死背景往下掉
+            if (isClosing) {
+                const dropOffset = moveUpDist - currentY;
+                editContainer.style.transform = `translateY(${dropOffset}px)`;
+                btnContainer.style.transform = `translateY(${dropOffset}px)`;
+            } else {
+                // 🚨 點擊開啟時：清除所有多餘位移！讓新內容乖乖待在卡片裡，跟著卡片 1:1 原速往上爬升
+                editContainer.style.transform = '';
+                btnContainer.style.transform = '';
+            }
 
             if (progress < 1) {
                 shredderRafId = requestAnimationFrame(step);
             } else {
                 shredderRafId = null;
+                // 確保動畫落地後解開物理鎖，恢復點擊
+                innerCard.style.pointerEvents = 'auto'; 
             }
         };
         shredderRafId = requestAnimationFrame(step);
@@ -524,10 +533,10 @@ export function startRouteEditMode(cardId, currentLineIds) {
         child.style.opacity = '0';
     });
 
-    // 4. 400ms 後徹底清理並隱藏舊清單，把底層效能還給瀏覽器
+    // 4. 400ms 後徹底清理並隱藏舊清單
     setTimeout(() => {
         originalChildren.forEach(child => {
-            child.style.display = 'none'; // 此時已經完全透明，真正隱藏絕對不會閃爍
+            child.style.display = 'none'; 
             child.style.position = '';
             child.style.top = '';
             child.style.left = '';
@@ -536,16 +545,34 @@ export function startRouteEditMode(cardId, currentLineIds) {
             child.style.transition = '';
             child.style.pointerEvents = '';
         });
+        
+        // ✨ 核心修復：把發射按鈕移進來！
+        // 確保 400ms 過去、舊資訊完全化為透明死透後，才正式啟動新內容的往上爬升！
+        runShredderAnimation(0, moveUpDist, 850);
     }, 400);
 
     // =========================================================
-    // 🚀 新內容預先歸位，準備發射 JS 實體引擎
+    // 🚀 新內容預先歸位 (在終點正下方的黑暗中靜靜等待)
     // =========================================================
+    // 1. 拔除暴衝的 translateY，只保持透明，讓它預設待在卡片的底部
     editContainer.style.opacity = '0';
     btnContainer.style.opacity = '0';
-    editContainer.style.transform = `translateY(${moveUpDist}px)`;
-    btnContainer.style.transform = `translateY(${moveUpDist}px)`;
+    editContainer.style.transform = ''; 
+    btnContainer.style.transform = '';
 
+    innerCard.style.transition = 'none';
+    extensionCard.style.transition = 'none';
+    innerCard.style.pointerEvents = 'none';
+    innerCard.style.opacity = '1';
+
+    // 2. ✨ 鎖定卡片與遮罩的「等待期狀態」
+    // 因為我們要等 400ms，必須先鎖死卡片位置，防止在等待期間畫面被提前向下撐破！
+    innerCard.style.transform = `translateY(0px)`;
+    extensionCard.style.transform = `translateY(0px)`;
+    const initialMaskPos = `0px -${feather}px`;
+    innerCard.style.setProperty('-webkit-mask-position', initialMaskPos, 'important');
+    innerCard.style.setProperty('mask-position', initialMaskPos, 'important');
+    
     // ============================================================================
     // ✋ 頂級互動：全域「1:1 跟手下拉關閉」手勢引擎 (GPU 幀同步完美版)
     // ============================================================================
