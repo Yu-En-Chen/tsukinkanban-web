@@ -3263,3 +3263,30 @@ body.keyboard-active .card,
 body.keyboard-active #fixed-info-card {
     pointer-events: none !important;
 }
+
+/* ==========================================
+   🛸 右側母艦 SVG 空間過渡動畫 (物理裁切拉霸版)
+   ========================================== */
+
+/* 1. 關鍵：賦予右側母艦的「按鈕本體」裁切能力！ 
+   一碰到按鈕邊緣，超出的 SVG 就會像被碎紙機切掉一樣隱形 */
+   #main-menu button,
+   .main-menu-container button {
+       overflow: hidden !important; 
+       position: relative; /* 確保裁切邊界生效 */
+   }
+   
+   /* 2. 定義 SVG 的完美物理曲線 (與你的卡片 0.85s 碎紙機 100% 同步) */
+   #main-menu button svg,
+   .main-menu-container button svg {
+       transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease 0.1s !important;
+       will-change: transform, opacity;
+   }
+   
+   /* 3. 進入編輯模式時，SVG 往上推離邊界 (推 150% 確保完全滑出按鈕視角) */
+   body.route-edit-active #main-menu button svg,
+   body.route-edit-active .main-menu-container button svg {
+       transform: translateY(-150%) !important; 
+       /* 其實有 overflow: hidden 已經看不見了，但加 opacity: 0 防邊緣漏光，做到最保險 */
+       opacity: 0 !important;
+   }

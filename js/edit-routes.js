@@ -38,16 +38,16 @@ export function startRouteEditMode(cardId, currentLineIds) {
     const duration = '0.85s';
 
     // ==========================================
-    // 🛸 頂級防護：鎖死母艦，並讓圖示同步往上滑出
+    // 🛸 頂級防護：鎖死右側母艦，並觸發 CSS 拉霸動畫
     // ==========================================
-    const mainMenu = document.getElementById('main-menu');
-    // 抓取母艦裡面的所有 SVG 圖示
-    const menuIcons = mainMenu ? Array.from(mainMenu.querySelectorAll('svg')) : [];
-    
+    const mainMenu = document.getElementById('main-menu') || document.querySelector('.main-menu-container');
     if (mainMenu) {
-        // ✨ 第一時間物理鎖死！編輯模式下母艦絕對不給按，杜絕所有 Bug
+        // 第一時間物理鎖死，絕對不給按，杜絕所有 Bug！
         mainMenu.style.pointerEvents = 'none'; 
     }
+    
+    // ✨ 核心魔法：貼上全域標籤！CSS 會瞬間讓右側 4 顆 SVG 往上滑出邊界
+    document.body.classList.add('route-edit-active');
 
     // 🚀 效能解鎖 2：使用雙重 requestAnimationFrame！
     requestAnimationFrame(() => {
@@ -270,12 +270,8 @@ export function startRouteEditMode(cardId, currentLineIds) {
                     extensionCard.style.transition = `transform ${duration} ${easeBezier}`;
                     extensionCard.style.transform = '';
 
-                    // ✨ 母艦 SVG 圖示同步降落還原
-                    menuIcons.forEach(icon => {
-                        icon.style.transition = `transform ${duration} ${easeBezier}, opacity 0.3s ease`;
-                        icon.style.transform = '';
-                        icon.style.opacity = '1';
-                    });
+                    // ✨ 撕下標籤！CSS 偵測到標籤消失，就會自動把 SVG 降落還原回來
+                    document.body.classList.remove('route-edit-active');
                 });
             });
             
@@ -313,12 +309,9 @@ export function startRouteEditMode(cardId, currentLineIds) {
                         }, 400);
                     });
                 });
-                // ✨ 動畫徹底結束後，解除母艦鎖定，並清理圖示的 transition
-                if (mainMenu) mainMenu.style.pointerEvents = ''; // 恢復可點擊狀態
-                menuIcons.forEach(icon => {
-                    icon.style.transition = '';
-                    icon.style.willChange = 'auto';
-                });
+                // ✨ 動畫徹底落地結束後，才把母艦的點擊權限還給使用者
+                if (mainMenu) mainMenu.style.pointerEvents = ''; 
+                
             }, 850);
         }, 300);
     };
