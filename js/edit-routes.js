@@ -448,23 +448,26 @@ export function startRouteEditMode(cardId, currentLineIds) {
     }, { passive: false });
 
     scrollWrapper.addEventListener('touchend', () => {
-        if (!isDraggingModal) return; // 如果在 touchmove 已經觸發關閉，這裡直接忽略，防止動畫衝突
+        if (!isDraggingModal) return; 
         isDraggingModal = false;
 
         // 走到這裡代表「未達一半就放手」，一律視為反悔，觸發 Q 彈回彈動畫
         if (pullDelta > 0) { 
-            // ✨ 核心優化：把原本的 opacity 0.2s ease 0.2s (延遲淡出) 
-            // 改成 0.3s ease (立即滑順淡出)，讓彈回去的過程一氣呵成消失
             innerCard.style.transition = `transform 0.4s ${easeBezier}, -webkit-mask-position 0.4s ${easeBezier}, mask-position 0.4s ${easeBezier}, opacity 0.3s ease`;
             extensionCard.style.transition = `transform 0.4s ${easeBezier}`;
 
+            // ✨ 1. 卡片本體彈回
             innerCard.style.transform = `translateY(-${moveUpDist}px)`;
             
+            // 🚨 2. 就是這行！救回被遺漏的玻璃底板，讓它一起跟著彈回去！
+            extensionCard.style.transform = `translateY(-${moveUpDist}px)`;
+            
+            // ✨ 3. 遮罩彈回
             const targetMaskPos = `0px ${moveUpDist - feather}px`;
             innerCard.style.setProperty('-webkit-mask-position', targetMaskPos);
             innerCard.style.setProperty('mask-position', targetMaskPos);
             
-            // 彈回頂部後，再次將它隱形確保無殘影
+            // ✨ 4. 完美隱形
             innerCard.style.opacity = '0';
         }
         pullDelta = 0;
