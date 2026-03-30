@@ -282,12 +282,12 @@ export function startRouteEditMode(cardId, currentLineIds) {
     const restoreUI = (options = {}) => {
         const isSeamless = options.isSeamless || false;
 
-        // 🛑 只有「非手勢」的按鈕關閉時，才需要強制煞停 JS 引擎
         if (!isSeamless && shredderRafId) {
             cancelAnimationFrame(shredderRafId);
         }
-        editContainer.style.opacity = '0';
-        btnContainer.style.opacity = '0';
+        // ✨ 拔除 CSS，讓內容透明度完全跟隨 JS 實體引擎平滑淡出，不突兀！
+        editContainer.style.transition = 'none';
+        btnContainer.style.transition = 'none';
         
         setTimeout(() => {
             editContainer.remove();
@@ -320,22 +320,17 @@ export function startRouteEditMode(cardId, currentLineIds) {
             // 雙重 RAF 確保回程也極度滑順
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
+                    // 🚀 終極統一：全面廢除 CSS 位移引擎，保證遮罩絕對不抽搐！
+                    innerCard.style.transition = 'none';
+                    extensionCard.style.transition = 'none';
+
                     if (!isSeamless) {
-                        // 🔘 點擊按鈕關閉：交給傳統 CSS 引擎處理
-                        innerCard.style.transition = `transform ${duration} ${easeBezier}, -webkit-mask-position ${duration} ${easeBezier}, opacity 0.15s ease-out`;
-                        innerCard.style.transform = '';
-                        innerCard.style.WebkitMaskPosition = `0px -${feather}px`; 
-                        
-                        extensionCard.style.transition = `transform ${duration} ${easeBezier}`;
-                        extensionCard.style.transform = '';
-                    } else {
-                        // 🚀 終極無縫魔法：手勢接力時，徹底拔除 CSS 位移干擾！
-                        // 讓卡片順著 JS 引擎的物理慣性滑落，這裡只補上透明度保護
-                        innerCard.style.transition = 'opacity 0.15s ease-out';
+                        // 🔘 點擊按鈕關閉：發射 JS 實體引擎接管降落！(從頂部降落到 0，耗時 850ms)
+                        runShredderAnimation(moveUpDist, 0, 850);
                     }
-                    
+
                     innerCard.style.pointerEvents = 'auto';
-                    innerCard.style.opacity = '1';
+                    innerCard.style.opacity = '1'; // 確保底板實心
 
                     // ✨ 右側所有 SVG 降落還原
                     const targetIds = ['action-capsule', 'left-menu-btn', 'search-trigger'];
@@ -356,12 +351,11 @@ export function startRouteEditMode(cardId, currentLineIds) {
             // 🧹 850ms 動畫結束後
             setTimeout(() => {
                 // ✨ 確保 JS 引擎降落完畢後，把內聯樣式擦乾淨，為下次打開做好準備
-                if (isSeamless) {
-                    innerCard.style.transform = '';
-                    innerCard.style.WebkitMaskPosition = '';
-                    innerCard.style.maskPosition = '';
-                    extensionCard.style.transform = '';
-                }
+                // (移除 if (isSeamless)，因為現在所有降落都由完美不抽搐的 JS 引擎負責了！)
+                innerCard.style.transform = '';
+                innerCard.style.WebkitMaskPosition = '';
+                innerCard.style.maskPosition = '';
+                extensionCard.style.transform = '';
                 extensionCard.style.transition = '';
                 
                 // ✨ 動畫完全落地後，才把容器無縫縮回原本的尺寸 (此時底部已在螢幕外，絕對看不出破綻)
