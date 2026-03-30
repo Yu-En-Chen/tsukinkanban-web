@@ -383,7 +383,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
     let touchStartY = 0;
     let pullDelta = 0;
     let isDraggingModal = false;
-    let rafTicking = false; // 🚀 新增：GPU 幀同步鎖
+    let rafTicking = false; 
 
     scrollWrapper.addEventListener('touchstart', (e) => {
         // 🛑 防呆機制：拖曳把手、刪除按鈕、或畫面已經往下滾動時，不啟動下拉
@@ -398,8 +398,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
         innerCard.style.transition = 'none';
         extensionCard.style.transition = 'none';
         
-        // ✨ 核心修復 1：在手指觸碰的瞬間，喚醒卡片實體！
-        // 因為此時卡片完全被遮罩隱藏，瞬間切換為 1 絕對不會閃爍，拉下來時就能看見它了！
+        // 在手指觸碰的瞬間，喚醒卡片實體
         innerCard.style.opacity = '1';
     }, { passive: true });
 
@@ -413,15 +412,26 @@ export function startRouteEditMode(cardId, currentLineIds) {
             if (e.cancelable) e.preventDefault(); // 阻斷原生滾動
 
             pullDelta = deltaY * 0.85; 
+
+            // ✨ 終極進化：可反悔區域縮短為「總行程的一半」
+            const threshold = moveUpDist / 2;
             
-            // 🚀 核心破解：使用 requestAnimationFrame 鎖定渲染幀！
-            // 強迫較快的 transform 與稍慢的 mask-position 在同一個 GPU 畫面刷新時一起噴出，達成 100% 視覺死鎖同步！
+            // ✨ 一旦拉超過一半，立刻沒收控制權，系統無縫接手直接關閉！
+            if (pullDelta > threshold) {
+                isDraggingModal = false; // 釋放手勢控制權，不再跟隨手指
+                restoreUI();             // 系統無縫接力，觸發退出降落動畫
+                return;                  // 終止後續的手勢計算，確保零卡頓！
+            }
+            
+            // 🚀 核心破解：使用 requestAnimationFrame 鎖定渲染幀
             if (!rafTicking) {
                 requestAnimationFrame(() => {
+                    // 防呆保險：如果在等待 GPU 畫圖的極短瞬間，已經移交控制權了，就終止繪製避免畫面抖動
+                    if (!isDraggingModal) { rafTicking = false; return; }
+                    
                     innerCard.style.transform = `translateY(-${moveUpDist - pullDelta}px)`;
                     extensionCard.style.transform = `translateY(-${moveUpDist - pullDelta}px)`;
                     
-                    // ✨ 雙管齊下：強制寫入兩種遮罩屬性，並使用 setProperty 確保絕對生效
                     const currentMaskPos = `0px ${moveUpDist - feather - pullDelta}px`;
                     innerCard.style.setProperty('-webkit-mask-position', currentMaskPos);
                     innerCard.style.setProperty('mask-position', currentMaskPos);
@@ -434,14 +444,11 @@ export function startRouteEditMode(cardId, currentLineIds) {
     }, { passive: false });
 
     scrollWrapper.addEventListener('touchend', () => {
-        if (!isDraggingModal) return;
+        if (!isDraggingModal) return; // 如果在 touchmove 已經觸發關閉，這裡直接忽略，防止動畫衝突
         isDraggingModal = false;
 
-        if (pullDelta > 90) { 
-            // 💥 拉超過 90px：直接觸發關閉！
-            restoreUI(); 
-        } else if (pullDelta > 0) { 
-            // 🛑 放手回彈：加入 opacity 的漸變，讓它彈回去時再次優雅地隱形
+        // 走到這裡代表「未達一半就放手」，一律視為反悔，觸發 Q 彈回彈動畫
+        if (pullDelta > 0) { 
             innerCard.style.transition = `transform 0.4s ${easeBezier}, -webkit-mask-position 0.4s ${easeBezier}, mask-position 0.4s ${easeBezier}, opacity 0.2s ease 0.2s`;
             extensionCard.style.transition = `transform 0.4s ${easeBezier}`;
 
@@ -451,7 +458,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
             innerCard.style.setProperty('-webkit-mask-position', targetMaskPos);
             innerCard.style.setProperty('mask-position', targetMaskPos);
             
-            // ✨ 核心修復 2：彈回頂部後，再次將它隱形確保無殘影
+            // 彈回頂部後，再次將它隱形確保無殘影
             innerCard.style.opacity = '0';
         }
         pullDelta = 0;
