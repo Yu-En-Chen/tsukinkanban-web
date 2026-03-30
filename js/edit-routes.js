@@ -377,6 +377,79 @@ export function startRouteEditMode(cardId, currentLineIds) {
     editContainer.style.opacity = '1';
     btnContainer.style.opacity = '1';
 
+    // ============================================================================
+    // ✋ 頂級互動：全域「1:1 跟手下拉關閉」手勢引擎 (GPU 幀同步完美版)
+    // ============================================================================
+    let touchStartY = 0;
+    let pullDelta = 0;
+    let isDraggingModal = false;
+    let rafTicking = false; // 🚀 新增：GPU 幀同步鎖
+
+    scrollWrapper.addEventListener('touchstart', (e) => {
+        // 🛑 防呆機制：拖曳把手、刪除按鈕、或畫面已經往下滾動時，不啟動下拉
+        if (e.target.closest('.drag-handle') || e.target.closest('.delete-route-btn')) return;
+        if (scrollWrapper.scrollTop > 0) return;
+
+        touchStartY = e.touches[0].clientY;
+        isDraggingModal = true;
+        pullDelta = 0;
+
+        // 拔除系統動畫
+        innerCard.style.transition = 'none';
+        extensionCard.style.transition = 'none';
+    }, { passive: true });
+
+    scrollWrapper.addEventListener('touchmove', (e) => {
+        if (!isDraggingModal) return;
+
+        const touchY = e.touches[0].clientY;
+        const deltaY = touchY - touchStartY;
+
+        if (deltaY > 0) { 
+            if (e.cancelable) e.preventDefault(); // 阻斷原生滾動
+
+            pullDelta = deltaY * 0.85; 
+            
+            // 🚀 核心破解：使用 requestAnimationFrame 鎖定渲染幀！
+            // 強迫較快的 transform 與稍慢的 mask-position 在同一個 GPU 畫面刷新時一起噴出，達成 100% 視覺死鎖同步！
+            if (!rafTicking) {
+                requestAnimationFrame(() => {
+                    innerCard.style.transform = `translateY(-${moveUpDist - pullDelta}px)`;
+                    extensionCard.style.transform = `translateY(-${moveUpDist - pullDelta}px)`;
+                    
+                    // ✨ 雙管齊下：強制寫入兩種遮罩屬性，並使用 setProperty 確保絕對生效
+                    const currentMaskPos = `0px ${moveUpDist - feather - pullDelta}px`;
+                    innerCard.style.setProperty('-webkit-mask-position', currentMaskPos);
+                    innerCard.style.setProperty('mask-position', currentMaskPos);
+                    
+                    rafTicking = false;
+                });
+                rafTicking = true;
+            }
+        }
+    }, { passive: false });
+
+    scrollWrapper.addEventListener('touchend', () => {
+        if (!isDraggingModal) return;
+        isDraggingModal = false;
+
+        if (pullDelta > 90) { 
+            // 💥 拉超過 90px：直接觸發關閉！
+            restoreUI(); 
+        } else if (pullDelta > 0) { 
+            // 🛑 放手回彈 (加入標準的 mask-position 確保回彈也完美同步)
+            innerCard.style.transition = `transform 0.4s ${easeBezier}, -webkit-mask-position 0.4s ${easeBezier}, mask-position 0.4s ${easeBezier}`;
+            extensionCard.style.transition = `transform 0.4s ${easeBezier}`;
+
+            innerCard.style.transform = `translateY(-${moveUpDist}px)`;
+            
+            const targetMaskPos = `0px ${moveUpDist - feather}px`;
+            innerCard.style.setProperty('-webkit-mask-position', targetMaskPos);
+            innerCard.style.setProperty('mask-position', targetMaskPos);
+        }
+        pullDelta = 0;
+    });
+
     initDragAndDrop(editContainer);
 }
 
