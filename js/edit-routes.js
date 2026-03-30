@@ -38,6 +38,41 @@ export function startRouteEditMode(cardId, currentLineIds) {
     const duration = '0.85s';
 
     // ==========================================
+    // ⚙️ 核心實體引擎：JS 幀同步動畫 (徹底消滅 Safari 遮罩殘影)
+    // ==========================================
+    let shredderRafId = null; // 動畫中斷閥門
+
+    const runShredderAnimation = (startY, targetY, durationMs) => {
+        if (shredderRafId) cancelAnimationFrame(shredderRafId); // 啟動前先清理舊動畫
+        
+        const startTime = performance.now();
+        // 完美逼近 cubic-bezier(0.16, 1, 0.3, 1) 的數學阻尼曲線
+        const easeOutQuint = t => 1 - Math.pow(1 - t, 5);
+
+        const step = (now) => {
+            let progress = (now - startTime) / durationMs;
+            if (progress >= 1) progress = 1;
+
+            const currentY = startY + (targetY - startY) * easeOutQuint(progress);
+
+            // 🚀 100% 幀同步輸出：強迫 GPU 與 CPU 在同一毫秒渲染！
+            innerCard.style.transform = `translateY(-${currentY}px)`;
+            extensionCard.style.transform = `translateY(-${currentY}px)`;
+
+            const currentMaskPos = `0px ${currentY - feather}px`;
+            innerCard.style.setProperty('-webkit-mask-position', currentMaskPos, 'important');
+            innerCard.style.setProperty('mask-position', currentMaskPos, 'important');
+
+            if (progress < 1) {
+                shredderRafId = requestAnimationFrame(step);
+            } else {
+                shredderRafId = null;
+            }
+        };
+        shredderRafId = requestAnimationFrame(step);
+    };
+
+    // ==========================================
     // 🛸 終極母艦控制：包含膠囊與下方雙圓扣
     // ==========================================
     const targetIds = ['action-capsule', 'left-menu-btn', 'search-trigger'];
@@ -62,20 +97,14 @@ export function startRouteEditMode(cardId, currentLineIds) {
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             // 1. 主卡片：位移與遮罩
-            // ✨ 核心魔法 1：恢復「絕對靜止」的完美傳送門，拔除遮罩的超車！
-            // ✨ 核心魔法 2：壓秒消影！opacity 延遲 0.35s 才開始淡出，在卡片快到頂時完美融化最後的殘影！
-            innerCard.style.transition = `transform ${duration} ${easeBezier}, opacity 0.2s ease 0.35s, -webkit-mask-position ${duration} ${easeBezier}`;
-            innerCard.style.transform = `translateY(-${moveUpDist}px)`;
+            // ✨ 讓卡片位移與遮罩全部交給 JS 引擎！這裡只保留 opacity 的過渡
+            innerCard.style.transition = `opacity 0.2s ease 0.35s`;
+            extensionCard.style.transition = 'none'; 
             innerCard.style.pointerEvents = 'none';
-            
-            // 遮罩精準等比位移，將裁切線死死釘在螢幕上
-            innerCard.style.WebkitMaskPosition = `0px ${moveUpDist - feather}px`;
             innerCard.style.opacity = '0';
-
-            // 2. 實心玻璃面板：
-            extensionCard.style.transition = `transform ${duration} ${easeBezier}`;
-            extensionCard.style.transform = `translateY(-${moveUpDist}px)`;
-
+            
+            // 🚀 發射！啟動 JS 幀同步碎紙機 (從 0 走到頂部，耗時 850ms)
+            runShredderAnimation(0, moveUpDist, 850);
             // ✨ 讓右側所有 SVG 強制往上滑出，並完美裁切
             targetIds.forEach(id => {
                 const el = document.getElementById(id);
@@ -237,6 +266,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
     };
 
     const restoreUI = () => {
+        if (shredderRafId) cancelAnimationFrame(shredderRafId);
         editContainer.style.opacity = '0';
         btnContainer.style.opacity = '0';
         
@@ -391,6 +421,8 @@ export function startRouteEditMode(cardId, currentLineIds) {
         if (e.target.closest('.drag-handle') || e.target.closest('.delete-route-btn')) return;
         if (scrollWrapper.scrollTop > 0) return;
 
+        if (shredderRafId) cancelAnimationFrame(shredderRafId);
+
         touchStartY = e.touches[0].clientY;
         isDraggingModal = true;
         pullDelta = 0;
@@ -453,21 +485,15 @@ export function startRouteEditMode(cardId, currentLineIds) {
 
         // 走到這裡代表「未達一半就放手」，一律視為反悔，觸發 Q 彈回彈動畫
         if (pullDelta > 0) { 
-            innerCard.style.transition = `transform 0.4s ${easeBezier}, -webkit-mask-position 0.4s ${easeBezier}, mask-position 0.4s ${easeBezier}, opacity 0.3s ease`;
-            extensionCard.style.transition = `transform 0.4s ${easeBezier}`;
+            // 拔除 CSS 位移過渡，只留 opacity
+            innerCard.style.transition = `opacity 0.3s ease`;
+            extensionCard.style.transition = 'none';
 
-            // ✨ 1. 卡片本體彈回
-            innerCard.style.transform = `translateY(-${moveUpDist}px)`;
+            // 🚀 發射！啟動 JS 幀同步引擎 (從手指放開的位置 -> 彈回頂部，耗時 400ms)
+            const currentY = moveUpDist - pullDelta;
+            runShredderAnimation(currentY, moveUpDist, 400);
             
-            // 🚨 2. 就是這行！救回被遺漏的玻璃底板，讓它一起跟著彈回去！
-            extensionCard.style.transform = `translateY(-${moveUpDist}px)`;
-            
-            // ✨ 3. 遮罩彈回
-            const targetMaskPos = `0px ${moveUpDist - feather}px`;
-            innerCard.style.setProperty('-webkit-mask-position', targetMaskPos);
-            innerCard.style.setProperty('mask-position', targetMaskPos);
-            
-            // ✨ 4. 完美隱形
+            // 彈回頂部後隱形
             innerCard.style.opacity = '0';
         }
         pullDelta = 0;
