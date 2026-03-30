@@ -38,23 +38,27 @@ export function startRouteEditMode(cardId, currentLineIds) {
     const duration = '0.85s';
 
     // ==========================================
-    // 🛸 終極母艦控制：JS 強制驅動版 (無懼任何 CSS 阻擋)
+    // 🛸 終極母艦控制：包含膠囊與下方雙圓扣
     // ==========================================
-    const mainMenu = document.getElementById('action-capsule');
-    if (mainMenu) {
-        // 第一時間物理鎖死
-        mainMenu.style.setProperty('pointer-events', 'none', 'important');
-        
-        mainMenu.querySelectorAll('.capsule-btn-item').forEach(btn => {
-            // 賦予按鈕物理裁切能力，超出的東西就會被切掉！
-            btn.style.setProperty('overflow', 'hidden', 'important');
+    const targetIds = ['action-capsule', 'left-menu-btn', 'search-trigger'];
+    
+    targetIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            // 第一時間物理鎖死，絕對不給按
+            el.style.setProperty('pointer-events', 'none', 'important');
             
-            btn.querySelectorAll('svg').forEach(svg => {
-                // 準備 GPU 硬體加速
-                svg.style.setProperty('will-change', 'transform, opacity', 'important');
-            });
-        });
-    }
+            // 賦予按鈕物理裁切能力 (依據結構不同有不同的掛載點)
+            if (id === 'action-capsule') {
+                el.querySelectorAll('.capsule-btn-item').forEach(btn => btn.style.setProperty('overflow', 'hidden', 'important'));
+            } else {
+                el.style.setProperty('overflow', 'hidden', 'important');
+            }
+            
+            // 準備硬體加速
+            el.querySelectorAll('svg').forEach(svg => svg.style.setProperty('will-change', 'transform, opacity', 'important'));
+        }
+    });
 
     // 🚀 效能解鎖 2：使用雙重 requestAnimationFrame！
     requestAnimationFrame(() => {
@@ -74,15 +78,17 @@ export function startRouteEditMode(cardId, currentLineIds) {
             extensionCard.style.transition = `transform ${duration} ${easeBezier}`;
             extensionCard.style.transform = `translateY(-${moveUpDist}px)`;
 
-            // ✨ 讓母艦 SVG 強制往上滑出
-            if (mainMenu) {
-                mainMenu.querySelectorAll('svg').forEach(svg => {
-                    svg.style.setProperty('transition', `transform ${duration} ${easeBezier}, opacity 0.3s ease 0.1s`, 'important');
-                    // 🚨 核心破解：使用絕對值 -48px 避開 Safari 百分比 Bug，保證滑出按鈕外！
-                    svg.style.setProperty('transform', 'translateY(-48px)', 'important');
-                    svg.style.setProperty('opacity', '0', 'important');
-                });
-            }
+            // ✨ 讓右側所有 SVG 強制往上滑出，並完美裁切
+            targetIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.querySelectorAll('svg').forEach(svg => {
+                        svg.style.setProperty('transition', `transform ${duration} ${easeBezier}, opacity 0.3s ease 0.1s`, 'important');
+                        svg.style.setProperty('transform', 'translateY(-48px)', 'important');
+                        svg.style.setProperty('opacity', '0', 'important');
+                    });
+                }
+            });
         });
     });
 
@@ -277,19 +283,18 @@ export function startRouteEditMode(cardId, currentLineIds) {
                     extensionCard.style.transition = `transform ${duration} ${easeBezier}`;
                     extensionCard.style.transform = '';
 
-                    // ✨ 母艦 SVG 降落還原
-                    const mainMenu = document.getElementById('action-capsule');
-                    if (mainMenu) {
-                        mainMenu.querySelectorAll('svg').forEach(svg => {
-                            // 保留滑順過渡
-                            svg.style.setProperty('transition', `transform ${duration} ${easeBezier}, opacity 0.3s ease`, 'important');
-                            
-                            // 🚨 終極魔法：拔除我們剛剛強加的屬性！
-                            // 這樣 SVG 就會像變魔術一樣，平滑地恢復成它在 CSS 中原本該有的狀態（該隱藏的隱藏，該顯示的顯示），完全不會破壞你原本的設計！
-                            svg.style.removeProperty('transform');
-                            svg.style.removeProperty('opacity');
-                        });
-                    }
+                    // ✨ 右側所有 SVG 降落還原
+                    const targetIds = ['action-capsule', 'left-menu-btn', 'search-trigger'];
+                    targetIds.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.querySelectorAll('svg').forEach(svg => {
+                                svg.style.setProperty('transition', `transform ${duration} ${easeBezier}, opacity 0.3s ease`, 'important');
+                                svg.style.removeProperty('transform');
+                                svg.style.removeProperty('opacity');
+                            });
+                        }
+                    });
                 });
             });
             
@@ -327,18 +332,25 @@ export function startRouteEditMode(cardId, currentLineIds) {
                         }, 400);
                     });
                 });
-                // ✨ 徹底解除母艦鎖定與過渡殘留
-                const mainMenu = document.getElementById('action-capsule');
-                if (mainMenu) {
-                    mainMenu.style.removeProperty('pointer-events'); 
-                    mainMenu.querySelectorAll('.capsule-btn-item').forEach(btn => {
-                        btn.style.removeProperty('overflow');
-                        btn.querySelectorAll('svg').forEach(svg => {
+                // ✨ 徹底解除右側按鈕的鎖定與清理過渡殘留
+                const targetIds = ['action-capsule', 'left-menu-btn', 'search-trigger'];
+                targetIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.style.removeProperty('pointer-events'); 
+                        
+                        if (id === 'action-capsule') {
+                            el.querySelectorAll('.capsule-btn-item').forEach(btn => btn.style.removeProperty('overflow'));
+                        } else {
+                            el.style.removeProperty('overflow');
+                        }
+                        
+                        el.querySelectorAll('svg').forEach(svg => {
                             svg.style.removeProperty('transition');
                             svg.style.removeProperty('will-change');
                         });
-                    });
-                }
+                    }
+                });
             }, 850);
         }, 300);
     };
