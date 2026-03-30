@@ -78,8 +78,9 @@ export function startRouteEditMode(cardId, currentLineIds) {
             innerCard.style.setProperty('-webkit-mask-position', currentMaskPos, 'important');
             innerCard.style.setProperty('mask-position', currentMaskPos, 'important');
 
-            // ✨ 1. 時間錯位魔法：如果是關閉，讓舊內容在動畫前 40% 就「極速透明」，徹底解決殘影重疊！
-            let opacityProgress = isClosing ? (progress * 2.5) : progress;
+            // ✨ 修復 2：將透明倍率拉高到 4.5 倍！
+            // 讓舊內容在掉落的前 22% (不到 0.2 秒) 就徹底煙消雲散，絕對不留殘影！
+            let opacityProgress = isClosing ? (progress * 4.5) : progress;
             if (opacityProgress > 1) opacityProgress = 1;
             
             const currentOpacity = startOpacity + (targetOpacity - startOpacity) * opacityProgress;
@@ -305,7 +306,6 @@ export function startRouteEditMode(cardId, currentLineIds) {
         // =========================================================
         // 🚀 第一步：啟動十字交疊淡入淡出引擎 (Cross-fade Engine)
         // =========================================================
-        // ✨ 暫時卸除物理位移，來獲取最純粹的底層排版座標
         const currentEditTransform = editContainer.style.transform;
         const currentBtnTransform = btnContainer.style.transform;
         editContainer.style.transform = '';
@@ -317,27 +317,31 @@ export function startRouteEditMode(cardId, currentLineIds) {
 
         const editTop = editRect.top - scrollRect.top + scrollWrapper.scrollTop;
         const btnTop = btnRect.top - scrollRect.top + scrollWrapper.scrollTop;
+        
+        // ✨ 修復 3：精準計算 Left 座標與實際 Width，不再粗暴使用 left:0 和 100%！
+        const editLeft = editRect.left - scrollRect.left + scrollWrapper.scrollLeft;
+        const btnLeft = btnRect.left - scrollRect.left + scrollWrapper.scrollLeft;
 
         editContainer.style.transition = 'none';
         btnContainer.style.transition = 'none';
 
-        // 懸空編輯區塊
+        // 懸空編輯區塊 (精準鎖死寬度與左側距離)
         editContainer.style.position = 'absolute';
         editContainer.style.top = `${editTop}px`;
-        editContainer.style.left = '0';
-        editContainer.style.width = '100%';
+        editContainer.style.left = `${editLeft}px`; 
+        editContainer.style.width = `${editRect.width}px`; 
         editContainer.style.pointerEvents = 'none';
-        editContainer.style.transform = currentEditTransform; // ✨ 座標量完，恢復掉落位移！
+        editContainer.style.transform = currentEditTransform; 
 
-        // 懸空底部按鈕
+        // 懸空底部按鈕 (精準鎖死寬度與左側距離)
         btnContainer.style.position = 'absolute';
         btnContainer.style.top = `${btnTop}px`;
         btnContainer.style.bottom = 'auto'; 
-        btnContainer.style.left = '0';
-        btnContainer.style.width = '100%';
+        btnContainer.style.left = `${btnLeft}px`;
+        btnContainer.style.width = `${btnRect.width}px`;
         btnContainer.style.marginTop = '0';
         btnContainer.style.pointerEvents = 'none';
-        btnContainer.style.transform = currentBtnTransform; // ✨ 恢復掉落位移！
+        btnContainer.style.transform = currentBtnTransform; 
 
         // 2. 喚醒原本的清單，放入排版中，但先保持完全透明 (opacity: 0)
         originalChildren.forEach(child => {
@@ -367,9 +371,9 @@ export function startRouteEditMode(cardId, currentLineIds) {
         // 3. 強制瀏覽器重繪 (Reflow)，確認隱形與排版已生效
         void scrollWrapper.offsetHeight;
 
-        // 4. 發動原本清單的平滑淡入！(✨ 加入 0.15s 延遲，完美錯開舊內容的殘影)
+        // 4. 發動原本清單的平滑淡入！(延遲 0.2s 讓舊內容先死透，完美錯開)
         originalChildren.forEach(child => {
-            child.style.transition = 'opacity 0.4s ease-out 0.15s';
+            child.style.transition = 'opacity 0.4s ease-out 0.2s';
             child.style.opacity = '1';
         });
 
@@ -491,11 +495,16 @@ export function startRouteEditMode(cardId, currentLineIds) {
 
     scrollWrapper.appendChild(editContainer);
     scrollWrapper.appendChild(btnContainer);
-    scrollWrapper.scrollTop = 0; // 強制歸零捲動軸
+    scrollWrapper.scrollTop = 0; 
 
     void editContainer.offsetWidth;
-    editContainer.style.opacity = '1';
-    btnContainer.style.opacity = '1';
+    
+    // ✨ 修復 1：不要在一開始給 opacity: 1！保持透明，並「預先」把它推到掉落的起點。
+    // 這樣在 JS 引擎啟動前，它絕對不會在原位閃爍穿幫！
+    editContainer.style.opacity = '0';
+    btnContainer.style.opacity = '0';
+    editContainer.style.transform = `translateY(${moveUpDist}px)`;
+    btnContainer.style.transform = `translateY(${moveUpDist}px)`;
 
     // ============================================================================
     // ✋ 頂級互動：全域「1:1 跟手下拉關閉」手勢引擎 (GPU 幀同步完美版)
