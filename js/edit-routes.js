@@ -38,15 +38,30 @@ export function startRouteEditMode(cardId, currentLineIds) {
     const duration = '0.85s';
 
     // ==========================================
-    // 🛸 頂級防護：鎖死右側母艦，並觸發 CSS 拉霸動畫
+    // 🛸 頂級防護：自動貼上追蹤器、鎖死母艦，並觸發拉霸動畫
     // ==========================================
-    const mainMenu = document.getElementById('main-menu') || document.querySelector('.main-menu-container');
+    // 1. 抓出右上角那排按鈕的母艦容器
+    const mainMenu = document.getElementById('main-menu') || document.querySelector('.main-menu-container') || document.querySelector('.header-right');
+    
     if (mainMenu) {
-        // 第一時間物理鎖死，絕對不給按，杜絕所有 Bug！
+        // 2. 第一時間物理鎖死，絕對不給按
         mainMenu.style.pointerEvents = 'none'; 
+        
+        // ✨ 3. 自動尋標：把母艦裡面的 4 顆按鈕抓出來，親自為它們貼上追蹤器 Class！
+        const topButtons = mainMenu.querySelectorAll('button, div[onclick], a');
+        topButtons.forEach(btn => {
+            // 為按鈕本體貼上「裁切追蹤器」
+            btn.classList.add('mothership-btn-wrapper'); 
+            
+            // 為按鈕裡面的 SVG 貼上「動畫追蹤器」
+            const svg = btn.querySelector('svg');
+            if (svg) {
+                svg.classList.add('mothership-svg-icon'); 
+            }
+        });
     }
     
-    // ✨ 核心魔法：貼上全域標籤！CSS 會瞬間讓右側 4 顆 SVG 往上滑出邊界
+    // ✨ 4. 啟動總開關！CSS 會瞬間命中帶有追蹤器的 SVG，並把它們往上滑出
     document.body.classList.add('route-edit-active');
 
     // 🚀 效能解鎖 2：使用雙重 requestAnimationFrame！
