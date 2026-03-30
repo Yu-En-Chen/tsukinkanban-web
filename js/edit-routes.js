@@ -164,7 +164,6 @@ export function startRouteEditMode(cardId, currentLineIds) {
     // 🛠️ 第二階段：替換為編輯內容
     // ==========================================
     const originalChildren = Array.from(scrollWrapper.children);
-    originalChildren.forEach(child => child.style.display = 'none');
 
     const editContainer = document.createElement('div');
     editContainer.id = 'edit-mode-container';
@@ -493,14 +492,55 @@ export function startRouteEditMode(cardId, currentLineIds) {
         }, 300);
     }));
 
+    // =========================================================
+    // 🚀 入場十字交疊淡出引擎 (Entrance Cross-fade Engine)
+    // =========================================================
+    // 1. 量測並凍結舊清單的精準座標 (懸空化)
+    const scrollRect = scrollWrapper.getBoundingClientRect();
+    originalChildren.forEach(child => {
+        const rect = child.getBoundingClientRect();
+        const top = rect.top - scrollRect.top + scrollWrapper.scrollTop;
+        const left = rect.left - scrollRect.left + scrollWrapper.scrollLeft;
+        
+        child.style.position = 'absolute';
+        child.style.top = `${top}px`;
+        child.style.left = `${left}px`;
+        child.style.width = `${rect.width}px`;
+        child.style.pointerEvents = 'none'; // 鎖死防誤觸
+        child.style.transition = 'none';
+    });
+
+    // 2. 放入新清單
     scrollWrapper.appendChild(editContainer);
     scrollWrapper.appendChild(btnContainer);
     scrollWrapper.scrollTop = 0; 
-
-    void editContainer.offsetWidth;
     
-    // ✨ 修復 1：不要在一開始給 opacity: 1！保持透明，並「預先」把它推到掉落的起點。
-    // 這樣在 JS 引擎啟動前，它絕對不會在原位閃爍穿幫！
+    // 強制重繪
+    void scrollWrapper.offsetWidth;
+
+    // 3. 發動舊清單的優雅淡出 (在 0.4s 內化為迷霧)
+    originalChildren.forEach(child => {
+        child.style.transition = 'opacity 0.4s ease-out';
+        child.style.opacity = '0';
+    });
+
+    // 4. 400ms 後徹底清理並隱藏舊清單，把底層效能還給瀏覽器
+    setTimeout(() => {
+        originalChildren.forEach(child => {
+            child.style.display = 'none'; // 此時已經完全透明，真正隱藏絕對不會閃爍
+            child.style.position = '';
+            child.style.top = '';
+            child.style.left = '';
+            child.style.width = '';
+            child.style.opacity = '';
+            child.style.transition = '';
+            child.style.pointerEvents = '';
+        });
+    }, 400);
+
+    // =========================================================
+    // 🚀 新內容預先歸位，準備發射 JS 實體引擎
+    // =========================================================
     editContainer.style.opacity = '0';
     btnContainer.style.opacity = '0';
     editContainer.style.transform = `translateY(${moveUpDist}px)`;
