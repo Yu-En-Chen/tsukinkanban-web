@@ -38,29 +38,23 @@ export function startRouteEditMode(cardId, currentLineIds) {
     const duration = '0.85s';
 
     // ==========================================
-    // 🛸 頂級防護：自動貼上追蹤器、鎖死母艦，並觸發拉霸動畫
+    // 🛸 終極母艦控制：JS 強制驅動版 (無懼任何 CSS 阻擋)
     // ==========================================
-    // ✨ 核心修正：換成你 HTML 中真實的母艦 ID！
     const mainMenu = document.getElementById('action-capsule');
-    
     if (mainMenu) {
-        mainMenu.style.pointerEvents = 'none'; 
+        // 第一時間物理鎖死
+        mainMenu.style.setProperty('pointer-events', 'none', 'important');
         
-        // 抓出母艦裡面的按鈕
-        const topButtons = mainMenu.querySelectorAll('button');
-        topButtons.forEach(btn => {
-            btn.classList.add('mothership-btn-wrapper'); 
+        mainMenu.querySelectorAll('.capsule-btn-item').forEach(btn => {
+            // 賦予按鈕物理裁切能力，超出的東西就會被切掉！
+            btn.style.setProperty('overflow', 'hidden', 'important');
             
-            // ✨ 核心修正：因為你的按鈕裡面會切換多張 SVG，我們把它們「全部」抓出來貼標籤！
-            const svgs = btn.querySelectorAll('svg');
-            svgs.forEach(svg => {
-                svg.classList.add('mothership-svg-icon'); 
+            btn.querySelectorAll('svg').forEach(svg => {
+                // 準備 GPU 硬體加速
+                svg.style.setProperty('will-change', 'transform, opacity', 'important');
             });
         });
     }
-    
-    // ✨ 4. 啟動總開關！CSS 會瞬間命中帶有追蹤器的 SVG，並把它們往上滑出
-    document.body.classList.add('route-edit-active');
 
     // 🚀 效能解鎖 2：使用雙重 requestAnimationFrame！
     requestAnimationFrame(() => {
@@ -80,15 +74,15 @@ export function startRouteEditMode(cardId, currentLineIds) {
             extensionCard.style.transition = `transform ${duration} ${easeBezier}`;
             extensionCard.style.transform = `translateY(-${moveUpDist}px)`;
 
-            // ✨ 讓母艦的 SVG 圖示跟著主卡片一起「往上滑並淡出」
-            menuIcons.forEach(icon => {
-                icon.style.willChange = 'transform, opacity';
-                // 同步時間與曲線，稍微延遲 0.1s 淡出看起來更自然
-                icon.style.transition = `transform ${duration} ${easeBezier}, opacity 0.3s ease 0.1s`;
-                // 往上滑動 24px (大約是圖示的高度)，製造被推出邊界的錯覺
-                icon.style.transform = `translateY(-24px)`; 
-                icon.style.opacity = '0';
-            });
+            // ✨ 讓母艦 SVG 強制往上滑出
+            if (mainMenu) {
+                mainMenu.querySelectorAll('svg').forEach(svg => {
+                    svg.style.setProperty('transition', `transform ${duration} ${easeBezier}, opacity 0.3s ease 0.1s`, 'important');
+                    // 🚨 核心破解：使用絕對值 -48px 避開 Safari 百分比 Bug，保證滑出按鈕外！
+                    svg.style.setProperty('transform', 'translateY(-48px)', 'important');
+                    svg.style.setProperty('opacity', '0', 'important');
+                });
+            }
         });
     });
 
@@ -283,8 +277,19 @@ export function startRouteEditMode(cardId, currentLineIds) {
                     extensionCard.style.transition = `transform ${duration} ${easeBezier}`;
                     extensionCard.style.transform = '';
 
-                    // ✨ 撕下標籤！CSS 偵測到標籤消失，就會自動把 SVG 降落還原回來
-                    document.body.classList.remove('route-edit-active');
+                    // ✨ 母艦 SVG 降落還原
+                    const mainMenu = document.getElementById('action-capsule');
+                    if (mainMenu) {
+                        mainMenu.querySelectorAll('svg').forEach(svg => {
+                            // 保留滑順過渡
+                            svg.style.setProperty('transition', `transform ${duration} ${easeBezier}, opacity 0.3s ease`, 'important');
+                            
+                            // 🚨 終極魔法：拔除我們剛剛強加的屬性！
+                            // 這樣 SVG 就會像變魔術一樣，平滑地恢復成它在 CSS 中原本該有的狀態（該隱藏的隱藏，該顯示的顯示），完全不會破壞你原本的設計！
+                            svg.style.removeProperty('transform');
+                            svg.style.removeProperty('opacity');
+                        });
+                    }
                 });
             });
             
@@ -322,9 +327,18 @@ export function startRouteEditMode(cardId, currentLineIds) {
                         }, 400);
                     });
                 });
-                // ✨ 動畫徹底落地結束後，才把母艦的點擊權限還給使用者
-                if (mainMenu) mainMenu.style.pointerEvents = ''; 
-                
+                // ✨ 徹底解除母艦鎖定與過渡殘留
+                const mainMenu = document.getElementById('action-capsule');
+                if (mainMenu) {
+                    mainMenu.style.removeProperty('pointer-events'); 
+                    mainMenu.querySelectorAll('.capsule-btn-item').forEach(btn => {
+                        btn.style.removeProperty('overflow');
+                        btn.querySelectorAll('svg').forEach(svg => {
+                            svg.style.removeProperty('transition');
+                            svg.style.removeProperty('will-change');
+                        });
+                    });
+                }
             }, 850);
         }, 300);
     };

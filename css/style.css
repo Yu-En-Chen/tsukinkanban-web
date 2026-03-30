@@ -3263,21 +3263,3 @@ body.keyboard-active .card,
 body.keyboard-active #fixed-info-card {
     pointer-events: none !important;
 }
-
-/* ==========================================
-   🛸 右側母艦 SVG 空間過渡動畫 (絕對命中版)
-   ========================================== */
-   .mothership-btn-wrapper {
-    overflow: hidden !important; 
-    position: relative !important; 
-}
-
-.mothership-svg-icon {
-    transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease 0.1s !important;
-    will-change: transform, opacity;
-}
-
-body.route-edit-active .mothership-svg-icon {
-    transform: translateY(-150%) !important; 
-    opacity: 0 !important;
-}
