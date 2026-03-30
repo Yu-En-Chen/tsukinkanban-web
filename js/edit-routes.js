@@ -40,24 +40,22 @@ export function startRouteEditMode(cardId, currentLineIds) {
     // ==========================================
     // 🛸 頂級防護：自動貼上追蹤器、鎖死母艦，並觸發拉霸動畫
     // ==========================================
-    // 1. 抓出右上角那排按鈕的母艦容器
-    const mainMenu = document.getElementById('main-menu') || document.querySelector('.main-menu-container') || document.querySelector('.header-right');
+    // ✨ 核心修正：換成你 HTML 中真實的母艦 ID！
+    const mainMenu = document.getElementById('action-capsule');
     
     if (mainMenu) {
-        // 2. 第一時間物理鎖死，絕對不給按
         mainMenu.style.pointerEvents = 'none'; 
         
-        // ✨ 3. 自動尋標：把母艦裡面的 4 顆按鈕抓出來，親自為它們貼上追蹤器 Class！
-        const topButtons = mainMenu.querySelectorAll('button, div[onclick], a');
+        // 抓出母艦裡面的按鈕
+        const topButtons = mainMenu.querySelectorAll('button');
         topButtons.forEach(btn => {
-            // 為按鈕本體貼上「裁切追蹤器」
             btn.classList.add('mothership-btn-wrapper'); 
             
-            // 為按鈕裡面的 SVG 貼上「動畫追蹤器」
-            const svg = btn.querySelector('svg');
-            if (svg) {
+            // ✨ 核心修正：因為你的按鈕裡面會切換多張 SVG，我們把它們「全部」抓出來貼標籤！
+            const svgs = btn.querySelectorAll('svg');
+            svgs.forEach(svg => {
                 svg.classList.add('mothership-svg-icon'); 
-            }
+            });
         });
     }
     
