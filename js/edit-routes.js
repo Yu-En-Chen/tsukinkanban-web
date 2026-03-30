@@ -15,6 +15,9 @@ export function startRouteEditMode(cardId, currentLineIds) {
     const exactNewHeight = window.innerHeight - innerRect.top;
     
     const originalScrollHeight = scrollWrapper.style.height;
+    // ✨ 紀錄進入編輯模式前的精準狀態 (高度與捲動軸位置)
+    const originalScrollTop = scrollWrapper.scrollTop;
+    const origClientHeight = scrollWrapper.clientHeight;
 
     // 🚀 效能解鎖 1：只給予純 GPU 屬性的加速，【拔除對 Height 的依賴】！
     innerCard.style.willChange = 'transform, opacity, -webkit-mask-position';
@@ -217,8 +220,15 @@ export function startRouteEditMode(cardId, currentLineIds) {
             innerCard.style.WebkitBackfaceVisibility = 'hidden';
             extensionCard.style.willChange = 'transform';
             
-            // 瞬間把透明容器縮回
-            scrollWrapper.style.height = originalScrollHeight;
+            // ✨ 核心修復：在下滑期間，讓容器「往下長」抵銷位移，徹底消滅裁切斷層！
+            scrollWrapper.style.height = `${origClientHeight + moveUpDist}px`;
+            
+            // ✨ 新增細節：關閉時，觸發原生平滑捲動，讓清單優雅地洗牌回到最上方！
+            scrollWrapper.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+
             void innerCard.offsetHeight;
 
             // ✨ 核心修正 1：在下滑前瞬間恢復實體透明度 (opacity: 1)
@@ -243,6 +253,9 @@ export function startRouteEditMode(cardId, currentLineIds) {
             // 🧹 850ms 動畫結束後
             setTimeout(() => {
                 extensionCard.style.transition = '';
+                
+                // ✨ 動畫完全落地後，才把容器無縫縮回原本的尺寸 (此時底部已在螢幕外，絕對看不出破綻)
+                scrollWrapper.style.height = originalScrollHeight;
                 
                 // ✨ 完美整合：解除遮罩與陰影呼吸外擴
                 // 先將陰影設為透明，避免拔除遮罩時產生粗暴的爆閃
