@@ -25,7 +25,20 @@ export function startRouteEditMode(cardId, currentLineIds) {
     extensionCard.style.willChange = 'transform'; // 只要位移就好，不准算高度
 
     const feather = 45; 
-    innerCard.style.WebkitMaskImage = `linear-gradient(to bottom, transparent 0px, transparent 10px, black ${feather}px, black 100%)`;
+    // ✨ 核心調校：不增加 45px 總範圍，利用多節點透明度 (0.15 -> 0.5 -> 0.85) 
+    // 徹底消除線性漸層的邊緣斷層 (Mach Bands)，創造如同實體毛玻璃邊緣般的柔和消散感！
+    innerCard.style.WebkitMaskImage = `linear-gradient(to bottom, 
+        transparent 0px, 
+        transparent 2px, 
+        rgba(0,0,0,0.02) 6px,   /* 極慢起步，騙過眼睛 */
+        rgba(0,0,0,0.09) 12px, 
+        rgba(0,0,0,0.25) 18px, 
+        rgba(0,0,0,0.50) 24px,  /* 完美中點 */
+        rgba(0,0,0,0.75) 30px, 
+        rgba(0,0,0,0.91) 36px, 
+        rgba(0,0,0,0.98) 40px,  /* 極慢收尾 */
+        black ${feather}px, 
+        black 100%)`;
     innerCard.style.WebkitMaskSize = '100% 3000px'; 
     innerCard.style.WebkitMaskPosition = `0px -${feather}px`;
     innerCard.style.WebkitMaskRepeat = 'no-repeat';
