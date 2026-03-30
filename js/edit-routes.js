@@ -97,6 +97,17 @@ export function startRouteEditMode(cardId, currentLineIds) {
                 // 🚨 點擊開啟時：清除所有多餘位移！讓新內容乖乖待在卡片裡，跟著卡片 1:1 原速往上爬升
                 editContainer.style.transform = '';
                 btnContainer.style.transform = '';
+
+                // ✨ [新增] 尾巴消除魔法 (只針對開啟動畫)：綁定 Y 軸物理座標
+                // 設定在抵達終點前 (行程的 60% 處) 開始連動淡化
+                const fadeStartDistance = targetY * 0.6; 
+                if (currentY > fadeStartDistance) {
+                    // 隨座標逼近終點，透明度從 1 精準滑落到 0
+                    const tailOpacity = 1 - ((currentY - fadeStartDistance) / (targetY - fadeStartDistance));
+                    innerCard.style.opacity = Math.max(0, tailOpacity).toString();
+                } else {
+                    innerCard.style.opacity = '1';
+                }
             }
 
             if (progress < 1) {
