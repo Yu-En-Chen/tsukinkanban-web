@@ -1266,6 +1266,9 @@ function initOverlayGestures() {
     detailOverlay.ontouchstart = e => {
         if (isAnimating || !activeCardId) return;
 
+        // 🚨 多點觸控防護 1：如果一開始就有兩根以上手指碰到螢幕，直接拒絕啟動手勢！
+        if (e.touches.length > 1) return;
+
         defaultIcons = document.querySelectorAll('#action-capsule .icon-default, #search-trigger .icon-default');
         hiddenIcons = document.querySelectorAll('#action-capsule .icon-hidden, #search-trigger .icon-hidden');
 
@@ -1301,16 +1304,44 @@ function initOverlayGestures() {
     detailOverlay.ontouchmove = e => {
         if (isAnimating || !activeCardId) return;
 
-        // ✨ 核心防護盾：如果手指不是點在主卡片上，我們這裡「什麼都不做」！
-        // 直接放行讓 CSS 原生的 overflow-y: auto 去處理內部捲動，極度滑順且零衝突！
-        if (!isClosingGestureAllowed) {
-            return; 
+        // 🚨 多點觸控防護 2：滑動到一半時，如果偵測到第二根手指
+        if (e.touches.length > 1) {
+            // 1. 強制沒收手勢控制權，停止跟隨手指
+            isClosingGestureAllowed = false;
+
+            // 2. 🚀 發射回彈引擎：套用原生彈簧動畫，讓卡片從半空中順滑彈回原位
+            detailContainer.style.transition = 'transform 0.55s var(--spring-release)';
+            detailContainer.style.transform = 'translate3d(0, 0, 0)';
+
+            // 3. 復原周邊的 UI 元素 (叉叉、文字、頂部膠囊圖示)
+            if (dismissIcon) {
+                dismissIcon.style.transition = 'opacity 0.3s ease';
+                dismissIcon.style.opacity = '1';
+            }
+
+            extraElements.forEach(el => {
+                el.style.transition = 'opacity 0.3s ease';
+                el.style.opacity = '1';
+            });
+
+            defaultIcons.forEach(icon => {
+                icon.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
+                icon.style.removeProperty('transform');
+                icon.style.removeProperty('opacity');
+            });
+            hiddenIcons.forEach(icon => {
+                icon.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
+                icon.style.removeProperty('transform');
+                icon.style.removeProperty('opacity');
+            });
+
+            return; // 終止這次的 touchmove
         }
 
         const rawMoveY = e.touches[0].pageY - overlayStartY;
 
         if (rawMoveY > 0) {
-            if (rawMoveY > 10 && e.cancelable) e.preventDefault(); // 阻止網頁的橡皮筋回彈
+            if (rawMoveY > 10 && e.cancelable) e.preventDefault(); 
             const resistedY = rawMoveY * 0.5;
             
             detailContainer.style.transform = `translate3d(0, ${resistedY}px, 0)`;
