@@ -137,7 +137,6 @@ export function startRouteEditMode(cardId, currentLineIds) {
                 el.style.setProperty('overflow', 'hidden', 'important');
             }
             
-            // ✨ 核心修正 1：改為 translate，保護原本的 transform！
             el.querySelectorAll('svg').forEach(svg => svg.style.setProperty('will-change', 'translate, opacity', 'important'));
         }
     });
@@ -145,16 +144,13 @@ export function startRouteEditMode(cardId, currentLineIds) {
     // 🚀 效能解鎖 2：使用雙重 requestAnimationFrame！
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-            // 🚨 請把這裡原本寫的 innerCard.style.transition... 等等全部刪除
-            // 🚨 請務必把這行刪除：runShredderAnimation(0, moveUpDist, 850); 
-            // (因為我們已經在上面 400ms 的 setTimeout 裡面發射過了！)
-
-            // ✨ 這個 RAF 裡面「只保留」右側母艦 SVG 的動畫：
             targetIds.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
                     el.querySelectorAll('svg').forEach(svg => {
-                        svg.style.setProperty('transition', `translate ${duration} ${easeBezier}, opacity 0.3s ease 0.1s`, 'important');
+                        // ✨ 完美同步魔法：將時間(0.85s)與曲線(cubic-bezier)完全對齊 JS 實體引擎！
+                        // 讓位移與透明度都與卡片上升的時間一模一樣 (0.85s)
+                        svg.style.setProperty('transition', `translate 0.85s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1)`, 'important');
                         svg.style.setProperty('translate', '0px -48px', 'important');
                         svg.style.setProperty('opacity', '0', 'important');
                     });
