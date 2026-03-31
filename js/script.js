@@ -1263,64 +1263,23 @@ function initOverlayGestures() {
     let defaultIcons = document.querySelectorAll('#action-capsule .icon-default, #search-trigger .icon-default');
     let hiddenIcons = document.querySelectorAll('#action-capsule .icon-hidden, #search-trigger .icon-hidden');
 
-    // ==========================================
-    // ✋ 詳情面板下拉手勢引擎 (多點觸控防護版)
-    // ==========================================
     detailOverlay.ontouchstart = e => {
         if (isAnimating || !activeCardId) return;
 
         defaultIcons = document.querySelectorAll('#action-capsule .icon-default, #search-trigger .icon-default');
         hiddenIcons = document.querySelectorAll('#action-capsule .icon-hidden, #search-trigger .icon-hidden');
 
-        // 🚨 多點觸控防護 1：在滑動途中，有第二根手指按下來（例如去按底下的按鈕）
-        if (e.touches.length > 1) {
-            if (isClosingGestureAllowed) {
-                // 1. 吊銷滑動憑證
-                isClosingGestureAllowed = false;
-                
-                // 2. 🚀 發射回彈引擎
-                detailContainer.style.transition = 'transform 0.55s var(--spring-release)';
-                detailContainer.style.transform = 'translate3d(0, 0, 0)';
-
-                if (dismissIcon) {
-                    dismissIcon.style.transition = 'opacity 0.3s ease';
-                    dismissIcon.style.opacity = '1';
-                }
-                extraElements.forEach(el => {
-                    el.style.transition = 'opacity 0.3s ease';
-                    el.style.opacity = '1';
-                });
-                defaultIcons.forEach(icon => {
-                    icon.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
-                    icon.style.removeProperty('transform');
-                    icon.style.removeProperty('opacity');
-                });
-                hiddenIcons.forEach(icon => {
-                    icon.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
-                    icon.style.removeProperty('transform');
-                    icon.style.removeProperty('opacity');
-                });
-
-                // 3. 提前歸還底下延伸面板的點擊權限
-                const extension = detailContainer.querySelector('.detail-extension-card');
-                if (extension) extension.style.removeProperty('pointer-events');
-            }
-            return;
-        }
-
         overlayStartY = e.touches[0].pageY;
         
-        // ✨ 終極劃清界線邏輯
+        // ✨ 終極劃清界線邏輯：
+        // 判斷手指按下去的瞬間，是不是點在「主卡片 (.detail-card-inner)」上？
         const targetElement = e.target;
         const isClickingInnerCard = targetElement.closest('.detail-card-inner');
         
         if (isClickingInnerCard) {
+            // 👉 點在主卡片上：允許觸發下拉關閉動畫！
             isClosingGestureAllowed = true;
             detailContainer.style.transition = 'none';
-
-            // 🛡️ 物理盾：手指一按在主卡片上，立刻剝奪底下按鈕的點擊權限！
-            const extension = detailContainer.querySelector('.detail-extension-card');
-            if (extension) extension.style.pointerEvents = 'none';
 
             if (dismissIcon) {
                 dismissIcon.style.transition = 'none';
@@ -1334,132 +1293,11 @@ function initOverlayGestures() {
             }
             extraElements.forEach(el => el.style.transition = 'none');
         } else {
-            // 👉 點在實心玻璃面板上：封印關閉動畫，允許正常捲動
+            // 👉 點在實心玻璃面板上：封印關閉動畫，準備讓它自己捲動！
             isClosingGestureAllowed = false; 
         }
     };
 
-    detailOverlay.ontouchmove = e => {
-        if (isAnimating || !activeCardId) return;
-
-        // 🚨 多點觸控防護 2：滑動途中偵測到第二根手指亂入
-        if (e.touches.length > 1) {
-            if (isClosingGestureAllowed) {
-                isClosingGestureAllowed = false;
-
-                detailContainer.style.transition = 'transform 0.55s var(--spring-release)';
-                detailContainer.style.transform = 'translate3d(0, 0, 0)';
-
-                if (dismissIcon) {
-                    dismissIcon.style.transition = 'opacity 0.3s ease';
-                    dismissIcon.style.opacity = '1';
-                }
-
-                extraElements.forEach(el => {
-                    el.style.transition = 'opacity 0.3s ease';
-                    el.style.opacity = '1';
-                });
-
-                defaultIcons.forEach(icon => {
-                    icon.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
-                    icon.style.removeProperty('transform');
-                    icon.style.removeProperty('opacity');
-                });
-                hiddenIcons.forEach(icon => {
-                    icon.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
-                    icon.style.removeProperty('transform');
-                    icon.style.removeProperty('opacity');
-                });
-
-                const extension = detailContainer.querySelector('.detail-extension-card');
-                if (extension) extension.style.removeProperty('pointer-events');
-            }
-            return;
-        }
-
-        // 🛡️ 擋下幽靈接續：如果已經被宣告不允許關閉，絕對不執行下方位移！
-        if (!isClosingGestureAllowed) return;
-
-        const rawMoveY = e.touches[0].pageY - overlayStartY;
-
-        if (rawMoveY > 0) {
-            if (rawMoveY > 10 && e.cancelable) e.preventDefault(); 
-            const resistedY = rawMoveY * 0.5;
-            
-            detailContainer.style.transform = `translate3d(0, ${resistedY}px, 0)`;
-
-            if (dismissIcon) dismissIcon.style.opacity = Math.max(0, 1 - (rawMoveY / 150));
-
-            const progress = Math.min(rawMoveY / 200, 1);
-            defaultIcons.forEach(icon => {
-                icon.style.setProperty('transform', `translateY(${-120 + (120 * progress)}%)`, 'important');
-                icon.style.setProperty('opacity', `${0.8 * progress}`, 'important');
-            });
-            hiddenIcons.forEach(icon => {
-                icon.style.setProperty('transform', `translateY(${120 * progress}%)`, 'important');
-                icon.style.setProperty('opacity', `${0.8 - (0.8 * progress)}`, 'important');
-            });
-
-            let textOpacity = 1;
-            if (rawMoveY > 100) {
-                textOpacity = Math.max(0, 1 - ((rawMoveY - 100) / 100));
-            }
-            extraElements.forEach(el => el.style.opacity = textOpacity);
-
-            // 拉超過 200px 關閉卡片
-            if (rawMoveY > 200) {
-                isClosingGestureAllowed = false; // 觸發關閉時也強制拔除憑證
-                closeAllCards(false);
-            }
-        }
-    };
-
-    // ✨ 將 touchend 與 touchcancel 統整，確保系統干擾時依然能安全落地
-    const handleTouchEnd = e => {
-        // 如果原本就不允許關閉（例如是在玻璃面板正常滑動，或是剛才被多指中斷），直接無視
-        if (isAnimating || !activeCardId || !isClosingGestureAllowed) return;
-
-        // 🛡️ 標記手勢結束，防止幽靈殘留
-        isClosingGestureAllowed = false;
-
-        defaultIcons.forEach(icon => {
-            icon.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
-            icon.style.removeProperty('transform');
-            icon.style.removeProperty('opacity');
-        });
-        hiddenIcons.forEach(icon => {
-            icon.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
-            icon.style.removeProperty('transform');
-            icon.style.removeProperty('opacity');
-        });
-
-        // 🛡️ 放開手指後，延遲 100ms 再把底下按鈕的點擊權限還給使用者 (避開系統的幽靈 Click 事件)
-        const extension = detailContainer.querySelector('.detail-extension-card');
-        if (extension) {
-            setTimeout(() => {
-                extension.style.removeProperty('pointer-events');
-            }, 100);
-        }
-
-        if (!detailOverlay.classList.contains('active')) return;
-
-        // 沒拉到底，彈回原位
-        detailContainer.style.transition = 'transform 0.55s var(--spring-release)';
-        detailContainer.style.transform = 'translate3d(0, 0, 0)';
-
-        if (dismissIcon) {
-            dismissIcon.style.transition = 'opacity 0.3s ease';
-            dismissIcon.style.opacity = '1';
-        }
-
-        extraElements.forEach(el => {
-            el.style.transition = 'opacity 0.3s ease';
-            el.style.opacity = '1';
-        });
-    };
-
-    detailOverlay.ontouchend = handleTouchEnd;
-    detailOverlay.ontouchcancel = handleTouchEnd; // 加入系統強制中斷防呆
     detailOverlay.ontouchmove = e => {
         if (isAnimating || !activeCardId) return;
 
