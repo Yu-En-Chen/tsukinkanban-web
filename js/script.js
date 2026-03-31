@@ -1263,22 +1263,26 @@ function initOverlayGestures() {
     let defaultIcons = document.querySelectorAll('#action-capsule .icon-default, #search-trigger .icon-default');
     let hiddenIcons = document.querySelectorAll('#action-capsule .icon-hidden, #search-trigger .icon-hidden');
 
+    // =====================================================================
+    // ✋ 從這裡開始貼上：詳情面板下拉手勢引擎 (純 JS 狀態機多點防護版)
+    // =====================================================================
     detailOverlay.ontouchstart = e => {
         if (isAnimating || !activeCardId) return;
+
+        // 🚨 多點觸控防護 1：起手式如果就兩指，直接拒絕啟動手勢
+        if (e.touches.length > 1) return;
 
         defaultIcons = document.querySelectorAll('#action-capsule .icon-default, #search-trigger .icon-default');
         hiddenIcons = document.querySelectorAll('#action-capsule .icon-hidden, #search-trigger .icon-hidden');
 
         overlayStartY = e.touches[0].pageY;
         
-        // ✨ 終極劃清界線邏輯：
-        // 判斷手指按下去的瞬間，是不是點在「主卡片 (.detail-card-inner)」上？
+        // ✨ 終極劃清界線邏輯：判斷是否點在主卡片上
         const targetElement = e.target;
         const isClickingInnerCard = targetElement.closest('.detail-card-inner');
         
         if (isClickingInnerCard) {
-            // 👉 點在主卡片上：允許觸發下拉關閉動畫！
-            isClosingGestureAllowed = true;
+            isClosingGestureAllowed = true; // 發放滑動憑證
             detailContainer.style.transition = 'none';
 
             if (dismissIcon) {
@@ -1293,7 +1297,7 @@ function initOverlayGestures() {
             }
             extraElements.forEach(el => el.style.transition = 'none');
         } else {
-            // 👉 點在實心玻璃面板上：封印關閉動畫，準備讓它自己捲動！
+            // 👉 點在下方玻璃面板或按鈕上：拒絕發放憑證，交給系統原生滾動與點擊
             isClosingGestureAllowed = false; 
         }
     };
@@ -1301,16 +1305,45 @@ function initOverlayGestures() {
     detailOverlay.ontouchmove = e => {
         if (isAnimating || !activeCardId) return;
 
-        // ✨ 核心防護盾：如果手指不是點在主卡片上，我們這裡「什麼都不做」！
-        // 直接放行讓 CSS 原生的 overflow-y: auto 去處理內部捲動，極度滑順且零衝突！
-        if (!isClosingGestureAllowed) {
-            return; 
+        // 🚨 多點觸控防護 2：滑動途中，偵測到第二根手指亂入 (例如去按下方按鈕)
+        if (e.touches.length > 1) {
+            // 如果原本正在滑動中，強制中斷並回彈
+            if (isClosingGestureAllowed) {
+                isClosingGestureAllowed = false; // 🛑 立刻吊銷滑動憑證！
+
+                // 🚀 發射回彈引擎
+                detailContainer.style.transition = 'transform 0.55s var(--spring-release)';
+                detailContainer.style.transform = 'translate3d(0, 0, 0)';
+
+                if (dismissIcon) {
+                    dismissIcon.style.transition = 'opacity 0.3s ease';
+                    dismissIcon.style.opacity = '1';
+                }
+                extraElements.forEach(el => {
+                    el.style.transition = 'opacity 0.3s ease';
+                    el.style.opacity = '1';
+                });
+                defaultIcons.forEach(icon => {
+                    icon.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
+                    icon.style.removeProperty('transform');
+                    icon.style.removeProperty('opacity');
+                });
+                hiddenIcons.forEach(icon => {
+                    icon.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
+                    icon.style.removeProperty('transform');
+                    icon.style.removeProperty('opacity');
+                });
+            }
+            return;
         }
+
+        // 🛡️ 擋下幽靈接續：如果已經被吊銷憑證，絕對不執行下方位移！
+        if (!isClosingGestureAllowed) return;
 
         const rawMoveY = e.touches[0].pageY - overlayStartY;
 
         if (rawMoveY > 0) {
-            if (rawMoveY > 10 && e.cancelable) e.preventDefault(); // 阻止網頁的橡皮筋回彈
+            if (rawMoveY > 10 && e.cancelable) e.preventDefault(); 
             const resistedY = rawMoveY * 0.5;
             
             detailContainer.style.transform = `translate3d(0, ${resistedY}px, 0)`;
@@ -1334,13 +1367,20 @@ function initOverlayGestures() {
             extraElements.forEach(el => el.style.opacity = textOpacity);
 
             // 拉超過 200px 關閉卡片
-            if (rawMoveY > 200) closeAllCards(false);
+            if (rawMoveY > 200) {
+                isClosingGestureAllowed = false; // 觸發關閉時也強制吊銷
+                closeAllCards(false);
+            }
         }
     };
 
-    detailOverlay.ontouchend = e => {
-        // 如果原本就不允許關閉（例如是在玻璃面板滑動），就不用做復原動畫
+    // ✨ 將 touchend 與系統強制中斷 (touchcancel) 統整處理
+    const handleTouchEnd = e => {
+        // 如果原本就不允許關閉（例如已經被多指中斷），直接無視，不執行任何干擾
         if (isAnimating || !activeCardId || !isClosingGestureAllowed) return;
+
+        // 🛡️ 標記手勢正式結束
+        isClosingGestureAllowed = false;
 
         defaultIcons.forEach(icon => {
             icon.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
@@ -1370,6 +1410,9 @@ function initOverlayGestures() {
         });
     };
 
+    detailOverlay.ontouchend = handleTouchEnd;
+    detailOverlay.ontouchcancel = handleTouchEnd;
+   
     // 電腦版滑鼠滾輪邏輯（一樣套用劃清界線法）
     let overlayWheelSum = 0;
     let overlayWheelTimer;
