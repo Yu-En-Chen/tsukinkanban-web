@@ -496,51 +496,67 @@ export function startRouteEditMode(cardId, currentLineIds) {
     }));
 
     // =========================================================
-    // 🚀 入場十字交疊淡出引擎 (Entrance Cross-fade Engine)
+    // 🚀 入場十字交疊淡出引擎 (Entrance Cross-fade Engine - 完美克隆凍結版)
     // =========================================================
-    // 1. 量測並凍結舊清單的精準座標 (懸空化)
-    const scrollRect = scrollWrapper.getBoundingClientRect();
+    
+    // ✨ 1. 記錄當前的捲動位置
+    const currentScrollTop = scrollWrapper.scrollTop;
+
+    // ✨ 2. 建立 Ghost 容器 (幽靈圖層)
+    // 為了防止內容被放大或走位，我們必須「精準繼承」原容器的排版屬性 (包含 Padding 與 Gap)
+    const wrapperStyle = getComputedStyle(scrollWrapper);
+    const ghostContainer = document.createElement('div');
+    ghostContainer.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        box-sizing: border-box;
+        padding: ${wrapperStyle.padding};
+        display: ${wrapperStyle.display};
+        flex-direction: ${wrapperStyle.flexDirection || 'column'};
+        gap: ${wrapperStyle.gap || '0px'};
+        pointer-events: none;
+        z-index: 10;
+        transition: opacity 0.3s ease-out;
+        transform: translateY(-${currentScrollTop}px);
+    `;
+
+    // ✨ 3. 將真正的內容「拍照 (Clone)」並放入 Ghost 中
     originalChildren.forEach(child => {
-        const rect = child.getBoundingClientRect();
+        // 使用 cloneNode(true) 進行深拷貝，製作視覺替身
+        const clone = child.cloneNode(true);
+        // 保留原本可能存在的 inline margin
+        clone.style.margin = child.style.margin || getComputedStyle(child).margin;
+        ghostContainer.appendChild(clone);
         
-        // ✨ 核心修復 1：消除跳動重疊！
-        // 因為下一秒會把 scrollTop 歸零，所以這裡的 top 只需「視覺上的相對距離」即可！
-        const top = rect.top - scrollRect.top;
-        const left = rect.left - scrollRect.left;
-        
-        child.style.position = 'absolute';
-        child.style.top = `${top}px`;
-        child.style.left = `${left}px`;
-        child.style.width = `${rect.width}px`;
-        child.style.pointerEvents = 'none'; // 鎖死防誤觸
-        child.style.transition = 'none';
-        child.style.margin = '0'; // ✨ 防止 margin 造成二次位移
+        // 🚨 解決空白問題的關鍵：
+        // 真正的子節點我們「絕對不拔除」，只是把它們藏起來 (display: none)
+        // 這樣關閉 (restoreUI) 的時候，才能找得到它們並喚醒！
+        child.style.display = 'none';
     });
 
-    // 2. 放入新清單
-    scrollWrapper.appendChild(editContainer);
-    scrollWrapper.appendChild(btnContainer);
-    
-    // ✨ 此時將捲動軸歸零，因為舊內容已精準鎖定相對視覺座標，絕對不會跳動！
-    scrollWrapper.scrollTop = 0; 
-    
-    // 強制重繪
-    void scrollWrapper.offsetWidth;
-
-    // 3. 發動舊清單的優雅淡出 (加速到 0.3s)
-    originalChildren.forEach(child => {
-        child.style.transition = 'opacity 0.3s ease-out';
-        child.style.opacity = '0';
-    });
-
-    // =========================================================
-    // 🚀 新內容預先歸位
-    // =========================================================
+    // ✨ 4. 準備新內容 (編輯介面)
     editContainer.style.opacity = '0';
     btnContainer.style.opacity = '0';
-    editContainer.style.transform = ''; 
-    btnContainer.style.transform = '';
+    
+    // 將 替身(Ghost) 與 新內容 放進容器
+    scrollWrapper.appendChild(ghostContainer);
+    scrollWrapper.appendChild(editContainer);
+    scrollWrapper.appendChild(btnContainer);
 
+    // ✨ 5. 安心歸零捲動軸 (因為替身已經透過 translateY 完美抵銷了高度)
+    scrollWrapper.scrollTop = 0;
+
+    // 強制瀏覽器重繪
+    void scrollWrapper.offsetWidth;
+
+    // ✨ 6. 發動替身淡出
+    ghostContainer.style.opacity = '0';
+
+    // =========================================================
+    // 🚀 新內容預先歸位與發射
+    // =========================================================
     innerCard.style.transition = 'none';
     extensionCard.style.transition = 'none';
     innerCard.style.pointerEvents = 'none';
@@ -551,24 +567,13 @@ export function startRouteEditMode(cardId, currentLineIds) {
     const initialMaskPos = `0px -${feather}px`;
     innerCard.style.setProperty('-webkit-mask-position', initialMaskPos, 'important');
     innerCard.style.setProperty('mask-position', initialMaskPos, 'important');
-
-    // ✨ 核心修復 2：消除停頓！
-    // 拔除原本的 setTimeout 400ms，直接與舊內容淡出「同時發射」上升與淡入引擎！
+    
+    // 發射！啟動新內容上升引擎！
     runShredderAnimation(0, moveUpDist, 850);
 
-    // 4. 300ms 後徹底清理並隱藏舊清單 (此時它已經完全化為透明，清掉確保 DOM 乾淨)
+    // ✨ 7. 300ms 後，徹底清除替身節點 (保持 DOM 乾淨，真正的內容依然安全地沉睡在 DOM 裡)
     setTimeout(() => {
-        originalChildren.forEach(child => {
-            child.style.display = 'none'; 
-            child.style.position = '';
-            child.style.top = '';
-            child.style.left = '';
-            child.style.width = '';
-            child.style.margin = '';
-            child.style.opacity = '';
-            child.style.transition = '';
-            child.style.pointerEvents = '';
-        });
+        if (ghostContainer) ghostContainer.remove();
     }, 300);
     
     // ============================================================================
