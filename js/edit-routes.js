@@ -625,6 +625,9 @@ export function startRouteEditMode(cardId, currentLineIds) {
         // 🚨 手勢防護：動畫中禁止發動下拉！
         if (isEditRouteAnimating) return;
 
+        // 🚨 多點觸控防護 1：如果一開始就有兩根以上手指碰到螢幕，直接拒絕啟動手勢！
+        if (e.touches.length > 1) return;
+
         if (e.target.closest('.drag-handle') || e.target.closest('.delete-route-btn')) return;
         if (scrollWrapper.scrollTop > 0) return;
 
@@ -644,8 +647,28 @@ export function startRouteEditMode(cardId, currentLineIds) {
     }, { passive: true });
 
     scrollWrapper.addEventListener('touchmove', (e) => {
-        // ... (這裡維持你原本的 touchmove 邏輯，完全不用動) ...
         if (!isDraggingModal) return;
+
+        // 🚨 多點觸控防護 2：滑動到一半時，如果偵測到第二根手指（例如試圖去按保存）
+        if (e.touches.length > 1) {
+            // 1. 強制沒收手勢控制權
+            isDraggingModal = false;
+
+            // 2. 提前把按鈕的點擊能力還給系統
+            if (btnContainer) btnContainer.style.removeProperty('pointer-events');
+
+            // 3. 🚀 發射回彈引擎：從當下卡在半空中的位置，順滑彈回頂部！
+            innerCard.style.transition = `opacity 0.3s ease`;
+            extensionCard.style.transition = 'none';
+            const currentY = moveUpDist - pullDelta;
+            runShredderAnimation(currentY, moveUpDist, 400);
+            
+            // 4. 恢復透明度與數值歸零
+            innerCard.style.opacity = '0';
+            pullDelta = 0;
+            return; 
+        }
+
         const touchY = e.touches[0].clientY;
         const deltaY = touchY - touchStartY;
 
