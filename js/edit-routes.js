@@ -502,8 +502,11 @@ export function startRouteEditMode(cardId, currentLineIds) {
     const scrollRect = scrollWrapper.getBoundingClientRect();
     originalChildren.forEach(child => {
         const rect = child.getBoundingClientRect();
-        const top = rect.top - scrollRect.top + scrollWrapper.scrollTop;
-        const left = rect.left - scrollRect.left + scrollWrapper.scrollLeft;
+        
+        // ✨ 核心修復 1：消除跳動重疊！
+        // 因為下一秒會把 scrollTop 歸零，所以這裡的 top 只需「視覺上的相對距離」即可！
+        const top = rect.top - scrollRect.top;
+        const left = rect.left - scrollRect.left;
         
         child.style.position = 'absolute';
         child.style.top = `${top}px`;
@@ -511,44 +514,28 @@ export function startRouteEditMode(cardId, currentLineIds) {
         child.style.width = `${rect.width}px`;
         child.style.pointerEvents = 'none'; // 鎖死防誤觸
         child.style.transition = 'none';
+        child.style.margin = '0'; // ✨ 防止 margin 造成二次位移
     });
 
     // 2. 放入新清單
     scrollWrapper.appendChild(editContainer);
     scrollWrapper.appendChild(btnContainer);
+    
+    // ✨ 此時將捲動軸歸零，因為舊內容已精準鎖定相對視覺座標，絕對不會跳動！
     scrollWrapper.scrollTop = 0; 
     
     // 強制重繪
     void scrollWrapper.offsetWidth;
 
-    // 3. 發動舊清單的優雅淡出 (在 0.4s 內化為迷霧)
+    // 3. 發動舊清單的優雅淡出 (加速到 0.3s)
     originalChildren.forEach(child => {
-        child.style.transition = 'opacity 0.4s ease-out';
+        child.style.transition = 'opacity 0.3s ease-out';
         child.style.opacity = '0';
     });
 
-    // 4. 400ms 後徹底清理並隱藏舊清單
-    setTimeout(() => {
-        originalChildren.forEach(child => {
-            child.style.display = 'none'; 
-            child.style.position = '';
-            child.style.top = '';
-            child.style.left = '';
-            child.style.width = '';
-            child.style.opacity = '';
-            child.style.transition = '';
-            child.style.pointerEvents = '';
-        });
-        
-        // ✨ 核心修復：把發射按鈕移進來！
-        // 確保 400ms 過去、舊資訊完全化為透明死透後，才正式啟動新內容的往上爬升！
-        runShredderAnimation(0, moveUpDist, 850);
-    }, 400);
-
     // =========================================================
-    // 🚀 新內容預先歸位 (在終點正下方的黑暗中靜靜等待)
+    // 🚀 新內容預先歸位
     // =========================================================
-    // 1. 拔除暴衝的 translateY，只保持透明，讓它預設待在卡片的底部
     editContainer.style.opacity = '0';
     btnContainer.style.opacity = '0';
     editContainer.style.transform = ''; 
@@ -559,13 +546,30 @@ export function startRouteEditMode(cardId, currentLineIds) {
     innerCard.style.pointerEvents = 'none';
     innerCard.style.opacity = '1';
 
-    // 2. ✨ 鎖定卡片與遮罩的「等待期狀態」
-    // 因為我們要等 400ms，必須先鎖死卡片位置，防止在等待期間畫面被提前向下撐破！
     innerCard.style.transform = `translateY(0px)`;
     extensionCard.style.transform = `translateY(0px)`;
     const initialMaskPos = `0px -${feather}px`;
     innerCard.style.setProperty('-webkit-mask-position', initialMaskPos, 'important');
     innerCard.style.setProperty('mask-position', initialMaskPos, 'important');
+
+    // ✨ 核心修復 2：消除停頓！
+    // 拔除原本的 setTimeout 400ms，直接與舊內容淡出「同時發射」上升與淡入引擎！
+    runShredderAnimation(0, moveUpDist, 850);
+
+    // 4. 300ms 後徹底清理並隱藏舊清單 (此時它已經完全化為透明，清掉確保 DOM 乾淨)
+    setTimeout(() => {
+        originalChildren.forEach(child => {
+            child.style.display = 'none'; 
+            child.style.position = '';
+            child.style.top = '';
+            child.style.left = '';
+            child.style.width = '';
+            child.style.margin = '';
+            child.style.opacity = '';
+            child.style.transition = '';
+            child.style.pointerEvents = '';
+        });
+    }, 300);
     
     // ============================================================================
     // ✋ 頂級互動：全域「1:1 跟手下拉關閉」手勢引擎 (GPU 幀同步完美版)
