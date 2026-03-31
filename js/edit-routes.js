@@ -1,11 +1,36 @@
 import * as db from '../data/db.js';
 
+// 🛡️ 絕對防禦：全域狀態鎖與計時器 (必須在所有 function 外面！)
+let isEditRouteAnimating = false;
+let editLockTimer = null;
+
 export function startRouteEditMode(cardId, currentLineIds) {
+
+    // 🚨 1. 第一層防呆：如果動畫還在跑，立刻擋掉第二次點擊！
+    if (isEditRouteAnimating) {
+        console.log('動畫進行中，阻擋重複開啟');
+        return;
+    }
+
     const innerCard = document.querySelector('#detail-card-container .detail-card-inner');
     const extensionCard = document.querySelector('#detail-card-container .detail-extension-card');
     const scrollWrapper = document.getElementById('card-extension-container');
 
     if (!innerCard || !extensionCard || !scrollWrapper) return;
+
+    // 🔒 2. 上鎖：標記進場動畫開始
+    isEditRouteAnimating = true;
+
+    // 🛡️ 3. 物理盾：瞬間剝奪整個區域的點擊能力，防止連點按鈕
+    scrollWrapper.style.pointerEvents = 'none';
+
+    // 🔓 4. 解鎖計時器：900ms 後準時解開防護罩
+    if (editLockTimer) clearTimeout(editLockTimer);
+    editLockTimer = setTimeout(() => {
+        isEditRouteAnimating = false;
+        // ✨ 改用 removeProperty，避免覆蓋你原本的 CSS 設定！
+        if (scrollWrapper) scrollWrapper.style.removeProperty('pointer-events');
+    }, 900);
 
     // ==========================================
     // 🎬 第一階段：沈浸式過渡動畫 (純 GPU 零卡頓極致版)
@@ -294,6 +319,16 @@ export function startRouteEditMode(cardId, currentLineIds) {
 
     // 加上 options 參數
     const restoreUI = (options = {}) => {
+
+        // 🚨 1. 退場防護：如果在進場中、或已經在退場中，絕對不允許觸發！
+        if (isEditRouteAnimating) return;
+
+        // 🔒 2. 關閉時也上鎖
+        isEditRouteAnimating = true;
+
+        // 🛡️ 3. 退場瞬間，再次沒收點擊權限，防止消散過程被誤觸
+        scrollWrapper.style.pointerEvents = 'none';
+
         const isSeamless = options.isSeamless || false;
 
         // 🛑 只有「非手勢」的按鈕關閉時，才需要強制煞停 JS 引擎
@@ -474,12 +509,18 @@ export function startRouteEditMode(cardId, currentLineIds) {
                     });
                 }
             });
-        }, 850);
+         // 🔓 4. 徹底清理完畢後解鎖
+            isEditRouteAnimating = false;
+            if (scrollWrapper) scrollWrapper.style.removeProperty('pointer-events');
+
+        }, 850); 
     };
 
     btnContainer.appendChild(createBtn(iconCancel, 'キャンセル', false, restoreUI));
     btnContainer.appendChild(createBtn(iconSave, '保存', true, async () => {
-        // ✨ 保存時只抓取左欄(膠囊)的最新的順序即可，非常安全！
+        // 🚨 存檔按鈕防護：防止手指抽筋連點兩下存檔
+        if (isEditRouteAnimating) return;
+        
         const newOrder = Array.from(capsulesCol.querySelectorAll('.edit-route-item'))
             .map(item => item.getAttribute('data-line-id'));
         await db.saveCardPreference(cardId, { targetLineIds: newOrder });
@@ -581,11 +622,16 @@ export function startRouteEditMode(cardId, currentLineIds) {
     let rafTicking = false;
 
     scrollWrapper.addEventListener('touchstart', (e) => {
-        // 🛑 防呆機制：拖曳把手、刪除按鈕、或畫面已經往下滾動時，不啟動下拉
+        // 🚨 手勢防護：動畫中禁止發動下拉！
+        if (isEditRouteAnimating) return;
+
         if (e.target.closest('.drag-handle') || e.target.closest('.delete-route-btn')) return;
         if (scrollWrapper.scrollTop > 0) return;
 
         if (shredderRafId) cancelAnimationFrame(shredderRafId);
+
+        // 🛡️ 【新增防護】：下拉手勢一啟動，立刻沒收底部按鈕的點擊權限
+        if (btnContainer) btnContainer.style.pointerEvents = 'none';
 
         touchStartY = e.touches[0].clientY;
         isDraggingModal = true;
@@ -598,59 +644,37 @@ export function startRouteEditMode(cardId, currentLineIds) {
     }, { passive: true });
 
     scrollWrapper.addEventListener('touchmove', (e) => {
+        // ... (這裡維持你原本的 touchmove 邏輯，完全不用動) ...
         if (!isDraggingModal) return;
-
         const touchY = e.touches[0].clientY;
         const deltaY = touchY - touchStartY;
 
         if (deltaY > 0) {
-            if (e.cancelable) e.preventDefault(); // 阻斷原生滾動
-
+            if (e.cancelable) e.preventDefault();
             pullDelta = deltaY * 0.5;
-
-            // ✨ 終極進化：可反悔區域縮短為「總行程的一半」
             const threshold = moveUpDist / 3;
 
-            // ✨ 一旦拉超過一半，立刻沒收控制權，系統無縫接手直接關閉！
             if (pullDelta > threshold) {
                 isDraggingModal = false;
-
-                // 🚀 核心爆發：發射 JS 實體引擎！直接從指尖當下的位置，順滑重力降落到底部 (耗時約 350ms)
                 const currentY = moveUpDist - pullDelta;
                 runShredderAnimation(currentY, 0, 350);
-
-                // 呼叫退出清理，並掛上「無縫接力」的免死金牌！
                 restoreUI({ isSeamless: true });
                 return;
             }
 
-            // 🚀 核心破解：使用 requestAnimationFrame 鎖定渲染幀
             if (!rafTicking) {
                 requestAnimationFrame(() => {
-                    // 防呆保險：如果在等待 GPU 畫圖的極短瞬間，已經移交控制權了，就終止繪製避免畫面抖動
                     if (!isDraggingModal) { rafTicking = false; return; }
-
                     innerCard.style.transform = `translateY(-${moveUpDist - pullDelta}px)`;
                     extensionCard.style.transform = `translateY(-${moveUpDist - pullDelta}px)`;
-
-                    // ✨ 教授級調校：優雅的視差阻尼 (Parallax Damping)
-                    // 0.0 = 內容死死黏在卡片上，完全沒有層次感。
-                    // 0.25 = 頂級 App 的微視差感，內容物微微沉降，優雅且受控。
-                    // 1.0 = (你原本的狀態) 雙重暴衝，掉得太快。
                     const contentParallax = pullDelta * 0.22;
-
                     editContainer.style.transform = `translateY(${contentParallax}px)`;
                     btnContainer.style.transform = `translateY(${contentParallax}px)`;
-
                     const currentMaskPos = `0px ${moveUpDist - feather - pullDelta}px`;
                     innerCard.style.setProperty('-webkit-mask-position', currentMaskPos);
                     innerCard.style.setProperty('mask-position', currentMaskPos);
-
-                    // ✨ 動態透明度魔法：在前 40px 的拉動距離內，透明度從 0 滑順過渡到 1
-                    // 這樣卡片就像是從「迷霧中」被拉出來一樣，絕對不會有生硬的閃現！
                     const dynamicOpacity = Math.min(pullDelta / 40, 1);
                     innerCard.style.opacity = dynamicOpacity.toString();
-
                     rafTicking = false;
                 });
                 rafTicking = true;
@@ -662,21 +686,21 @@ export function startRouteEditMode(cardId, currentLineIds) {
         if (!isDraggingModal) return;
         isDraggingModal = false;
 
+        // 🛡️ 【新增防護】：手指放開後，延遲 100ms 再把按鈕點擊權限還給使用者
+        // 這能完美避開觸控螢幕在 touchend 瞬間所觸發的幽靈點擊 (Ghost Click) 事件
+        setTimeout(() => {
+            if (btnContainer) btnContainer.style.removeProperty('pointer-events');
+        }, 100);
+
         if (pullDelta > 90) {
-            // 💥 拉超過 90px 鬆手：同樣呼叫 JS 引擎順滑降落！
             const currentY = moveUpDist - pullDelta;
             runShredderAnimation(currentY, 0, 350);
             restoreUI({ isSeamless: true });
         } else if (pullDelta > 0) {
-            // 拔除 CSS 位移過渡，只留 opacity
             innerCard.style.transition = `opacity 0.3s ease`;
             extensionCard.style.transition = 'none';
-
-            // 🚀 發射！啟動 JS 幀同步引擎 (從手指放開的位置 -> 彈回頂部，耗時 400ms)
             const currentY = moveUpDist - pullDelta;
             runShredderAnimation(currentY, moveUpDist, 400);
-
-            // 彈回頂部後隱形
             innerCard.style.opacity = '0';
         }
         pullDelta = 0;
