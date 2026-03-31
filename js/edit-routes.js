@@ -606,10 +606,10 @@ export function startRouteEditMode(cardId, currentLineIds) {
         if (deltaY > 0) { 
             if (e.cancelable) e.preventDefault(); // 阻斷原生滾動
 
-            pullDelta = deltaY * 0.85; 
+            pullDelta = deltaY * 0.5; 
 
             // ✨ 終極進化：可反悔區域縮短為「總行程的一半」
-            const threshold = moveUpDist / 2;
+            const threshold = moveUpDist / 3;
             
             // ✨ 一旦拉超過一半，立刻沒收控制權，系統無縫接手直接關閉！
             if (pullDelta > threshold) {
