@@ -593,7 +593,7 @@ function handleCardClick(id) {
 
     scrollWrapper.style.cssText = `
         width: 100%; 
-        overflow-y: auto; 
+        overflow-y: visible; 
         overscroll-behavior: contain; 
         -webkit-overflow-scrolling: touch; 
         display: flex; 
@@ -1018,6 +1018,11 @@ function handleCardClick(id) {
             originalCard.style.transform = 'translate3d(0, -100px, 0)';
             originalCard.classList.add('lifted-state');
         }
+
+        // ✨ 2. 核心修復：動畫完全落地停穩後，再把 overflow-y 鎖回 auto，還原順滑的捲動功能！
+        const sw = document.getElementById('card-extension-container');
+        if (sw) sw.style.overflowY = 'auto';
+
     }, 600);
 }
 
@@ -1119,6 +1124,10 @@ function closeAllCards(isPopState = false) {
     }
 
     isAnimating = true;
+
+    // ✨ 關閉時也暫時解除裁切，保護下墜回彈時的視覺完整性
+    const sw = document.getElementById('card-extension-container');
+    if (sw) sw.style.overflowY = 'visible';
 
     // 🟢 1. 關閉瞬間上鎖：告訴物理引擎現在不准動！
     mainStack.dataset.blockScroll = 'true';
