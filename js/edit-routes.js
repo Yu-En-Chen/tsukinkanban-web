@@ -11,9 +11,9 @@ export function startRouteEditMode(cardId, currentLineIds) {
     // 🎬 第一階段：沈浸式過渡動畫 (純 GPU 零卡頓極致版)
     // ==========================================
     const innerRect = innerCard.getBoundingClientRect();
-    const moveUpDist = innerRect.height + 16; 
+    const moveUpDist = innerRect.height + 16;
     const exactNewHeight = window.innerHeight - innerRect.top;
-    
+
     const originalScrollHeight = scrollWrapper.style.height;
     // ✨ 紀錄進入編輯模式前的精準狀態 (高度與捲動軸位置)
     const originalScrollTop = scrollWrapper.scrollTop;
@@ -24,7 +24,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
     innerCard.style.WebkitBackfaceVisibility = 'hidden';
     extensionCard.style.willChange = 'transform'; // 只要位移就好，不准算高度
 
-    const feather = 45; 
+    const feather = 45;
     // ✨ 核心調校：不增加 45px 總範圍，利用多節點透明度 (0.15 -> 0.5 -> 0.85) 
     // 徹底消除線性漸層的邊緣斷層 (Mach Bands)，創造如同實體毛玻璃邊緣般的柔和消散感！
     innerCard.style.WebkitMaskImage = `linear-gradient(to bottom, 
@@ -39,7 +39,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
         rgba(0,0,0,0.98) 40px,  /* 極慢收尾 */
         black ${feather}px, 
         black 100%)`;
-    innerCard.style.WebkitMaskSize = '100% 3000px'; 
+    innerCard.style.WebkitMaskSize = '100% 3000px';
     innerCard.style.WebkitMaskPosition = `0px -${feather}px`;
     innerCard.style.WebkitMaskRepeat = 'no-repeat';
 
@@ -53,11 +53,11 @@ export function startRouteEditMode(cardId, currentLineIds) {
     // ==========================================
     // ⚙️ 核心實體引擎：加入時空錯位與內容掉落
     // ==========================================
-    let shredderRafId = null; 
+    let shredderRafId = null;
 
     const runShredderAnimation = (startY, targetY, durationMs) => {
-        if (shredderRafId) cancelAnimationFrame(shredderRafId); 
-        
+        if (shredderRafId) cancelAnimationFrame(shredderRafId);
+
         const startTime = performance.now();
         const easeOutQuint = t => 1 - Math.pow(1 - t, 5);
 
@@ -82,7 +82,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
             // 讓舊內容在掉落的前 22% (不到 0.2 秒) 就徹底煙消雲散，絕對不留殘影！
             let opacityProgress = isClosing ? (progress * 4.5) : progress;
             if (opacityProgress > 1) opacityProgress = 1;
-            
+
             const currentOpacity = startOpacity + (targetOpacity - startOpacity) * opacityProgress;
             editContainer.style.opacity = currentOpacity.toString();
             btnContainer.style.opacity = currentOpacity.toString();
@@ -100,7 +100,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
 
                 // ✨ [新增] 尾巴消除魔法 (只針對開啟動畫)：綁定 Y 軸物理座標
                 // 設定在抵達終點前 (行程的 60% 處) 開始連動淡化
-                const fadeStartDistance = targetY * 0.6; 
+                const fadeStartDistance = targetY * 0.6;
                 if (currentY > fadeStartDistance) {
                     // 隨座標逼近終點，透明度從 1 精準滑落到 0
                     const tailOpacity = 1 - ((currentY - fadeStartDistance) / (targetY - fadeStartDistance));
@@ -115,7 +115,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
             } else {
                 shredderRafId = null;
                 // 確保動畫落地後解開物理鎖，恢復點擊
-                innerCard.style.pointerEvents = 'auto'; 
+                innerCard.style.pointerEvents = 'auto';
             }
         };
         shredderRafId = requestAnimationFrame(step);
@@ -125,18 +125,18 @@ export function startRouteEditMode(cardId, currentLineIds) {
     // 🛸 終極母艦控制：包含膠囊與下方雙圓扣
     // ==========================================
     const targetIds = ['action-capsule', 'left-menu-btn', 'search-trigger'];
-    
+
     targetIds.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.style.setProperty('pointer-events', 'none', 'important');
-            
+
             if (id === 'action-capsule') {
                 el.querySelectorAll('.capsule-btn-item').forEach(btn => btn.style.setProperty('overflow', 'hidden', 'important'));
             } else {
                 el.style.setProperty('overflow', 'hidden', 'important');
             }
-            
+
             el.querySelectorAll('svg').forEach(svg => svg.style.setProperty('will-change', 'translate, opacity', 'important'));
         }
     });
@@ -170,7 +170,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
 
     const dict = window.MasterRouteDictionary || {};
     const cardName = window.appRailwayData?.find(c => c.id === cardId)?.name || 'カスタムカード';
-    
+
     // ✨ 核心升級：建立包含「隱形地基」的雙欄排版
     editContainer.innerHTML = `
         <div style="padding: 12px 4px 20px 4px; display: flex; flex-direction: column; gap: 6px;">
@@ -197,7 +197,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
         const capsule = document.createElement('div');
         capsule.className = 'edit-route-item';
         capsule.setAttribute('data-line-id', lineId);
-        
+
         capsule.style.cssText = `
             display: flex; align-items: center; 
             background: var(--search-bg); /* ⬅️ 關鍵：使用與按鈕相同的背景變數 */
@@ -239,12 +239,12 @@ export function startRouteEditMode(cardId, currentLineIds) {
             box-sizing: border-box;
         `;
         delBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`;
-        
+
         // 刪除邏輯：動態對應並判定剩餘數量
         delBtn.onclick = () => {
             const index = Array.from(deleteBtnsCol.children).indexOf(delBtn);
             const targetCapsule = capsulesCol.children[index];
-            
+
             // ✨ 標記這個膠囊「正在被刪除」，這樣後面的計算才會準確
             targetCapsule.classList.add('deleting');
 
@@ -252,7 +252,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
             targetCapsule.style.opacity = '0';
             delBtn.style.transform = 'scale(0.95)';
             delBtn.style.opacity = '0';
-            
+
             // ✨ 動態淡出：檢查還剩下幾個沒被刪除的膠囊？如果只剩 1 個，就把它的手把淡出！
             const remainingCapsules = Array.from(capsulesCol.children).filter(c => !c.classList.contains('deleting'));
             if (remainingCapsules.length <= 1 && remainingCapsules[0]) {
@@ -315,7 +315,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
 
         const editTop = editRect.top - scrollRect.top + scrollWrapper.scrollTop;
         const btnTop = btnRect.top - scrollRect.top + scrollWrapper.scrollTop;
-        
+
         // ✨ 修復 3：精準計算 Left 座標與實際 Width，不再粗暴使用 left:0 和 100%！
         const editLeft = editRect.left - scrollRect.left + scrollWrapper.scrollLeft;
         const btnLeft = btnRect.left - scrollRect.left + scrollWrapper.scrollLeft;
@@ -326,20 +326,20 @@ export function startRouteEditMode(cardId, currentLineIds) {
         // 懸空編輯區塊 (精準鎖死寬度與左側距離)
         editContainer.style.position = 'absolute';
         editContainer.style.top = `${editTop}px`;
-        editContainer.style.left = `${editLeft}px`; 
-        editContainer.style.width = `${editRect.width}px`; 
+        editContainer.style.left = `${editLeft}px`;
+        editContainer.style.width = `${editRect.width}px`;
         editContainer.style.pointerEvents = 'none';
-        editContainer.style.transform = currentEditTransform; 
+        editContainer.style.transform = currentEditTransform;
 
         // 懸空底部按鈕 (精準鎖死寬度與左側距離)
         btnContainer.style.position = 'absolute';
         btnContainer.style.top = `${btnTop}px`;
-        btnContainer.style.bottom = 'auto'; 
+        btnContainer.style.bottom = 'auto';
         btnContainer.style.left = `${btnLeft}px`;
         btnContainer.style.width = `${btnRect.width}px`;
         btnContainer.style.marginTop = '0';
         btnContainer.style.pointerEvents = 'none';
-        btnContainer.style.transform = currentBtnTransform; 
+        btnContainer.style.transform = currentBtnTransform;
 
         // 2. 喚醒原本的清單，放入排版中，但先保持完全透明 (opacity: 0)
         originalChildren.forEach(child => {
@@ -475,15 +475,15 @@ export function startRouteEditMode(cardId, currentLineIds) {
                 }
             });
         }, 850);
-    }; 
+    };
 
     btnContainer.appendChild(createBtn(iconCancel, 'キャンセル', false, restoreUI));
     btnContainer.appendChild(createBtn(iconSave, '保存', true, async () => {
         // ✨ 保存時只抓取左欄(膠囊)的最新的順序即可，非常安全！
         const newOrder = Array.from(capsulesCol.querySelectorAll('.edit-route-item'))
-                              .map(item => item.getAttribute('data-line-id'));
+            .map(item => item.getAttribute('data-line-id'));
         await db.saveCardPreference(cardId, { targetLineIds: newOrder });
-        
+
         restoreUI();
         setTimeout(async () => {
             if (window.buildAndRender) await window.buildAndRender();
@@ -494,7 +494,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
     // =========================================================
     // 🚀 入場十字交疊淡出引擎 (Entrance Cross-fade Engine - 完美克隆凍結版)
     // =========================================================
-    
+
     // ✨ 1. 記錄當前的捲動位置
     const currentScrollTop = scrollWrapper.scrollTop;
 
@@ -525,7 +525,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
         // 保留原本可能存在的 inline margin
         clone.style.margin = child.style.margin || getComputedStyle(child).margin;
         ghostContainer.appendChild(clone);
-        
+
         // 🚨 解決空白問題的關鍵：
         // 真正的子節點我們「絕對不拔除」，只是把它們藏起來 (display: none)
         // 這樣關閉 (restoreUI) 的時候，才能找得到它們並喚醒！
@@ -535,7 +535,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
     // ✨ 4. 準備新內容 (編輯介面)
     editContainer.style.opacity = '0';
     btnContainer.style.opacity = '0';
-    
+
     // 將 替身(Ghost) 與 新內容 放進容器
     scrollWrapper.appendChild(ghostContainer);
     scrollWrapper.appendChild(editContainer);
@@ -563,7 +563,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
     const initialMaskPos = `0px -${feather}px`;
     innerCard.style.setProperty('-webkit-mask-position', initialMaskPos, 'important');
     innerCard.style.setProperty('mask-position', initialMaskPos, 'important');
-    
+
     // 發射！啟動新內容上升引擎！
     runShredderAnimation(0, moveUpDist, 850);
 
@@ -571,14 +571,14 @@ export function startRouteEditMode(cardId, currentLineIds) {
     setTimeout(() => {
         if (ghostContainer) ghostContainer.remove();
     }, 300);
-    
+
     // ============================================================================
     // ✋ 頂級互動：全域「1:1 跟手下拉關閉」手勢引擎 (GPU 幀同步完美版)
     // ============================================================================
     let touchStartY = 0;
     let pullDelta = 0;
     let isDraggingModal = false;
-    let rafTicking = false; 
+    let rafTicking = false;
 
     scrollWrapper.addEventListener('touchstart', (e) => {
         // 🛑 防呆機制：拖曳把手、刪除按鈕、或畫面已經往下滾動時，不啟動下拉
@@ -594,7 +594,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
         // 拔除系統動畫
         innerCard.style.transition = 'none';
         extensionCard.style.transition = 'none';
-        
+
     }, { passive: true });
 
     scrollWrapper.addEventListener('touchmove', (e) => {
@@ -603,39 +603,44 @@ export function startRouteEditMode(cardId, currentLineIds) {
         const touchY = e.touches[0].clientY;
         const deltaY = touchY - touchStartY;
 
-        if (deltaY > 0) { 
+        if (deltaY > 0) {
             if (e.cancelable) e.preventDefault(); // 阻斷原生滾動
 
-            pullDelta = deltaY * 0.5; 
+            pullDelta = deltaY * 0.5;
 
             // ✨ 終極進化：可反悔區域縮短為「總行程的一半」
             const threshold = moveUpDist / 3;
-            
+
             // ✨ 一旦拉超過一半，立刻沒收控制權，系統無縫接手直接關閉！
             if (pullDelta > threshold) {
-                isDraggingModal = false; 
-                
+                isDraggingModal = false;
+
                 // 🚀 核心爆發：發射 JS 實體引擎！直接從指尖當下的位置，順滑重力降落到底部 (耗時約 350ms)
                 const currentY = moveUpDist - pullDelta;
                 runShredderAnimation(currentY, 0, 350);
-                
+
                 // 呼叫退出清理，並掛上「無縫接力」的免死金牌！
-                restoreUI({ isSeamless: true });             
-                return;                  
+                restoreUI({ isSeamless: true });
+                return;
             }
-            
+
             // 🚀 核心破解：使用 requestAnimationFrame 鎖定渲染幀
             if (!rafTicking) {
                 requestAnimationFrame(() => {
                     // 防呆保險：如果在等待 GPU 畫圖的極短瞬間，已經移交控制權了，就終止繪製避免畫面抖動
                     if (!isDraggingModal) { rafTicking = false; return; }
-                    
+
                     innerCard.style.transform = `translateY(-${moveUpDist - pullDelta}px)`;
                     extensionCard.style.transform = `translateY(-${moveUpDist - pullDelta}px)`;
-                    
-                    // ✨ 讓內容也同步貼死背景物理滑落，完全對齊原生 iOS 手感！
-                    editContainer.style.transform = `translateY(${pullDelta}px)`;
-                    btnContainer.style.transform = `translateY(${pullDelta}px)`;
+
+                    // ✨ 教授級調校：優雅的視差阻尼 (Parallax Damping)
+                    // 0.0 = 內容死死黏在卡片上，完全沒有層次感。
+                    // 0.25 = 頂級 App 的微視差感，內容物微微沉降，優雅且受控。
+                    // 1.0 = (你原本的狀態) 雙重暴衝，掉得太快。
+                    const contentParallax = pullDelta * 0.22;
+
+                    editContainer.style.transform = `translateY(${contentParallax}px)`;
+                    btnContainer.style.transform = `translateY(${contentParallax}px)`;
 
                     const currentMaskPos = `0px ${moveUpDist - feather - pullDelta}px`;
                     innerCard.style.setProperty('-webkit-mask-position', currentMaskPos);
@@ -645,7 +650,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
                     // 這樣卡片就像是從「迷霧中」被拉出來一樣，絕對不會有生硬的閃現！
                     const dynamicOpacity = Math.min(pullDelta / 40, 1);
                     innerCard.style.opacity = dynamicOpacity.toString();
-                    
+
                     rafTicking = false;
                 });
                 rafTicking = true;
@@ -654,14 +659,14 @@ export function startRouteEditMode(cardId, currentLineIds) {
     }, { passive: false });
 
     scrollWrapper.addEventListener('touchend', () => {
-        if (!isDraggingModal) return; 
+        if (!isDraggingModal) return;
         isDraggingModal = false;
 
-        if (pullDelta > 90) { 
+        if (pullDelta > 90) {
             // 💥 拉超過 90px 鬆手：同樣呼叫 JS 引擎順滑降落！
             const currentY = moveUpDist - pullDelta;
             runShredderAnimation(currentY, 0, 350);
-            restoreUI({ isSeamless: true }); 
+            restoreUI({ isSeamless: true });
         } else if (pullDelta > 0) {
             // 拔除 CSS 位移過渡，只留 opacity
             innerCard.style.transition = `opacity 0.3s ease`;
@@ -670,7 +675,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
             // 🚀 發射！啟動 JS 幀同步引擎 (從手指放開的位置 -> 彈回頂部，耗時 400ms)
             const currentY = moveUpDist - pullDelta;
             runShredderAnimation(currentY, moveUpDist, 400);
-            
+
             // 彈回頂部後隱形
             innerCard.style.opacity = '0';
         }
@@ -687,7 +692,7 @@ function initDragAndDrop(container) {
     // 拖曳只在左欄內部發生！
     const capsulesCol = container.querySelector('#capsules-col');
     const items = capsulesCol.querySelectorAll('.edit-route-item');
-    
+
     let draggingItem = null;
     let ghost = null;
     let startY = 0;
@@ -698,13 +703,13 @@ function initDragAndDrop(container) {
         const handle = item.querySelector('.drag-handle');
 
         const onDragStart = (clientY) => {
-            if(navigator.vibrate) navigator.vibrate(50);
+            if (navigator.vibrate) navigator.vibrate(50);
             draggingItem = item;
             startY = clientY;
-            
+
             const rect = item.getBoundingClientRect();
             ghost = item.cloneNode(true);
-            
+
             // ✨ 核心修復：幽靈物件全面導入系統變數，質感完美對齊！
             Object.assign(ghost.style, {
                 position: 'fixed',
@@ -713,20 +718,20 @@ function initDragAndDrop(container) {
                 width: `${rect.width}px`,
                 height: `${rect.height}px`,
                 zIndex: '9999',
-                opacity: '1', 
+                opacity: '1',
                 pointerEvents: 'none',
                 transform: 'scale(1.04)',
-                transition: 'transform 0.1s ease, box-shadow 0.1s ease', 
-                
+                transition: 'transform 0.1s ease, box-shadow 0.1s ease',
+
                 // ✨ 改動 3：拖曳時的顏色與邊框，完全跟隨系統變數
-                background: 'var(--search-bg)', 
+                background: 'var(--search-bg)',
                 backdropFilter: 'blur(12px)',
                 WebkitBackdropFilter: 'blur(12px)',
-                border: '1px solid var(--border-color)', 
+                border: '1px solid var(--border-color)',
 
                 // ✨ 改動 4：直接召喚你寫好的神級光追陰影！
-                boxShadow: 'var(--ray-shadow-active)', 
-                
+                boxShadow: 'var(--ray-shadow-active)',
+
                 boxSizing: 'border-box',
                 borderRadius: '999px',
                 margin: '0',
@@ -736,31 +741,31 @@ function initDragAndDrop(container) {
             document.body.appendChild(ghost);
 
             // ✨ 將原本的膠囊設為 opacity: 0，它變成一塊完美的透明磚塊幫我們撐住排版！
-            item.style.opacity = '0'; 
+            item.style.opacity = '0';
             initialTop = rect.top;
 
             document.addEventListener('mousemove', onDragMove);
             document.addEventListener('mouseup', onDragEnd);
-            document.addEventListener('touchmove', onDragMove, {passive: false});
+            document.addEventListener('touchmove', onDragMove, { passive: false });
             document.addEventListener('touchend', onDragEnd);
         };
 
         handle.addEventListener('mousedown', (e) => { e.preventDefault(); onDragStart(e.clientY); });
         handle.addEventListener('touchstart', (e) => {
-            touchTimeout = setTimeout(() => { onDragStart(e.touches[0].clientY); }, 400); 
-        }, {passive: true});
+            touchTimeout = setTimeout(() => { onDragStart(e.touches[0].clientY); }, 400);
+        }, { passive: true });
 
-        handle.addEventListener('touchmove', () => clearTimeout(touchTimeout), {passive: true});
+        handle.addEventListener('touchmove', () => clearTimeout(touchTimeout), { passive: true });
         handle.addEventListener('touchend', () => clearTimeout(touchTimeout));
         handle.addEventListener('touchcancel', () => clearTimeout(touchTimeout));
     });
 
     const onDragMove = (e) => {
         if (!draggingItem || !ghost) return;
-        if (e.cancelable) e.preventDefault(); 
+        if (e.cancelable) e.preventDefault();
         const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
         const deltaY = clientY - startY;
-        ghost.style.top = `${initialTop + deltaY}px`; 
+        ghost.style.top = `${initialTop + deltaY}px`;
 
         const elements = document.elementsFromPoint(window.innerWidth / 2, clientY);
         const target = elements.find(el => el.classList.contains('edit-route-item') && el !== draggingItem);
