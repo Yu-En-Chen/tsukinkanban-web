@@ -3,6 +3,7 @@ import * as db from '../data/db.js';
 // 🛡️ 絕對防禦：全域狀態鎖與計時器 (必須在所有 function 外面！)
 let isEditRouteAnimating = false;
 let editLockTimer = null;
+let editGestureAbortController = null; // ✨ 新增：手勢生命週期控制器
 
 export function startRouteEditMode(cardId, currentLineIds) {
 
@@ -11,6 +12,13 @@ export function startRouteEditMode(cardId, currentLineIds) {
         console.log('動畫進行中，阻擋重複開啟');
         return;
     }
+
+    // ✨ 核心修復 1：每次啟動前，確保舊的幽靈監聽器被徹底殺死
+    if (editGestureAbortController) {
+        editGestureAbortController.abort();
+    }
+    editGestureAbortController = new AbortController();
+    const { signal } = editGestureAbortController;
 
     const innerCard = document.querySelector('#detail-card-container .detail-card-inner');
     const extensionCard = document.querySelector('#detail-card-container .detail-extension-card');
@@ -464,6 +472,17 @@ export function startRouteEditMode(cardId, currentLineIds) {
 
             isEditRouteAnimating = false;
             if (scrollWrapper) scrollWrapper.style.removeProperty('pointer-events');
+
+            // 🔓 4. 徹底清理完畢後解鎖
+            isEditRouteAnimating = false;
+            if (scrollWrapper) scrollWrapper.style.removeProperty('pointer-events');
+
+            // ✨ 核心修復 2：終結幽靈手勢！退場完畢後，一鍵註銷所有綁定在滑動區的手勢
+            if (editGestureAbortController) {
+                editGestureAbortController.abort();
+                editGestureAbortController = null;
+            }
+            
         }, 850);
     };
 
@@ -605,7 +624,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
         innerCard.style.transition = 'none';
         extensionCard.style.transition = 'none';
 
-    }, { passive: true });
+    }, { passive: true, signal });
 
     scrollWrapper.addEventListener('touchmove', (e) => {
         if (!isDraggingModal) return;
@@ -664,7 +683,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
                 rafTicking = true;
             }
         }
-    }, { passive: false });
+    }, { passive: false, signal });
 
     scrollWrapper.addEventListener('touchend', () => {
         if (!isDraggingModal) return;
@@ -688,7 +707,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
             innerCard.style.opacity = '0';
         }
         pullDelta = 0;
-    });
+    }, { signal });
 
     initDragAndDrop(editContainer);
 }
