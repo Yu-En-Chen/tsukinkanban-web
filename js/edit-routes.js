@@ -743,17 +743,28 @@ export function startRouteEditMode(cardId, currentLineIds) {
                 return;
             }
 
-            // 🎬 視覺回饋：讓實心玻璃跟著滾輪/觸控板的拉扯往下沉
+            // 🎬 視覺回饋：讓實心玻璃跟著滾輪/觸控板的拉扯往下沉，並產生「吐出」顯影效果
             if (!wheelRafTicking) {
                 requestAnimationFrame(() => {
                     // 確保沒有被 CSS 鎖住
                     innerCard.style.transition = 'none';
                     extensionCard.style.transition = 'none';
+                    if (editContainer) editContainer.style.transition = 'none';
+                    if (btnContainer) btnContainer.style.transition = 'none';
                     
                     const currentY = moveUpDist - wheelPullDelta;
                     innerCard.style.transform = `translateY(-${currentY}px)`;
                     extensionCard.style.transform = `translateY(-${currentY}px)`;
                     
+                    // ✨ 1. 補上視差位移 (Parallax)：讓編輯區塊以 0.22 倍速跟著下沉，創造空間深度
+                    const contentParallax = wheelPullDelta * 0.22;
+                    if (editContainer) editContainer.style.transform = `translateY(${contentParallax}px)`;
+                    if (btnContainer) btnContainer.style.transform = `translateY(${contentParallax}px)`;
+                    
+                    // ✨ 2. 補上動態透明度 (Dynamic Opacity)：拉扯超過 40px 就完全顯影原本的卡片，創造「從遮罩中吐出來」的錯覺
+                    const dynamicOpacity = Math.min(wheelPullDelta / 40, 1);
+                    innerCard.style.opacity = dynamicOpacity.toString();
+
                     // 連動更新遮罩(Mask)的物理位置，維持完美的毛玻璃邊緣
                     const currentMaskPos = `0px ${currentY - feather}px`;
                     innerCard.style.setProperty('-webkit-mask-position', currentMaskPos, 'important');
@@ -768,12 +779,18 @@ export function startRouteEditMode(cardId, currentLineIds) {
             if (wheelBounceTimer) clearTimeout(wheelBounceTimer);
             wheelBounceTimer = setTimeout(() => {
                 if (wheelPullDelta > 0 && !isEditRouteAnimating) {
-                    innerCard.style.transition = `transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)`;
+                    // ✨ 回彈時，連同透明度與視差區塊一起加入過渡動畫
+                    innerCard.style.transition = `transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease`;
                     extensionCard.style.transition = `transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)`;
+                    if (editContainer) editContainer.style.transition = `transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)`;
+                    if (btnContainer) btnContainer.style.transition = `transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)`;
                     
-                    // 彈回原始高度
+                    // 彈回原始高度與全透明隱藏狀態
                     innerCard.style.transform = `translateY(-${moveUpDist}px)`;
                     extensionCard.style.transform = `translateY(-${moveUpDist}px)`;
+                    if (editContainer) editContainer.style.transform = `translateY(0px)`;
+                    if (btnContainer) btnContainer.style.transform = `translateY(0px)`;
+                    innerCard.style.opacity = '0'; 
                     
                     const currentMaskPos = `0px ${moveUpDist - feather}px`;
                     innerCard.style.setProperty('-webkit-mask-position', currentMaskPos, 'important');
@@ -788,7 +805,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
             wheelPullDelta = 0;
         }
     }, { passive: false, signal }); // ✨ 同樣掛上 signal，保證退場時自動銷毀，絕不殘留幽靈！
-    
+
     initDragAndDrop(editContainer);
 }
 
