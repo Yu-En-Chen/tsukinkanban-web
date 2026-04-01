@@ -322,34 +322,34 @@ export function startRouteEditMode(cardId, currentLineIds) {
         if (isEditRouteAnimating) return;
         isEditRouteAnimating = true;
         scrollWrapper.style.pointerEvents = 'none';
-    
+
         const isSeamless = options.isSeamless || false;
         if (!isSeamless && shredderRafId) cancelAnimationFrame(shredderRafId);
-    
+
         const currentEditTransform = editContainer.style.transform;
         const currentBtnTransform = btnContainer.style.transform;
         editContainer.style.transform = '';
         btnContainer.style.transform = '';
-    
+
         const editRect = editContainer.getBoundingClientRect();
         const btnRect = btnContainer.getBoundingClientRect();
         const scrollRect = scrollWrapper.getBoundingClientRect();
-    
+
         const editTop = editRect.top - scrollRect.top + scrollWrapper.scrollTop;
         const btnTop = btnRect.top - scrollRect.top + scrollWrapper.scrollTop;
         const editLeft = editRect.left - scrollRect.left + scrollWrapper.scrollLeft;
         const btnLeft = btnRect.left - scrollRect.left + scrollWrapper.scrollLeft;
-    
+
         editContainer.style.transition = 'none';
         btnContainer.style.transition = 'none';
-    
+
         editContainer.style.position = 'absolute';
         editContainer.style.top = `${editTop}px`;
         editContainer.style.left = `${editLeft}px`;
         editContainer.style.width = `${editRect.width}px`;
         editContainer.style.pointerEvents = 'none';
         editContainer.style.transform = currentEditTransform;
-    
+
         btnContainer.style.position = 'absolute';
         btnContainer.style.top = `${btnTop}px`;
         btnContainer.style.bottom = 'auto';
@@ -358,44 +358,44 @@ export function startRouteEditMode(cardId, currentLineIds) {
         btnContainer.style.marginTop = '0';
         btnContainer.style.pointerEvents = 'none';
         btnContainer.style.transform = currentBtnTransform;
-    
+
         // ✨ 動態獲取當下的真實 DOM，不管背景有沒有被偷換過，都能精準命中！
-        const contentToReveal = Array.from(scrollWrapper.children).filter(child => 
-            child.id !== 'edit-mode-container' && 
-            child.id !== 'ghost-container' && 
+        const contentToReveal = Array.from(scrollWrapper.children).filter(child =>
+            child.id !== 'edit-mode-container' &&
+            child.id !== 'ghost-container' &&
             child !== btnContainer
         );
-    
+
         contentToReveal.forEach(child => {
             child.style.transition = 'none';
             child.style.opacity = '0';
             child.style.display = '';
         });
-    
+
         innerCard.style.willChange = 'transform, opacity, -webkit-mask-position';
         innerCard.style.WebkitBackfaceVisibility = 'hidden';
         extensionCard.style.willChange = 'transform';
-    
+
         scrollWrapper.style.height = `${origClientHeight + moveUpDist}px`;
         scrollWrapper.scrollTo({ top: 0, behavior: 'smooth' });
-    
+
         void scrollWrapper.offsetHeight;
-    
+
         contentToReveal.forEach(child => {
             child.style.transition = 'opacity 0.4s ease-out 0.2s';
             child.style.opacity = '1';
         });
-    
+
         innerCard.style.transition = 'none';
         extensionCard.style.transition = 'none';
-    
+
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 if (!isSeamless) runShredderAnimation(moveUpDist, 0, 850);
-                
+
                 innerCard.style.pointerEvents = 'auto';
                 innerCard.style.opacity = '1';
-    
+
                 const targetIds = ['action-capsule', 'left-menu-btn', 'search-trigger'];
                 targetIds.forEach(id => {
                     const el = document.getElementById(id);
@@ -409,26 +409,27 @@ export function startRouteEditMode(cardId, currentLineIds) {
                 });
             });
         });
-    
+
         setTimeout(() => {
             editContainer.remove();
             btnContainer.remove();
-    
+
             contentToReveal.forEach(child => {
                 child.style.transition = '';
                 child.style.opacity = '';
             });
-    
+
             innerCard.style.transform = '';
             innerCard.style.WebkitMaskPosition = '';
             innerCard.style.maskPosition = '';
             extensionCard.style.transform = '';
             extensionCard.style.transition = '';
-    
-            scrollWrapper.style.height = '';
+
+            // 4. ✨ 核心修復：不能清空！必須還原最初在 script.js 精準計算的 100dvh 捲動高度
+            scrollWrapper.style.height = originalScrollHeight;
             scrollWrapper.style.minHeight = '';
             scrollWrapper.style.paddingBottom = '';
-    
+
             innerCard.style.transition = 'none';
             innerCard.style.boxShadow = '0 0 0 rgba(0,0,0,0)';
             innerCard.style.WebkitMaskImage = '';
@@ -438,7 +439,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
             innerCard.style.willChange = 'auto';
             innerCard.style.WebkitBackfaceVisibility = '';
             extensionCard.style.willChange = 'auto';
-    
+
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     innerCard.style.transition = `box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1)`;
@@ -446,7 +447,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
                     setTimeout(() => { innerCard.style.transition = ''; }, 400);
                 });
             });
-    
+
             const targetIds = ['action-capsule', 'left-menu-btn', 'search-trigger'];
             targetIds.forEach(id => {
                 const el = document.getElementById(id);
@@ -460,7 +461,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
                     });
                 }
             });
-    
+
             isEditRouteAnimating = false;
             if (scrollWrapper) scrollWrapper.style.removeProperty('pointer-events');
         }, 850);
@@ -469,16 +470,16 @@ export function startRouteEditMode(cardId, currentLineIds) {
     btnContainer.appendChild(createBtn(iconCancel, 'キャンセル', false, restoreUI));
     btnContainer.appendChild(createBtn(iconSave, '保存', true, async () => {
         if (isEditRouteAnimating) return;
-    
+
         const newOrder = Array.from(capsulesCol.querySelectorAll('.edit-route-item:not(.deleting)'))
             .map(item => item.getAttribute('data-line-id'));
-            
+
         await db.updateCardRoutes(cardId, newOrder);
-    
+
         // ✨ 核心修復：在退場前，等待背景將真實 DOM 抽換為最新排序
         if (window.refreshAppAfterEdit) {
             await window.refreshAppAfterEdit();
-            
+
             // 🚨 防止剛長出來的新路線卡片瞬間閃現！先把他們藏起來，交由 restoreUI 優雅淡入
             Array.from(scrollWrapper.children).forEach(child => {
                 if (child.id !== 'edit-mode-container' && child !== btnContainer && child.id !== 'ghost-container') {
@@ -486,11 +487,11 @@ export function startRouteEditMode(cardId, currentLineIds) {
                 }
             });
         }
-    
+
         // 觸發面板收起動畫 (現在 restoreUI 會抓到最新的 DOM)
         restoreUI();
     }));
-    
+
     // =========================================================
     // 🚀 入場十字交疊淡出引擎 (Entrance Cross-fade Engine - 完美克隆凍結版)
     // =========================================================
