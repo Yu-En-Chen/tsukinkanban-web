@@ -482,7 +482,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
                 editGestureAbortController.abort();
                 editGestureAbortController = null;
             }
-            
+
         }, 850);
     };
 
@@ -709,6 +709,86 @@ export function startRouteEditMode(cardId, currentLineIds) {
         pullDelta = 0;
     }, { signal });
 
+    // ============================================================================
+    // 🖱️ 頂級互動：電腦版「滑鼠滾輪 / 觸控板」下拉關閉引擎
+    // ============================================================================
+    let wheelPullDelta = 0;
+    let wheelRafTicking = false;
+    let wheelBounceTimer = null;
+
+    scrollWrapper.addEventListener('wheel', (e) => {
+        // 🚨 防護 1：動畫中禁止發動
+        if (isEditRouteAnimating) return;
+
+        // 🚨 防護 2：只有在列表最頂部 (scrollTop <= 0)，且滾輪往上滾 (e.deltaY < 0 代表下拉) 時才觸發
+        if (scrollWrapper.scrollTop <= 0 && e.deltaY < 0) {
+            
+            // 擋住瀏覽器預設的橡皮筋回彈與捲動行為
+            if (e.cancelable) e.preventDefault(); 
+            
+            // 累加下拉距離 (乘以 0.6 稍微降低觸控板的過度靈敏度)
+            wheelPullDelta += Math.abs(e.deltaY) * 0.6;
+
+            // 門檻值：大約等於卡片高度的 1/4，超過就關閉
+            const threshold = moveUpDist / 4;
+
+            if (wheelPullDelta > threshold) {
+                // 🛑 達到門檻，發射關閉引擎！
+                wheelPullDelta = 0;
+                if (wheelBounceTimer) clearTimeout(wheelBounceTimer);
+                
+                // 從當前拉扯的高度，平滑降落到底部
+                runShredderAnimation(moveUpDist - threshold, 0, 350);
+                restoreUI({ isSeamless: true });
+                return;
+            }
+
+            // 🎬 視覺回饋：讓實心玻璃跟著滾輪/觸控板的拉扯往下沉
+            if (!wheelRafTicking) {
+                requestAnimationFrame(() => {
+                    // 確保沒有被 CSS 鎖住
+                    innerCard.style.transition = 'none';
+                    extensionCard.style.transition = 'none';
+                    
+                    const currentY = moveUpDist - wheelPullDelta;
+                    innerCard.style.transform = `translateY(-${currentY}px)`;
+                    extensionCard.style.transform = `translateY(-${currentY}px)`;
+                    
+                    // 連動更新遮罩(Mask)的物理位置，維持完美的毛玻璃邊緣
+                    const currentMaskPos = `0px ${currentY - feather}px`;
+                    innerCard.style.setProperty('-webkit-mask-position', currentMaskPos, 'important');
+                    innerCard.style.setProperty('mask-position', currentMaskPos, 'important');
+                    
+                    wheelRafTicking = false;
+                });
+                wheelRafTicking = true;
+            }
+
+            // 🔄 智慧回彈機制：如果滾輪停下來 150ms 且沒超過關閉門檻，自動彈回滿版頂部
+            if (wheelBounceTimer) clearTimeout(wheelBounceTimer);
+            wheelBounceTimer = setTimeout(() => {
+                if (wheelPullDelta > 0 && !isEditRouteAnimating) {
+                    innerCard.style.transition = `transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)`;
+                    extensionCard.style.transition = `transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)`;
+                    
+                    // 彈回原始高度
+                    innerCard.style.transform = `translateY(-${moveUpDist}px)`;
+                    extensionCard.style.transform = `translateY(-${moveUpDist}px)`;
+                    
+                    const currentMaskPos = `0px ${moveUpDist - feather}px`;
+                    innerCard.style.setProperty('-webkit-mask-position', currentMaskPos, 'important');
+                    innerCard.style.setProperty('mask-position', currentMaskPos, 'important');
+                    
+                    wheelPullDelta = 0;
+                }
+            }, 150);
+            
+        } else {
+            // 如果是在往下滾動看列表，直接歸零，不干擾正常捲動
+            wheelPullDelta = 0;
+        }
+    }, { passive: false, signal }); // ✨ 同樣掛上 signal，保證退場時自動銷毀，絕不殘留幽靈！
+    
     initDragAndDrop(editContainer);
 }
 
