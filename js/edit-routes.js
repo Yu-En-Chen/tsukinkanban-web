@@ -588,7 +588,8 @@ export function startRouteEditMode(cardId, currentLineIds) {
         // 🚨 多點觸控防護 1：如果一開始就有兩根以上手指碰到螢幕，直接拒絕啟動手勢！
         if (e.touches.length > 1) return;
 
-        if (e.target.closest('.drag-handle') || e.target.closest('.delete-route-btn')) return;
+        // ✨ 核心修復：把底部的操作按鈕區 (.flight-action-buttons-container) 加入免死金牌名單！
+        if (e.target.closest('.drag-handle') || e.target.closest('.delete-route-btn') || e.target.closest('.flight-action-buttons-container')) return;
         if (scrollWrapper.scrollTop > 0) return;
 
         if (shredderRafId) cancelAnimationFrame(shredderRafId);
