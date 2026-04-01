@@ -2962,3 +2962,30 @@ window.addEventListener('mousemove', (e) => {
         resetFocus(); 
     }
 });
+
+// ============================================================================
+// 🟢 提供給編輯路線介面 (edit-routes.js) 存檔後呼叫的全域重繪引擎
+// ============================================================================
+window.refreshAppAfterEdit = async function() {
+    try {
+        console.log("🔄 路線編輯完成，正在重繪畫面...");
+        
+        // 1. 從資料庫讀取最新的偏好設定 (包含剛剛存入的新排序/刪除結果)
+        const userPrefs = await getAllUserPreferences();
+        
+        // 2. 拿取記憶體中的快取字典與狀態 (不重新浪費流量 call API)
+        const cachedDict = JSON.parse(localStorage.getItem('Tsukin_Cached_Dict') || '{}');
+        const cachedLiveStatus = JSON.parse(localStorage.getItem('Tsukin_Cached_Status') || '{}');
+        
+        // 3. 呼叫底層渲染引擎，這會重新洗牌首頁主卡片的內部路線
+        buildAndRender(userPrefs, cachedDict, cachedLiveStatus, false);
+        
+        // 4. ✨ 神級細節：因為你的編輯介面退場後，底層的「詳情卡片(玻璃面板)」依然是展開的！
+        // 必須呼叫我們寫過的靜默更新引擎，瞬間把玻璃面板裡的路線也抽換成新的，肉眼完全不會察覺。
+        if (window.activeCardId) {
+            silentUpdateExtensionPanel(window.activeCardId);
+        }
+    } catch (err) {
+        console.error("重繪畫面失敗:", err);
+    }
+};

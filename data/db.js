@@ -396,3 +396,81 @@ export async function deleteRoutePreference(id) {
         }
     });
 }
+
+// ============================================================================
+// 🟢 新增：更新卡片內的路線列表 (支援 Drag & Drop 排序與刪除)
+// ============================================================================
+export async function updateCardRoutes(id, newTargetLineIds) {
+    const db = await initDB();
+
+    // 🟢 處理備用模式 (LocalStorage)
+    if (useFallback || !db) {
+        const map = getFallbackData();
+        let currentData = map[id] || { id: id }; // 若無舊資料則新建
+        let previousState = null;
+
+        // 備份舊狀態 (提供給 Undo 引擎使用)
+        if (currentData.targetLineIds || currentData.customName || currentData.customHex) {
+            previousState = {
+                customName: currentData.customName,
+                customHex: currentData.customHex,
+                targetLineIds: currentData.targetLineIds ? [...currentData.targetLineIds] : []
+            };
+        }
+
+        currentData.targetLineIds = newTargetLineIds;
+        currentData.updatedAt = Date.now();
+        currentData.previousState = previousState;
+
+        saveFallbackData(currentData);
+        console.log(`[DB-Fallback] 路線 ${id} 的列表已更新`);
+        return Promise.resolve();
+    }
+
+    // 🟢 處理 IndexedDB 模式
+    return new Promise((resolve) => {
+        try {
+            const transaction = db.transaction(STORE_NAME, 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const getRequest = store.get(id);
+
+            getRequest.onsuccess = () => {
+                let currentData = getRequest.result || { id: id };
+                let previousState = null;
+
+                if (currentData.targetLineIds || currentData.customName || currentData.customHex) {
+                    previousState = {
+                        customName: currentData.customName,
+                        customHex: currentData.customHex,
+                        targetLineIds: currentData.targetLineIds ? [...currentData.targetLineIds] : []
+                    };
+                }
+
+                currentData.targetLineIds = newTargetLineIds;
+                currentData.updatedAt = Date.now();
+                currentData.previousState = previousState;
+
+                const putRequest = store.put(currentData);
+                putRequest.onsuccess = () => {
+                    console.log(`[DB] 路線 ${id} 的列表已更新`);
+                    resolve();
+                };
+                putRequest.onerror = () => {
+                    useFallback = true;
+                    saveFallbackData(currentData);
+                    resolve();
+                };
+            };
+
+            getRequest.onerror = () => {
+                const data = { id, targetLineIds: newTargetLineIds, updatedAt: Date.now(), previousState: null };
+                useFallback = true;
+                saveFallbackData(data);
+                resolve();
+            };
+        } catch (err) {
+            useFallback = true;
+            resolve();
+        }
+    });
+}

@@ -523,17 +523,24 @@ export function startRouteEditMode(cardId, currentLineIds) {
         // 🚨 存檔按鈕防護：防止手指抽筋連點兩下存檔
         if (isEditRouteAnimating) return;
 
-        const newOrder = Array.from(capsulesCol.querySelectorAll('.edit-route-item'))
+        // ✨ 核心修復：使用 :not(.deleting) 絕對濾除「剛按垃圾桶還沒消失」的幽靈路線！
+        const newOrder = Array.from(capsulesCol.querySelectorAll('.edit-route-item:not(.deleting)'))
             .map(item => item.getAttribute('data-line-id'));
-        await db.saveCardPreference(cardId, { targetLineIds: newOrder });
+            
+        // 呼叫剛剛在 db.js 建立的真實函式
+        await db.updateCardRoutes(cardId, newOrder);
 
+        // 觸發面板收起動畫
         restoreUI();
+        
+        // 延遲 300ms，趁著降落動畫遮住畫面時，在背景偷偷重繪 UI
         setTimeout(async () => {
-            if (window.buildAndRender) await window.buildAndRender();
-            if (window.closeAllCards) window.closeAllCards(true);
+            if (window.refreshAppAfterEdit) {
+                await window.refreshAppAfterEdit();
+            }
         }, 300);
     }));
-
+    
     // =========================================================
     // 🚀 入場十字交疊淡出引擎 (Entrance Cross-fade Engine - 完美克隆凍結版)
     // =========================================================
