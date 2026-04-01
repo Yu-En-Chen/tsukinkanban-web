@@ -2804,71 +2804,101 @@ function silentUpdateExtensionPanel(cardId) {
     const data = window.appRailwayData.find(r => r.id === cardId);
     if (!data) return;
 
-    // ✨ 核心魔法：記住使用者目前的滑動位置 (Scroll Position)
     const currentScroll = extension.scrollTop;
     
-    // 清空並瞬間重組內容
-    extension.innerHTML = '';
-    
-    data.detailedLines.forEach(line => {
-        let statusClass = 'status-normal';
-        if (line.isError) statusClass = 'status-error';
-        else if (line.isAttention) statusClass = 'status-attention';
-        else if (line.isDelayed) {
-            if (line.delay > 0 && line.delay <= 5) statusClass = 'status-delayed-minor'; 
-            else statusClass = 'status-delayed';
+    // 1. ✨ 安全清除：只移除舊的「路線卡片」與「空狀態」，絕對不碰操作按鈕！
+    Array.from(extension.children).forEach(child => {
+        if (child.classList.contains('extension-route-card') || 
+            (child.style.backdropFilter && child.style.backdropFilter.includes('blur(25px)'))) {
+            child.remove();
         }
-
-        const delayText = line.delay > 0 ? ` (${line.delay}分)` : '';
-        const row = document.createElement('div');
-        row.className = 'extension-route-card';
-
-        let advancedHtml = '';
-        if (line.advancedDetails && line.advancedDetails.length > 0) {
-            advancedHtml = `
-                <div class="adv-details-container">
-                    ${line.advancedDetails.map(adv => {
-                        let dirDelayHtml = `<span class="adv-normal-text">平常</span>`;
-                        if (adv.max_delay > 0) {
-                            if (adv.max_delay <= 5) dirDelayHtml = `<span class="adv-delay-minor-text">${adv.max_delay}分遅れ</span>`;
-                            else dirDelayHtml = `<span class="adv-delay-text">${adv.max_delay}分遅れ</span>`;
-                        }
-                        const trainCountHtml = adv.train_count > 0 ? `<span class="adv-train-count">(${adv.train_count}列車)</span>` : '';
-                        return `
-                            <div class="adv-detail-capsule">
-                                <span class="adv-dir-name">${adv.direction_name}</span>
-                                <div class="adv-status-group">${trainCountHtml}${dirDelayHtml}</div>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            `;
-        }
-
-        row.innerHTML = `
-            <div class="ext-card-header">
-                <div class="ext-card-title-group">
-                    <div class="ext-route-name">${line.name}</div>
-                    <div class="ext-route-company">${line.company}</div>
-                </div>
-                <div class="ext-status-badge ${statusClass}">
-                    ${line.status}${delayText}
-                </div>
-            </div>
-            <div class="ext-card-divider"></div>
-            <div class="ext-card-message">${line.message}</div>
-            ${advancedHtml}
-            <div class="ext-card-footer">
-                <span class="ext-update-time">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    更新: ${line.updateTime}
-                </span>
-            </div>
-        `;
-        extension.appendChild(row);
     });
 
-    // ✨ 核心魔法：瞬間把滑動位置設定回去，肉眼完全看不出畫面有被清空過
+    // 2. 找到原本的按鈕區塊 (作為插入新卡片的定位點)
+    const actionBtnContainer = Array.from(extension.querySelectorAll('.flight-action-buttons-container')).find(c => !c.innerHTML.includes('保存'));
+
+    const fragment = document.createDocumentFragment();
+    
+    // 3. 生成新卡片 (原本的邏輯)
+    if (data.detailedLines && data.detailedLines.length > 0) {
+        data.detailedLines.forEach(line => {
+            let statusClass = 'status-normal';
+            if (line.isError) statusClass = 'status-error';
+            else if (line.isAttention) statusClass = 'status-attention';
+            else if (line.isDelayed) {
+                if (line.delay > 0 && line.delay <= 5) statusClass = 'status-delayed-minor'; 
+                else statusClass = 'status-delayed';
+            }
+
+            const delayText = line.delay > 0 ? ` (${line.delay}分)` : '';
+            const row = document.createElement('div');
+            row.className = 'extension-route-card';
+
+            let advancedHtml = '';
+            if (line.advancedDetails && line.advancedDetails.length > 0) {
+                advancedHtml = `
+                    <div class="adv-details-container">
+                        ${line.advancedDetails.map(adv => {
+                            let dirDelayHtml = `<span class="adv-normal-text">平常</span>`;
+                            if (adv.max_delay > 0) {
+                                if (adv.max_delay <= 5) dirDelayHtml = `<span class="adv-delay-minor-text">${adv.max_delay}分遅れ</span>`;
+                                else dirDelayHtml = `<span class="adv-delay-text">${adv.max_delay}分遅れ</span>`;
+                            }
+                            const trainCountHtml = adv.train_count > 0 ? `<span class="adv-train-count">(${adv.train_count}列車)</span>` : '';
+                            return `
+                                <div class="adv-detail-capsule">
+                                    <span class="adv-dir-name">${adv.direction_name}</span>
+                                    <div class="adv-status-group">${trainCountHtml}${dirDelayHtml}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+
+            row.innerHTML = `
+                <div class="ext-card-header">
+                    <div class="ext-card-title-group">
+                        <div class="ext-route-name">${line.name}</div>
+                        <div class="ext-route-company">${line.company}</div>
+                    </div>
+                    <div class="ext-status-badge ${statusClass}">
+                        ${line.status}${delayText}
+                    </div>
+                </div>
+                <div class="ext-card-divider"></div>
+                <div class="ext-card-message">${line.message}</div>
+                ${advancedHtml}
+                <div class="ext-card-footer">
+                    <span class="ext-update-time">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        更新: ${line.updateTime}
+                    </span>
+                </div>
+            `;
+            fragment.appendChild(row);
+        });
+    } else {
+        // 如果刪到一條不剩，補回空狀態
+        const emptyState = document.createElement('div');
+        emptyState.style.cssText = 'background: rgba(30, 30, 32, 0.65); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px 20px; text-align: center; color: var(--text-secondary); box-shadow: 0 8px 24px rgba(0,0,0,0.15);';
+        emptyState.innerHTML = `
+            <div style="opacity: 0.6; margin-bottom: 12px; display: flex; justify-content: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            </div>
+            <div style="font-size: 1.05em; font-weight: 800; color: #fff;">追跡している路線はありません</div>
+            <div style="font-size: 0.85em; margin-top: 8px; opacity: 0.7;">右上の「＋」から路線を追加してください</div>
+        `;
+        fragment.appendChild(emptyState);
+    }
+
+    // 4. 精準插入新卡片到按鈕上方
+    if (actionBtnContainer) {
+        extension.insertBefore(fragment, actionBtnContainer);
+    } else {
+        extension.appendChild(fragment);
+    }
+
     extension.scrollTop = currentScroll;
 }
 
@@ -2963,27 +2993,18 @@ window.addEventListener('mousemove', (e) => {
     }
 });
 
-// ============================================================================
-// 🟢 提供給編輯路線介面 (edit-routes.js) 存檔後呼叫的全域重繪引擎
-// ============================================================================
 window.refreshAppAfterEdit = async function() {
     try {
         console.log("🔄 路線編輯完成，正在重繪畫面...");
-        
-        // 1. 從資料庫讀取最新的偏好設定 (包含剛剛存入的新排序/刪除結果)
         const userPrefs = await getAllUserPreferences();
-        
-        // 2. 拿取記憶體中的快取字典與狀態 (不重新浪費流量 call API)
         const cachedDict = JSON.parse(localStorage.getItem('Tsukin_Cached_Dict') || '{}');
         const cachedLiveStatus = JSON.parse(localStorage.getItem('Tsukin_Cached_Status') || '{}');
         
-        // 3. 呼叫底層渲染引擎，這會重新洗牌首頁主卡片的內部路線
         buildAndRender(userPrefs, cachedDict, cachedLiveStatus, false);
         
-        // 4. ✨ 神級細節：因為你的編輯介面退場後，底層的「詳情卡片(玻璃面板)」依然是展開的！
-        // 必須呼叫我們寫過的靜默更新引擎，瞬間把玻璃面板裡的路線也抽換成新的，肉眼完全不會察覺。
-        if (window.activeCardId) {
-            silentUpdateExtensionPanel(window.activeCardId);
+        // 🚨 修正：拔除 window. 前綴
+        if (activeCardId) {
+            silentUpdateExtensionPanel(activeCardId);
         }
     } catch (err) {
         console.error("重繪畫面失敗:", err);

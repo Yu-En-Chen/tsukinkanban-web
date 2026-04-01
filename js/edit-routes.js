@@ -319,54 +319,37 @@ export function startRouteEditMode(cardId, currentLineIds) {
 
     // 加上 options 參數
     const restoreUI = (options = {}) => {
-
-        // 🚨 1. 退場防護：如果在進場中、或已經在退場中，絕對不允許觸發！
         if (isEditRouteAnimating) return;
-
-        // 🔒 2. 關閉時也上鎖
         isEditRouteAnimating = true;
-
-        // 🛡️ 3. 退場瞬間，再次沒收點擊權限，防止消散過程被誤觸
         scrollWrapper.style.pointerEvents = 'none';
-
+    
         const isSeamless = options.isSeamless || false;
-
-        // 🛑 只有「非手勢」的按鈕關閉時，才需要強制煞停 JS 引擎
-        if (!isSeamless && shredderRafId) {
-            cancelAnimationFrame(shredderRafId);
-        }
-
-        // =========================================================
-        // 🚀 第一步：啟動十字交疊淡入淡出引擎 (Cross-fade Engine)
-        // =========================================================
+        if (!isSeamless && shredderRafId) cancelAnimationFrame(shredderRafId);
+    
         const currentEditTransform = editContainer.style.transform;
         const currentBtnTransform = btnContainer.style.transform;
         editContainer.style.transform = '';
         btnContainer.style.transform = '';
-
+    
         const editRect = editContainer.getBoundingClientRect();
         const btnRect = btnContainer.getBoundingClientRect();
         const scrollRect = scrollWrapper.getBoundingClientRect();
-
+    
         const editTop = editRect.top - scrollRect.top + scrollWrapper.scrollTop;
         const btnTop = btnRect.top - scrollRect.top + scrollWrapper.scrollTop;
-
-        // ✨ 修復 3：精準計算 Left 座標與實際 Width，不再粗暴使用 left:0 和 100%！
         const editLeft = editRect.left - scrollRect.left + scrollWrapper.scrollLeft;
         const btnLeft = btnRect.left - scrollRect.left + scrollWrapper.scrollLeft;
-
+    
         editContainer.style.transition = 'none';
         btnContainer.style.transition = 'none';
-
-        // 懸空編輯區塊 (精準鎖死寬度與左側距離)
+    
         editContainer.style.position = 'absolute';
         editContainer.style.top = `${editTop}px`;
         editContainer.style.left = `${editLeft}px`;
         editContainer.style.width = `${editRect.width}px`;
         editContainer.style.pointerEvents = 'none';
         editContainer.style.transform = currentEditTransform;
-
-        // 懸空底部按鈕 (精準鎖死寬度與左側距離)
+    
         btnContainer.style.position = 'absolute';
         btnContainer.style.top = `${btnTop}px`;
         btnContainer.style.bottom = 'auto';
@@ -375,65 +358,50 @@ export function startRouteEditMode(cardId, currentLineIds) {
         btnContainer.style.marginTop = '0';
         btnContainer.style.pointerEvents = 'none';
         btnContainer.style.transform = currentBtnTransform;
-
-        // 2. 喚醒原本的清單，放入排版中，但先保持完全透明 (opacity: 0)
-        originalChildren.forEach(child => {
+    
+        // ✨ 動態獲取當下的真實 DOM，不管背景有沒有被偷換過，都能精準命中！
+        const contentToReveal = Array.from(scrollWrapper.children).filter(child => 
+            child.id !== 'edit-mode-container' && 
+            child.id !== 'ghost-container' && 
+            child !== btnContainer
+        );
+    
+        contentToReveal.forEach(child => {
             child.style.transition = 'none';
             child.style.opacity = '0';
             child.style.display = '';
         });
-
-        const easeBezier = 'cubic-bezier(0.16, 1, 0.3, 1)';
-        const duration = '0.85s';
-        const feather = 45;
-
-        // 重新分配 GPU
+    
         innerCard.style.willChange = 'transform, opacity, -webkit-mask-position';
         innerCard.style.WebkitBackfaceVisibility = 'hidden';
         extensionCard.style.willChange = 'transform';
-
-        // 抵銷位移的撐高，防止排版坍塌
+    
         scrollWrapper.style.height = `${origClientHeight + moveUpDist}px`;
-
-        // ✨ 觸發原生平滑捲動，讓清單優雅地洗牌回到最上方
-        scrollWrapper.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
-
-        // 3. 強制瀏覽器重繪 (Reflow)，確認隱形與排版已生效
+        scrollWrapper.scrollTo({ top: 0, behavior: 'smooth' });
+    
         void scrollWrapper.offsetHeight;
-
-        // 4. 發動原本清單的平滑淡入！(延遲 0.2s 讓舊內容先死透，完美錯開)
-        originalChildren.forEach(child => {
+    
+        contentToReveal.forEach(child => {
             child.style.transition = 'opacity 0.4s ease-out 0.2s';
             child.style.opacity = '1';
         });
-
-        // =========================================================
-        // 🚀 第二步：啟動降落引擎
-        // =========================================================
+    
         innerCard.style.transition = 'none';
         extensionCard.style.transition = 'none';
-
+    
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-                if (!isSeamless) {
-                    // 🔘 按鈕關閉：發射 JS 實體引擎接管降落！(耗時 850ms)
-                    // 💡 注意：引擎會自動把懸空的 editContainer 透明度平滑降到 0，達成完美交疊！
-                    runShredderAnimation(moveUpDist, 0, 850);
-                }
-
+                if (!isSeamless) runShredderAnimation(moveUpDist, 0, 850);
+                
                 innerCard.style.pointerEvents = 'auto';
                 innerCard.style.opacity = '1';
-
-                // ✨ 右側 SVG 按鈕降落還原
+    
                 const targetIds = ['action-capsule', 'left-menu-btn', 'search-trigger'];
                 targetIds.forEach(id => {
                     const el = document.getElementById(id);
                     if (el) {
                         el.querySelectorAll('svg').forEach(svg => {
-                            svg.style.setProperty('transition', `translate ${duration} ${easeBezier}, opacity 0.3s ease`, 'important');
+                            svg.style.setProperty('transition', `translate 0.85s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease`, 'important');
                             svg.style.removeProperty('translate');
                             svg.style.removeProperty('opacity');
                         });
@@ -441,104 +409,86 @@ export function startRouteEditMode(cardId, currentLineIds) {
                 });
             });
         });
-
-        // =========================================================
-        // 🧹 850ms 動畫徹底落地後的現場清理
-        // =========================================================
+    
         setTimeout(() => {
-            // 1. 徹底移除已經淡出完畢的編輯容器
             editContainer.remove();
             btnContainer.remove();
-
-            // 2. 清理原本清單的 inline-style
-            originalChildren.forEach(child => {
+    
+            contentToReveal.forEach(child => {
                 child.style.transition = '';
                 child.style.opacity = '';
             });
-
-            // 3. 擦乾淨降落引擎的痕跡
+    
             innerCard.style.transform = '';
             innerCard.style.WebkitMaskPosition = '';
             innerCard.style.maskPosition = '';
             extensionCard.style.transform = '';
             extensionCard.style.transition = '';
-
-            // 4. 強制淨空高度與 Padding 殘留，交還給 CSS 控制
+    
             scrollWrapper.style.height = '';
             scrollWrapper.style.minHeight = '';
             scrollWrapper.style.paddingBottom = '';
-
-            // 5. 陰影呼吸外擴復原
+    
             innerCard.style.transition = 'none';
             innerCard.style.boxShadow = '0 0 0 rgba(0,0,0,0)';
-
             innerCard.style.WebkitMaskImage = '';
             innerCard.style.WebkitMaskSize = '';
             innerCard.style.WebkitMaskPosition = '';
             innerCard.style.WebkitMaskRepeat = '';
-
             innerCard.style.willChange = 'auto';
             innerCard.style.WebkitBackfaceVisibility = '';
             extensionCard.style.willChange = 'auto';
-
+    
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
-                    innerCard.style.transition = `box-shadow 0.4s ${easeBezier}`;
+                    innerCard.style.transition = `box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1)`;
                     innerCard.style.boxShadow = '';
-
-                    setTimeout(() => {
-                        innerCard.style.transition = '';
-                    }, 400);
+                    setTimeout(() => { innerCard.style.transition = ''; }, 400);
                 });
             });
-
-            // 清理右側按鈕的鎖定殘留
+    
             const targetIds = ['action-capsule', 'left-menu-btn', 'search-trigger'];
             targetIds.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
                     el.style.removeProperty('pointer-events');
-
-                    if (id === 'action-capsule') {
-                        el.querySelectorAll('.capsule-btn-item').forEach(btn => btn.style.removeProperty('overflow'));
-                    } else {
-                        el.style.removeProperty('overflow');
-                    }
-
+                    if (id === 'action-capsule') el.querySelectorAll('.capsule-btn-item').forEach(btn => btn.style.removeProperty('overflow'));
+                    else el.style.removeProperty('overflow');
                     el.querySelectorAll('svg').forEach(svg => {
                         svg.style.removeProperty('transition');
                         svg.style.removeProperty('will-change');
                     });
                 }
             });
-            // 🔓 4. 徹底清理完畢後解鎖
+    
             isEditRouteAnimating = false;
             if (scrollWrapper) scrollWrapper.style.removeProperty('pointer-events');
-
         }, 850);
     };
 
     btnContainer.appendChild(createBtn(iconCancel, 'キャンセル', false, restoreUI));
     btnContainer.appendChild(createBtn(iconSave, '保存', true, async () => {
-        // 🚨 存檔按鈕防護：防止手指抽筋連點兩下存檔
         if (isEditRouteAnimating) return;
-
-        // ✨ 核心修復：使用 :not(.deleting) 絕對濾除「剛按垃圾桶還沒消失」的幽靈路線！
+    
         const newOrder = Array.from(capsulesCol.querySelectorAll('.edit-route-item:not(.deleting)'))
             .map(item => item.getAttribute('data-line-id'));
             
-        // 呼叫剛剛在 db.js 建立的真實函式
         await db.updateCardRoutes(cardId, newOrder);
-
-        // 觸發面板收起動畫
+    
+        // ✨ 核心修復：在退場前，等待背景將真實 DOM 抽換為最新排序
+        if (window.refreshAppAfterEdit) {
+            await window.refreshAppAfterEdit();
+            
+            // 🚨 防止剛長出來的新路線卡片瞬間閃現！先把他們藏起來，交由 restoreUI 優雅淡入
+            Array.from(scrollWrapper.children).forEach(child => {
+                if (child.id !== 'edit-mode-container' && child !== btnContainer && child.id !== 'ghost-container') {
+                    child.style.display = 'none';
+                }
+            });
+        }
+    
+        // 觸發面板收起動畫 (現在 restoreUI 會抓到最新的 DOM)
         restoreUI();
-        
-        // 延遲 300ms，趁著降落動畫遮住畫面時，在背景偷偷重繪 UI
-        setTimeout(async () => {
-            if (window.refreshAppAfterEdit) {
-                await window.refreshAppAfterEdit();
-            }
-        }, 300);
     }));
     
     // =========================================================
