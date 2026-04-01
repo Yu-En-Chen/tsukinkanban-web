@@ -463,8 +463,10 @@ export function startRouteEditMode(cardId, currentLineIds) {
             extensionCard.style.transform = '';
             extensionCard.style.transition = '';
 
-            // 4. 恢復 scrollWrapper 原始高度
-            scrollWrapper.style.height = originalScrollHeight;
+            // 4. 強制淨空高度與 Padding 殘留，交還給 CSS 控制
+            scrollWrapper.style.height = '';
+            scrollWrapper.style.minHeight = '';
+            scrollWrapper.style.paddingBottom = '';
 
             // 5. 陰影呼吸外擴復原
             innerCard.style.transition = 'none';
@@ -509,18 +511,18 @@ export function startRouteEditMode(cardId, currentLineIds) {
                     });
                 }
             });
-         // 🔓 4. 徹底清理完畢後解鎖
+            // 🔓 4. 徹底清理完畢後解鎖
             isEditRouteAnimating = false;
             if (scrollWrapper) scrollWrapper.style.removeProperty('pointer-events');
 
-        }, 850); 
+        }, 850);
     };
 
     btnContainer.appendChild(createBtn(iconCancel, 'キャンセル', false, restoreUI));
     btnContainer.appendChild(createBtn(iconSave, '保存', true, async () => {
         // 🚨 存檔按鈕防護：防止手指抽筋連點兩下存檔
         if (isEditRouteAnimating) return;
-        
+
         const newOrder = Array.from(capsulesCol.querySelectorAll('.edit-route-item'))
             .map(item => item.getAttribute('data-line-id'));
         await db.saveCardPreference(cardId, { targetLineIds: newOrder });
@@ -662,11 +664,11 @@ export function startRouteEditMode(cardId, currentLineIds) {
             extensionCard.style.transition = 'none';
             const currentY = moveUpDist - pullDelta;
             runShredderAnimation(currentY, moveUpDist, 400);
-            
+
             // 4. 恢復透明度與數值歸零
             innerCard.style.opacity = '0';
             pullDelta = 0;
-            return; 
+            return;
         }
 
         const touchY = e.touches[0].clientY;
