@@ -710,43 +710,53 @@ export function startRouteEditMode(cardId, currentLineIds) {
     }, { signal });
 
     // ============================================================================
-    // 🖱️ 頂級互動：電腦版「滑鼠滾輪 / 觸控板」下拉關閉引擎
+    // 🖱️ 頂級互動：電腦版「滑鼠滾輪 / 觸控板」下拉關閉引擎 (穩重厚實 100% 對齊版)
     // ============================================================================
     let wheelPullDelta = 0;
     let wheelRafTicking = false;
     let wheelBounceTimer = null;
+    let isWheelDragging = false; // ✨ 加入狀態鎖，防止頻繁上下滾動卡死
 
     scrollWrapper.addEventListener('wheel', (e) => {
         // 🚨 防護 1：動畫中禁止發動
         if (isEditRouteAnimating) return;
 
-        // 🚨 防護 2：只有在列表最頂部 (scrollTop <= 0)，且滾輪往上滾 (e.deltaY < 0 代表下拉) 時才觸發
-        if (scrollWrapper.scrollTop <= 0 && e.deltaY < 0) {
+        // 🚨 防護 2：只有在列表最頂部，且意圖下拉 (deltaY < 0) 時才啟動引擎
+        // 加上 isWheelDragging 鎖，確保一旦開始下拉，就算中途手指稍微反向滾，也不會瞬間斷開卡死
+        if ((scrollWrapper.scrollTop <= 0 && e.deltaY < 0) || isWheelDragging) {
             
             // 擋住瀏覽器預設的橡皮筋回彈與捲動行為
             if (e.cancelable) e.preventDefault(); 
+            isWheelDragging = true;
             
-            // 累加下拉距離 (乘以 0.6 稍微降低觸控板的過度靈敏度)
-            wheelPullDelta += Math.abs(e.deltaY) * 0.6;
+            // ✨ 核心調校 1：阻尼係數 (Damping)。
+            // 將係數降到 0.2，創造「厚實穩重」的拉扯手感，需要更明確的滑動
+            // 允許反向滾動 (e.deltaY > 0) 來抵銷拉扯距離，但極限就是退回原位 (0)
+            wheelPullDelta += -(e.deltaY) * 0.2; 
+            if (wheelPullDelta < 0) wheelPullDelta = 0;
 
-            // 門檻值：大約等於卡片高度的 1/4，超過就關閉
-            const threshold = moveUpDist / 4;
+            // ✨ 核心調校 2：觸發門檻 (Threshold)。
+            // 與手機版 touch 手勢完全對齊 (moveUpDist / 3)
+            const threshold = moveUpDist / 3;
 
             if (wheelPullDelta > threshold) {
                 // 🛑 達到門檻，發射關閉引擎！
+                isWheelDragging = false;
                 wheelPullDelta = 0;
                 if (wheelBounceTimer) clearTimeout(wheelBounceTimer);
                 
-                // 從當前拉扯的高度，平滑降落到底部
+                // 完全對齊手機版的 350ms 降落參數
                 runShredderAnimation(moveUpDist - threshold, 0, 350);
                 restoreUI({ isSeamless: true });
                 return;
             }
 
-            // 🎬 視覺回饋：讓實心玻璃跟著滾輪/觸控板的拉扯往下沉，並產生「吐出」顯影效果
+            // 🎬 視覺回饋：跟隨觸控板拉扯
             if (!wheelRafTicking) {
                 requestAnimationFrame(() => {
-                    // 確保沒有被 CSS 鎖住
+                    if (!isWheelDragging) { wheelRafTicking = false; return; }
+                    
+                    // 拔除 CSS 動畫，將控制權 100% 交給使用者的手指/滾輪
                     innerCard.style.transition = 'none';
                     extensionCard.style.transition = 'none';
                     if (editContainer) editContainer.style.transition = 'none';
@@ -756,16 +766,15 @@ export function startRouteEditMode(cardId, currentLineIds) {
                     innerCard.style.transform = `translateY(-${currentY}px)`;
                     extensionCard.style.transform = `translateY(-${currentY}px)`;
                     
-                    // ✨ 1. 補上視差位移 (Parallax)：讓編輯區塊以 0.22 倍速跟著下沉，創造空間深度
+                    // 視差位移 (Parallax) 與動態透明度 (Dynamic Opacity)
                     const contentParallax = wheelPullDelta * 0.22;
                     if (editContainer) editContainer.style.transform = `translateY(${contentParallax}px)`;
                     if (btnContainer) btnContainer.style.transform = `translateY(${contentParallax}px)`;
                     
-                    // ✨ 2. 補上動態透明度 (Dynamic Opacity)：拉扯超過 40px 就完全顯影原本的卡片，創造「從遮罩中吐出來」的錯覺
                     const dynamicOpacity = Math.min(wheelPullDelta / 40, 1);
                     innerCard.style.opacity = dynamicOpacity.toString();
 
-                    // 連動更新遮罩(Mask)的物理位置，維持完美的毛玻璃邊緣
+                    // 毛玻璃邊緣同步
                     const currentMaskPos = `0px ${currentY - feather}px`;
                     innerCard.style.setProperty('-webkit-mask-position', currentMaskPos, 'important');
                     innerCard.style.setProperty('mask-position', currentMaskPos, 'important');
@@ -775,36 +784,31 @@ export function startRouteEditMode(cardId, currentLineIds) {
                 wheelRafTicking = true;
             }
 
-            // 🔄 智慧回彈機制：如果滾輪停下來 150ms 且沒超過關閉門檻，自動彈回滿版頂部
+            // 🔄 智慧回彈機制 (完全對齊手機版的放手物理運算)
             if (wheelBounceTimer) clearTimeout(wheelBounceTimer);
             wheelBounceTimer = setTimeout(() => {
-                if (wheelPullDelta > 0 && !isEditRouteAnimating) {
-                    // ✨ 回彈時，連同透明度與視差區塊一起加入過渡動畫
-                    innerCard.style.transition = `transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease`;
-                    extensionCard.style.transition = `transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)`;
-                    if (editContainer) editContainer.style.transition = `transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)`;
-                    if (btnContainer) btnContainer.style.transition = `transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)`;
+                if (wheelPullDelta > 0 && isWheelDragging && !isEditRouteAnimating) {
+                    isWheelDragging = false;
                     
-                    // 彈回原始高度與全透明隱藏狀態
-                    innerCard.style.transform = `translateY(-${moveUpDist}px)`;
-                    extensionCard.style.transform = `translateY(-${moveUpDist}px)`;
-                    if (editContainer) editContainer.style.transform = `translateY(0px)`;
-                    if (btnContainer) btnContainer.style.transform = `translateY(0px)`;
+                    // ✨ 核心調校 3：捨棄 CSS 回彈，改呼叫你寫的 runShredderAnimation！
+                    // 這保證了回彈的 400ms、五次方緩動曲線 (easeOutQuint) 與手機版 100% 相同！
+                    const currentY = moveUpDist - wheelPullDelta;
+                    runShredderAnimation(currentY, moveUpDist, 400);
+                    
+                    // 處理透明度消失
+                    innerCard.style.transition = `opacity 0.3s ease`;
                     innerCard.style.opacity = '0'; 
-                    
-                    const currentMaskPos = `0px ${moveUpDist - feather}px`;
-                    innerCard.style.setProperty('-webkit-mask-position', currentMaskPos, 'important');
-                    innerCard.style.setProperty('mask-position', currentMaskPos, 'important');
                     
                     wheelPullDelta = 0;
                 }
-            }, 150);
+            }, 150); // 觸控板停下 150ms 視為「放開手指」
             
         } else {
-            // 如果是在往下滾動看列表，直接歸零，不干擾正常捲動
+            // 如果沒在拉扯狀態，且正常往下滾動看列表，解除所有鎖定，不干擾原生捲動
+            isWheelDragging = false;
             wheelPullDelta = 0;
         }
-    }, { passive: false, signal }); // ✨ 同樣掛上 signal，保證退場時自動銷毀，絕不殘留幽靈！
+    }, { passive: false, signal });
 
     initDragAndDrop(editContainer);
 }
