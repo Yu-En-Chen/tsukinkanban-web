@@ -767,6 +767,24 @@ function handleCardClick(id) {
             }
         };
 
+        // ✨ 1. 新增：處理「新建卡片」的點擊轉場邏輯
+        const handleCreateNewCardClick = () => {
+            if (isAnimating) return;
+            
+            // 步驟 A：先關閉目前的詳情卡片
+            closeAllCards(false);
+            
+            // 步驟 B：等待卡片完全降落 (約 450ms)，再呼叫 add-panel.js 的自動化神兵利器
+            setTimeout(() => {
+                if (typeof window.createNewCardAndEdit === 'function') {
+                    window.createNewCardAndEdit();
+                } else {
+                    // 防呆：如果 add-panel 模組還沒完全載入，先打開面板當作備用
+                    if (window.openAddPanel) window.openAddPanel();
+                }
+            }, 450); 
+        };
+
         // 綁定按鈕與事件
         btnContainer.appendChild(createBtn(iconMapPin, 'Google Maps', handleGoogleMapClick)); // 綁定 Google Map 邏輯
         btnContainer.appendChild(createBtn(iconMap, '1日だけ追加'));
@@ -909,6 +927,24 @@ function handleCardClick(id) {
                 closeAllCards(false);
                 setTimeout(() => { if (window.openAddPanel) window.openAddPanel(); }, 400);
             };
+
+            // ✨ 1. 新增：處理「新建卡片」的點擊轉場邏輯
+        const handleCreateNewCardClick = () => {
+            if (isAnimating) return;
+            
+            // 步驟 A：先關閉目前的詳情卡片
+            closeAllCards(false);
+            
+            // 步驟 B：等待卡片完全降落 (約 450ms)，再呼叫 add-panel.js 的自動化神兵利器
+            setTimeout(() => {
+                if (typeof window.createNewCardAndEdit === 'function') {
+                    window.createNewCardAndEdit();
+                } else {
+                    // 防呆：如果 add-panel 模組還沒完全載入，先打開面板當作備用
+                    if (window.openAddPanel) window.openAddPanel();
+                }
+            }, 450); 
+        };
 
             btnContainer.appendChild(createBtn(iconTimer, '1日だけ追加', handleTempAdd));
             btnContainer.appendChild(createBtn(iconListPlus, '既存カード追加', handleAddToExisting));
