@@ -647,9 +647,11 @@ window.createNewCardAndEdit = async function(prefillData = null) {
             isCustom: true,
             targetLineIds: newTargetLineIds,
             detailedLines: prefillData && prefillData.detailedLines ? prefillData.detailedLines : [],
+            statusFlags: prefillData && prefillData.statusFlags ? prefillData.statusFlags : [false, false, false, false, false, false, false],
             
-            // ✨ 新增這行：完美繼承七燈號，這樣畫出來的瞬間就會亮著正確的燈！
-            statusFlags: prefillData && prefillData.statusFlags ? prefillData.statusFlags : [false, false, false, false, false, false, false]
+            // ✈️ 關鍵修復：新卡片生成時，必須確認並繼承飛機的血統！
+            isFlightCard: prefillData && prefillData.isFlightCard ? prefillData.isFlightCard : false,
+            flightData: prefillData && prefillData.flightData ? prefillData.flightData : null
         };
 
         // 🧹 清除幽靈標記，避免這張實體卡片被系統當作預覽卡片刪掉
