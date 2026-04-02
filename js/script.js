@@ -767,15 +767,23 @@ function handleCardClick(id) {
             }
         };
 
-        // ✨ 新增：處理飛機卡片「新建卡片」的點擊轉場邏輯
+        // ✨ 新增：飛機卡片也支援資料繼承
         const handleCreateNewCardClick = () => {
             if (isAnimating) return;
             
+            const prefillData = {
+                name: data.name,
+                hex: data.hex,
+                desc: data.desc,
+                detail: data.detail,
+                targetLineIds: data.targetLineIds || [],
+                detailedLines: data.detailedLines || []
+            };
+
             closeAllCards(false);
-            
             setTimeout(() => {
                 if (typeof window.createNewCardAndEdit === 'function') {
-                    window.createNewCardAndEdit();
+                    window.createNewCardAndEdit(prefillData);
                 }
             }, 450); 
         };
@@ -918,18 +926,27 @@ function handleCardClick(id) {
 
             const handleTempAdd = () => { console.log('1日だけ追加 clicked'); };
             const handleAddToExisting = () => { console.log('既存カード追加 clicked'); };
+            // ✨ 替換這裡：打包目前的卡片資訊，傳遞給新增引擎！
             const handleCreateNew = () => {
-                if (isAnimating) return; // 防呆，避免動畫打架
+                if (isAnimating) return;
                 
-                // 1. 先優雅地關閉目前的預覽卡片
+                // 📦 擷取這張臨時卡片的精華資料 (包含剛剛查出來的路線 ID 與即時狀態)
+                const prefillData = {
+                    name: data.name,
+                    hex: data.hex,
+                    desc: data.desc,
+                    detail: data.detail,
+                    // 抓取路線 ID (通常臨時卡片會把它塞在 detailedLines 裡面)
+                    targetLineIds: data.detailedLines && data.detailedLines[0] ? [data.detailedLines[0].id] : (data.targetLineIds || []),
+                    // 把預覽的路線狀態也帶過去，這樣等一下打開就不用重新 Fetch！
+                    detailedLines: data.detailedLines || []
+                };
+
                 closeAllCards(false);
-                
-                // 2. 等待卡片完全降落 (450ms)，再呼叫 add-panel.js 裡的神級函數
                 setTimeout(() => { 
                     if (typeof window.createNewCardAndEdit === 'function') {
-                        window.createNewCardAndEdit();
-                    } else {
-                        console.warn('[System] 無法找到 createNewCardAndEdit 函數');
+                        // ✨ 帶入參數！
+                        window.createNewCardAndEdit(prefillData);
                     }
                 }, 450);
             };

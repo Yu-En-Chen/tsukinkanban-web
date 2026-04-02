@@ -552,10 +552,10 @@ function initDragAndDrop(list) {
     }
 }
 
-window.createNewCardAndEdit = async function() {
+// ✨ 讓函數可以接收 prefillData (預填資料)，如果從管理選單按的就會是 undefined
+window.createNewCardAndEdit = async function(prefillData = null) {
     if (!window.appRailwayData) window.appRailwayData = [];
 
-    // ✨ 修復 1：確保直接點擊按鈕時，沙盒資料庫有被正確初始化！
     if (!isSandboxInitialized) {
         try {
             const initModule = await import('../data/db-add-panel.js');
@@ -569,7 +569,6 @@ window.createNewCardAndEdit = async function() {
     const dbSandbox = await import('../data/db-add-panel.js');
     const hiddenIds = dbSandbox.getHiddenCards ? dbSandbox.getHiddenCards() : [];
 
-    // ✨ 修復 2：精準過濾掉搜尋用的「幽靈卡片」，才不會發生 4 張卻被判定為 5 張的 Bug！
     const visibleCount = window.appRailwayData.filter(r => 
         !hiddenIds.includes(r.id) && 
         !r.isTemporarySearch && 
@@ -585,14 +584,9 @@ window.createNewCardAndEdit = async function() {
         );
 
         if (goToManage) {
-            // ✨ 修復 3：判斷新增面板是否已經打開？
             const addPanel = document.getElementById('add-panel-container');
-
             if (!addPanel) {
-                // 👉 情況 A：如果面板根本沒開（是從首頁的卡片按的），先幫他打開！
                 if (window.openAddPanel) window.openAddPanel();
-
-                // 等待面板 DOM 渲染與進場動畫完成後，再展開管理區塊
                 setTimeout(() => {
                     const manageItem = document.getElementById('add-item-3');
                     if (manageItem && !manageItem.classList.contains('is-expanded')) {
@@ -600,20 +594,14 @@ window.createNewCardAndEdit = async function() {
                     }
                 }, 350); 
             } else {
-                // 👉 情況 B：面板已經在畫面上 (原本的邏輯)
                 const manageItem = document.getElementById('add-item-3');
                 const scrollContainer = document.getElementById('universal-page-content') || document.getElementById('universal-page-wrapper');
-                
                 if (manageItem && scrollContainer) {
                     const targetY = scrollContainer.scrollTop + manageItem.getBoundingClientRect().top - scrollContainer.getBoundingClientRect().top - 24;
-                    
                     scrollContainer.style.overflowY = 'auto';
                     scrollContainer.scrollTo({ top: targetY, behavior: 'smooth' });
-                    
                     setTimeout(() => {
-                        if (!manageItem.classList.contains('is-expanded')) {
-                            window.toggleAddMenuItem('add-item-3');
-                        }
+                        if (!manageItem.classList.contains('is-expanded')) window.toggleAddMenuItem('add-item-3');
                     }, 350);
                 } else {
                     window.toggleAddMenuItem('add-item-3');
@@ -640,18 +628,26 @@ window.createNewCardAndEdit = async function() {
         }
         const newId = `new-card-${nextNum}`;
 
+        // ==========================================
+        // 🔮 魔法發生地：智慧繼承傳入的卡片資料
+        // ==========================================
+        const newName = prefillData && prefillData.name ? prefillData.name : '新規カード';
+        const newHex = prefillData && prefillData.hex ? prefillData.hex : '#2C2C2E';
+        const newTargetLineIds = prefillData && prefillData.targetLineIds ? prefillData.targetLineIds : [];
+
         const newCard = {
             id: newId,
-            name: '新規カード',
+            name: newName, // ✨ 自動帶入名稱
             kana: 'しんきかーど',
             status: 'カスタム',      
-            desc: 'カスタム追加されたカード', 
-            detail: ['カスタマイズ可能'],   
-            hex: '#2C2C2E',
-            isCustom: true 
+            desc: prefillData && prefillData.desc ? prefillData.desc : 'カスタム追加されたカード', 
+            detail: prefillData && prefillData.detail ? prefillData.detail : ['カスタマイズ可能', '-', '-', '-'],   
+            hex: newHex, // ✨ 自動帶入顏色
+            isCustom: true,
+            targetLineIds: newTargetLineIds, // ✨ 自動帶入路線 ID
+            detailedLines: prefillData && prefillData.detailedLines ? prefillData.detailedLines : [] // ✨ 繼承預覽畫面，這樣一打開就不會是白畫面
         };
 
-        // ✨ 確保新增卡片時，不會把幽靈卡片算進去
         window.appRailwayData = window.appRailwayData.filter(r => !r.isTemporarySearch && r.id !== 'temp-search-route');
         window.appRailwayData.unshift(newCard);
 
@@ -660,7 +656,15 @@ window.createNewCardAndEdit = async function() {
 
         const db = await import('../data/db.js');
         if (db.saveDisplayOrder) db.saveDisplayOrder(visibleIds);
-        if (db.saveRoutePreference) db.saveRoutePreference(newId, newCard.name, newCard.hex, null);
+        
+        // ✨ 寫入 DB 時，確實將目標路線存進去
+        if (db.saveRoutePreference) {
+            await db.saveRoutePreference(newId, newName, newHex, newTargetLineIds.length > 0 ? newTargetLineIds : null);
+        }
+        // ✨ 雙重保險：呼叫路線更新 API，確保路線真正綁定到這張新卡片上
+        if (newTargetLineIds.length > 0 && db.updateCardRoutes) {
+            await db.updateCardRoutes(newId, newTargetLineIds);
+        }
 
         if (typeof window.renderMainCards === 'function') {
             window.renderMainCards(updatedVisibleData);
@@ -675,6 +679,8 @@ window.createNewCardAndEdit = async function() {
                     targetCard.click(); 
 
                     setTimeout(() => {
+                        // 此時個性化面板打開，會自動抓取 targetCard 的資料！
+                        // 因為 targetCard 已經繼承了名字跟顏色，所以 UI 也會完美對應！
                         if (typeof window.openBlankOverlay === 'function') {
                             window.openBlankOverlay(newCard.hex);
                             
