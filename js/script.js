@@ -767,20 +767,15 @@ function handleCardClick(id) {
             }
         };
 
-        // ✨ 1. 新增：處理「新建卡片」的點擊轉場邏輯
+        // ✨ 新增：處理飛機卡片「新建卡片」的點擊轉場邏輯
         const handleCreateNewCardClick = () => {
             if (isAnimating) return;
             
-            // 步驟 A：先關閉目前的詳情卡片
             closeAllCards(false);
             
-            // 步驟 B：等待卡片完全降落 (約 450ms)，再呼叫 add-panel.js 的自動化神兵利器
             setTimeout(() => {
                 if (typeof window.createNewCardAndEdit === 'function') {
                     window.createNewCardAndEdit();
-                } else {
-                    // 防呆：如果 add-panel 模組還沒完全載入，先打開面板當作備用
-                    if (window.openAddPanel) window.openAddPanel();
                 }
             }, 450); 
         };
@@ -924,27 +919,22 @@ function handleCardClick(id) {
             const handleTempAdd = () => { console.log('1日だけ追加 clicked'); };
             const handleAddToExisting = () => { console.log('既存カード追加 clicked'); };
             const handleCreateNew = () => {
+                if (isAnimating) return; // 防呆，避免動畫打架
+                
+                // 1. 先優雅地關閉目前的預覽卡片
                 closeAllCards(false);
-                setTimeout(() => { if (window.openAddPanel) window.openAddPanel(); }, 400);
+                
+                // 2. 等待卡片完全降落 (450ms)，再呼叫 add-panel.js 裡的神級函數
+                setTimeout(() => { 
+                    if (typeof window.createNewCardAndEdit === 'function') {
+                        window.createNewCardAndEdit();
+                    } else {
+                        console.warn('[System] 無法找到 createNewCardAndEdit 函數');
+                    }
+                }, 450);
             };
 
-            // ✨ 1. 新增：處理「新建卡片」的點擊轉場邏輯
-        const handleCreateNewCardClick = () => {
-            if (isAnimating) return;
             
-            // 步驟 A：先關閉目前的詳情卡片
-            closeAllCards(false);
-            
-            // 步驟 B：等待卡片完全降落 (約 450ms)，再呼叫 add-panel.js 的自動化神兵利器
-            setTimeout(() => {
-                if (typeof window.createNewCardAndEdit === 'function') {
-                    window.createNewCardAndEdit();
-                } else {
-                    // 防呆：如果 add-panel 模組還沒完全載入，先打開面板當作備用
-                    if (window.openAddPanel) window.openAddPanel();
-                }
-            }, 450); 
-        };
 
             btnContainer.appendChild(createBtn(iconTimer, '1日だけ追加', handleTempAdd));
             btnContainer.appendChild(createBtn(iconListPlus, '既存カード追加', handleAddToExisting));
