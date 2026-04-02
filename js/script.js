@@ -768,16 +768,30 @@ function handleCardClick(id) {
         };
 
         // ✨ 新增：飛機卡片也支援資料繼承 (包含燈號與飛機專屬資料)
+        // ✨ 新增：飛機卡片也支援資料繼承 (包含燈號與飛機專屬資料)
         const handleCreateNewCardClick = () => {
             if (isAnimating) return;
-            
+
+            // 🚨 抓蟲修復：從臨時卡片中提煉出真實的飛機航班 ID
+            let realFlightId = null;
+            if (data.flightData && data.flightData.id) {
+                realFlightId = data.flightData.id;
+            } else if (data.detailedLines && data.detailedLines.length > 0) {
+                realFlightId = data.detailedLines[0].id;
+            }
+
             const prefillData = {
                 name: data.name,
                 hex: data.hex,
                 desc: data.desc,
                 detail: data.detail,
                 statusFlags: data.statusFlags || [false, false, false, false, false, false, false],
-                targetLineIds: data.targetLineIds || [],
+
+                // ✨ 修正：如果原本的 targetLineIds 是空的，就把抓到的真實航班 ID 塞進去！
+                targetLineIds: (data.targetLineIds && data.targetLineIds.length > 0)
+                    ? data.targetLineIds
+                    : (realFlightId ? [realFlightId] : []),
+
                 detailedLines: data.detailedLines || [],
                 // ✈️ 關鍵：把飛機專屬的判斷旗標與資料打包帶走！
                 isFlightCard: data.isFlightCard || false,
@@ -789,13 +803,13 @@ function handleCardClick(id) {
                 if (typeof window.createNewCardAndEdit === 'function') {
                     window.createNewCardAndEdit(prefillData);
                 }
-            }, 450); 
+            }, 450);
         };
 
         // 綁定按鈕與事件
         btnContainer.appendChild(createBtn(iconMapPin, 'Google Maps', handleGoogleMapClick));
         btnContainer.appendChild(createBtn(iconMap, '1日だけ追加'));
-        
+
         // 🐛 核心修復：原本這裡漏掉把 handleCreateNewCardClick 綁定上去了！
         btnContainer.appendChild(createBtn(iconShare, '新規カード作成', handleCreateNewCardClick));
 
@@ -935,7 +949,7 @@ function handleCardClick(id) {
             // ✨ 替換這裡：打包目前的卡片資訊，傳遞給新增引擎！
             const handleCreateNew = () => {
                 if (isAnimating) return;
-                
+
                 // 📦 擷取這張卡片的精華資料 (包含剛剛查出來的路線 ID 與即時狀態)
                 const prefillData = {
                     name: data.name,
@@ -944,13 +958,13 @@ function handleCardClick(id) {
                     detail: data.detail,
                     // ✨ 新增這行：把算好的七燈號陣列一起打包帶走！
                     statusFlags: data.statusFlags || [false, false, false, false, false, false, false],
-                    
+
                     targetLineIds: data.detailedLines && data.detailedLines[0] ? [data.detailedLines[0].id] : (data.targetLineIds || []),
                     detailedLines: data.detailedLines || []
                 };
 
                 closeAllCards(false);
-                setTimeout(() => { 
+                setTimeout(() => {
                     if (typeof window.createNewCardAndEdit === 'function') {
                         window.createNewCardAndEdit(prefillData);
                     }
