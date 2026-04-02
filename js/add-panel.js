@@ -554,9 +554,27 @@ function initDragAndDrop(list) {
 
 window.createNewCardAndEdit = async function() {
     if (!window.appRailwayData) window.appRailwayData = [];
+
+    // ✨ 修復 1：確保直接點擊按鈕時，沙盒資料庫有被正確初始化！
+    if (!isSandboxInitialized) {
+        try {
+            const initModule = await import('../data/db-add-panel.js');
+            if (initModule.cloneFromMainDB) await initModule.cloneFromMainDB();
+            isSandboxInitialized = true;
+        } catch(e) {
+            console.error("[Sandbox] 初始化失敗:", e);
+        }
+    }
+
     const dbSandbox = await import('../data/db-add-panel.js');
     const hiddenIds = dbSandbox.getHiddenCards ? dbSandbox.getHiddenCards() : [];
-    const visibleCount = window.appRailwayData.filter(r => !hiddenIds.includes(r.id)).length;
+
+    // ✨ 修復 2：精準過濾掉搜尋用的「幽靈卡片」，才不會發生 4 張卻被判定為 5 張的 Bug！
+    const visibleCount = window.appRailwayData.filter(r => 
+        !hiddenIds.includes(r.id) && 
+        !r.isTemporarySearch && 
+        r.id !== 'temp-search-route'
+    ).length;
 
     if (visibleCount >= 5) {
         const goToManage = await window.iosConfirm(
@@ -567,22 +585,39 @@ window.createNewCardAndEdit = async function() {
         );
 
         if (goToManage) {
-            const manageItem = document.getElementById('add-item-3');
-            const scrollContainer = document.getElementById('universal-page-content') || document.getElementById('universal-page-wrapper');
-            
-            if (manageItem && scrollContainer) {
-                const targetY = scrollContainer.scrollTop + manageItem.getBoundingClientRect().top - scrollContainer.getBoundingClientRect().top - 24;
-                
-                scrollContainer.style.overflowY = 'auto';
-                scrollContainer.scrollTo({ top: targetY, behavior: 'smooth' });
-                
+            // ✨ 修復 3：判斷新增面板是否已經打開？
+            const addPanel = document.getElementById('add-panel-container');
+
+            if (!addPanel) {
+                // 👉 情況 A：如果面板根本沒開（是從首頁的卡片按的），先幫他打開！
+                if (window.openAddPanel) window.openAddPanel();
+
+                // 等待面板 DOM 渲染與進場動畫完成後，再展開管理區塊
                 setTimeout(() => {
-                    if (!manageItem.classList.contains('is-expanded')) {
+                    const manageItem = document.getElementById('add-item-3');
+                    if (manageItem && !manageItem.classList.contains('is-expanded')) {
                         window.toggleAddMenuItem('add-item-3');
                     }
-                }, 350);
+                }, 350); 
             } else {
-                window.toggleAddMenuItem('add-item-3');
+                // 👉 情況 B：面板已經在畫面上 (原本的邏輯)
+                const manageItem = document.getElementById('add-item-3');
+                const scrollContainer = document.getElementById('universal-page-content') || document.getElementById('universal-page-wrapper');
+                
+                if (manageItem && scrollContainer) {
+                    const targetY = scrollContainer.scrollTop + manageItem.getBoundingClientRect().top - scrollContainer.getBoundingClientRect().top - 24;
+                    
+                    scrollContainer.style.overflowY = 'auto';
+                    scrollContainer.scrollTo({ top: targetY, behavior: 'smooth' });
+                    
+                    setTimeout(() => {
+                        if (!manageItem.classList.contains('is-expanded')) {
+                            window.toggleAddMenuItem('add-item-3');
+                        }
+                    }, 350);
+                } else {
+                    window.toggleAddMenuItem('add-item-3');
+                }
             }
         }
         return; 
@@ -616,6 +651,8 @@ window.createNewCardAndEdit = async function() {
             isCustom: true 
         };
 
+        // ✨ 確保新增卡片時，不會把幽靈卡片算進去
+        window.appRailwayData = window.appRailwayData.filter(r => !r.isTemporarySearch && r.id !== 'temp-search-route');
         window.appRailwayData.unshift(newCard);
 
         const updatedVisibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
