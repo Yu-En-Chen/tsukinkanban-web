@@ -234,7 +234,8 @@ window.renderManagementCards = async function() {
         });
     }
     
-    const currentCards = window.appRailwayData || [];
+    // 🛡️ 防護罩：管理面板永遠只畫出「真實存在」的卡片，徹底過濾幽靈
+    const currentCards = window.appRailwayData ? window.appRailwayData.filter(r => !r.isTemporarySearch && r.id !== 'temp-search-route') : [];
     let visibleCount = 0;
 
     currentCards.forEach(card => {
@@ -552,9 +553,14 @@ function initDragAndDrop(list) {
     }
 }
 
-// ✨ 讓函數可以接收 prefillData (預填資料)，如果從管理選單按的就會是 undefined
+// ✨ 讓函數可以接收 prefillData (預填資料)
 window.createNewCardAndEdit = async function(prefillData = null) {
     if (!window.appRailwayData) window.appRailwayData = [];
+
+    // 🧹 ✨ 核心修復：在做任何事之前，先「超渡」殘留的幽靈卡片！
+    // 必須在「檢查數量上限」前執行，否則被 return 擋下後，幽靈卡片會殘留在記憶體裡，
+    // 導致使用者在管理面板看到它，誤以為系統偷偷把它存起來了！
+    window.appRailwayData = window.appRailwayData.filter(r => !r.isTemporarySearch && r.id !== 'temp-search-route');
 
     if (!isSandboxInitialized) {
         try {
@@ -569,11 +575,8 @@ window.createNewCardAndEdit = async function(prefillData = null) {
     const dbSandbox = await import('../data/db-add-panel.js');
     const hiddenIds = dbSandbox.getHiddenCards ? dbSandbox.getHiddenCards() : [];
 
-    const visibleCount = window.appRailwayData.filter(r => 
-        !hiddenIds.includes(r.id) && 
-        !r.isTemporarySearch && 
-        r.id !== 'temp-search-route'
-    ).length;
+    // 這裡的計算已經很安全了，因為前面已經把幽靈卡片清掉了
+    const visibleCount = window.appRailwayData.filter(r => !hiddenIds.includes(r.id)).length;
 
     if (visibleCount >= 5) {
         const goToManage = await window.iosConfirm(
@@ -608,7 +611,7 @@ window.createNewCardAndEdit = async function(prefillData = null) {
                 }
             }
         }
-        return; 
+        return; // 🛑 完美停止：幽靈已被清除，資料庫也不會被寫入！
     }
 
     if (typeof window.closeUniversalPage === 'function') window.closeUniversalPage(true);
@@ -628,27 +631,24 @@ window.createNewCardAndEdit = async function(prefillData = null) {
         }
         const newId = `new-card-${nextNum}`;
 
-        // ==========================================
-        // 🔮 魔法發生地：智慧繼承傳入的卡片資料
-        // ==========================================
         const newName = prefillData && prefillData.name ? prefillData.name : '新規カード';
         const newHex = prefillData && prefillData.hex ? prefillData.hex : '#2C2C2E';
         const newTargetLineIds = prefillData && prefillData.targetLineIds ? prefillData.targetLineIds : [];
 
         const newCard = {
             id: newId,
-            name: newName, // ✨ 自動帶入名稱
+            name: newName,
             kana: 'しんきかーど',
             status: 'カスタム',      
             desc: prefillData && prefillData.desc ? prefillData.desc : 'カスタム追加されたカード', 
             detail: prefillData && prefillData.detail ? prefillData.detail : ['カスタマイズ可能', '-', '-', '-'],   
-            hex: newHex, // ✨ 自動帶入顏色
+            hex: newHex,
             isCustom: true,
-            targetLineIds: newTargetLineIds, // ✨ 自動帶入路線 ID
-            detailedLines: prefillData && prefillData.detailedLines ? prefillData.detailedLines : [] // ✨ 繼承預覽畫面，這樣一打開就不會是白畫面
+            targetLineIds: newTargetLineIds,
+            detailedLines: prefillData && prefillData.detailedLines ? prefillData.detailedLines : [] 
         };
 
-        window.appRailwayData = window.appRailwayData.filter(r => !r.isTemporarySearch && r.id !== 'temp-search-route');
+        // 直接將新卡片加入最前面
         window.appRailwayData.unshift(newCard);
 
         const updatedVisibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
@@ -657,11 +657,10 @@ window.createNewCardAndEdit = async function(prefillData = null) {
         const db = await import('../data/db.js');
         if (db.saveDisplayOrder) db.saveDisplayOrder(visibleIds);
         
-        // ✨ 寫入 DB 時，確實將目標路線存進去
         if (db.saveRoutePreference) {
             await db.saveRoutePreference(newId, newName, newHex, newTargetLineIds.length > 0 ? newTargetLineIds : null);
         }
-        // ✨ 雙重保險：呼叫路線更新 API，確保路線真正綁定到這張新卡片上
+        
         if (newTargetLineIds.length > 0 && db.updateCardRoutes) {
             await db.updateCardRoutes(newId, newTargetLineIds);
         }
@@ -679,11 +678,8 @@ window.createNewCardAndEdit = async function(prefillData = null) {
                     targetCard.click(); 
 
                     setTimeout(() => {
-                        // 此時個性化面板打開，會自動抓取 targetCard 的資料！
-                        // 因為 targetCard 已經繼承了名字跟顏色，所以 UI 也會完美對應！
                         if (typeof window.openBlankOverlay === 'function') {
                             window.openBlankOverlay(newCard.hex);
-                            
                             setTimeout(() => {
                                 const nameLabel = document.getElementById('p-btn-label');
                                 if (nameLabel) nameLabel.click();
