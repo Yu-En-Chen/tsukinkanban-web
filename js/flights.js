@@ -16,6 +16,12 @@ const landingIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" heigh
 const domesticCodes = ['CTS', 'KIX', 'FUK', 'OKA', 'ITM', 'NGO', 'KOJ', 'MYJ', 'TAK', 'KMJ', 'AKJ', 'ASJ', 'ISG', 'KCZ', 'KMI', 'KTI', 'NGS', 'OIT', 'HIJ', 'AOJ', 'AXT', 'HKD', 'KUH', 'MMB', 'SHB', 'SYO', 'TKS', 'WKJ', 'YGJ', 'MBE', 'UKB', 'NKM', 'SDJ', 'GAJ', 'ONJ', 'FKS', 'NTQ', 'FSZ', 'KIJ', 'TOY', 'OIR', 'UBJ', 'TTJ', 'OKI', 'IWJ', 'IZO', 'TNE', 'KUM', 'RNJ', 'UEO', 'KKX', 'KJP', 'MMJ', 'SHI'];
 
 export function initFlights() {
+    // ✨ 1. 啟動時立刻從快取讀取航班，防止重整瞬間白畫面！
+    try {
+        const cachedFlights = localStorage.getItem('Tsukin_Cached_Flights');
+        if (cachedFlights) window.GlobalFlights = JSON.parse(cachedFlights);
+    } catch (e) {}
+
     setTimeout(() => {
         console.log("✈️ 背景延遲載入航班資訊中...");
         const timestamp = new Date().getTime();
@@ -26,6 +32,8 @@ export function initFlights() {
             .then(data => {
                 if (Array.isArray(data)) {
                     window.GlobalFlights = data;
+                    // ✨ 2. 儲存最新航班到快取
+                    localStorage.setItem('Tsukin_Cached_Flights', JSON.stringify(data));
                     console.log(`✅ 成功載入 ${data.length} 筆航班資訊！`);
                 }
             })
@@ -180,21 +188,9 @@ export function searchFlights(lowKeyword) {
     return results;
 }
 // ==========================================
-// 🟢 航班專屬：無縫介接主卡片引擎 (幽靈卡片版)
+// 🟢 航班專屬：共用資料格式化引擎 (給搜尋與重繪共同使用)
 // ==========================================
-window.previewFlightFromSearch = function(routeId) {
-    const fid = routeId.replace('flight-', '');
-    const flight = window.GlobalFlights.find(f => f.fid.includes(fid));
-    if (!flight) return;
-
-    const searchInput = document.getElementById('search-input');
-    const dropdown = document.getElementById('home-search-dropdown');
-    if (searchInput) { searchInput.value = ''; searchInput.blur(); }
-    if (dropdown) dropdown.style.display = 'none';
-
-    const cancelBtn = document.querySelector('.cancel-circle-btn');
-    if (cancelBtn) cancelBtn.click();
-
+window.generateFlightDataFormat = function(flight, fid) {
     const isTimeChanged = flight.scheduled !== flight.latest;
     const statusMap = {
         'Normal': '通常', 'Delayed': '遅延', 'Cancelled': '欠航',
@@ -223,62 +219,40 @@ window.previewFlightFromSearch = function(routeId) {
         flags[5] = true;
     }
 
-    // ✨ 收斂白光陰影：因為字體設定為 800 極粗體，我們把陰影擴散範圍縮小，讓光暈變得低調細緻
     const subtleGlow = '0 0 5px rgba(255,255,255,0.4), 0 0 1px rgba(255,255,255,0.6)';
-
-    let statusColor = 'inherit';
-    let statusShadow = 'none';
+    let statusColor = 'inherit', statusShadow = 'none';
     const greenStatuses = ['出発済', '到着済', '着陸済', '搭乗手続中'];
     const redStatuses = ['欠航'];
     const normalStatuses = ['通常', '新規到着'];
 
     if (greenStatuses.includes(statusText)) {
-        statusColor = '#32d74b'; 
-        statusShadow = subtleGlow;
+        statusColor = '#32d74b'; statusShadow = subtleGlow;
     } else if (redStatuses.includes(statusText)) {
-        statusColor = '#ff3b30';
-        statusShadow = subtleGlow;
+        statusColor = '#ff3b30'; statusShadow = subtleGlow;
     } else if (normalStatuses.includes(statusText)) {
-        statusColor = 'inherit';
-        statusShadow = 'none';
+        statusColor = 'inherit'; statusShadow = 'none';
     } else {
-        statusColor = '#ffcc00'; 
-        statusShadow = subtleGlow;
+        statusColor = '#ffcc00'; statusShadow = subtleGlow;
     }
 
-    let delayColor = 'inherit';
-    let delayShadow = 'none';
-    let delayText = '';
-
+    let delayColor = 'inherit', delayShadow = 'none', delayText = '';
     if (isTimeChanged) {
         if (delayMins > 30) {
-            delayColor = '#ff3b30';
-            delayShadow = subtleGlow;
-            delayText = `(+${delayMins}分)`;
+            delayColor = '#ff3b30'; delayShadow = subtleGlow; delayText = `(+${delayMins}分)`;
         } else if (delayMins > 0) {
-            delayColor = '#ffcc00';
-            delayShadow = subtleGlow;
-            delayText = `(+${delayMins}分)`;
+            delayColor = '#ffcc00'; delayShadow = subtleGlow; delayText = `(+${delayMins}分)`;
         } else if (delayMins < 0) {
-            delayColor = '#32d74b';
-            delayShadow = subtleGlow;
-            delayText = `(${delayMins}分)`;
+            delayColor = '#32d74b'; delayShadow = subtleGlow; delayText = `(${delayMins}分)`;
         } else {
             delayText = `(±0分)`;
         }
     }
 
     const formattedUpdateTime = flight.system_updated ? flight.system_updated.substring(0, 5) : "--:--";
-
-    const takeoffIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; margin-right: 4px;"><path d="M2 22h20"/><path d="M6.36 17.4 4 17l-2-4 1.1-.55a2 2 0 0 1 1.8 0l.17.1a2 2 0 0 0 1.8 0L8 12 5 6l.9-.45a2 2 0 0 1 2.09.2l4.02 3a2 2 0 0 0 2.1.2l4.19-2.06a2.41 2.41 0 0 1 1.73-.17L21 7a1.4 1.4 0 0 1 .87 1.99l-.38.76c-.23.46-.6.84-1.07 1.08L7.58 17.2a2 2 0 0 1-1.22.18Z"/></svg>`;
-    const landingIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; margin-right: 4px;"><path d="M2 22h20"/><path d="M3.77 10.77 2 9l2-4.5 1.1.55c.55.28.9.84.9 1.45s.35 1.17.9 1.45L8 8.5l3-6 1.05.53a2 2 0 0 1 1.09 1.52l.72 5.4a2 2 0 0 0 1.09 1.52l4.4 2.2c.42.22.78.55 1.01.96l.6 1.03c.49.88-.06 1.98-1.06 2.1l-1.18.15c-.47.06-.95-.02-1.37-.24L4.29 11.15a2 2 0 0 1-.52-.38Z"/></svg>`;
-    const flightTypeIcon = flight.type === 'Departure' ? takeoffIconSvg : landingIconSvg;
-
     const locMatch = flight.location.match(/[A-Z]{3}/);
     const locCode = locMatch ? locMatch[0] : '';
     const isDomestic = locCode ? domesticCodes.includes(locCode) : false;
 
-    // ✨ 拔除機場警告外框：保留警示黃色，確保它跟後面的航線文字使用一樣的字體粗細
     let airportBadge = airportNamesJa[flight.airport] || flight.airport;
     if (flight.airport === 'NRT' && isDomestic) {
         airportBadge = `<span style="color: #ffcc00;">成田国内線</span>`;
@@ -288,7 +262,6 @@ window.previewFlightFromSearch = function(routeId) {
         airportBadge = `<span>${airportBadge}</span>`;
     }
 
-    // ✨ 統一全體粗細：將出發地、目的地全部加上 font-weight: 800
     let routeHtml = '';
     if (flight.type === 'Departure') {
         const arrowRightSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin: 0 4px;"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
@@ -298,17 +271,11 @@ window.previewFlightFromSearch = function(routeId) {
         routeHtml = `<span style="font-weight: 800;">${airportBadge}</span> <span style="font-weight: 800; opacity: 0.7;">到着${arrowLeftSvg}</span> <span style="font-weight: 800;">${flight.location}</span>`;
     }
 
-    const tempCard = {
-        id: 'temp-search-flight', 
-        name: `${flightTypeIcon}${fid}`, 
-        hex: '#0a84ff', 
-        desc: '', 
-        statusFlags: flags,
-        isTemporarySearch: false, 
-        detail: ['フライト', '-', '-', '-'], 
-        detailedLines: [], 
-        isFlightCard: true, 
+    return {
+        flags: flags,
+        desc: `${flight.airline} ${statusText} ${delayText}`, // 顯示在主卡片外的文字
         flightData: {
+            id: fid, // 🚨 救命關鍵：存檔時必須要有真實 ID
             airline: flight.airline,
             routeHtml: routeHtml,
             scheduled: flight.scheduled,
@@ -327,6 +294,44 @@ window.previewFlightFromSearch = function(routeId) {
             terminal: flight.terminal,
             gate: flight.gate
         }
+    };
+};
+
+// ==========================================
+// 🟢 航班專屬：無縫介接主卡片引擎 (幽靈卡片版)
+// ==========================================
+window.previewFlightFromSearch = function(routeId) {
+    const fid = routeId.replace('flight-', '');
+    const flight = window.GlobalFlights.find(f => f.fid.includes(fid));
+    if (!flight) return;
+
+    const searchInput = document.getElementById('search-input');
+    const dropdown = document.getElementById('home-search-dropdown');
+    if (searchInput) { searchInput.value = ''; searchInput.blur(); }
+    if (dropdown) dropdown.style.display = 'none';
+
+    const cancelBtn = document.querySelector('.cancel-circle-btn');
+    if (cancelBtn) cancelBtn.click();
+
+    // 呼叫我們剛剛建立的共用格式化引擎
+    const formatted = window.generateFlightDataFormat(flight, fid);
+
+    const takeoffIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; margin-right: 4px;"><path d="M2 22h20"/><path d="M6.36 17.4 4 17l-2-4 1.1-.55a2 2 0 0 1 1.8 0l.17.1a2 2 0 0 0 1.8 0L8 12 5 6l.9-.45a2 2 0 0 1 2.09.2l4.02 3a2 2 0 0 0 2.1.2l4.19-2.06a2.41 2.41 0 0 1 1.73-.17L21 7a1.4 1.4 0 0 1 .87 1.99l-.38.76c-.23.46-.6.84-1.07 1.08L7.58 17.2a2 2 0 0 1-1.22.18Z"/></svg>`;
+    const landingIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; margin-right: 4px;"><path d="M2 22h20"/><path d="M3.77 10.77 2 9l2-4.5 1.1.55c.55.28.9.84.9 1.45s.35 1.17.9 1.45L8 8.5l3-6 1.05.53a2 2 0 0 1 1.09 1.52l.72 5.4a2 2 0 0 0 1.09 1.52l4.4 2.2c.42.22.78.55 1.01.96l.6 1.03c.49.88-.06 1.98-1.06 2.1l-1.18.15c-.47.06-.95-.02-1.37-.24L4.29 11.15a2 2 0 0 1-.52-.38Z"/></svg>`;
+    const flightTypeIcon = flight.type === 'Departure' ? takeoffIconSvg : landingIconSvg;
+
+    const tempCard = {
+        id: 'temp-search-flight', 
+        name: `${flightTypeIcon}${fid}`, 
+        hex: '#0a84ff', 
+        desc: formatted.desc, 
+        statusFlags: formatted.flags,
+        isTemporarySearch: false,
+        targetLineIds: [fid], // 🚨 救命關鍵：必須要有追蹤的路線 ID，才存得下來
+        detail: ['フライト', '-', '-', '-'], 
+        detailedLines: [], 
+        isFlightCard: true, 
+        flightData: formatted.flightData
     };
 
     const tempIndex = window.appRailwayData.findIndex(c => c.id === 'temp-search-flight');

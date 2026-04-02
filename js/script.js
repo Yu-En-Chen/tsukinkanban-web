@@ -2007,18 +2007,43 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
         let groupDesc = "路線を追加してください";
         let groupFlags = [false, false, false, false, false, false, false];
         let worstDelay = 0;
-
-        let hasError = false;     // 系統連線錯誤
-        let hasSevere = false;    // ✨ 新增：嚴重異常 (>15分 或 停駛無時間)
-        let hasDelay = false;     // 一般延誤 (6~15分)
-        let hasAttention = false; // 監視中
-        let hasNormal = false;    // 正常 (0~5分)
-
         let groupUpdateTime = "";
-
         const detailedLines = [];
+        
+        // ✨ 新增飛機專用旗標與容器
+        let isFlightCard = false;
+        let flightDataPayload = null;
 
-        if (finalTargetIds.length > 0) {
+        // 🟢 攔截器：檢查這張卡片是否為航班
+        if (finalTargetIds.length > 0 && window.GlobalFlights) {
+            const testId = finalTargetIds[0];
+            // 尋找是否在航班資料庫中
+            const flightInfo = window.GlobalFlights.find(f => f.fid.includes(testId));
+            
+            if (flightInfo) {
+                isFlightCard = true;
+                if (typeof window.generateFlightDataFormat === 'function') {
+                    // 呼叫我們剛剛在 flights.js 寫好的格式化引擎
+                    const formatted = window.generateFlightDataFormat(flightInfo, testId);
+                    flightDataPayload = formatted.flightData;
+                    groupFlags = formatted.flags;
+                    groupDesc = formatted.desc;
+                    groupUpdateTime = formatted.flightData.updateTime;
+                }
+            }
+        }
+
+        // 🟢 分流處理：是飛機就不走火車的邏輯
+        if (isFlightCard) {
+            // 飛機的資料已經在攔截器處理完了，什麼都不用做！
+        } else if (finalTargetIds.length > 0) {
+            // 🚄 --- 以下是原本火車的迴圈邏輯 (保留不要動) ---
+            let hasError = false;
+            let hasSevere = false;
+            let hasDelay = false;
+            let hasAttention = false;
+            let hasNormal = false;
+
             finalTargetIds.forEach(lineId => {
                 const dictInfo = routeDict[lineId] || { name: "未知の路線", company: "不明" };
 
@@ -2133,7 +2158,10 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
             id: card.id, name: finalName, hex: finalHex, desc: groupDesc,
             statusFlags: groupFlags, targetLineIds: finalTargetIds, detailedLines: detailedLines,
             isCustom: card.id.startsWith('new-card-'), detail: card.detail || ['情報なし', '-', '-', '-'],
-            updateTime: groupUpdateTime
+            updateTime: groupUpdateTime,
+            // ✨ 救命關鍵：把這兩行補上，卡片才不會忘記自己是飛機！
+            isFlightCard: isFlightCard,
+            flightData: flightDataPayload
         });
     });
 
@@ -2795,17 +2823,29 @@ window.triggerBackgroundUpdate = async function () {
     try {
         console.log("⏱️ 時鐘膠囊收縮：觸發背景 API 靜默更新...");
 
-        // ✨ 加入時間戳防禦魔法：確保每次網址都長得不一樣，破解瀏覽器快取！
         const timestamp = new Date().getTime();
         const STATUS_API_URL = `https://tsukinkanban-odpt.onrender.com/api/status?t=${timestamp}`;
+        const FLIGHTS_API_URL = `https://tsukinkanban-odpt.onrender.com/api/flights?t=${timestamp}`; // ✨ 加入航班 API
 
-        // ✨ 強制宣告 no-store，嚴禁瀏覽器從硬碟拿資料
-        const statusRes = await fetch(STATUS_API_URL, { cache: 'no-store' }).catch(() => null);
+        // ✨ 同時發送火車與飛機的請求
+        const [statusRes, flightRes] = await Promise.all([
+            fetch(STATUS_API_URL, { cache: 'no-store' }).catch(() => null),
+            fetch(FLIGHTS_API_URL, { cache: 'no-store' }).catch(() => null)
+        ]);
 
-        if (!statusRes || !statusRes.ok) return; // 沒回應就埋著不做事
+        if (!statusRes || !statusRes.ok) return; 
+
+        // ✨ 如果飛機更新成功，更新全域變數與快取
+        if (flightRes && flightRes.ok) {
+            const flightsData = await flightRes.json();
+            if (Array.isArray(flightsData)) {
+                window.GlobalFlights = flightsData;
+                localStorage.setItem('Tsukin_Cached_Flights', JSON.stringify(flightsData));
+            }
+        }
 
         const liveStatus = await statusRes.json();
-        if (liveStatus.error) return; // 初始化中也埋著不做事
+        if (liveStatus.error) return;
 
         // 取得最新資料成功，準備無縫重繪
         const cachedDict = JSON.parse(localStorage.getItem('Tsukin_Cached_Dict') || '{}');
