@@ -14,7 +14,7 @@ try {
     if (localStorage.getItem('tsukin_setting_bottomCardPreview') === 'true') {
         document.body.classList.add('enable-bottom-preview');
     }
-} catch(e) {}
+} catch (e) { }
 
 import { bottomCardConfig, railwayData } from '../data/data.js';
 import { initPhysics } from './physics.js';
@@ -30,7 +30,7 @@ import { startRouteEditMode } from './edit-routes.js';
 window.appRailwayData = [];
 
 // 🚀 升級版：七燈號 SVG 狀態生成引擎 (預設全部為 false 暗燈)
-window.getStatusIconsHTML = function(activeFlags = [false, false, false, false, false, false, false]) {
+window.getStatusIconsHTML = function (activeFlags = [false, false, false, false, false, false, false]) {
     // 陣列對應順序：0:心跳（地震）, 1:雨風, 2:雪花, 3:打叉, 4:三角形, 5:圓形, 6:注意
     return `
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-activity-icon lucide-activity ${activeFlags[0] ? 'active' : ''}"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg>
@@ -424,7 +424,7 @@ function renderCards(data) {
     }
 
     const template = document.getElementById('railway-card-template');
-    
+
     // 紀錄這次拿到的所有合法卡片 ID，用來最後清理被刪除的卡片
     const currentValidIds = data.map(line => `card-${line.id}`);
 
@@ -439,22 +439,22 @@ function renderCards(data) {
             const clone = template.content.cloneNode(true);
             card = clone.querySelector('.card');
             card.id = `card-${line.id}`;
-            
+
             // 綁定點擊事件
             card.onclick = () => handleCardClick(line.id);
-            
+
             // ⭐️ 動畫守護者：只有「全新建立」的卡片，才需要掛上波浪進場動畫
             if (isInitialLoad) {
                 card.classList.add('opening-pull');
                 card.style.animationDelay = `${(data.length - index) * 0.08}s`;
             }
-            
+
             // 先放進畫面中 (這樣下面的 querySelector 才能修改它)
             mainStack.appendChild(clone);
         }
 
         // 👉 B. 無縫資料更新 (無論新舊卡片都會執行，且「絕對不會」打斷 CSS 動畫)
-        
+
         // 重新套用最新光影與背景色
         applyThemeToCard(card, line.hex);
 
@@ -474,7 +474,7 @@ function renderCards(data) {
         if (tagsContainer) {
             tagsContainer.className = 'vertical-info-list';
             tagsContainer.innerHTML = ''; // 這裡清空膠囊是安全的，因為不影響外層動畫
-            
+
             const dummyTexts = ['運行状況：平常運転', '現在の混雑度：ゆったり', '次の列車：快速', '車両編成：8両編成'];
             const dummyCircles = ['◎', '空', '5分', '8両'];
 
@@ -513,9 +513,9 @@ function renderCards(data) {
             isInitialLoad = false;
             document.querySelectorAll('.card').forEach(c => {
                 c.classList.remove('opening-pull');
-                c.style.animationDelay = ''; 
+                c.style.animationDelay = '';
             });
-            
+
             const fixedCard = document.getElementById('fixed-info-card');
             if (fixedCard) fixedCard.classList.remove('opening-pull-fixed');
 
@@ -573,19 +573,19 @@ function handleCardClick(id) {
     const template = document.getElementById('detail-card-template');
     const clone = template.content.cloneNode(true);
     const inner = clone.querySelector('.detail-card-inner');
-    
+
     // ✨ 核心抓蟲 1：直接抓取 Template 內建的玻璃面板
-    const extension = clone.querySelector('.detail-extension-card'); 
+    const extension = clone.querySelector('.detail-extension-card');
 
     // 💡 UX 完美解法：外層玻璃「無限向下延伸」，隱藏底部圓角並防止回彈穿幫！
     extension.style.marginTop = '16px';
-    extension.style.height = '100vh'; 
-    extension.innerHTML = ''; 
-    
+    extension.style.height = '100vh';
+    extension.innerHTML = '';
+
     // ✨ 建立透明的內層滾動容器
     const scrollWrapper = document.createElement('div');
-    scrollWrapper.id = 'card-extension-container'; 
-    
+    scrollWrapper.id = 'card-extension-container';
+
     // 📐 內層滾動軸的精準高度：100dvh - 160(頂部預留) - 16(卡片間隙) - 主卡片高度
     // 加入 0px 防止電腦版 env() 報錯，並加入 min() 防止電腦版變數暴衝
     const exactScrollHeight = 'calc(100dvh - env(safe-area-inset-top, 0px) - 176px - (min(var(--card-width), 420px) / var(--card-ratio)))';
@@ -601,11 +601,11 @@ function handleCardClick(id) {
         gap: 16px; 
         padding: 16px 16px 0px 16px;
     `;
-    
+
     // 套用精準捲動高度 (保證滑到底部時，捲動軸 100% 貼齊螢幕下緣)
     scrollWrapper.style.height = fallbackScrollHeight;
     scrollWrapper.style.height = exactScrollHeight;
-    
+
     extension.appendChild(scrollWrapper);
 
     inner.style.background = applyThemeToCard(inner, data.hex);
@@ -618,7 +618,7 @@ function handleCardClick(id) {
         // ✈️ 飛機卡片專屬排版
         const isCancelled = data.flightData.isCancelled;
         const isTimeChangedLocal = data.flightData.scheduled !== data.flightData.latest;
-        const strikeScheduled = isTimeChangedLocal || isCancelled; 
+        const strikeScheduled = isTimeChangedLocal || isCancelled;
 
         cardContent.innerHTML = `
             <div style="display: flex; flex-direction: column; margin-top: 4px;">
@@ -658,7 +658,7 @@ function handleCardClick(id) {
         // ✨ 動態抓取航廈與登機口資訊 (如果 API 沒給或為 undefined 就用 '-')
         const fData = data.flightData;
         const isDep = fData.type === 'Departure';
-        
+
         // 辨識主要機場名稱 (優化 HND/NRT 的顯示)
         let mainAirport = fData.airport;
         if (mainAirport === 'HND') mainAirport = '羽田(HND)';
@@ -666,17 +666,17 @@ function handleCardClick(id) {
         else mainAirport = mainAirport || '-';
 
         const otherAirport = fData.location || '-';
-        
+
         // 判斷出發與抵達的名稱
         const depAirport = isDep ? mainAirport : otherAirport;
         const arrAirport = !isDep ? mainAirport : otherAirport;
-        
+
         // API (ODPT) 通常只會提供「東京端(主機場)」的航廈與登機口資料
         const depTerminal = isDep ? (fData.terminal || '-') : '-';
-        const depGate     = isDep ? (fData.gate || '-') : '-';
-        
+        const depGate = isDep ? (fData.gate || '-') : '-';
+
         const arrTerminal = !isDep ? (fData.terminal || '-') : '-';
-        const arrGate     = !isDep ? (fData.gate || '-') : '-';
+        const arrGate = !isDep ? (fData.gate || '-') : '-';
 
         // ✨ 改變對象：塞入精緻的 Native 雙欄風格卡片
         // ✨ 改變對象：塞入精緻的 Native 雙欄風格卡片 (引入 CSS Class 支援深淺模式)
@@ -717,7 +717,7 @@ function handleCardClick(id) {
                 </div>
             </div>
         `;
-        
+
         // 5. [終極新增區塊] 增加三個水平排列的玻璃按鈕 (完美對齊版)
         const btnContainer = document.createElement('div');
         btnContainer.className = 'flight-action-buttons-container';
@@ -734,7 +734,7 @@ function handleCardClick(id) {
             btn.type = 'button';
             btn.className = 'flight-action-btn';
             btn.innerHTML = `${iconHtml}<span>${text}</span>`;
-            
+
             // 如果有傳入點擊事件，就綁定上去
             if (onClickAction) {
                 btn.onclick = onClickAction;
@@ -746,7 +746,7 @@ function handleCardClick(id) {
         let mapQuery = '';
         if (fData.airport === 'HND') mapQuery = '羽田空港';
         else if (fData.airport === 'NRT') mapQuery = '成田空港';
-        
+
         // 💎 教授級 UX 細節：如果 API 有給航廈，直接幫使用者導航到「專屬航廈」！
         // 這樣 Google Maps 會直接開啟該航廈的「室內地圖」
         const mainTerminal = isDep ? depTerminal : arrTerminal;
@@ -783,14 +783,14 @@ function handleCardClick(id) {
         // 🚄 火車卡片邏輯
         const descEl = clone.querySelector('.description');
         if (descEl) descEl.textContent = data.desc;
-        
+
         const tagsContainer = clone.querySelector('.info-tags-container');
         if (tagsContainer) {
             tagsContainer.className = 'vertical-info-list';
             tagsContainer.innerHTML = '';
-            tagsContainer.style.visibility = 'hidden'; 
-            tagsContainer.style.opacity = '0';         
-            
+            tagsContainer.style.visibility = 'hidden';
+            tagsContainer.style.opacity = '0';
+
             for (let i = 0; i < 4; i++) {
                 const row = document.createElement('div');
                 row.className = 'info-list-row';
@@ -812,7 +812,7 @@ function handleCardClick(id) {
                 if (line.isError) statusClass = 'status-error';
                 else if (line.isAttention) statusClass = 'status-attention';
                 else if (line.isDelayed) {
-                    if (line.delay > 0 && line.delay <= 5) statusClass = 'status-delayed-minor'; 
+                    if (line.delay > 0 && line.delay <= 5) statusClass = 'status-delayed-minor';
                     else statusClass = 'status-delayed';
                 }
 
@@ -825,19 +825,19 @@ function handleCardClick(id) {
                     advancedHtml = `
                         <div class="adv-details-container">
                             ${line.advancedDetails.map(adv => {
-                                let dirDelayHtml = `<span class="adv-normal-text">平常</span>`;
-                                if (adv.max_delay > 0) {
-                                    if (adv.max_delay <= 5) dirDelayHtml = `<span class="adv-delay-minor-text">${adv.max_delay}分遅れ</span>`;
-                                    else dirDelayHtml = `<span class="adv-delay-text">${adv.max_delay}分遅れ</span>`;
-                                }
-                                const trainCountHtml = adv.train_count > 0 ? `<span class="adv-train-count">(${adv.train_count}列車)</span>` : '';
-                                return `
+                        let dirDelayHtml = `<span class="adv-normal-text">平常</span>`;
+                        if (adv.max_delay > 0) {
+                            if (adv.max_delay <= 5) dirDelayHtml = `<span class="adv-delay-minor-text">${adv.max_delay}分遅れ</span>`;
+                            else dirDelayHtml = `<span class="adv-delay-text">${adv.max_delay}分遅れ</span>`;
+                        }
+                        const trainCountHtml = adv.train_count > 0 ? `<span class="adv-train-count">(${adv.train_count}列車)</span>` : '';
+                        return `
                                     <div class="adv-detail-capsule">
                                         <span class="adv-dir-name">${adv.direction_name}</span>
                                         <div class="adv-status-group">${trainCountHtml}${dirDelayHtml}</div>
                                     </div>
                                 `;
-                            }).join('')}
+                    }).join('')}
                         </div>
                     `;
                 }
@@ -864,7 +864,7 @@ function handleCardClick(id) {
                 `;
                 scrollWrapper.appendChild(row);
             });
-            
+
         } else {
             // 無追蹤路線時的空狀態
             scrollWrapper.innerHTML = `
@@ -892,7 +892,7 @@ function handleCardClick(id) {
             const createBtn = (iconHtml, text, onClickAction) => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = 'flight-action-btn'; 
+                btn.className = 'flight-action-btn';
                 btn.innerHTML = `${iconHtml}<span style="font-size: 0.9em; letter-spacing: -0.5px;">${text}</span>`;
                 if (onClickAction) {
                     btn.onclick = (e) => {
@@ -907,7 +907,7 @@ function handleCardClick(id) {
             const handleAddToExisting = () => { console.log('既存カード追加 clicked'); };
             const handleCreateNew = () => {
                 closeAllCards(false);
-                setTimeout(() => { if(window.openAddPanel) window.openAddPanel(); }, 400);
+                setTimeout(() => { if (window.openAddPanel) window.openAddPanel(); }, 400);
             };
 
             btnContainer.appendChild(createBtn(iconTimer, '1日だけ追加', handleTempAdd));
@@ -921,23 +921,23 @@ function handleCardClick(id) {
             const btnContainer = document.createElement('div');
             btnContainer.className = 'flight-action-buttons-container';
 
-            const iconEdit = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-chevrons-up-down-icon lucide-list-chevrons-up-down"><path d="M3 5h8"/><path d="M3 12h8"/><path d="M3 19h8"/><path d="m15 8 3-3 3 3"/><path d="m15 16 3 3 3-3"/></svg>`; 
-            const iconAdd = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-plus-icon lucide-list-plus"><path d="M16 5H3"/><path d="M11 12H3"/><path d="M16 19H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></svg>`; 
+            const iconEdit = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-chevrons-up-down-icon lucide-list-chevrons-up-down"><path d="M3 5h8"/><path d="M3 12h8"/><path d="M3 19h8"/><path d="m15 8 3-3 3 3"/><path d="m15 16 3 3 3-3"/></svg>`;
+            const iconAdd = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-plus-icon lucide-list-plus"><path d="M16 5H3"/><path d="M11 12H3"/><path d="M16 19H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></svg>`;
 
             const createBtn = (iconHtml, text, onClickAction) => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = 'flight-action-btn'; 
+                btn.className = 'flight-action-btn';
                 // 這裡保留你上一回合設定的 1.1em
                 btn.innerHTML = `${iconHtml}<span style="font-size: 1.1em; letter-spacing: -0.5px;">${text}</span>`;
-                
+
                 btn.onclick = (e) => {
                     e.stopPropagation();
-                    if(navigator.vibrate) navigator.vibrate(50);
-                    
+                    if (navigator.vibrate) navigator.vibrate(50);
+
                     // ✨ 核心魔法：智慧捲動偵測
                     const isAtBottom = Math.abs(scrollWrapper.scrollHeight - scrollWrapper.scrollTop - scrollWrapper.clientHeight) <= 5;
-                    
+
                     if (isAtBottom) {
                         onClickAction();
                     } else {
@@ -945,7 +945,7 @@ function handleCardClick(id) {
                             top: scrollWrapper.scrollHeight,
                             behavior: 'smooth'
                         });
-                        
+
                         setTimeout(() => {
                             onClickAction();
                         }, 400); // 等待鏡頭推進完成
@@ -956,8 +956,8 @@ function handleCardClick(id) {
 
             const handleEditRoutes = async () => {
                 try {
-                    const cardId = data.id; 
-                    const prefs = await getAllUserPreferences(); 
+                    const cardId = data.id;
+                    const prefs = await getAllUserPreferences();
                     const pref = prefs[cardId];
                     const currentLineIds = pref && pref.targetLineIds ? pref.targetLineIds : (data.targetLineIds || []);
                     startRouteEditMode(cardId, currentLineIds);
@@ -966,14 +966,43 @@ function handleCardClick(id) {
                 }
             };
 
-            const handleAddRouteClick = () => { console.log('首頁卡片：準備新增路線'); };
+            const handleAddRouteClick = () => {
+                if (isAnimating) return;
+
+                // 1. 狀態傳遞：利用全域變數（或 sessionStorage）記住目標卡片的 ID
+                // 這樣等一下 add-panel.js 才知道要把選好的路線塞給誰
+                window.targetCardIdForAdd = data.id;
+
+                // 2. 視覺轉場：先關閉目前的詳情面板，避免 Z-index 穿透與效能問題
+                closeAllCards(false);
+
+                // 3. 轉場排程：等待 500ms 讓下拉關閉動畫跑完並完全落地
+                setTimeout(() => {
+                    // 尋找首頁頂部的搜尋觸發按鈕並模擬點擊
+                    const searchBtn = document.querySelector('.search-trigger') || document.getElementById('search-trigger');
+
+                    if (searchBtn) {
+                        searchBtn.click(); // 觸發搜尋列展開
+
+                        // 4. 微互動優化：等待搜尋框展開動畫後，自動 Focus 並喚起手機虛擬鍵盤
+                        setTimeout(() => {
+                            const searchInput = document.getElementById('search-input');
+                            if (searchInput) {
+                                searchInput.focus({ preventScroll: true });
+                            }
+                        }, 300); // 配合 Header 搜尋列展開的動畫時間 (約 300ms)
+                    } else {
+                        console.warn('[UX Engine] 找不到搜尋按鈕，無法展開搜尋列');
+                    }
+                }, 500); // 故意拉長到 500ms，確保 Z-index 退場乾淨，避免動畫打架
+            };
 
             btnContainer.appendChild(createBtn(iconEdit, '路線を編集', handleEditRoutes));
             btnContainer.appendChild(createBtn(iconAdd, '路線を追加', handleAddRouteClick));
 
             scrollWrapper.appendChild(btnContainer);
         }
-        
+
         const scrollSpacer = document.createElement('div');
         scrollSpacer.style.cssText = 'height: env(safe-area-inset-bottom, 0px); flex-shrink: 0; pointer-events: none;';
         scrollWrapper.appendChild(scrollSpacer);
@@ -1208,11 +1237,11 @@ function closeAllCards(isPopState = false) {
     activeCardId = null;
     const inner = detailContainer.querySelector('.detail-card-inner');
     const extension = detailContainer.querySelector('.detail-extension-card');
-    
+
     // ✨ 確保關閉時，裝著所有東西的大箱子也要歸位！
     detailContainer.style.transition = '';
     detailContainer.style.transform = '';
-    
+
     if (inner) {
         inner.style.transition = '';
         inner.style.transform = '';
@@ -1251,7 +1280,7 @@ function closeAllCards(isPopState = false) {
 
 // ✨ 新增防呆變數：用來記錄手指是不是按在「主卡片」上
 let overlayStartY = 0;
-let isClosingGestureAllowed = false; 
+let isClosingGestureAllowed = false;
 
 function initOverlayGestures() {
     const inner = detailContainer.querySelector('.detail-card-inner');
@@ -1259,7 +1288,7 @@ function initOverlayGestures() {
 
     const dismissIcon = document.getElementById('dismiss-icon');
     const extraElements = inner.querySelectorAll('.description, .info-tags-container, .status-tag');
-    
+
     let defaultIcons = document.querySelectorAll('#action-capsule .icon-default, #search-trigger .icon-default');
     let hiddenIcons = document.querySelectorAll('#action-capsule .icon-hidden, #search-trigger .icon-hidden');
 
@@ -1276,11 +1305,11 @@ function initOverlayGestures() {
         hiddenIcons = document.querySelectorAll('#action-capsule .icon-hidden, #search-trigger .icon-hidden');
 
         overlayStartY = e.touches[0].pageY;
-        
+
         // ✨ 終極劃清界線邏輯：判斷是否點在主卡片上
         const targetElement = e.target;
         const isClickingInnerCard = targetElement.closest('.detail-card-inner');
-        
+
         if (isClickingInnerCard) {
             isClosingGestureAllowed = true; // 發放滑動憑證
             detailContainer.style.transition = 'none';
@@ -1298,7 +1327,7 @@ function initOverlayGestures() {
             extraElements.forEach(el => el.style.transition = 'none');
         } else {
             // 👉 點在下方玻璃面板或按鈕上：拒絕發放憑證，交給系統原生滾動與點擊
-            isClosingGestureAllowed = false; 
+            isClosingGestureAllowed = false;
         }
     };
 
@@ -1343,9 +1372,9 @@ function initOverlayGestures() {
         const rawMoveY = e.touches[0].pageY - overlayStartY;
 
         if (rawMoveY > 0) {
-            if (rawMoveY > 10 && e.cancelable) e.preventDefault(); 
+            if (rawMoveY > 10 && e.cancelable) e.preventDefault();
             const resistedY = rawMoveY * 0.5;
-            
+
             detailContainer.style.transform = `translate3d(0, ${resistedY}px, 0)`;
 
             if (dismissIcon) dismissIcon.style.opacity = Math.max(0, 1 - (rawMoveY / 150));
@@ -1412,7 +1441,7 @@ function initOverlayGestures() {
 
     detailOverlay.ontouchend = handleTouchEnd;
     detailOverlay.ontouchcancel = handleTouchEnd;
-   
+
     // 電腦版滑鼠滾輪邏輯（一樣套用劃清界線法）
     let overlayWheelSum = 0;
     let overlayWheelTimer;
@@ -1420,17 +1449,17 @@ function initOverlayGestures() {
         if (isAnimating || !activeCardId) return;
 
         const extension = detailContainer.querySelector('.detail-extension-card');
-        
+
         // ✨ 如果滑鼠是在實心玻璃裡面滾動，直接放行，完全不觸發關閉動畫！
         if (extension && extension.contains(e.target)) {
-            return; 
+            return;
         }
 
         e.preventDefault();
         overlayWheelSum -= e.deltaY;
         if (overlayWheelSum < 0) overlayWheelSum = 0;
         const resistedY = overlayWheelSum * 0.2;
-        
+
         detailContainer.style.transition = 'none';
         detailContainer.style.transform = `translate3d(0, ${resistedY}px, 0)`;
 
@@ -1541,7 +1570,7 @@ function filterCards(keyword) {
             gap: 16px;
             padding-bottom: 20px;
         `;
-        
+
         dropdown.addEventListener('touchmove', (e) => {
             e.stopPropagation();
         }, { passive: true });
@@ -1558,8 +1587,8 @@ function filterCards(keyword) {
 
     // ✨ 終極暴力破解：支援頓號多重搜尋，且絕對無視「-」與空白
     const searchKeywords = keyword.split('、')
-                                  .map(k => k.toLowerCase().replace(/[- ]/g, '').trim()) // 暴力把 - 跟空白拔光！
-                                  .filter(k => k.length > 0);
+        .map(k => k.toLowerCase().replace(/[- ]/g, '').trim()) // 暴力把 - 跟空白拔光！
+        .filter(k => k.length > 0);
 
     // 2. 如果清空或取消搜尋框，隱藏選單、恢復主畫面
     if (searchKeywords.length === 0) {
@@ -1579,11 +1608,11 @@ function filterCards(keyword) {
 
     // ✨ 迴圈啟動：針對每一個被頓號切開的詞獨立搜尋
     searchKeywords.forEach(lowKeyword => {
-        
+
         // A. 遍歷雲端鐵道字典
         for (const rw_id in dict) {
             const route = dict[rw_id];
-            
+
             // ✨ 把目標名稱裡的「-」也暴力拔除，兩邊都光溜溜的一定對得上！
             const rName = (route.name || '').toLowerCase().replace(/[- ]/g, '');
             const rComp = (route.company || '').toLowerCase().replace(/[- ]/g, '');
@@ -1597,7 +1626,7 @@ function filterCards(keyword) {
                 const statusInfo = liveStatus[rw_id] || { status_type: "監視中", message: "", delay_minutes: 0, status_text: "" };
                 const msg = statusInfo.message || "";
                 const isNormalMsg = msg.includes("ありません") || msg.includes("平常") || msg.includes("正常");
-                
+
                 let isDelayed = false, isError = false, isAttention = false;
 
                 if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
@@ -1657,8 +1686,8 @@ function filterCards(keyword) {
         dropdown.innerHTML = `<div class="search-empty-state">該当する路線が見つかりません</div>`;
     } else {
         dropdown.innerHTML = searchResults.slice(0, 30).map(route => {
-            let delayHtml = route.customRightHtml || ''; 
-            
+            let delayHtml = route.customRightHtml || '';
+
             if (!route.customRightHtml && route.delayMinutes > 0) {
                 if (route.delayMinutes <= 5) {
                     delayHtml = `<div class="search-delay-minor">${route.delayMinutes}分遅れ</div>`;
@@ -1666,11 +1695,11 @@ function filterCards(keyword) {
                     delayHtml = `<div class="search-delay-major">${route.delayMinutes}分遅れ</div>`;
                 }
             }
-            
+
             // ✨ 解除封印：讓飛機卡片也變成手指游標，並綁定專屬的點擊事件
             const cursorStyle = 'cursor: pointer;';
             const clickAction = route.isFlight ? `onclick="window.previewFlightFromSearch('${route.id}')"` : `onclick="window.previewRouteFromSearch('${route.id}')"`;
-    
+
             // ✨ 直接套用 CSS class，並在結尾處加入 ${route.customBottomHtml || ''} 支援底部換行排版！
             return `
                 <div class="search-result-item" style="${cursorStyle}" ${clickAction}>
@@ -1708,7 +1737,7 @@ function filterCards(keyword) {
 // ============================================================================
 // 🟢 點擊搜尋結果的預覽功能：無縫整合主卡片引擎 (幽靈卡片版)
 // ============================================================================
-window.previewRouteFromSearch = function(routeId) {
+window.previewRouteFromSearch = function (routeId) {
     // 1. 先關閉搜尋列與下拉選單
     const searchInput = document.getElementById('search-input');
     if (searchInput) {
@@ -1716,7 +1745,7 @@ window.previewRouteFromSearch = function(routeId) {
         searchInput.blur(); // 收起手機鍵盤
     }
     filterCards(''); // 清空搜尋結果並恢復主畫面
-    
+
     const cancelBtn = document.querySelector('.cancel-circle-btn');
     if (cancelBtn) cancelBtn.click();
 
@@ -1736,12 +1765,12 @@ window.previewRouteFromSearch = function(routeId) {
     const route = dict[routeId];
     if (!route) return;
 
-    const statusInfo = liveStatus[routeId] || { 
-        status_type: "監視中", 
-        message: "現在情報はありません。", 
-        delay_minutes: 0, 
-        status_text: "公式発表なし", 
-        update_time: "--:--" 
+    const statusInfo = liveStatus[routeId] || {
+        status_type: "監視中",
+        message: "現在情報はありません。",
+        delay_minutes: 0,
+        status_text: "公式発表なし",
+        update_time: "--:--"
     };
 
     const msg = statusInfo.message || "";
@@ -1822,7 +1851,7 @@ window.addEventListener('popstate', (e) => {
 // ============================================================================
 // 🟢 全域歷史紀錄還原引擎 (具備前後狀態深度比對防呆)
 // ============================================================================
-window.undoCardPreference = async function() {
+window.undoCardPreference = async function () {
     if (!activeCardId || activeCardId === 'fixed-bottom') return false;
 
     try {
@@ -1835,7 +1864,7 @@ window.undoCardPreference = async function() {
 
         // 2. 呼叫 db.js 進行還原 (DB 內部會進行上一筆與這一筆的互換)
         const restoredData = await restorePreviousPreference(activeCardId);
-        
+
         if (restoredData) {
             // ✨ 3. 核心防呆比對：檢查是否真的有改變？
             const isNameSame = restoredData.customName === currentName;
@@ -1853,7 +1882,7 @@ window.undoCardPreference = async function() {
             routeData.hex = restoredData.customHex;
 
             // 5. 畫面瞬間重新渲染 (套用全新光影)
-            
+
             // A. 更新個性化面板 (如果目前打開的話)
             const customizeCard = document.querySelector('#dynamic-blank-overlay .detail-card-inner');
             if (customizeCard) applyThemeToCard(customizeCard, restoredData.customHex);
@@ -1893,16 +1922,16 @@ window.undoCardPreference = async function() {
 // 🟢 獨立出資料建構與渲染引擎 (支援斷線強制覆寫 + 多重燈號共存版)
 // ============================================================================
 function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
-    window.GlobalLiveStatus = liveStatus; 
-    window.MasterRouteDictionary = routeDict; 
+    window.GlobalLiveStatus = liveStatus;
+    window.MasterRouteDictionary = routeDict;
     window.appRailwayData = [];
 
-    const baseCards = [...railwayData]; 
+    const baseCards = [...railwayData];
 
     for (const key in userPrefs) {
         if ((key.startsWith('new-card-') || key.startsWith('custom-')) && !baseCards.find(r => r.id === key)) {
             baseCards.push({
-                id: key, name: '新規カード', hex: '#2C2C2E', targetLineIds: [], detail: ['カスタマイズ可能', '-', '-', '-'] 
+                id: key, name: '新規カード', hex: '#2C2C2E', targetLineIds: [], detail: ['カスタマイズ可能', '-', '-', '-']
             });
         }
     }
@@ -1917,24 +1946,24 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
         let groupDesc = "路線を追加してください";
         let groupFlags = [false, false, false, false, false, false, false];
         let worstDelay = 0;
-        
+
         let hasError = false;     // 系統連線錯誤
         let hasSevere = false;    // ✨ 新增：嚴重異常 (>15分 或 停駛無時間)
         let hasDelay = false;     // 一般延誤 (6~15分)
         let hasAttention = false; // 監視中
         let hasNormal = false;    // 正常 (0~5分)
-        
-        let groupUpdateTime = ""; 
+
+        let groupUpdateTime = "";
 
         const detailedLines = [];
 
         if (finalTargetIds.length > 0) {
             finalTargetIds.forEach(lineId => {
                 const dictInfo = routeDict[lineId] || { name: "未知の路線", company: "不明" };
-                
-                let statusInfo = liveStatus[lineId] || { 
-                    status_type: "更新中...", message: "最新データを取得しています...", 
-                    delay_minutes: 0, status_text: "データ取得中", update_time: "--:--" 
+
+                let statusInfo = liveStatus[lineId] || {
+                    status_type: "更新中...", message: "最新データを取得しています...",
+                    delay_minutes: 0, status_text: "データ取得中", update_time: "--:--"
                 };
 
                 if (isOffline) {
@@ -1951,9 +1980,9 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                 const isNormalMsg = msg.includes("ありません") || msg.includes("平常") || msg.includes("正常") || msg.includes("取得しています");
 
                 // 🟢 狀態變數宣告
-                let isDelayedLocal = false; 
+                let isDelayedLocal = false;
                 let isSevereLocal = false;
-                let isErrorLocal = false; 
+                let isErrorLocal = false;
                 let isAttentionLocal = false;
                 let delay = statusInfo.delay_minutes || 0;
 
@@ -1971,14 +2000,14 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                         isDelayedLocal = true; // 讓詳細卡片內保持黃色輕微延誤字眼
                         hasNormal = true;      // ✨ 5分(含)以內：主卡片亮綠燈 (圓形)
                     } else if (delay <= 15) {
-                        isDelayedLocal = true; 
+                        isDelayedLocal = true;
                         hasDelay = true;       // ✨ 6~15分：主卡片亮紅燈 (三角形)
                     } else {
                         isSevereLocal = true;
                         hasSevere = true;      // ✨ 超過15分：主卡片亮叉叉
                     }
                     if (delay > worstDelay) worstDelay = delay;
-                    
+
                 } else if (isTextAbnormal) {
                     // 👉 沒回報分鐘數，但官方宣佈異常/停駛：
                     isSevereLocal = true;
@@ -1993,29 +2022,29 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                 if (!timeStr || timeStr === "" || timeStr === "--:--") {
                     timeStr = "--:--";
                 } else if (timeStr === "----" || timeStr === "本日公式発表なし") {
-                    timeStr = "公式発表なし"; 
+                    timeStr = "公式発表なし";
                 }
 
-                if (groupUpdateTime === "") groupUpdateTime = timeStr; 
-                if (isDelayedLocal || isSevereLocal || isErrorLocal || isAttentionLocal) groupUpdateTime = timeStr; 
+                if (groupUpdateTime === "") groupUpdateTime = timeStr;
+                if (isDelayedLocal || isSevereLocal || isErrorLocal || isAttentionLocal) groupUpdateTime = timeStr;
 
                 detailedLines.push({
                     id: lineId, name: dictInfo.name, company: dictInfo.company,
                     status: statusInfo.status_type || "情報なし", message: msg,
                     delay: delay, updateTime: timeStr, url: statusInfo.url || dictInfo.url || "",
-                    
+
                     // 將 Severe 狀態視為 Delayed 傳給詳細卡片，確保它顯示醒目的紅色
-                    isDelayed: isDelayedLocal || isSevereLocal, 
+                    isDelayed: isDelayedLocal || isSevereLocal,
                     isError: isErrorLocal, isAttention: isAttentionLocal,
-                    advancedDetails: statusInfo.advanced_details || [] 
+                    advancedDetails: statusInfo.advanced_details || []
                 });
             });
 
             // 🟢 多重燈號共存寫入陣列
             if (hasError || hasSevere) groupFlags[3] = true; // 第4顆：打叉 ❌ (系統錯誤 或 嚴重延誤停駛)
-            if (hasDelay)              groupFlags[4] = true; // 第5顆：三角形 ⚠️ (6~15分延誤)
-            if (hasNormal)             groupFlags[5] = true; // 第6顆：圓形 🟢 (0~5分正常)
-            if (hasAttention)          groupFlags[6] = true; // 第7顆：驚嘆號 ❕ (監視中)
+            if (hasDelay) groupFlags[4] = true; // 第5顆：三角形 ⚠️ (6~15分延誤)
+            if (hasNormal) groupFlags[5] = true; // 第6顆：圓形 🟢 (0~5分正常)
+            if (hasAttention) groupFlags[6] = true; // 第7顆：驚嘆號 ❕ (監視中)
 
             // ✨ 智慧文字描述生成 (依照嚴重程度給予精準說明)
             if (isOffline) {
@@ -2040,10 +2069,10 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
         }
 
         window.appRailwayData.push({
-            id: card.id, name: finalName, hex: finalHex, desc: groupDesc,           
-            statusFlags: groupFlags, targetLineIds: finalTargetIds, detailedLines: detailedLines, 
+            id: card.id, name: finalName, hex: finalHex, desc: groupDesc,
+            statusFlags: groupFlags, targetLineIds: finalTargetIds, detailedLines: detailedLines,
             isCustom: card.id.startsWith('new-card-'), detail: card.detail || ['情報なし', '-', '-', '-'],
-            updateTime: groupUpdateTime 
+            updateTime: groupUpdateTime
         });
     });
 
@@ -2052,16 +2081,16 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
         window.appRailwayData.sort((a, b) => {
             let indexA = orderData.order.indexOf(a.id);
             let indexB = orderData.order.indexOf(b.id);
-            if (indexA === -1) indexA = 999; 
+            if (indexA === -1) indexA = 999;
             if (indexB === -1) indexB = 999;
             return indexA - indexB;
         });
     }
 
     let hiddenIds = [];
-    try { hiddenIds = JSON.parse(localStorage.getItem('TsukinKanban_HiddenCards') || '[]'); } catch (e) {}
+    try { hiddenIds = JSON.parse(localStorage.getItem('TsukinKanban_HiddenCards') || '[]'); } catch (e) { }
     const visibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
-    
+
     renderCards(visibleData);
     initBottomCard();
     initDismissIcon();
@@ -2081,7 +2110,7 @@ async function initApp() {
         try {
             cachedDict = JSON.parse(localStorage.getItem('Tsukin_Cached_Dict') || '{}');
             cachedLiveStatus = JSON.parse(localStorage.getItem('Tsukin_Cached_Status') || '{}');
-        } catch(e) {}
+        } catch (e) { }
 
         // ⚡️ 2. 瞬間渲染！(先用快取畫出 DOM，不會有白畫面，動畫正常執行)
         buildAndRender(userPrefs, cachedDict, cachedLiveStatus, false);
@@ -2089,7 +2118,7 @@ async function initApp() {
         // 3. 背景非同步抓取最新資料
         console.log("📡 背景正在獲取最新運行狀態...");
         const DICTIONARY_API_URL = 'https://tsukinkanban-odpt.onrender.com/api/dictionary';
-        
+
         // ✨ 這裡也加上相同的快取破壞者！
         const timestamp = new Date().getTime();
         const STATUS_API_URL = `https://tsukinkanban-odpt.onrender.com/api/status?t=${timestamp}`;
@@ -2102,10 +2131,10 @@ async function initApp() {
         // 🚨 4. 判斷 API 是否活著
         if (statusRes && statusRes.ok) {
             const liveStatus = await statusRes.json();
-            
+
             localStorage.setItem('Tsukin_Cached_Dict', JSON.stringify(routeDict || cachedDict));
             localStorage.setItem('Tsukin_Cached_Status', JSON.stringify(liveStatus));
-            
+
             console.log("✅ 最新狀態獲取成功，更新畫面！");
             buildAndRender(userPrefs, routeDict || cachedDict, liveStatus, false);
         } else {
@@ -2585,11 +2614,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 🟢 2. 監聽輸入法拼字結束 (使用者選好漢字，或按下 Enter)
-    searchInput.addEventListener('compositionend', function() {
+    searchInput.addEventListener('compositionend', function () {
         isComposing = false;
         // 拼字結束後，才手動觸發一次我們的過濾與格式化！
         formatSearchInput.call(this);
-        
+
         // 觸發實際的搜尋連動
         this.dispatchEvent(new Event('input'));
     });
@@ -2597,8 +2626,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 🟢 3. 攔截原生的 input 事件
     searchInput.addEventListener('input', function (e) {
         // ✨ 核心修復：如果正在用羅馬拼音組合日文，這時候絕對不去改它的值，直接放行！
-        if (isComposing) return; 
-        
+        if (isComposing) return;
+
         // 如果是正常打英文/數字，或已經拼完字了，才進行過濾
         formatSearchInput.call(this);
     });
@@ -2625,23 +2654,23 @@ document.addEventListener('DOMContentLoaded', () => {
         val = val.replace(/[^A-Z0-9\u3005\u3040-\u30FF\u4E00-\u9FAF\u3400-\u4DBF\uFF65-\uFF9F\-\、]/g, '');
 
         // 5. 符號防呆處理
-        val = val.replace(/-+/g, '-');        
-        val = val.replace(/、+/g, '、');        
-        val = val.replace(/-、/g, '、');        
+        val = val.replace(/-+/g, '-');
+        val = val.replace(/、+/g, '、');
+        val = val.replace(/-、/g, '、');
         val = val.replace(/、-/g, '、');
-        val = val.replace(/^[、-]+/, '');     
+        val = val.replace(/^[、-]+/, '');
 
         // 6. 核心智慧分段邏輯
         let finalVal = '';
-        let hasDash = false; 
+        let hasDash = false;
 
         for (let char of val) {
             if (char === '、') {
-                hasDash = false; 
+                hasDash = false;
                 finalVal += char;
             } else if (char === '-') {
                 if (!hasDash) {
-                    hasDash = true; 
+                    hasDash = true;
                     finalVal += char;
                 } else {
                     hasDash = false;
@@ -2696,19 +2725,19 @@ document.addEventListener('DOMContentLoaded', initDynamicClock);
 // ============================================================================
 // 🟢 時鐘膠囊連動：背景靜默更新引擎 (無干擾極致版)
 // ============================================================================
-window.triggerBackgroundUpdate = async function() {
+window.triggerBackgroundUpdate = async function () {
     // 判斷是否「停留在首頁且閒置」：沒有展開卡片、沒打開選單、沒打開搜尋
-    const isIdleOnMainPage = !window.activeCardId && 
-                             !document.body.classList.contains('menu-open') &&
-                             !document.body.classList.contains('search-active');
+    const isIdleOnMainPage = !window.activeCardId &&
+        !document.body.classList.contains('menu-open') &&
+        !document.body.classList.contains('search-active');
 
     try {
         console.log("⏱️ 時鐘膠囊收縮：觸發背景 API 靜默更新...");
-        
+
         // ✨ 加入時間戳防禦魔法：確保每次網址都長得不一樣，破解瀏覽器快取！
         const timestamp = new Date().getTime();
         const STATUS_API_URL = `https://tsukinkanban-odpt.onrender.com/api/status?t=${timestamp}`;
-        
+
         // ✨ 強制宣告 no-store，嚴禁瀏覽器從硬碟拿資料
         const statusRes = await fetch(STATUS_API_URL, { cache: 'no-store' }).catch(() => null);
 
@@ -2719,7 +2748,7 @@ window.triggerBackgroundUpdate = async function() {
 
         // 取得最新資料成功，準備無縫重繪
         const cachedDict = JSON.parse(localStorage.getItem('Tsukin_Cached_Dict') || '{}');
-        const userPrefs = await getAllUserPreferences(); 
+        const userPrefs = await getAllUserPreferences();
         localStorage.setItem('Tsukin_Cached_Status', JSON.stringify(liveStatus));
 
         // 1. 永遠默默更新底層資料與主畫面卡片 (我們之前寫的局部更新引擎，保證不閃爍)
@@ -2740,11 +2769,11 @@ window.triggerBackgroundUpdate = async function() {
         // 3. ✨ 只有在首頁閒置時，才觸發華麗的漣漪進場動畫
         if (isIdleOnMainPage) {
             const mainStack = document.getElementById('main-stack');
-            
+
             // 🚨 核心防護 1：動畫期間暫時鎖住 JS 物理光影引擎，並關閉 Hover 避免打架
             mainStack.classList.add('just-awoke');
             mainStack.dataset.freezeGlare = 'true';
-            mainStack.classList.remove('allow-hover'); 
+            mainStack.classList.remove('allow-hover');
 
             const cards = Array.from(document.querySelectorAll('.card'));
             cards.forEach((c, index) => {
@@ -2753,7 +2782,7 @@ window.triggerBackgroundUpdate = async function() {
                 c.style.animationDelay = `${(cards.length - index) * 0.08}s`;
                 c.classList.add('opening-pull');
             });
-            
+
             const fixedCard = document.getElementById('fixed-info-card');
             if (fixedCard) {
                 fixedCard.classList.remove('opening-pull-fixed');
@@ -2770,9 +2799,9 @@ window.triggerBackgroundUpdate = async function() {
                 if (fixedCard) {
                     fixedCard.classList.remove('opening-pull-fixed');
                 }
-                
+
                 mainStack.dataset.freezeGlare = 'false'; // 解鎖物理光影引擎
-                
+
                 // 重新綁定滑鼠移動解鎖 hover (完美復刻初次載入時的防呆機制)
                 window.addEventListener('mousemove', function unlockHover() {
                     if (!mainStack.classList.contains('allow-hover')) {
@@ -2780,7 +2809,7 @@ window.triggerBackgroundUpdate = async function() {
                     }
                     window.removeEventListener('mousemove', unlockHover);
                 }, { once: true });
-                
+
             }, 1500);
 
             // 移除剛甦醒的狀態標籤
@@ -2805,10 +2834,10 @@ function silentUpdateExtensionPanel(cardId) {
     if (!data) return;
 
     const currentScroll = extension.scrollTop;
-    
+
     // 1. ✨ 安全清除：只移除舊的「路線卡片」與「空狀態」，絕對不碰操作按鈕！
     Array.from(extension.children).forEach(child => {
-        if (child.classList.contains('extension-route-card') || 
+        if (child.classList.contains('extension-route-card') ||
             (child.style.backdropFilter && child.style.backdropFilter.includes('blur(25px)'))) {
             child.remove();
         }
@@ -2818,7 +2847,7 @@ function silentUpdateExtensionPanel(cardId) {
     const actionBtnContainer = Array.from(extension.querySelectorAll('.flight-action-buttons-container')).find(c => !c.innerHTML.includes('保存'));
 
     const fragment = document.createDocumentFragment();
-    
+
     // 3. 生成新卡片 (原本的邏輯)
     if (data.detailedLines && data.detailedLines.length > 0) {
         data.detailedLines.forEach(line => {
@@ -2826,7 +2855,7 @@ function silentUpdateExtensionPanel(cardId) {
             if (line.isError) statusClass = 'status-error';
             else if (line.isAttention) statusClass = 'status-attention';
             else if (line.isDelayed) {
-                if (line.delay > 0 && line.delay <= 5) statusClass = 'status-delayed-minor'; 
+                if (line.delay > 0 && line.delay <= 5) statusClass = 'status-delayed-minor';
                 else statusClass = 'status-delayed';
             }
 
@@ -2839,19 +2868,19 @@ function silentUpdateExtensionPanel(cardId) {
                 advancedHtml = `
                     <div class="adv-details-container">
                         ${line.advancedDetails.map(adv => {
-                            let dirDelayHtml = `<span class="adv-normal-text">平常</span>`;
-                            if (adv.max_delay > 0) {
-                                if (adv.max_delay <= 5) dirDelayHtml = `<span class="adv-delay-minor-text">${adv.max_delay}分遅れ</span>`;
-                                else dirDelayHtml = `<span class="adv-delay-text">${adv.max_delay}分遅れ</span>`;
-                            }
-                            const trainCountHtml = adv.train_count > 0 ? `<span class="adv-train-count">(${adv.train_count}列車)</span>` : '';
-                            return `
+                    let dirDelayHtml = `<span class="adv-normal-text">平常</span>`;
+                    if (adv.max_delay > 0) {
+                        if (adv.max_delay <= 5) dirDelayHtml = `<span class="adv-delay-minor-text">${adv.max_delay}分遅れ</span>`;
+                        else dirDelayHtml = `<span class="adv-delay-text">${adv.max_delay}分遅れ</span>`;
+                    }
+                    const trainCountHtml = adv.train_count > 0 ? `<span class="adv-train-count">(${adv.train_count}列車)</span>` : '';
+                    return `
                                 <div class="adv-detail-capsule">
                                     <span class="adv-dir-name">${adv.direction_name}</span>
                                     <div class="adv-status-group">${trainCountHtml}${dirDelayHtml}</div>
                                 </div>
                             `;
-                        }).join('')}
+                }).join('')}
                     </div>
                 `;
             }
@@ -2910,7 +2939,7 @@ let keyboardFocusIndex = -1;
 window.addEventListener('keydown', (e) => {
     const activeElement = document.activeElement;
     const isTyping = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
-    
+
     // ✨ 核心抓蟲 1：移除 window. 前綴，直接讀取 isAnimating
     if (isTyping || isAnimating) return;
 
@@ -2924,7 +2953,7 @@ window.addEventListener('keydown', (e) => {
             closeAllCards(true);
         }
         // 🛑 超級護城河：只要有卡片打開，不管按 Enter 還是上下鍵，全部在這裡被強制攔截！
-        return; 
+        return;
     }
 
     const cards = Array.from(document.querySelectorAll('#main-stack .card:not(.hidden-placeholder), #fixed-info-card'));
@@ -2932,34 +2961,34 @@ window.addEventListener('keydown', (e) => {
 
     // 鍵盤奪權：啟動滑鼠封印力場
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-        document.body.classList.add('keyboard-active'); 
+        document.body.classList.add('keyboard-active');
     }
 
     // 無限輪迴引擎
     if (e.key === 'ArrowDown') {
-        e.preventDefault(); 
+        e.preventDefault();
         if (keyboardFocusIndex === -1) {
             keyboardFocusIndex = 0;
         } else {
-            keyboardFocusIndex = (keyboardFocusIndex + 1) % cards.length; 
+            keyboardFocusIndex = (keyboardFocusIndex + 1) % cards.length;
         }
         updateKeyboardFocus(cards);
-    } 
+    }
     else if (e.key === 'ArrowUp') {
-        e.preventDefault(); 
+        e.preventDefault();
         if (keyboardFocusIndex === -1) {
             keyboardFocusIndex = cards.length - 1;
         } else {
-            keyboardFocusIndex = (keyboardFocusIndex - 1 + cards.length) % cards.length; 
+            keyboardFocusIndex = (keyboardFocusIndex - 1 + cards.length) % cards.length;
         }
         updateKeyboardFocus(cards);
-    } 
+    }
     else if (e.key === 'Enter') {
         if (keyboardFocusIndex >= 0 && keyboardFocusIndex < cards.length) {
             e.preventDefault();
             cards[keyboardFocusIndex].click();
         }
-    } 
+    }
     else if (e.key === 'Escape') {
         resetFocus(); // 按 ESC 直接放棄控制權
     }
@@ -2980,7 +3009,7 @@ function updateKeyboardFocus(cards) {
 const resetFocus = () => {
     if (keyboardFocusIndex !== -1 || document.body.classList.contains('keyboard-active')) {
         keyboardFocusIndex = -1;
-        document.body.classList.remove('keyboard-active'); 
+        document.body.classList.remove('keyboard-active');
         document.querySelectorAll('.keyboard-focus').forEach(el => el.classList.remove('keyboard-focus'));
     }
 };
@@ -2989,19 +3018,19 @@ window.addEventListener('mousedown', resetFocus);
 window.addEventListener('touchstart', resetFocus, { passive: true });
 window.addEventListener('mousemove', (e) => {
     if (Math.abs(e.movementX) > 0 || Math.abs(e.movementY) > 0) {
-        resetFocus(); 
+        resetFocus();
     }
 });
 
-window.refreshAppAfterEdit = async function() {
+window.refreshAppAfterEdit = async function () {
     try {
         console.log("🔄 路線編輯完成，正在重繪畫面...");
         const userPrefs = await getAllUserPreferences();
         const cachedDict = JSON.parse(localStorage.getItem('Tsukin_Cached_Dict') || '{}');
         const cachedLiveStatus = JSON.parse(localStorage.getItem('Tsukin_Cached_Status') || '{}');
-        
+
         buildAndRender(userPrefs, cachedDict, cachedLiveStatus, false);
-        
+
         // 🚨 修正：拔除 window. 前綴
         if (activeCardId) {
             silentUpdateExtensionPanel(activeCardId);
