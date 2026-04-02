@@ -771,12 +771,16 @@ function handleCardClick(id) {
         const handleCreateNewCardClick = () => {
             if (isAnimating) return;
             
+            // 📦 擷取這張卡片的精華資料 (包含剛剛查出來的路線 ID 與即時狀態)
             const prefillData = {
                 name: data.name,
                 hex: data.hex,
                 desc: data.desc,
                 detail: data.detail,
-                targetLineIds: data.targetLineIds || [],
+                // ✨ 新增這行：把算好的七燈號陣列一起打包帶走！
+                statusFlags: data.statusFlags || [false, false, false, false, false, false, false],
+                
+                targetLineIds: data.detailedLines && data.detailedLines[0] ? [data.detailedLines[0].id] : (data.targetLineIds || []),
                 detailedLines: data.detailedLines || []
             };
 
@@ -930,28 +934,26 @@ function handleCardClick(id) {
             const handleCreateNew = () => {
                 if (isAnimating) return;
                 
-                // 📦 擷取這張臨時卡片的精華資料 (包含剛剛查出來的路線 ID 與即時狀態)
+                // 📦 擷取這張卡片的精華資料 (包含剛剛查出來的路線 ID 與即時狀態)
                 const prefillData = {
                     name: data.name,
                     hex: data.hex,
                     desc: data.desc,
                     detail: data.detail,
-                    // 抓取路線 ID (通常臨時卡片會把它塞在 detailedLines 裡面)
+                    // ✨ 新增這行：把算好的七燈號陣列一起打包帶走！
+                    statusFlags: data.statusFlags || [false, false, false, false, false, false, false],
+                    
                     targetLineIds: data.detailedLines && data.detailedLines[0] ? [data.detailedLines[0].id] : (data.targetLineIds || []),
-                    // 把預覽的路線狀態也帶過去，這樣等一下打開就不用重新 Fetch！
                     detailedLines: data.detailedLines || []
                 };
 
                 closeAllCards(false);
                 setTimeout(() => { 
                     if (typeof window.createNewCardAndEdit === 'function') {
-                        // ✨ 帶入參數！
                         window.createNewCardAndEdit(prefillData);
                     }
                 }, 450);
             };
-
-            
 
             btnContainer.appendChild(createBtn(iconTimer, '1日だけ追加', handleTempAdd));
             btnContainer.appendChild(createBtn(iconListPlus, '既存カード追加', handleAddToExisting));

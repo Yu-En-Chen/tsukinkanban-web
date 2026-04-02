@@ -634,6 +634,7 @@ window.createNewCardAndEdit = async function(prefillData = null) {
         const newName = prefillData && prefillData.name ? prefillData.name : '新規カード';
         const newHex = prefillData && prefillData.hex ? prefillData.hex : '#2C2C2E';
         const newTargetLineIds = prefillData && prefillData.targetLineIds ? prefillData.targetLineIds : [];
+        const newStatus = prefillData && prefillData.status ? prefillData.status : '平常運転';
 
         const newCard = {
             id: newId,
@@ -645,8 +646,16 @@ window.createNewCardAndEdit = async function(prefillData = null) {
             hex: newHex,
             isCustom: true,
             targetLineIds: newTargetLineIds,
-            detailedLines: prefillData && prefillData.detailedLines ? prefillData.detailedLines : [] 
+            detailedLines: prefillData && prefillData.detailedLines ? prefillData.detailedLines : [],
+            
+            // ✨ 新增這行：完美繼承七燈號，這樣畫出來的瞬間就會亮著正確的燈！
+            statusFlags: prefillData && prefillData.statusFlags ? prefillData.statusFlags : [false, false, false, false, false, false, false]
         };
+
+        // 🧹 清除幽靈標記，避免這張實體卡片被系統當作預覽卡片刪掉
+        delete newCard.isTemporarySearch;
+        // 🧹 如果系統有綁定舊的 DOM 元素緩存，一併清掉強制系統重繪
+        delete newCard.cardElement;
 
         // 直接將新卡片加入最前面
         window.appRailwayData.unshift(newCard);
