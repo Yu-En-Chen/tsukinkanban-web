@@ -2015,20 +2015,43 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
         let flightDataPayload = null;
 
         // 🟢 攔截器：檢查這張卡片是否為航班
-        if (finalTargetIds.length > 0 && window.GlobalFlights) {
+        if (finalTargetIds.length > 0) {
             const testId = finalTargetIds[0];
-            // 尋找是否在航班資料庫中
-            const flightInfo = window.GlobalFlights.find(f => f.fid.includes(testId));
-            
-            if (flightInfo) {
+            // ✨ 2. 【永遠鎖定身分】利用 ID 特徵判斷 (鐵道必有 . 或 :，飛機絕對沒有！)
+            const isLikelyFlight = !testId.includes('.') && !testId.includes(':');
+
+            if (isLikelyFlight) {
                 isFlightCard = true;
-                if (typeof window.generateFlightDataFormat === 'function') {
-                    // 呼叫我們剛剛在 flights.js 寫好的格式化引擎
+                const flightInfo = window.GlobalFlights ? window.GlobalFlights.find(f => f.fid.includes(testId)) : null;
+                
+                if (flightInfo && typeof window.generateFlightDataFormat === 'function') {
+                    // 有找到即時資料，正常處理
                     const formatted = window.generateFlightDataFormat(flightInfo, testId);
                     flightDataPayload = formatted.flightData;
                     groupFlags = formatted.flags;
                     groupDesc = formatted.desc;
                     groupUpdateTime = formatted.flightData.updateTime;
+                } else {
+                    // ⚠️ 找不到航班 (已落地移除或 API 異常)：給予幽靈防護罩，防止跌回火車排版！
+                    groupDesc = "フライト情報が終了したか、取得できません";
+                    groupFlags = [false, false, false, false, false, false, true]; // 亮灰色注意燈
+                    groupUpdateTime = "--:--";
+                    flightDataPayload = {
+                        id: testId,
+                        airline: "航空便",
+                        routeHtml: `<span style="font-weight: 800;">${testId}</span>`,
+                        scheduled: "--:--",
+                        latest: "--:--",
+                        updateTime: "--:--",
+                        statusText: "情報なし",
+                        statusColor: "inherit",
+                        statusShadow: "none",
+                        delayColor: "inherit",
+                        delayShadow: "none",
+                        delayText: "",
+                        isCancelled: false,
+                        type: "Unknown", airport: "-", location: "-", terminal: "-", gate: "-"
+                    };
                 }
             }
         }
@@ -2189,6 +2212,12 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
 // 🟢 系統啟動引擎 (秒開快取 + 背景非同步更新 API 版 + 斷線捕捉)
 // ============================================================================
 async function initApp() {
+    // ✨ 1. 【啟動優先權】在系統開始繪圖前，先從快取喚醒飛機記憶！
+    try {
+        const cachedFlights = localStorage.getItem('Tsukin_Cached_Flights');
+        if (cachedFlights) window.GlobalFlights = JSON.parse(cachedFlights);
+    } catch (e) {}
+
     let userPrefs = {};
     let cachedDict = {};
     let cachedLiveStatus = {};
@@ -2933,6 +2962,9 @@ function silentUpdateExtensionPanel(cardId) {
 
     const data = window.appRailwayData.find(r => r.id === cardId);
     if (!data) return;
+
+    // ✨ 3. 【神級防護盾】如果是飛機卡片，嚴禁使用火車的更新邏輯去清空它！
+    if (data.isFlightCard) return;
 
     const currentScroll = extension.scrollTop;
 
