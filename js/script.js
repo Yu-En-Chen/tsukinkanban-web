@@ -813,28 +813,33 @@ function handleCardClick(id) {
         const isPreviewCard = data.id.startsWith('temp-search');
 
         if (isPreviewCard) {
-            // 【預覽模式】尚未加入首頁時：保留 Google Maps 與 新規カード作成 (且把 1日だけ追加 刪掉了)
+            // 【預覽模式】尚未加入首頁時：保留 Google Maps 與 新規カード作成
             btnContainer.appendChild(createBtn(iconMapPin, 'Google Maps', handleGoogleMapClick));
             btnContainer.appendChild(createBtn(iconShare, '新規カード作成', handleCreateNewCardClick));
         } else {
-            // 【主畫面模式】已經在首頁時：換上飛機 SVG，並把按鈕功能切換為「編輯卡片」
-            const handleEditFlight = async () => {
+            // 【主畫面模式】已經在首頁時：換上飛機 SVG，並自動偵測機場給予官網連結
+            const handleOfficialSiteClick = () => {
                 if (isAnimating) return;
-                try {
-                    const cardId = data.id;
-                    const prefs = await getAllUserPreferences();
-                    const pref = prefs[cardId];
-                    const currentLineIds = pref && pref.targetLineIds ? pref.targetLineIds : (data.targetLineIds || []);
-                    
-                    // 呼叫系統內建的編輯器，讓使用者可以隨時更改飛機卡片的名稱與玻璃顏色
-                    startRouteEditMode(cardId, currentLineIds);
-                } catch (err) {
-                    console.error('啟動編輯模式發生錯誤:', err);
+                
+                let officialUrl = '';
+                // ✈️ 智慧判斷：依據機場代碼給予對應的官方網站
+                if (fData.airport === 'HND') {
+                    officialUrl = 'https://tokyo-haneda.com/';
+                } else if (fData.airport === 'NRT') {
+                    officialUrl = 'https://www.narita-airport.jp/jp/';
+                }
+                
+                if (officialUrl) {
+                    // 使用另開視窗安全地開啟官網
+                    window.open(officialUrl, '_blank', 'noopener,noreferrer');
+                } else {
+                    // 防呆機制：如果遇到不是羽田或成田的未知機場
+                    alert('公式サイトの情報がありません');
                 }
             };
 
             btnContainer.appendChild(createBtn(iconMapPin, 'Google Maps', handleGoogleMapClick));
-            btnContainer.appendChild(createBtn(iconPlane, 'フライトを編集', handleEditFlight));
+            btnContainer.appendChild(createBtn(iconPlane, '空港公式サイト', handleOfficialSiteClick));
         }
 
         scrollWrapper.appendChild(btnContainer);
