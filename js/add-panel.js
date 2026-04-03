@@ -557,10 +557,9 @@ function initDragAndDrop(list) {
 window.createNewCardAndEdit = async function(prefillData = null) {
     if (!window.appRailwayData) window.appRailwayData = [];
 
-    // 🧹 ✨ 核心修復：在做任何事之前，先「超渡」殘留的幽靈卡片！
-    // 必須在「檢查數量上限」前執行，否則被 return 擋下後，幽靈卡片會殘留在記憶體裡，
-    // 導致使用者在管理面板看到它，誤以為系統偷偷把它存起來了！
-    window.appRailwayData = window.appRailwayData.filter(r => !r.isTemporarySearch && r.id !== 'temp-search-route');
+    // 🧹 ✨ 終極修復：不管是火車還是飛機，只要是「temp-search」開頭的預覽卡片，一律強力超渡！
+    // 這樣它就不會殘留，避免免死金牌漏洞！
+    window.appRailwayData = window.appRailwayData.filter(r => !r.id.startsWith('temp-search'));
 
     if (!isSandboxInitialized) {
         try {
@@ -585,6 +584,14 @@ window.createNewCardAndEdit = async function(prefillData = null) {
             "管理画面へ", 
             "キャンセル" 
         );
+
+        // 🚨 終極防護盾：就算達到上限被擋下，也要強制呼叫 render 重新畫主畫面！
+        // 把剛剛被我們 filter 刪掉的幽靈卡片從畫面上「物理性消滅」，
+        // 這樣使用者就絕對無法點擊它的面板來偷偷存檔了！
+        const visibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
+        if (typeof window.renderMainCards === 'function') {
+            window.renderMainCards(visibleData);
+        }
 
         if (goToManage) {
             const addPanel = document.getElementById('add-panel-container');
