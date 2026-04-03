@@ -768,7 +768,6 @@ function handleCardClick(id) {
         };
 
         // ✨ 新增：飛機卡片也支援資料繼承 (包含燈號與飛機專屬資料)
-        // ✨ 新增：飛機卡片也支援資料繼承 (包含燈號與飛機專屬資料)
         const handleCreateNewCardClick = () => {
             if (isAnimating) return;
 
@@ -780,8 +779,14 @@ function handleCardClick(id) {
                 realFlightId = data.detailedLines[0].id;
             }
 
+            // 🧹 SVG 隱形掃帚：把帶有 HTML 標籤的圖示從名稱中剝離，只保留純文字
+            // 這樣在翻轉進入編輯面板時，就不會瞬間露出 SVG 原始碼！
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = data.name;
+            const cleanName = tempDiv.textContent.trim() || data.name;
+
             const prefillData = {
-                name: data.name,
+                name: cleanName, // ✨ 這裡原本是 data.name，換成乾淨的版本！
                 hex: data.hex,
                 desc: data.desc,
                 detail: data.detail,
@@ -805,7 +810,7 @@ function handleCardClick(id) {
                 }
             }, 450);
         };
-
+        
         // ✨ 加入你指定的飛機專屬 SVG (微調了粗細 stroke-width="2.5" 確保與系統圖示一致)
         const iconPlane = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>`;
 
