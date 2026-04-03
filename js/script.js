@@ -806,18 +806,38 @@ function handleCardClick(id) {
             }, 450);
         };
 
-        // 綁定按鈕與事件
-        btnContainer.appendChild(createBtn(iconMapPin, 'Google Maps', handleGoogleMapClick));
+        // ✨ 加入你指定的飛機專屬 SVG (微調了粗細 stroke-width="2.5" 確保與系統圖示一致)
+        const iconPlane = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>`;
 
-        // 🐛 核心修復：原本這裡漏掉把 handleCreateNewCardClick 綁定上去了！
-        btnContainer.appendChild(createBtn(iconShare, '新規カード作成', handleCreateNewCardClick));
+        // 🟢 智慧分流：利用 ID 判斷目前是「搜尋預覽」還是「已加入主畫面」
+        const isPreviewCard = data.id.startsWith('temp-search');
+
+        if (isPreviewCard) {
+            // 【預覽模式】尚未加入首頁時：保留 Google Maps 與 新規カード作成 (且把 1日だけ追加 刪掉了)
+            btnContainer.appendChild(createBtn(iconMapPin, 'Google Maps', handleGoogleMapClick));
+            btnContainer.appendChild(createBtn(iconShare, '新規カード作成', handleCreateNewCardClick));
+        } else {
+            // 【主畫面模式】已經在首頁時：換上飛機 SVG，並把按鈕功能切換為「編輯卡片」
+            const handleEditFlight = async () => {
+                if (isAnimating) return;
+                try {
+                    const cardId = data.id;
+                    const prefs = await getAllUserPreferences();
+                    const pref = prefs[cardId];
+                    const currentLineIds = pref && pref.targetLineIds ? pref.targetLineIds : (data.targetLineIds || []);
+                    
+                    // 呼叫系統內建的編輯器，讓使用者可以隨時更改飛機卡片的名稱與玻璃顏色
+                    startRouteEditMode(cardId, currentLineIds);
+                } catch (err) {
+                    console.error('啟動編輯模式發生錯誤:', err);
+                }
+            };
+
+            btnContainer.appendChild(createBtn(iconMapPin, 'Google Maps', handleGoogleMapClick));
+            btnContainer.appendChild(createBtn(iconPlane, 'フライトを編集', handleEditFlight));
+        }
 
         scrollWrapper.appendChild(btnContainer);
-
-        const scrollSpacer = document.createElement('div');
-        // 🛡️ 完美對稱排版：加入 0px 備用值，配合 Flexbox 的 16px gap
-        scrollSpacer.style.cssText = 'height: env(safe-area-inset-bottom, 0px); flex-shrink: 0; pointer-events: none;';
-        scrollWrapper.appendChild(scrollSpacer);
 
     } else {
         // 🚄 火車卡片邏輯
