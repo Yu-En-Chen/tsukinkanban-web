@@ -698,10 +698,7 @@ window.createNewCardAndEdit = async function(prefillData = null) {
                     setTimeout(() => {
                         if (typeof window.openBlankOverlay === 'function') {
                             window.openBlankOverlay(newCard.hex);
-                            setTimeout(() => {
-                                const nameLabel = document.getElementById('p-btn-label');
-                                if (nameLabel) nameLabel.click();
-                            }, 550); 
+                            
                         }
                     }, 650); 
                 }, 350); 
