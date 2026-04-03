@@ -560,31 +560,29 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         });
 
         // =========================================================
-        // 🟢 桌面版觸控板 (Trackpad) 橫向滑動關閉引擎
+        // 🟢 桌面版觸控板 (Trackpad) 橫向滑動關閉引擎 (已修復慣性卡頓)
         // =========================================================
         let wheelDeltaX = 0;
         let wheelTimer = null;
         let isWheelSwiping = false;
+        let wheelGestureLocked = false; // 🛑 鎖定閥門：用來阻斷觸控板的「滑動慣性」
 
         overlay.addEventListener('wheel', (e) => {
-            if (window.pSyncing || window.isFlipAnimating) return;
+            // 如果已經在翻轉、或已經觸發關閉、或「閥門已上鎖」，直接忽略所有的殘留慣性事件
+            if (window.pSyncing || window.isFlipAnimating || wheelGestureLocked) return;
 
-            // 1. 偵測是否為「橫向滑動」 (X 軸偏移量大於 Y 軸)
+            // 1. 偵測是否為「橫向滑動」
             if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-                e.preventDefault(); // 🛑 攔截瀏覽器預設的「上一頁 / 下一頁」行為
+                e.preventDefault(); // 🛑 攔截瀏覽器預設的上一頁/下一頁
 
                 if (!isWheelSwiping) {
                     isWheelSwiping = true;
                     wheelDeltaX = 0;
                 }
 
-                // 2. 累加滑動距離
-                // Mac 觸控板手指「向左滑」時，e.deltaX 為正值。
-                // 為了對齊手機版邏輯（向左滑是負值），我們用減法，並加上 0.8 的摩擦力係數讓手感更紮實
-                wheelDeltaX -= e.deltaX * 0.8; 
-                
-                // 限制只能「向左滑」，防止往右滑產生奇怪的破圖
-                if (wheelDeltaX > 0) wheelDeltaX = 0;
+                // 2. 累加滑動距離 (降低敏感度 * 0.4，避免太快撞到 90 度)
+                wheelDeltaX -= e.deltaX * 0.4;
+                if (wheelDeltaX > 0) wheelDeltaX = 0; // 只允許向左滑關閉
 
                 const leftBtn = document.getElementById('capsule-main-btn');
                 const rightBtn = document.getElementById('capsule-secondary-btn');
@@ -592,12 +590,28 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                 const dismissSvg = dismissIcon ? dismissIcon.querySelector('svg') : null;
                 const searchIconContainer = document.querySelector('#search-trigger .search-icon');
 
-                // 3. 轉換為 3D 翻轉角度 (直接共用手機版的物理數學模型)
                 const resistance = 0.5;
                 const dragDistance = Math.abs(wheelDeltaX) * resistance;
                 const maxDist = window.innerWidth * 0.6;
                 let progress = Math.max(0, Math.min(dragDistance / maxDist, 1));
 
+                // 🎯 核心修復：不等待觸控板慣性停止！只要滑超過一定距離 (progress > 0.2)，直接「瞬間觸發」關閉
+                if (progress > 0.2 || wheelDeltaX < -100) {
+                    wheelGestureLocked = true; // 鎖上閥門，這張卡片壽命結束前不再接受任何 wheel
+                    isWheelSwiping = false;
+                    clearTimeout(wheelTimer);
+
+                    container.classList.remove('is-swiping');
+                    clearInlineStyles(card);
+                    clearInlineStyles(leftBtn);
+                    clearInlineStyles(rightBtn);
+                    clearInlineStyles(searchIconContainer);
+                    
+                    window.closeBlankOverlay(true);
+                    return; // 直接中斷執行
+                }
+
+                // 3. 尚未達到閾值前，呈現跟手的 3D 視覺效果
                 card.classList.add('hardware-accelerated');
                 container.classList.add('is-flipping');
                 container.classList.add('is-swiping');
@@ -628,59 +642,48 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                     dismissSvg.style.setProperty('transform', `rotate(${currentAngle}deg)`, 'important');
                 }
 
-                // 4. 判定手勢結束 (Debounce 節流器)
+                // 4. 定時器「只」用來處理力道太輕、中途放棄的彈性回歸
                 clearTimeout(wheelTimer);
                 wheelTimer = setTimeout(() => {
                     isWheelSwiping = false;
-                    const flippedDegrees = 90 * progress;
+                    wheelDeltaX = 0;
 
-                    // 若翻轉角度超過 20 度，或滑動距離夠大，順勢關閉
-                    if (flippedDegrees > 20 || wheelDeltaX < -50) {
-                        container.classList.remove('is-swiping');
+                    container.classList.remove('is-swiping', 'is-flipping');
+                    container.style.removeProperty('--swipe-shadow-opacity');
+
+                    card.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15), box-shadow 0.3s linear', 'important');
+                    card.style.setProperty('transform', `scale(1) rotateY(0deg)`, 'important');
+                    card.style.setProperty('box-shadow', 'var(--ray-shadow-active)', 'important');
+
+                    if (leftBtn && rightBtn) {
+                        leftBtn.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15)', 'important');
+                        leftBtn.style.setProperty('transform', `translate3d(0px, 0, 0)`, 'important');
+                        rightBtn.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15)', 'important');
+                        rightBtn.style.setProperty('transform', `translate3d(0px, 0, 0)`, 'important');
+                    }
+
+                    if (searchIconContainer) {
+                        searchIconContainer.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15)', 'important');
+                        searchIconContainer.style.setProperty('transform', `translate3d(0px, 0, 0)`, 'important');
+                    }
+
+                    if (dismissSvg) {
+                        dismissSvg.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15)', 'important');
+                        dismissSvg.style.setProperty('transform', `rotate(${window.DISMISS_ICON_TARGET_ROTATION}deg)`, 'important');
+                    }
+
+                    setTimeout(() => {
+                        if (wheelGestureLocked) return;
                         clearInlineStyles(card);
                         clearInlineStyles(leftBtn);
                         clearInlineStyles(rightBtn);
                         clearInlineStyles(searchIconContainer);
-                        window.closeBlankOverlay(true);
-                    } else {
-                        // 力道不夠，套用 Apple Spring 彈性回歸原位
-                        container.classList.remove('is-swiping', 'is-flipping');
-                        container.style.removeProperty('--swipe-shadow-opacity');
-
-                        card.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15), box-shadow 0.3s linear', 'important');
-                        card.style.setProperty('transform', `scale(1) rotateY(0deg)`, 'important');
-                        card.style.setProperty('box-shadow', 'var(--ray-shadow-active)', 'important');
-
-                        if (leftBtn && rightBtn) {
-                            leftBtn.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15)', 'important');
-                            leftBtn.style.setProperty('transform', `translate3d(0px, 0, 0)`, 'important');
-                            rightBtn.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15)', 'important');
-                            rightBtn.style.setProperty('transform', `translate3d(0px, 0, 0)`, 'important');
-                        }
-
-                        if (searchIconContainer) {
-                            searchIconContainer.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15)', 'important');
-                            searchIconContainer.style.setProperty('transform', `translate3d(0px, 0, 0)`, 'important');
-                        }
-
-                        if (dismissSvg) {
-                            dismissSvg.style.setProperty('transition', 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15)', 'important');
-                            dismissSvg.style.setProperty('transform', `rotate(${window.DISMISS_ICON_TARGET_ROTATION}deg)`, 'important');
-                        }
-
-                        setTimeout(() => {
-                            clearInlineStyles(card);
-                            clearInlineStyles(leftBtn);
-                            clearInlineStyles(rightBtn);
-                            clearInlineStyles(searchIconContainer);
-                            container.classList.remove('is-flipping');
-                            card.classList.remove('hardware-accelerated');
-                        }, 500);
-                    }
-                    wheelDeltaX = 0; // 重置狀態
-                }, 150); // 只要 150ms 沒偵測到滾輪訊號，就視為「手指離開觸控板」
+                        container.classList.remove('is-flipping');
+                        card.classList.remove('hardware-accelerated');
+                    }, 500);
+                }, 100); 
             }
-        }, { passive: false }); // 必須設為 false 才能 e.preventDefault() 擋下網頁上一頁
+        }, { passive: false });
 
         originalContainer.classList.add('perspective-container', 'is-flipping');
         originalInner.classList.remove('flip-back-in');
