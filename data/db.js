@@ -127,10 +127,10 @@ export async function saveRoutePreference(id, customName, customHex) {
     // 🟢 備用模式 (LocalStorage) 的讀取與備份邏輯
     if (useFallback || !db) {
         const map = getFallbackData();
-        const currentData = map[id];
+        const currentData = map[id] || {}; // ✨ 防呆：確保 currentData 是一個物件
         let previousState = null;
 
-        if (currentData) {
+        if (currentData && currentData.customName) {
             previousState = {
                 customName: currentData.customName,
                 customHex: currentData.customHex
@@ -138,6 +138,7 @@ export async function saveRoutePreference(id, customName, customHex) {
         }
 
         const data = { 
+            ...currentData, // 🚨 救命關鍵：必須展開並保留舊資料 (包含飛機的 targetLineIds)
             id: id, 
             customName: customName, 
             customHex: customHex, 
@@ -158,10 +159,10 @@ export async function saveRoutePreference(id, customName, customHex) {
             const getRequest = store.get(id);
             
             getRequest.onsuccess = () => {
-                const currentData = getRequest.result;
+                const currentData = getRequest.result || {}; // ✨ 防呆
                 let previousState = null;
                 
-                if (currentData) {
+                if (currentData && currentData.customName) {
                     previousState = {
                         customName: currentData.customName,
                         customHex: currentData.customHex
@@ -169,6 +170,7 @@ export async function saveRoutePreference(id, customName, customHex) {
                 }
 
                 const data = { 
+                    ...currentData, // 🚨 救命關鍵：必須展開並保留舊資料 (包含飛機的 targetLineIds)
                     id: id, 
                     customName: customName, 
                     customHex: customHex, 
