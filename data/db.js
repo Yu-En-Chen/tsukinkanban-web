@@ -120,14 +120,32 @@ export async function getAllUserPreferences() {
     }
 }
 
-// 3. 儲存或更新單一路線的自訂設定 (自動備份上一筆)
+// 3. 儲存或更新單一路線的自訂設定 (自動備份上一筆 + 飛機名稱防呆校正)
 export async function saveRoutePreference(id, customName, customHex) {
     const db = await initDB();
+
+    // ==========================================
+    // 🟢 航班名稱強制校正引擎 (Smart Name Enforcer)
+    // ==========================================
+    const enforceFlightName = (nameInput, currentData) => {
+        const targetIds = currentData.targetLineIds || [];
+        // 利用特徵判斷是否為飛機 (ID 沒有 . 且沒有 :)
+        if (targetIds.length > 0 && !targetIds[0].includes('.') && !targetIds[0].includes(':')) {
+            const flightNum = targetIds[0];
+            
+            // 如果輸入的名字是空的，或者「沒有包含」航班號碼 (支援大小寫容錯)
+            if (!nameInput || !nameInput.toUpperCase().includes(flightNum.toUpperCase())) {
+                // 如果全空，直接還原航班號；如果有打字，就把航班號補在最前面加上空格
+                return (!nameInput || nameInput.trim() === '') ? flightNum : `${flightNum} ${nameInput.trim()}`;
+            }
+        }
+        return nameInput; // 如果原本就乖乖包含了，就維持原樣！
+    };
 
     // 🟢 備用模式 (LocalStorage) 的讀取與備份邏輯
     if (useFallback || !db) {
         const map = getFallbackData();
-        const currentData = map[id] || {}; // ✨ 防呆：確保 currentData 是一個物件
+        const currentData = map[id] || {}; 
         let previousState = null;
 
         if (currentData && currentData.customName) {
@@ -137,13 +155,16 @@ export async function saveRoutePreference(id, customName, customHex) {
             };
         }
 
+        // ✨ 存檔前，先經過校正引擎的洗禮
+        const finalName = enforceFlightName(customName, currentData);
+
         const data = { 
-            ...currentData, // 🚨 救命關鍵：必須展開並保留舊資料 (包含飛機的 targetLineIds)
+            ...currentData, 
             id: id, 
-            customName: customName, 
+            customName: finalName, // 🚨 存入校正後的名字
             customHex: customHex, 
             updatedAt: Date.now(),
-            previousState: previousState // 將舊資料封裝進去
+            previousState: previousState 
         };
         saveFallbackData(data);
         return Promise.resolve();
@@ -155,11 +176,10 @@ export async function saveRoutePreference(id, customName, customHex) {
             const transaction = db.transaction(STORE_NAME, 'readwrite');
             const store = transaction.objectStore(STORE_NAME);
             
-            // 先取得當前資料做備份
             const getRequest = store.get(id);
             
             getRequest.onsuccess = () => {
-                const currentData = getRequest.result || {}; // ✨ 防呆
+                const currentData = getRequest.result || {}; 
                 let previousState = null;
                 
                 if (currentData && currentData.customName) {
@@ -169,20 +189,20 @@ export async function saveRoutePreference(id, customName, customHex) {
                     };
                 }
 
+                // ✨ 存檔前，先經過校正引擎的洗禮
+                const finalName = enforceFlightName(customName, currentData);
+
                 const data = { 
-                    ...currentData, // 🚨 救命關鍵：必須展開並保留舊資料 (包含飛機的 targetLineIds)
+                    ...currentData, 
                     id: id, 
-                    customName: customName, 
+                    customName: finalName, // 🚨 存入校正後的名字
                     customHex: customHex, 
                     updatedAt: Date.now(),
-                    previousState: previousState // 將舊資料封裝進去
+                    previousState: previousState 
                 };
 
                 const putRequest = store.put(data);
-                putRequest.onsuccess = () => {
-                    console.log(`[DB] 路線 ${id} 的自訂設定已儲存 (含上一筆備份)`);
-                    resolve();
-                };
+                putRequest.onsuccess = () => resolve();
                 putRequest.onerror = () => {
                     useFallback = true;
                     saveFallbackData(data);
@@ -191,7 +211,7 @@ export async function saveRoutePreference(id, customName, customHex) {
             };
             
             getRequest.onerror = () => {
-                // 讀取失敗時跳過備份，直接儲存新資料
+                // 極端錯誤捕捉
                 const data = { id, customName, customHex, updatedAt: Date.now(), previousState: null };
                 useFallback = true;
                 saveFallbackData(data);
