@@ -808,7 +808,6 @@ function handleCardClick(id) {
 
         // 綁定按鈕與事件
         btnContainer.appendChild(createBtn(iconMapPin, 'Google Maps', handleGoogleMapClick));
-        btnContainer.appendChild(createBtn(iconMap, '1日だけ追加'));
 
         // 🐛 核心修復：原本這裡漏掉把 handleCreateNewCardClick 綁定上去了！
         btnContainer.appendChild(createBtn(iconShare, '新規カード作成', handleCreateNewCardClick));
@@ -971,7 +970,6 @@ function handleCardClick(id) {
                 }, 450);
             };
 
-            btnContainer.appendChild(createBtn(iconTimer, '1日だけ追加', handleTempAdd));
             btnContainer.appendChild(createBtn(iconListPlus, '既存カード追加', handleAddToExisting));
             btnContainer.appendChild(createBtn(iconSquarePlus, '新規カード作成', handleCreateNew));
 
