@@ -988,11 +988,39 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             // 🟢 【升級版】：非破壞性重置！將恢復預設視為一次「編輯」，並把當前狀態存入歷史紀錄
             const activeId = getActiveCardId();
             if (activeId && activeId !== 'fixed-bottom') {
-                // 1. 找出 data.js 中的原始預設值
-                const defaultData = railwayData.find(r => r.id === activeId);
+                const currentData = window.appRailwayData.find(r => r.id === activeId);
+                if (!currentData) return;
+
+                // 1. 先嘗試從系統內建的 railwayData 找預設值 (針對原生卡片)
+                let defaultData = railwayData.find(r => r.id === activeId);
+
+                // ✨ 2. 核心修復：如果找不到，代表這是「手動新增的自訂卡片」！我們動態為它生成預設值
+                if (!defaultData && currentData.isCustom) {
+                    // 狀況 A：如果它有綁定雲端字典的路線，它的預設值就是「那條路線原本的名字和顏色」
+                    if (currentData.targetLineIds && currentData.targetLineIds.length > 0 && window.MasterRouteDictionary) {
+                        const firstRouteId = currentData.targetLineIds[0];
+                        const dictRoute = window.MasterRouteDictionary[firstRouteId];
+                        if (dictRoute) {
+                            defaultData = { name: dictRoute.name, hex: dictRoute.hex || '#2C2C2E' };
+                        }
+                    } 
+                    // 狀況 B：如果是手動新增的飛機航班卡片
+                    else if (currentData.isFlightCard && currentData.flightData) {
+                        defaultData = { name: currentData.flightData.flightNumber || 'フライト', hex: '#2C2C2E' };
+                    } 
+                    
+                    // 狀況 C：如果都沒有，代表這是一張純白的自訂卡片
+                    if (!defaultData) {
+                        defaultData = { name: '新規カード', hex: '#2C2C2E' };
+                    }
+                }
+
+                // 3. 確認有預設值後，執行還原邏輯
                 if (defaultData) {
-                    const currentData = window.appRailwayData.find(r => r.id === activeId);
-                    if (currentData) {
+                    // 防呆：檢查是否已經是預設狀態，避免無意義的存檔
+                    if (currentData.name === defaultData.name && currentData.hex.toLowerCase() === defaultData.hex.toLowerCase()) {
+                        console.log("[雲端同步] 已經是預設狀態，無需覆蓋歷史紀錄");
+                    } else {
                         // 2. 防呆：檢查是否已經是預設狀態，避免無意義的存檔
                         if (currentData.name === defaultData.name && currentData.hex.toLowerCase() === defaultData.hex.toLowerCase()) {
                             console.log("[雲端同步] 已經是預設狀態，無需覆蓋歷史紀錄");
