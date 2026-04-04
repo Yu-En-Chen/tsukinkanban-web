@@ -1970,16 +1970,32 @@ window.undoCardPreference = async function () {
             routeData.name = restoredData.customName;
             routeData.hex = restoredData.customHex;
 
-            // 5. 畫面瞬間重新渲染 (套用全新光影)
+            // 🟢 [新增] 神級重繪魔法：強制清除瀏覽器對 CSS 變數的快取殘影
+            const forceRepaint = (el) => {
+                if (!el) return;
+                // 1. 強制讀取高度，觸發 DOM 重排 (Reflow)
+                void el.offsetHeight; 
+                // 2. 針對裡面的按鈕與膠囊進行微控，強迫 GPU 重新套用 `--tag-bg`
+                const tags = el.querySelectorAll('.info-tag-item, .info-capsule, .info-circle, .flight-action-btn');
+                tags.forEach(tag => {
+                    tag.style.display = 'none';
+                    void tag.offsetHeight; // 逼迫子元素重排
+                    tag.style.display = ''; // 恢復原本的 display 屬性
+                });
+            };
 
-            // A. 更新個性化面板 (如果目前打開的話)
+            // A. 更新個性化面板
             const customizeCard = document.querySelector('#dynamic-blank-overlay .detail-card-inner');
-            if (customizeCard) applyThemeToCard(customizeCard, restoredData.customHex);
+            if (customizeCard) {
+                applyThemeToCard(customizeCard, restoredData.customHex);
+                forceRepaint(customizeCard); // 🟢 [呼叫重繪]
+            }
 
             // B. 更新詳情卡片
             const detailCard = document.querySelector('#detail-card-container .detail-card-inner');
             if (detailCard) {
                 applyThemeToCard(detailCard, restoredData.customHex);
+                forceRepaint(detailCard); // 🟢 [呼叫重繪]
                 const detailNameNode = detailCard.querySelector('.line-name');
                 if (detailNameNode) detailNameNode.textContent = restoredData.customName;
             }
@@ -1988,17 +2004,23 @@ window.undoCardPreference = async function () {
             const mainCard = document.getElementById(`card-${activeCardId}`);
             if (mainCard) {
                 applyThemeToCard(mainCard, restoredData.customHex);
+                forceRepaint(mainCard); // 🟢 [呼叫重繪]
                 const mainNameNode = mainCard.querySelector('.line-name');
                 if (mainNameNode) mainNameNode.textContent = restoredData.customName;
             }
 
-            // D. 如果是在個性化模式下觸發，同步更新顯示的文字
+            // D. 同步更新顯示的文字與【面板上的自訂按鈕底色】
             const pDisplayName = document.getElementById('p-display-name');
             const pDisplayColor = document.getElementById('p-display-color');
             if (pDisplayName) pDisplayName.textContent = restoredData.customName;
-            if (pDisplayColor) pDisplayColor.textContent = restoredData.customHex.toUpperCase();
+            
+            if (pDisplayColor) {
+                pDisplayColor.textContent = restoredData.customHex.toUpperCase();
+                // 🟢 [補上遺漏]：如果你面板上有顯示目前顏色的按鈕，除了改文字，背景也要順便改！
+                pDisplayColor.style.backgroundColor = restoredData.customHex;
+            }
 
-            return true; // 成功還原，回傳 true 觸發打勾動畫
+            return true;
         }
         return false; // 沒有上一筆紀錄
     } catch (error) {
