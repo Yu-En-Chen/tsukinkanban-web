@@ -109,42 +109,55 @@
                 scale 0.4s var(--apple-spring) !important;
 }
 
-/* =========================================
-   🟢 靈動膠囊 (進度條) 專屬對比度強化
-   ========================================= */
+/* ==========================================
+   🟢 智慧警示燈號色彩系統 (Light/Dark Mode 自動切換)
+========================================== */
 
-/* 1. 預設 (深色模式)：加入純白透光，讓它比一般深灰色膠囊更亮、更白 */
-.left-capsule.top-capsule {
-    background: rgba(255, 255, 255, 0.13) !important;
-    border: 1px solid rgba(255, 255, 255, 0.13) !important;
+/* 1. 預設：淺色模式 (Light Mode) 的參數 */
+:root {
+    /* 淺色底：需要較深的橘黃色才清楚，且「不需要」發光 (發光會糊掉) */
+    --sync-yellow-color: #D97706; 
+    --sync-yellow-glow: 0 0 0px transparent; 
+    
+    /* 淺色底：使用純度較高的紅色，同樣不需要發光 */
+    --sync-red-color: #E32400; 
+    --sync-red-glow: 0 0 0px transparent; 
 }
 
-/* 2. 淺色模式：加入純黑透光，讓它比一般全白膠囊更暗、更灰 */
-@media (prefers-color-scheme: light) {
-    .left-capsule.top-capsule {
-        background: rgba(0, 0, 0, 0.08) !important;
-        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+/* 2. 覆蓋：深色模式 (Dark Mode) 的參數 */
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* 深色底：使用明亮的 Apple 系統黃色，加上適度光暈 */
+        --sync-yellow-color: #FFCC00;
+        --sync-yellow-glow: 0 0 8px rgba(255, 204, 0, 0.5);
+        
+        /* 深色底：使用 Apple 系統紅色。
+           ✨ 視覺校正魔法：因為紅色較暗，我們疊加「兩層」陰影，外圈大擴散 + 內圈高濃度，讓它徹底亮起來！ */
+        --sync-red-color: #FF3B30;
+        --sync-red-glow: 0 0 16px rgba(255, 59, 48, 0.8), 0 0 4px rgba(255, 59, 48, 0.6); 
     }
 }
 
-/* 🟢 1~5 分鐘：黃色警告狀態 */
+/* ==========================================
+   🟢 實際套用樣式 (包含修復冒號變色)
+========================================== */
+
+/* 🟡 1~5 分鐘：黃色警告狀態 */
 #entry-time-display.sync-warning-yellow .new-val,
 #entry-time-display.sync-warning-yellow .old-val,
-#entry-time-display.sync-warning-yellow .clock-colon {
-    color: #FFCC00 !important; /* iOS 系統黃色 */
-    text-shadow: 0 0 8px rgba(255, 204, 0, 0.4) !important;
-    transition: color 0.5s ease;
+#entry-time-display.sync-warning-yellow .clock-colon, 
+#entry-time-display.sync-warning-yellow #clock-colon { /* 確保抓到冒號，無論你是用 class 還是 id */
+    color: var(--sync-yellow-color) !important;
+    text-shadow: var(--sync-yellow-glow) !important;
+    transition: color 0.5s ease, text-shadow 0.5s ease;
 }
 
 /* 🔴 5 分鐘以上：紅色斷線狀態 */
 #entry-time-display.sync-warning-red .new-val,
 #entry-time-display.sync-warning-red .old-val,
-#entry-time-display.sync-warning-red .clock-colon {
-    color: #FF3B30 !important; /* iOS 系統紅色 */
-    text-shadow: 0 0 8px rgba(255, 59, 48, 0.4) !important;
-    transition: color 0.5s ease;
+#entry-time-display.sync-warning-red .clock-colon,
+#entry-time-display.sync-warning-red #clock-colon { /* 確保抓到冒號 */
+    color: var(--sync-red-color) !important;
+    text-shadow: var(--sync-red-glow) !important;
+    transition: color 0.5s ease, text-shadow 0.5s ease;
 }
-
-/* 讓旁邊的重新整理小圖示也跟著變色（選擇性） */
-.left-capsule.sync-warning-yellow .left-capsule-icon svg { color: #FFCC00 !important; }
-.left-capsule.sync-warning-red .left-capsule-icon svg { color: #FF3B30 !important; }
