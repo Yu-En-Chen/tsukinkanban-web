@@ -996,23 +996,24 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
 
                 // ✨ 2. 核心修復：如果找不到，代表這是「手動新增的自訂卡片」！我們動態為它生成預設值
                 if (!defaultData && currentData.isCustom) {
-                    // 狀況 A：如果它有綁定雲端字典的路線，它的預設值就是「那條路線原本的名字和顏色」
-                    if (currentData.targetLineIds && currentData.targetLineIds.length > 0 && window.MasterRouteDictionary) {
+                    
+                    // ✈️ 狀況 A：如果是飛機航班 (優先判定，避免被火車邏輯誤攔截)
+                    if (currentData.isFlightCard) {
+                        const flightId = (currentData.flightData && currentData.flightData.id) || 
+                                         (currentData.targetLineIds && currentData.targetLineIds[0]) || 
+                                         'フライト';
+                        defaultData = { name: flightId, hex: '#2C2C2E' };
+                    } 
+                    // 🚄 狀況 B：如果是綁定雲端字典的火車路線
+                    else if (currentData.targetLineIds && currentData.targetLineIds.length > 0 && window.MasterRouteDictionary) {
                         const firstRouteId = currentData.targetLineIds[0];
                         const dictRoute = window.MasterRouteDictionary[firstRouteId];
                         if (dictRoute) {
                             defaultData = { name: dictRoute.name, hex: dictRoute.hex || '#2C2C2E' };
                         }
                     } 
-                    // 狀況 B：如果是手動新增的飛機航班卡片
-                    else if (currentData.isFlightCard) {
-                        // 飛機的真實航班號碼存在 flightData.id 或 targetLineIds[0] 裡面
-                        const flightId = (currentData.flightData && currentData.flightData.id) || 
-                                         (currentData.targetLineIds && currentData.targetLineIds[0]) || 
-                                         'フライト';
-                        defaultData = { name: flightId, hex: '#2C2C2E' };
-                    }
-                    // 狀況 C：如果都沒有，代表這是一張純白的自訂卡片
+                    
+                    // ⬜ 狀況 C：如果都沒有（例如火車字典查不到），代表這是一張純白的自訂卡片
                     if (!defaultData) {
                         defaultData = { name: '新規カード', hex: '#2C2C2E' };
                     }
