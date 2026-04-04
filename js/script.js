@@ -2022,7 +2022,15 @@ window.undoCardPreference = async function () {
             if (pDisplayColor) {
                 pDisplayColor.textContent = restoredData.customHex.toUpperCase();
                 // 🟢 [補上遺漏]：如果你面板上有顯示目前顏色的按鈕，除了改文字，背景也要順便改！
-                pDisplayColor.style.backgroundColor = restoredData.customHex;
+            }
+
+            // 🟢 [新增] 1. 強制清除畫面上任何被反白選取的文字
+            if (window.getSelection) {
+                window.getSelection().removeAllRanges();
+            }
+            // 🟢 [新增] 2. 強制讓目前聚焦的輸入框 (Input) 或按鈕失去焦點，消除外框殘影
+            if (document.activeElement) {
+                document.activeElement.blur();
             }
 
             return true;
