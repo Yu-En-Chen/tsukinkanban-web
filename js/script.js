@@ -2317,17 +2317,25 @@ async function initApp() {
             localStorage.setItem('Tsukin_Cached_Status', JSON.stringify(liveStatus));
 
             console.log("✅ 最新狀態獲取成功，更新畫面！");
-            
-            // 🟢 [新增] 系統初次連線成功！更新左上角的最後同步時間
-            if (typeof window.updateSystemSyncTime === 'function') {
-                window.updateSystemSyncTime(new Date());
+
+            // 🟢 [新增嚴格防護網]：判斷 API 是否真的有吐出路線資料？
+            const hasValidData = liveStatus && Object.keys(liveStatus).length > 0 && !liveStatus.error;
+
+            if (hasValidData) {
+                // 只有確實拿到資料，才准許更新左上角的 JST 時間
+                if (typeof window.updateSystemSyncTime === 'function') {
+                    window.updateSystemSyncTime(new Date());
+                }
+            } else {
+                console.log("⚠️ [系統啟動] 偵測到 API 啟動中或無有效資料，維持顯示最後一次成功的快取時間！");
             }
 
             buildAndRender(userPrefs, routeDict || cachedDict, liveStatus, false);
         } else {
             // 🚨 API 伺服器回傳 500、502，或是休眠叫不醒
             console.warn("⚠️ 狀態 API 伺服器無回應，強制切換至斷線異常狀態");
-            buildAndRender(userPrefs, cachedDict, cachedLiveStatus, true); // 傳入 isOffline = true
+            // (💡 這裡原本就沒有呼叫更新時間，維持原樣，完美保留「舊時間」以提示斷線)
+            buildAndRender(userPrefs, cachedDict, cachedLiveStatus, true); 
         }
 
     } catch (error) {
@@ -2945,9 +2953,17 @@ window.triggerBackgroundUpdate = async function () {
         const liveStatus = await statusRes.json();
         if (liveStatus.error) return;
 
-        // 🟢 [新增] 資料抓取成功！更新左上角的最後同步時間
-        if (typeof window.updateSystemSyncTime === 'function') {
-            window.updateSystemSyncTime(new Date());
+        // 🟢 [新增嚴格防護網]：判斷 API 是否真的有吐出路線資料？
+        // 如果是剛甦醒的狀態，它通常會回傳空物件 {}
+        const hasValidData = liveStatus && Object.keys(liveStatus).length > 0 && !liveStatus.error;
+
+        if (hasValidData) {
+            // 只有確實拿到資料，才准許更新左上角的 JST 時間
+            if (typeof window.updateSystemSyncTime === 'function') {
+                window.updateSystemSyncTime(new Date());
+            }
+        } else {
+            console.log("⚠️ [背景同步] 偵測到 API 啟動中或無有效資料，拒絕更新左上角時間！");
         }
 
         // 取得最新資料成功，準備無縫重繪
