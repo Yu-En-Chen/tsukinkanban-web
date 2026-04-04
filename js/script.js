@@ -2317,6 +2317,12 @@ async function initApp() {
             localStorage.setItem('Tsukin_Cached_Status', JSON.stringify(liveStatus));
 
             console.log("✅ 最新狀態獲取成功，更新畫面！");
+            
+            // 🟢 [新增] 系統初次連線成功！更新左上角的最後同步時間
+            if (typeof window.updateSystemSyncTime === 'function') {
+                window.updateSystemSyncTime(new Date());
+            }
+
             buildAndRender(userPrefs, routeDict || cachedDict, liveStatus, false);
         } else {
             // 🚨 API 伺服器回傳 500、502，或是休眠叫不醒
@@ -2938,6 +2944,11 @@ window.triggerBackgroundUpdate = async function () {
 
         const liveStatus = await statusRes.json();
         if (liveStatus.error) return;
+
+        // 🟢 [新增] 資料抓取成功！更新左上角的最後同步時間
+        if (typeof window.updateSystemSyncTime === 'function') {
+            window.updateSystemSyncTime(new Date());
+        }
 
         // 取得最新資料成功，準備無縫重繪
         const cachedDict = JSON.parse(localStorage.getItem('Tsukin_Cached_Dict') || '{}');

@@ -99,17 +99,27 @@ export function initDynamicClock() {
         }
     }
 
+    // 🟢 [新增] 建立全域接口：讓 API 成功時可以呼叫這個函數來更新「最後同步時間」
+    window.updateSystemSyncTime = function(dateObj) {
+        if (!dateObj) return;
+        const h = String(dateObj.getHours()).padStart(2, '0');
+        const m = String(dateObj.getMinutes()).padStart(2, '0');
+
+        updateDigit('hour-tens', h[0]);
+        updateDigit('hour-units', h[1]);
+        updateDigit('min-tens', m[0]);
+        updateDigit('min-units', m[1]);
+
+        // 儲存最後同步的時間到快取，而不是當下的時間
+        localStorage.setItem('tsukin_last_time', h + m);
+    };
+
     // 核心計時引擎
     function tickClock() {
         const timeNow = new Date();
         const h = String(timeNow.getHours()).padStart(2, '0');
         const m = String(timeNow.getMinutes()).padStart(2, '0');
         const s = timeNow.getSeconds();
-
-        updateDigit('hour-tens', h[0]);
-        updateDigit('hour-units', h[1]);
-        updateDigit('min-tens', m[0]);
-        updateDigit('min-units', m[1]);
 
         // --- 🟢 終極防漏秒引擎：依賴「分鐘的改變」，而不依賴脆弱的「第 0 秒」 ---
         if (lastMinute !== -1 && m !== lastMinute) {
@@ -143,7 +153,6 @@ export function initDynamicClock() {
         }
 
         lastMinute = m; 
-        localStorage.setItem('tsukin_last_time', h + m);
     }
 
     // 開場立即啟動
