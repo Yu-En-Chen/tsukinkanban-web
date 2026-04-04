@@ -126,3 +126,25 @@
         border: 1px solid rgba(0, 0, 0, 0.08) !important;
     }
 }
+
+/* 🟢 1~5 分鐘：黃色警告狀態 */
+#entry-time-display.sync-warning-yellow .new-val,
+#entry-time-display.sync-warning-yellow .old-val,
+#entry-time-display.sync-warning-yellow .clock-colon {
+    color: #FFCC00 !important; /* iOS 系統黃色 */
+    text-shadow: 0 0 8px rgba(255, 204, 0, 0.4) !important;
+    transition: color 0.5s ease;
+}
+
+/* 🔴 5 分鐘以上：紅色斷線狀態 */
+#entry-time-display.sync-warning-red .new-val,
+#entry-time-display.sync-warning-red .old-val,
+#entry-time-display.sync-warning-red .clock-colon {
+    color: #FF3B30 !important; /* iOS 系統紅色 */
+    text-shadow: 0 0 8px rgba(255, 59, 48, 0.4) !important;
+    transition: color 0.5s ease;
+}
+
+/* 讓旁邊的重新整理小圖示也跟著變色（選擇性） */
+.left-capsule.sync-warning-yellow .left-capsule-icon svg { color: #FFCC00 !important; }
+.left-capsule.sync-warning-red .left-capsule-icon svg { color: #FF3B30 !important; }

@@ -99,21 +99,22 @@ export function initDynamicClock() {
         }
     }
 
-    // 🟢 [更新] 全域接口：強制使用「日本標準時間 (JST)」顯示最後同步時間
+    // 🟢 全域接口：強制使用「日本標準時間 (JST)」顯示最後同步時間
     window.updateSystemSyncTime = function(dateObj) {
         if (!dateObj) return;
 
-        // 核心魔法：無論手機在哪個時區，強制轉換為日本東京時間 (Asia/Tokyo)
+        // ✨ [新增] 按下隱形碼錶：紀錄「這一次成功拿到資料時」的手機內部時間戳
+        localStorage.setItem('tsukin_last_sync_device_time', Date.now().toString());
+
+        // 核心魔法：轉換為日本東京時間
         const jstString = new Intl.DateTimeFormat('en-GB', {
             timeZone: 'Asia/Tokyo',
             hour: '2-digit',
             minute: '2-digit',
-            hour12: false // 強制 24 小時制
+            hour12: false
         }).format(dateObj);
 
-        // jstString 會安全地輸出如 "09:05" 或 "23:45" 的格式
         const [hourPart, minPart] = jstString.split(':');
-
         const h = String(hourPart).padStart(2, '0');
         const m = String(minPart).padStart(2, '0');
 
@@ -122,16 +123,49 @@ export function initDynamicClock() {
         updateDigit('min-tens', m[0]);
         updateDigit('min-units', m[1]);
 
-        // 儲存最後同步的日本時間到快取
         localStorage.setItem('tsukin_last_time', h + m);
+
+        // ✨ [新增] 既然成功拿到資料，立刻清除時鐘的警告顏色
+        const clockContainer = document.getElementById('entry-time-display');
+        const capsule = document.querySelector('.left-capsule.top-capsule');
+        if (clockContainer) clockContainer.classList.remove('sync-warning-yellow', 'sync-warning-red');
+        if (capsule) capsule.classList.remove('sync-warning-yellow', 'sync-warning-red');
     };
 
-    // 核心計時引擎
+    // 核心計時引擎 (現在只負責膠囊動畫、背景 API 觸發、與斷線偵測)
     function tickClock() {
         const timeNow = new Date();
-        const h = String(timeNow.getHours()).padStart(2, '0');
         const m = String(timeNow.getMinutes()).padStart(2, '0');
-        const s = timeNow.getSeconds();
+
+        // ✨ [新增] 斷線偵測器：每秒檢查一次距離上次成功經過了多久
+        const lastSyncTimeStr = localStorage.getItem('tsukin_last_sync_device_time');
+        if (lastSyncTimeStr) {
+            const elapsedMs = Date.now() - parseInt(lastSyncTimeStr, 10);
+            const elapsedMinutes = elapsedMs / (1000 * 60); // 換算成分鐘
+            
+            const clockContainer = document.getElementById('entry-time-display');
+            const capsule = document.querySelector('.left-capsule.top-capsule');
+
+            if (clockContainer && capsule) {
+                if (elapsedMinutes >= 5) {
+                    // 超過 5 分鐘：亮紅燈
+                    clockContainer.classList.remove('sync-warning-yellow');
+                    clockContainer.classList.add('sync-warning-red');
+                    capsule.classList.remove('sync-warning-yellow');
+                    capsule.classList.add('sync-warning-red');
+                } else if (elapsedMinutes >= 1) {
+                    // 1 到 5 分鐘：亮黃燈
+                    clockContainer.classList.remove('sync-warning-red');
+                    clockContainer.classList.add('sync-warning-yellow');
+                    capsule.classList.remove('sync-warning-red');
+                    capsule.classList.add('sync-warning-yellow');
+                } else {
+                    // 1 分鐘以內：健康狀態，清除顏色
+                    clockContainer.classList.remove('sync-warning-yellow', 'sync-warning-red');
+                    capsule.classList.remove('sync-warning-yellow', 'sync-warning-red');
+                }
+            }
+        }
 
         // --- 🟢 終極防漏秒引擎：依賴「分鐘的改變」，而不依賴脆弱的「第 0 秒」 ---
         if (lastMinute !== -1 && m !== lastMinute) {
