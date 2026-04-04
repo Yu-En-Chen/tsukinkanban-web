@@ -99,18 +99,30 @@ export function initDynamicClock() {
         }
     }
 
-    // 🟢 [新增] 建立全域接口：讓 API 成功時可以呼叫這個函數來更新「最後同步時間」
+    // 🟢 [更新] 全域接口：強制使用「日本標準時間 (JST)」顯示最後同步時間
     window.updateSystemSyncTime = function(dateObj) {
         if (!dateObj) return;
-        const h = String(dateObj.getHours()).padStart(2, '0');
-        const m = String(dateObj.getMinutes()).padStart(2, '0');
+
+        // 核心魔法：無論手機在哪個時區，強制轉換為日本東京時間 (Asia/Tokyo)
+        const jstString = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Tokyo',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false // 強制 24 小時制
+        }).format(dateObj);
+
+        // jstString 會安全地輸出如 "09:05" 或 "23:45" 的格式
+        const [hourPart, minPart] = jstString.split(':');
+
+        const h = String(hourPart).padStart(2, '0');
+        const m = String(minPart).padStart(2, '0');
 
         updateDigit('hour-tens', h[0]);
         updateDigit('hour-units', h[1]);
         updateDigit('min-tens', m[0]);
         updateDigit('min-units', m[1]);
 
-        // 儲存最後同步的時間到快取，而不是當下的時間
+        // 儲存最後同步的日本時間到快取
         localStorage.setItem('tsukin_last_time', h + m);
     };
 
