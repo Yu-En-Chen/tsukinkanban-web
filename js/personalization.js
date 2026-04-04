@@ -1005,10 +1005,13 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                         }
                     } 
                     // 狀況 B：如果是手動新增的飛機航班卡片
-                    else if (currentData.isFlightCard && currentData.flightData) {
-                        defaultData = { name: currentData.flightData.flightNumber || 'フライト', hex: '#2C2C2E' };
-                    } 
-                    
+                    else if (currentData.isFlightCard) {
+                        // 飛機的真實航班號碼存在 flightData.id 或 targetLineIds[0] 裡面
+                        const flightId = (currentData.flightData && currentData.flightData.id) || 
+                                         (currentData.targetLineIds && currentData.targetLineIds[0]) || 
+                                         'フライト';
+                        defaultData = { name: flightId, hex: '#2C2C2E' };
+                    }
                     // 狀況 C：如果都沒有，代表這是一張純白的自訂卡片
                     if (!defaultData) {
                         defaultData = { name: '新規カード', hex: '#2C2C2E' };
