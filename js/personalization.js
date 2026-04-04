@@ -1042,50 +1042,64 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                     if (currentData.name === defaultData.name && currentData.hex.toLowerCase() === defaultData.hex.toLowerCase()) {
                         console.log("[雲端同步] 已經是預設狀態，無需覆蓋歷史紀錄");
                     } else {
-                        // 2. 防呆：檢查是否已經是預設狀態，避免無意義的存檔
-                        if (currentData.name === defaultData.name && currentData.hex.toLowerCase() === defaultData.hex.toLowerCase()) {
-                            console.log("[雲端同步] 已經是預設狀態，無需覆蓋歷史紀錄");
-                        } else {
-                            // ✨ 3. 核心魔法：將被洗掉前的「目前客製化狀態」打包成救生圈
-                            const oldState = {
-                                customName: currentData.name,
-                                customHex: currentData.hex
-                            };
+                        // ✨ 核心魔法：將被洗掉前的「目前客製化狀態」打包成救生圈
+                        const oldState = {
+                            customName: currentData.name,
+                            customHex: currentData.hex
+                        };
 
-                            // 4. 更新全域記憶體資料為預設值
-                            currentData.name = defaultData.name;
-                            currentData.hex = defaultData.hex;
+                        // 更新全域記憶體資料為預設值
+                        currentData.name = defaultData.name;
+                        currentData.hex = defaultData.hex;
 
-                            // ✨ 5. 改用 saveRoutePreference，把預設值存進去，並把舊顏色當作歷史紀錄傳給 DB！
-                            saveRoutePreference(activeId, defaultData.name, defaultData.hex, oldState)
-                                .then(() => console.log(`[DB] 已恢復預設值，並成功將客製化狀態保留於歷史紀錄中！`))
-                                .catch(err => console.error('[DB] 寫入 IndexedDB 失敗:', err));
-                        }
+                        // 改用 saveRoutePreference，把預設值存進去，並把舊顏色當作歷史紀錄傳給 DB！
+                        saveRoutePreference(activeId, defaultData.name, defaultData.hex, oldState)
+                            .then(() => console.log(`[DB] 已恢復預設值，並成功將客製化狀態保留於歷史紀錄中！`))
+                            .catch(err => console.error('[DB] 寫入 IndexedDB 失敗:', err));
 
-                        // 6. 即時更新畫面上的三張卡片顏色與標題
+                        // 🟢 [進化版] 終極無損重繪魔法：對付 setTimeout 的批次優化陷阱
+                        const forceRepaint = (el) => {
+                            if (!el) return;
+                            const tags = el.querySelectorAll('.info-tag-item, .info-capsule, .info-circle, .flight-action-btn');
+                            tags.forEach(tag => {
+                                const originalDisplay = tag.style.display; 
+                                tag.style.display = 'none';
+                                // ⚠️ 關鍵：使用 getComputedStyle 強制瀏覽器立刻結算這一步的樣式
+                                window.getComputedStyle(tag).display; 
+                                tag.style.display = originalDisplay; 
+                            });
+                        };
+
+                        // 1. 先把新的顏色變數寫入卡片
                         const customizeCard = document.querySelector('#dynamic-blank-overlay .detail-card-inner');
-                        if (customizeCard) applyThemeToCard(customizeCard, defaultData.hex);
-
                         const detailCard = document.querySelector('#detail-card-container .detail-card-inner');
+                        const mainCard = document.getElementById(`card-${activeId}`);
+
+                        if (customizeCard) applyThemeToCard(customizeCard, defaultData.hex);
                         if (detailCard) {
                             applyThemeToCard(detailCard, defaultData.hex);
                             const detailNameNode = detailCard.querySelector('.line-name');
                             if (detailNameNode) detailNameNode.textContent = defaultData.name;
                         }
-
-                        const mainCard = document.getElementById(`card-${activeId}`);
                         if (mainCard) {
                             applyThemeToCard(mainCard, defaultData.hex);
                             const mainNameNode = mainCard.querySelector('.line-name');
                             if (mainNameNode) mainNameNode.textContent = defaultData.name;
                         }
 
-                        // 7. 更新準備降落的文字框內容
+                        // 2. 更新準備降落的文字框內容
                         if (nameEls.display) nameEls.display.textContent = defaultData.name;
                         if (colorEls.display) colorEls.display.textContent = defaultData.hex.toUpperCase();
+
+                        // ✨ 3. 關鍵修復：把重繪動作推遲到「下一幀」，保證 CSS 變數已經徹底寫入 DOM
+                        requestAnimationFrame(() => {
+                            forceRepaint(customizeCard);
+                            forceRepaint(detailCard);
+                            forceRepaint(mainCard);
+                        });
                     }
                 }
-            }
+            } // 結束 if (activeId && ...)
         }, 900);
 
         setTimeout(() => {
