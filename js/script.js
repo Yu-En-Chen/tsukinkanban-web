@@ -810,7 +810,7 @@ function handleCardClick(id) {
                 }
             }, 450);
         };
-        
+
         // ✨ 加入你指定的飛機專屬 SVG (微調了粗細 stroke-width="2.5" 確保與系統圖示一致)
         const iconPlane = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>`;
 
@@ -825,7 +825,7 @@ function handleCardClick(id) {
             // 【主畫面模式】已經在首頁時：換上飛機 SVG，並自動偵測機場給予官網連結
             const handleOfficialSiteClick = () => {
                 if (isAnimating) return;
-                
+
                 let officialUrl = '';
                 // ✈️ 智慧判斷：依據機場代碼給予對應的官方網站
                 if (fData.airport === 'HND') {
@@ -833,7 +833,7 @@ function handleCardClick(id) {
                 } else if (fData.airport === 'NRT') {
                     officialUrl = 'https://www.narita-airport.jp/jp/';
                 }
-                
+
                 if (officialUrl) {
                     // 使用另開視窗安全地開啟官網
                     window.open(officialUrl, '_blank', 'noopener,noreferrer');
@@ -1970,17 +1970,22 @@ window.undoCardPreference = async function () {
             routeData.name = restoredData.customName;
             routeData.hex = restoredData.customHex;
 
-            // 🟢 [新增] 神級重繪魔法：強制清除瀏覽器對 CSS 變數的快取殘影
+            // 🟢 [更新] 無損重繪魔法：不會破壞原本的 Flex/Grid 版型
             const forceRepaint = (el) => {
                 if (!el) return;
-                // 1. 強制讀取高度，觸發 DOM 重排 (Reflow)
-                void el.offsetHeight; 
-                // 2. 針對裡面的按鈕與膠囊進行微控，強迫 GPU 重新套用 `--tag-bg`
+
+                // 1. 強制讀取高度，觸發父層 Reflow
+                void el.offsetHeight;
+
+                // 2. 針對子按鈕進行無損重排
                 const tags = el.querySelectorAll('.info-tag-item, .info-capsule, .info-circle, .flight-action-btn');
                 tags.forEach(tag => {
-                    tag.style.display = 'none';
-                    void tag.offsetHeight; // 逼迫子元素重排
-                    tag.style.display = ''; // 恢復原本的 display 屬性
+                    // 記住該元素當下真正的 inline display 屬性
+                    const originalDisplay = tag.style.display;
+
+                    tag.style.display = 'none'; // 瞬間隱藏
+                    void tag.offsetHeight;      // 逼迫 GPU 放棄快取
+                    tag.style.display = originalDisplay; // 完美還原原本的 display 狀態
                 });
             };
 
@@ -2013,7 +2018,7 @@ window.undoCardPreference = async function () {
             const pDisplayName = document.getElementById('p-display-name');
             const pDisplayColor = document.getElementById('p-display-color');
             if (pDisplayName) pDisplayName.textContent = restoredData.customName;
-            
+
             if (pDisplayColor) {
                 pDisplayColor.textContent = restoredData.customHex.toUpperCase();
                 // 🟢 [補上遺漏]：如果你面板上有顯示目前顏色的按鈕，除了改文字，背景也要順便改！
@@ -2059,7 +2064,7 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
         let worstDelay = 0;
         let groupUpdateTime = "";
         const detailedLines = [];
-        
+
         // ✨ 新增飛機專用旗標與容器
         let isFlightCard = false;
         let flightDataPayload = null;
@@ -2073,7 +2078,7 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
             if (isLikelyFlight) {
                 isFlightCard = true;
                 const flightInfo = window.GlobalFlights ? window.GlobalFlights.find(f => f.fid.includes(testId)) : null;
-                
+
                 if (flightInfo && typeof window.generateFlightDataFormat === 'function') {
                     // 有找到即時資料，正常處理
                     const formatted = window.generateFlightDataFormat(flightInfo, testId);
@@ -2266,7 +2271,7 @@ async function initApp() {
     try {
         const cachedFlights = localStorage.getItem('Tsukin_Cached_Flights');
         if (cachedFlights) window.GlobalFlights = JSON.parse(cachedFlights);
-    } catch (e) {}
+    } catch (e) { }
 
     let userPrefs = {};
     let cachedDict = {};
@@ -2912,7 +2917,7 @@ window.triggerBackgroundUpdate = async function () {
             fetch(FLIGHTS_API_URL, { cache: 'no-store' }).catch(() => null)
         ]);
 
-        if (!statusRes || !statusRes.ok) return; 
+        if (!statusRes || !statusRes.ok) return;
 
         // ✨ 如果飛機更新成功，更新全域變數與快取
         if (flightRes && flightRes.ok) {
