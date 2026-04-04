@@ -118,7 +118,6 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         if (!routeData) return;
 
         // 🟢 終極防護網：攔截「未改變」的幽靈存檔！
-        // 防止使用者點開輸入框但沒修改就關閉時，把歷史紀錄 (previousState) 覆蓋成一模一樣的廢資料
         if (editType === 'name' && routeData.name === finalVal) {
             console.log("[攔截] 名稱未變更，拒絕污染歷史紀錄");
             return;
@@ -137,14 +136,31 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         if (editType === 'name') routeData.name = finalVal;
         if (editType === 'color') routeData.hex = finalVal;
 
+        // 🟢 [新增] 無損重繪魔法：強制清除瀏覽器對 CSS 變數的快取殘影
+        const forceRepaint = (el) => {
+            if (!el) return;
+            void el.offsetHeight; 
+            const tags = el.querySelectorAll('.info-tag-item, .info-capsule, .info-circle, .flight-action-btn');
+            tags.forEach(tag => {
+                const originalDisplay = tag.style.display; 
+                tag.style.display = 'none';
+                void tag.offsetHeight;
+                tag.style.display = originalDisplay; 
+            });
+        };
+
         // 同步更新：個性化卡片 (Blank Overlay)
         const customizeCard = document.querySelector('#dynamic-blank-overlay .detail-card-inner');
-        if (customizeCard) applyThemeToCard(customizeCard, routeData.hex);
+        if (customizeCard) {
+            applyThemeToCard(customizeCard, routeData.hex);
+            forceRepaint(customizeCard); // ✨ 執行重繪
+        }
 
         // 同步更新：中層的詳情卡片 (Detail Card)
         const detailCard = document.querySelector('#detail-card-container .detail-card-inner');
         if (detailCard) {
             applyThemeToCard(detailCard, routeData.hex);
+            forceRepaint(detailCard); // ✨ 執行重繪
             const detailNameNode = detailCard.querySelector('.line-name');
             if (detailNameNode) detailNameNode.textContent = routeData.name;
         }
@@ -153,6 +169,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         const mainCard = document.getElementById(`card-${activeId}`);
         if (mainCard) {
             applyThemeToCard(mainCard, routeData.hex);
+            forceRepaint(mainCard); // ✨ 執行重繪
             const mainNameNode = mainCard.querySelector('.line-name');
             if (mainNameNode) mainNameNode.textContent = routeData.name;
         }
