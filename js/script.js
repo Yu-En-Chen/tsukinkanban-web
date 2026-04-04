@@ -2322,9 +2322,13 @@ async function initApp() {
             const hasValidData = liveStatus && Object.keys(liveStatus).length > 0 && !liveStatus.error;
 
             if (hasValidData) {
+                // ✨ 擷取伺服器給的絕對時間
+                const serverTimeStr = liveStatus._meta ? liveStatus._meta.server_time : null;
+                const syncDate = serverTimeStr ? new Date(serverTimeStr) : new Date();
+
                 // 只有確實拿到資料，才准許更新左上角的 JST 時間
                 if (typeof window.updateSystemSyncTime === 'function') {
-                    window.updateSystemSyncTime(new Date());
+                    window.updateSystemSyncTime(syncDate);
                 }
             } else {
                 console.log("⚠️ [系統啟動] 偵測到 API 啟動中或無有效資料，維持顯示最後一次成功的快取時間！");
@@ -2958,9 +2962,13 @@ window.triggerBackgroundUpdate = async function () {
         const hasValidData = liveStatus && Object.keys(liveStatus).length > 0 && !liveStatus.error;
 
         if (hasValidData) {
+            // ✨ 擷取伺服器給的絕對時間，如果後端沒給，才退回使用手機時間當備案
+            const serverTimeStr = liveStatus._meta ? liveStatus._meta.server_time : null;
+            const syncDate = serverTimeStr ? new Date(serverTimeStr) : new Date();
+            
             // 只有確實拿到資料，才准許更新左上角的 JST 時間
             if (typeof window.updateSystemSyncTime === 'function') {
-                window.updateSystemSyncTime(new Date());
+                window.updateSystemSyncTime(syncDate);
             }
         } else {
             console.log("⚠️ [背景同步] 偵測到 API 啟動中或無有效資料，拒絕更新左上角時間！");
