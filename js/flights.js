@@ -313,6 +313,26 @@ window.previewFlightFromSearch = function(routeId) {
     const cancelBtn = document.querySelector('.cancel-circle-btn');
     if (cancelBtn) cancelBtn.click();
 
+    // 飛機卡片加入首頁後，ID 會變成 'new-card-X'，我們要透過 targetLineIds 或 flightData 內的真實航班號碼來相認
+    if (window.appRailwayData) {
+        const existingCard = window.appRailwayData.find(c => 
+            !c.isTemporarySearch && 
+            c.isFlightCard && 
+            ((c.targetLineIds && c.targetLineIds.includes(fid)) || 
+             (c.flightData && c.flightData.id === fid) || 
+             (c.detailedLines && c.detailedLines.length > 0 && c.detailedLines[0].id === fid))
+        );
+        
+        if (existingCard) {
+            const cardEl = document.getElementById(`card-${existingCard.id}`);
+            if (cardEl) {
+                // 等待搜尋列退場動畫結束後，直接點擊主畫面的卡片！
+                setTimeout(() => cardEl.click(), 300); 
+                return; // 🛑 找到了就直接打開它，提早結束，不要再往下產生幽靈預覽卡片！
+            }
+        }
+    }
+
     // 呼叫我們剛剛建立的共用格式化引擎
     const formatted = window.generateFlightDataFormat(flight, fid);
 

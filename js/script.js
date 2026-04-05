@@ -1743,7 +1743,8 @@ function filterCards(keyword) {
         }
 
         // B. 遍歷自訂卡片
-        const customCards = window.appRailwayData.filter(c => c.isCustom && c.name.toLowerCase().replace(/[- ]/g, '').includes(lowKeyword));
+        // ✨ 修正：排除飛機卡片 (!c.isFlightCard)，讓飛機專屬的搜尋引擎 (C) 來處理，才能保留豐富的 UI！
+        const customCards = window.appRailwayData.filter(c => c.isCustom && !c.isFlightCard && c.name.toLowerCase().replace(/[- ]/g, '').includes(lowKeyword));
         customCards.forEach(c => {
             if (!seenNames.has(c.name)) {
                 seenNames.add(c.name);
@@ -1751,7 +1752,8 @@ function filterCards(keyword) {
                     id: c.id,
                     name: c.name,
                     company: 'カスタムカード',
-                    statusFlags: [false, false, false, false, false, false, false],
+                    // ✨ 順便修復：把真實的燈號狀態還給自訂卡片，不要寫死全部 false
+                    statusFlags: c.statusFlags || [false, false, false, false, false, false, false],
                     delayMinutes: 0
                 });
             }
