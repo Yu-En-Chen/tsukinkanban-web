@@ -428,7 +428,11 @@ export function initHeader(onSearchCallback, getActiveCardId) {
     window.handleCapsuleSecondaryClick = function () {
         if (window.pSyncing) {
             const btn = document.getElementById('capsule-secondary-btn');
-            if (btn && typeof window.triggerBump === 'function') window.triggerBump(btn);
+            if (btn) {
+                btn.style.transform = 'scale(0.92)';
+                btn.style.opacity = '0.8';
+                setTimeout(() => { btn.style.transform = ''; btn.style.opacity = ''; }, 150);
+            }
             return;
         }
 
@@ -438,47 +442,41 @@ export function initHeader(onSearchCallback, getActiveCardId) {
         if (mode === 'native') {
             if (capsule.classList.contains('detail-active')) {
                 // ====================================================
-                // 🟢 官網外部連結跳轉邏輯 (External Link Action)
+                // 🟢 官網外部連結跳轉邏輯 (External Link Action) - 已修復 Dialog 問題
                 // ====================================================
-                const activeId = getActiveCardId ? getActiveCardId() : null;
+                const activeId = typeof getActiveCardId === 'function' ? getActiveCardId() : null;
                 
-                // 防呆：如果沒有抓到 ID 或是預設底層的「運行情報」，則不執行
                 if (!activeId || activeId === 'fixed-bottom') return;
 
-                // 1. 從全域記憶體尋找當前卡片的完整資料
                 const currentData = window.appRailwayData ? window.appRailwayData.find(r => r.id === activeId) : null;
                 if (!currentData) return;
 
-                // 2. 收集所有相關線路的網址
                 let linksToCheck = [];
                 
                 if (currentData.isCustom && currentData.targetLineIds && currentData.targetLineIds.length > 0) {
-                    // 【情境 A】自訂卡片：可能綁定了多條線路
                     currentData.targetLineIds.forEach(id => {
                         const dictRoute = window.MasterRouteDictionary ? window.MasterRouteDictionary[id] : null;
                         if (dictRoute) {
-                            // 💡 這裡相容不同的 API 命名習慣，請依據你實際 API 傳回的 Key 調整 (url / companyUrl / website)
                             const url = dictRoute.url || dictRoute.companyUrl || dictRoute.website;
                             if (url) {
                                 linksToCheck.push({
-                                    name: dictRoute.name || dictRoute.company || '路線公式サイト',
+                                    name: dictRoute.company || dictRoute.name || '公式サイト',
                                     url: url
                                 });
                             }
                         }
                     });
                 } else {
-                    // 【情境 B】原生卡片：單一線路
                     const url = currentData.url || currentData.companyUrl || currentData.website;
                     if (url) {
                         linksToCheck.push({
-                            name: currentData.name || currentData.company || '公式サイト',
+                            name: currentData.company || currentData.name || '公式サイト',
                             url: url
                         });
                     }
                 }
 
-                // 3. 過濾重複的 URL (避免綁定多條 JR 線時，出現五個一模一樣的 JR 官網)
+                // 過濾重複的網址
                 const uniqueLinks = [];
                 const seenUrls = new Set();
                 linksToCheck.forEach(link => {
@@ -488,50 +486,57 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                     }
                 });
 
-                // 4. 執行互動路由分發
+                // 【修復 2】沒有網址時：直接在這裡實作微互動，不依賴外部函數
                 if (uniqueLinks.length === 0) {
-                    console.log('[Routing] 未找到官網 URL 資料');
-                    // 💡 細節：如果 API 沒給網址，我們不讓按鈕無反應，而是觸發一個「微震動」與「縮放」暗示不可點擊
                     const btn = document.getElementById('capsule-secondary-btn');
-                    if (btn && typeof window.triggerBump === 'function') window.triggerBump(btn);
+                    if (btn) {
+                        // 按鈕縮小的微互動
+                        btn.style.transition = 'transform 0.15s cubic-bezier(0.34, 1.6, 0.64, 1), opacity 0.15s ease';
+                        btn.style.transform = 'scale(0.85)';
+                        btn.style.opacity = '0.7';
+                        if (navigator.vibrate) navigator.vibrate(20); // 呼叫實體馬達輕微震動
+                        
+                        setTimeout(() => {
+                            btn.style.transform = 'scale(1)';
+                            btn.style.opacity = '1';
+                            setTimeout(() => { btn.style.transition = ''; }, 150); // 清理過渡狀態
+                        }, 150);
+                    }
                     return;
                 }
 
                 if (uniqueLinks.length === 1) {
-                    // 只有一個官網，直接另開新分頁跳轉
+                    // 只有一個官網，直接開啟
                     window.open(uniqueLinks[0].url, '_blank');
                 } else {
-                    // 有多個不同官網，呼叫你的 dialog.js 讓使用者選擇
-                    // ⚠️ 注意：依據你 dialog.js 實際暴露的全域函數名稱做調整
-                    
-                    if (typeof window.showActionSheet === 'function') {
-                        // 假設 dialog.js 有實作多按鈕清單 (Action Sheet)
-                        window.showActionSheet({
-                            title: '公式サイトを選択',
-                            buttons: uniqueLinks.map(link => ({
-                                text: link.name,
-                                onClick: () => window.open(link.url, '_blank')
-                            }))
-                        });
-                    } else if (typeof window.iosConfirm === 'function') {
-                        // 假設 dialog.js 只有雙按鈕的 iosConfirm (我在之前的分析有看到你封裝過這個)
-                        // 若只有雙按鈕，這裡做個優雅降級 (Graceful Degradation)，取前兩筆顯示
+                    // 【修復 1】有多個不同官網：正確使用 dialog.js 的 Promise 架構
+                    if (typeof window.iosConfirm === 'function') {
+                        // 擷取前兩個選項 (因為 dialog.js 只有兩個按鈕)
+                        const link1 = uniqueLinks[0];
+                        const link2 = uniqueLinks[1];
+                        
+                        // iosConfirm(title, message, confirmText, cancelText)
                         window.iosConfirm(
                             '公式サイト',
-                            '複数の路線が含まれています。どちらを開きますか？',
-                            uniqueLinks[0].name, // 確認按鈕 1
-                            () => window.open(uniqueLinks[0].url, '_blank'),
-                            uniqueLinks[1].name, // 取消按鈕當作 2
-                            () => window.open(uniqueLinks[1].url, '_blank')
-                        );
+                            '複数の路線が含まれています。\nどちらのサイトを開きますか？',
+                            link1.name, // 右側 (主按鈕)
+                            link2.name  // 左側 (次按鈕)
+                        ).then(isConfirm => {
+                            // 當 Promise resolve 時，根據結果打開對應網址
+                            if (isConfirm) {
+                                window.open(link1.url, '_blank');
+                            } else {
+                                window.open(link2.url, '_blank');
+                            }
+                        });
                     } else {
-                        // 最終 Fallback：如果 dialog 引擎沒掛載成功，保底打開第一個
+                        // 保底：如果 dialog.js 失效，直接開第一個
                         window.open(uniqueLinks[0].url, '_blank');
                     }
                 }
                 // ====================================================
             } else {
-                window.toggleMainMenu();
+                if (typeof window.toggleMainMenu === 'function') window.toggleMainMenu();
             }
         } else if (mode === 'blank') {
             if (typeof window.triggerCloudSync === 'function') window.triggerCloudSync();
