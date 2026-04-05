@@ -97,19 +97,25 @@ window.RouteAppender = {
                 btn.onclick = () => {
                     selectedTargetId = btn.getAttribute('data-card-id');
                     
-                    // 重置所有選項的外觀
+                    // 重置所有選項的外觀 (恢復未選中的黑白預設狀態)
                     options.forEach(b => {
                         b.style.borderColor = borderColor;
                         b.style.background = btnBg;
-                        b.querySelector('.radio-circle').style.borderColor = '#999';
+                        // 未選中的圈圈維持淡灰色
+                        b.querySelector('.radio-circle').style.borderColor = isDarkMode ? '#666' : '#CCC';
                         b.querySelector('.radio-dot').style.background = 'transparent';
                     });
 
-                    // 點亮被選中的這個選項 (套用 iOS 原生藍色)
-                    btn.style.borderColor = '#007AFF';
-                    btn.style.background = isDarkMode ? 'rgba(0, 122, 255, 0.15)' : 'rgba(0, 122, 255, 0.08)';
-                    btn.querySelector('.radio-circle').style.borderColor = '#007AFF';
-                    btn.querySelector('.radio-dot').style.background = '#007AFF';
+                    // ✨ 黑白質感魔法：點亮被選中的選項
+                    // 深色模式：白邊框 + 微亮灰底
+                    // 淺色模式：黑邊框 + 微暗灰底
+                    btn.style.borderColor = isDarkMode ? '#FFFFFF' : '#000000';
+                    btn.style.background = isDarkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.05)';
+                    
+                    // 圈圈也變成純黑或純白
+                    const activeColor = isDarkMode ? '#FFFFFF' : '#000000';
+                    btn.querySelector('.radio-circle').style.borderColor = activeColor;
+                    btn.querySelector('.radio-dot').style.background = activeColor;
 
                     // 🎯 使用者有選擇了！解鎖「確認」按鈕
                     if (confirmBtn) {
