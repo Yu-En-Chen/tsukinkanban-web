@@ -414,12 +414,17 @@ mainStack.addEventListener('click', (e) => {
 // ============================================================================
 function renderCards(data) {
     if (data.length === 0) {
-        mainStack.innerHTML = '<p style="text-align:center; padding:40px; color:#666;">該当する駅・路線が見つかりません</p>';
+        // 🟢 加入專屬的 class "empty-state-msg"，方便未來精準辨識
+        mainStack.innerHTML = '<p class="empty-state-msg" style="text-align:center; padding:40px; color:#666;">該当する駅・路線が見つかりません</p>';
         return;
     }
 
-    // 🚨 只有當目前畫面是「無資料的文字段落」時，我們才清空它
-    if (mainStack.querySelector('p')) {
+    // 🚨 抓蟲修復：只精準移除空狀態訊息，絕對不碰已經在畫面上飛舞的卡片！
+    const emptyMsg = mainStack.querySelector('.empty-state-msg');
+    if (emptyMsg) {
+        emptyMsg.remove(); 
+    } else if (mainStack.children.length === 1 && mainStack.firstElementChild.tagName === 'P') {
+        // 防呆：相容舊版沒加 class 的狀況
         mainStack.innerHTML = '';
     }
 
@@ -469,10 +474,11 @@ function renderCards(data) {
         card.querySelector('.status-tag').innerHTML = window.getStatusIconsHTML(line.statusFlags || []);
         card.querySelector('.description').textContent = line.desc;
 
-        // 更新底下的假資料與膠囊資訊 (完整保留你原本的假資料邏輯)
-        const tagsContainer = card.querySelector('.info-tags-container');
+        // 🚨 抓蟲修復：加入 || 條件，避免第二次渲染時因為 class 被覆寫而找不到
+        const tagsContainer = card.querySelector('.info-tags-container') || card.querySelector('.vertical-info-list');
         if (tagsContainer) {
-            tagsContainer.className = 'vertical-info-list';
+            // 🟢 確保每次都同時擁有兩個 class，才不會在下一次被漏掉
+            tagsContainer.className = 'info-tags-container vertical-info-list';
             tagsContainer.innerHTML = ''; // 這裡清空膠囊是安全的，因為不影響外層動畫
 
             const dummyTexts = ['運行状況：平常運転', '現在の混雑度：ゆったり', '次の列車：快速', '車両編成：8両編成'];
@@ -1628,7 +1634,8 @@ function initBottomCard() {
     const card = document.getElementById('fixed-info-card');
     if (!card) return;
 
-    if (isInitialLoad) {
+    // 🚨 抓蟲修復：如果卡片已經掛上動畫了，就不要再重複指派，避免打斷 CSS 渲染引擎
+    if (isInitialLoad && !card.classList.contains('opening-pull-fixed')) {
         card.classList.add('opening-pull-fixed');
         // 置底卡片最後彈出
         card.style.animationDelay = `${(railwayData.length + 1) * 0.08}s`;
