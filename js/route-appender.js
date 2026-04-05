@@ -51,18 +51,42 @@ window.RouteAppender = {
         htmlMessage += `<div id="route-appender-list" style="max-height: 40vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; text-align: left;">`;
 
         homeCards.forEach(card => {
-            const routeCount = card.targetLineIds ? card.targetLineIds.length : 0;
+            const targetLines = card.targetLineIds || [];
+            const routeCount = targetLines.length;
+
+            // ✨ 核心升級：智慧防呆狀態判斷
+            let isDisabled = false;
+            let statusText = `${routeCount} 路線`;
+
+            if (card.isFlightCard) {
+                isDisabled = true;
+                statusText = "航空用"; // 飛機專用卡片
+            } else if (targetLines.includes(newRoute.id)) {
+                isDisabled = true;
+                statusText = "追加済"; // 已經存在該路線
+            } else if (routeCount >= 6) {
+                isDisabled = true;
+                statusText = "上限到達"; // 達到 6 條路線上限
+            }
+
+            // 若被禁用，改變透明度且禁止滑鼠事件
+            const disabledStyle = isDisabled ? `opacity: 0.4; pointer-events: none;` : `cursor: pointer;`;
+            // 若被禁用，右側文字稍微加粗並變換顏色以供識別
+            const statusColor = isDisabled ? (isDarkMode ? '#FF453A' : '#D70015') : subTextColor; 
+            const statusWeight = isDisabled ? '600' : 'normal';
+
             htmlMessage += `
-                <button class="route-appender-option" data-card-id="${card.id}" style="
+                <button class="route-appender-option" data-card-id="${card.id}" ${isDisabled ? 'disabled' : ''} style="
                     width: 100%; padding: 12px 18px; background: ${btnBg}; border: 1px solid ${borderColor};
-                    border-radius: 999px; cursor: pointer; transition: all 0.2s ease; outline: none;
+                    border-radius: 999px; transition: all 0.2s ease; outline: none;
                     display: flex; align-items: center; gap: 12px; box-sizing: border-box;
+                    ${disabledStyle}
                 ">
                     <div class="radio-circle" style="width: 20px; height: 20px; min-width: 20px; border-radius: 50%; border: 1.5px solid #999; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
                         <div class="radio-dot" style="width: 10px; height: 10px; border-radius: 50%; background: transparent; transition: all 0.2s;"></div>
                     </div>
                     <span style="font-weight: 500; font-size: 1rem; color: ${textColor}; flex: 1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${card.name}</span>
-                    <span style="font-size: 0.8rem; color: ${subTextColor}; white-space: nowrap; min-width: 45px; text-align: right;">${routeCount} 路線</span>
+                    <span style="font-size: 0.8rem; color: ${statusColor}; font-weight: ${statusWeight}; white-space: nowrap; min-width: 50px; text-align: right;">${statusText}</span>
                 </button>
             `;
         });
@@ -81,7 +105,8 @@ window.RouteAppender = {
                 confirmBtn.style.pointerEvents = 'none';
             }
 
-            const options = document.querySelectorAll('.route-appender-option');
+            // ✨ 神奇選擇器：只幫「沒有被 disabled」的按鈕掛上點擊事件！
+            const options = document.querySelectorAll('.route-appender-option:not([disabled])');
             options.forEach(btn => {
                 btn.onclick = () => {
                     selectedTargetId = btn.getAttribute('data-card-id');
@@ -123,15 +148,8 @@ window.RouteAppender = {
         if (!targetCard.targetLineIds) targetCard.targetLineIds = [];
         if (!targetCard.detailedLines) targetCard.detailedLines = [];
 
-        // 防呆：確認路線是否已經在卡片裡面了
-        if (targetCard.targetLineIds.includes(newRoute.id)) {
-            if (window.iosConfirm) {
-                window.iosConfirm('追加失敗', 'この路線はすでにカードに追加されています！', 'OK', null);
-            } else {
-                alert("この路線はすでにカードに追加されています！");
-            }
-            return;
-        }
+        // 雖然介面已經防呆，雙重保險還是留著
+        if (targetCard.targetLineIds.includes(newRoute.id)) return;
 
         // 1. 將路線資料推入記憶體陣列
         targetCard.targetLineIds.push(newRoute.id);
@@ -145,20 +163,19 @@ window.RouteAppender = {
         const searchInput = document.getElementById('search-input');
         if (searchInput) searchInput.blur();
         const cancelBtn = document.querySelector('.cancel-circle-btn');
-        if (cancelBtn) cancelBtn.click(); // 觸發 header.js 裡的退出搜尋邏輯
+        if (cancelBtn) cancelBtn.click(); 
 
         try {
-            // ✨ 3. 呼叫真正的資料庫儲存引擎！把更新後的路線陣列存進 IndexedDB
+            // 3. 寫入 IndexedDB
             await updateCardRoutes(targetCardId, targetCard.targetLineIds);
 
-            // ✨ 4. 呼叫你寫好的無縫重繪引擎 (refreshAppAfterEdit)，讓主畫面瞬間長出新路線！
+            // 4. 無縫重繪畫面
             if (window.refreshAppAfterEdit) {
                 await window.refreshAppAfterEdit();
             } else if (window.triggerBackgroundUpdate) {
                 window.triggerBackgroundUpdate();
             }
             
-            // 成功後可以在這裡加一點微小的震動回饋
             if (window.navigator.vibrate) window.navigator.vibrate(20);
             
         } catch (err) {
