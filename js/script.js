@@ -422,7 +422,7 @@ function renderCards(data) {
     // 🚨 抓蟲修復：只精準移除空狀態訊息，絕對不碰已經在畫面上飛舞的卡片！
     const emptyMsg = mainStack.querySelector('.empty-state-msg');
     if (emptyMsg) {
-        emptyMsg.remove(); 
+        emptyMsg.remove();
     } else if (mainStack.children.length === 1 && mainStack.firstElementChild.tagName === 'P') {
         // 防呆：相容舊版沒加 class 的狀況
         mainStack.innerHTML = '';
@@ -985,8 +985,8 @@ function handleCardClick(id) {
                 if (isAnimating) return;
 
                 // 1. 📦 精準擷取目前預覽的這條路線資料
-                const routeId = (data.detailedLines && data.detailedLines.length > 0) 
-                    ? data.detailedLines[0].id 
+                const routeId = (data.detailedLines && data.detailedLines.length > 0)
+                    ? data.detailedLines[0].id
                     : (data.id || data.targetLineIds[0]);
 
                 const routeData = {
@@ -2328,8 +2328,8 @@ async function initApp() {
             cachedLiveStatus = JSON.parse(localStorage.getItem('Tsukin_Cached_Status') || '{}');
         } catch (e) { }
 
-        // ⚡️ 2. 瞬間渲染！(先用快取畫出 DOM，不會有白畫面，動畫正常執行)
-        buildAndRender(userPrefs, cachedDict, cachedLiveStatus, false);
+        // ⚡️ 2. 瞬間渲染！(不傳入舊狀態，強制將所有燈號重置為「更新中...」)
+        buildAndRender(userPrefs, cachedDict, {}, false);
 
         // 3. 背景非同步抓取最新資料
         console.log("📡 背景正在獲取最新運行狀態...");
@@ -2373,14 +2373,15 @@ async function initApp() {
         } else {
             // 🚨 API 伺服器回傳 500、502，或是休眠叫不醒
             console.warn("⚠️ 狀態 API 伺服器無回應，強制切換至斷線異常狀態");
-            // (💡 這裡原本就沒有呼叫更新時間，維持原樣，完美保留「舊時間」以提示斷線)
-            buildAndRender(userPrefs, cachedDict, cachedLiveStatus, true); 
+            // 🛑 丟棄舊資料，強制觸發斷線狀態
+            buildAndRender(userPrefs, cachedDict, {}, true); 
         }
 
     } catch (error) {
         // 🚨 發生無法預期的底層錯誤 (如 DNS 解析失敗、網路完全斷開)
         console.error("系統遭遇嚴重連線錯誤:", error);
-        buildAndRender(userPrefs, cachedDict, cachedLiveStatus, true); // 依然強制渲染出錯誤燈號
+        // 🛑 丟棄舊資料，不拿過期的綠燈騙使用者
+        buildAndRender(userPrefs, cachedDict, {}, true); 
     }
     initFlights();
 }
@@ -3000,7 +3001,7 @@ window.triggerBackgroundUpdate = async function () {
             // ✨ 擷取伺服器給的絕對時間，如果後端沒給，才退回使用手機時間當備案
             const serverTimeStr = liveStatus._meta ? liveStatus._meta.server_time : null;
             const syncDate = serverTimeStr ? new Date(serverTimeStr) : new Date();
-            
+
             // 只有確實拿到資料，才准許更新左上角的 JST 時間
             if (typeof window.updateSystemSyncTime === 'function') {
                 window.updateSystemSyncTime(syncDate);
