@@ -118,16 +118,6 @@ window.getDisplaySettingsHTML = function() {
             ` : ''}
         </div>
 
-        <div class="settings-group">
-            <div class="settings-row">
-                <span class="settings-label">下部カードのプレビュー</span>
-                <label class="ios-switch">
-                    <input type="checkbox" id="setting-bottom-card-preview">
-                    <span class="slider"></span>
-                </label>
-            </div>
-        </div>
-
     </div>
     `;
 };
@@ -270,27 +260,7 @@ window.initDisplaySettingsEvents = function() {
             });
         }
 
-        // 🎯 3. 新增：開啟底部卡片預覽設定 (預設關閉 false)
-        const bottomPreviewSwitch = document.getElementById('setting-bottom-card-preview');
-        if (bottomPreviewSwitch && dbSettings.getDisplaySetting) {
-            dbSettings.getDisplaySetting('bottomCardPreview', false).then(isPreviewEnabled => {
-                bottomPreviewSwitch.checked = isPreviewEnabled;
-                if (isPreviewEnabled) document.body.classList.add('enable-bottom-preview');
-            });
-
-            bottomPreviewSwitch.addEventListener('change', (e) => {
-                const isChecked = e.target.checked;
-                dbSettings.saveDisplaySetting('bottomCardPreview', isChecked);
-                
-                // 立即套用 Class 讓 CSS 能夠抓取
-                document.body.classList.toggle('enable-bottom-preview', isChecked);
-                
-                console.log(`設定 [底部卡片預覽] 切換為：`, isChecked);
-                if (window.navigator.vibrate) window.navigator.vibrate(5);
-            });
-        }
-
-        // 🎯 4. 其他開關 (預留未來擴充)
+        // 🎯 3. 其他開關 (預留未來擴充)
         const otherSwitches = ['reduce-motion', 'reduce-blur', 'disable-gradient'];
         otherSwitches.forEach(id => {
             const el = document.getElementById(`setting-${id}`);

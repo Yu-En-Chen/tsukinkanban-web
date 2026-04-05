@@ -10,10 +10,6 @@ try {
     if (localStorage.getItem('tsukin_setting_highContrastIcons') === 'true') {
         document.body.classList.add('high-contrast-icons');
     }
-    // 3. 底部卡片預覽 (預設關閉，如果有開啟才加上 class)
-    if (localStorage.getItem('tsukin_setting_bottomCardPreview') === 'true') {
-        document.body.classList.add('enable-bottom-preview');
-    }
 } catch (e) { }
 
 import { bottomCardConfig, railwayData } from '../data/data.js';
