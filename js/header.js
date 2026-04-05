@@ -437,7 +437,99 @@ export function initHeader(onSearchCallback, getActiveCardId) {
 
         if (mode === 'native') {
             if (capsule.classList.contains('detail-active')) {
-                console.log('External Link Action Triggered');
+                // ====================================================
+                // 🟢 官網外部連結跳轉邏輯 (External Link Action)
+                // ====================================================
+                const activeId = getActiveCardId ? getActiveCardId() : null;
+                
+                // 防呆：如果沒有抓到 ID 或是預設底層的「運行情報」，則不執行
+                if (!activeId || activeId === 'fixed-bottom') return;
+
+                // 1. 從全域記憶體尋找當前卡片的完整資料
+                const currentData = window.appRailwayData ? window.appRailwayData.find(r => r.id === activeId) : null;
+                if (!currentData) return;
+
+                // 2. 收集所有相關線路的網址
+                let linksToCheck = [];
+                
+                if (currentData.isCustom && currentData.targetLineIds && currentData.targetLineIds.length > 0) {
+                    // 【情境 A】自訂卡片：可能綁定了多條線路
+                    currentData.targetLineIds.forEach(id => {
+                        const dictRoute = window.MasterRouteDictionary ? window.MasterRouteDictionary[id] : null;
+                        if (dictRoute) {
+                            // 💡 這裡相容不同的 API 命名習慣，請依據你實際 API 傳回的 Key 調整 (url / companyUrl / website)
+                            const url = dictRoute.url || dictRoute.companyUrl || dictRoute.website;
+                            if (url) {
+                                linksToCheck.push({
+                                    name: dictRoute.name || dictRoute.company || '路線公式サイト',
+                                    url: url
+                                });
+                            }
+                        }
+                    });
+                } else {
+                    // 【情境 B】原生卡片：單一線路
+                    const url = currentData.url || currentData.companyUrl || currentData.website;
+                    if (url) {
+                        linksToCheck.push({
+                            name: currentData.name || currentData.company || '公式サイト',
+                            url: url
+                        });
+                    }
+                }
+
+                // 3. 過濾重複的 URL (避免綁定多條 JR 線時，出現五個一模一樣的 JR 官網)
+                const uniqueLinks = [];
+                const seenUrls = new Set();
+                linksToCheck.forEach(link => {
+                    if (!seenUrls.has(link.url)) {
+                        seenUrls.add(link.url);
+                        uniqueLinks.push(link);
+                    }
+                });
+
+                // 4. 執行互動路由分發
+                if (uniqueLinks.length === 0) {
+                    console.log('[Routing] 未找到官網 URL 資料');
+                    // 💡 細節：如果 API 沒給網址，我們不讓按鈕無反應，而是觸發一個「微震動」與「縮放」暗示不可點擊
+                    const btn = document.getElementById('capsule-secondary-btn');
+                    if (btn && typeof window.triggerBump === 'function') window.triggerBump(btn);
+                    return;
+                }
+
+                if (uniqueLinks.length === 1) {
+                    // 只有一個官網，直接另開新分頁跳轉
+                    window.open(uniqueLinks[0].url, '_blank');
+                } else {
+                    // 有多個不同官網，呼叫你的 dialog.js 讓使用者選擇
+                    // ⚠️ 注意：依據你 dialog.js 實際暴露的全域函數名稱做調整
+                    
+                    if (typeof window.showActionSheet === 'function') {
+                        // 假設 dialog.js 有實作多按鈕清單 (Action Sheet)
+                        window.showActionSheet({
+                            title: '公式サイトを選択',
+                            buttons: uniqueLinks.map(link => ({
+                                text: link.name,
+                                onClick: () => window.open(link.url, '_blank')
+                            }))
+                        });
+                    } else if (typeof window.iosConfirm === 'function') {
+                        // 假設 dialog.js 只有雙按鈕的 iosConfirm (我在之前的分析有看到你封裝過這個)
+                        // 若只有雙按鈕，這裡做個優雅降級 (Graceful Degradation)，取前兩筆顯示
+                        window.iosConfirm(
+                            '公式サイト',
+                            '複数の路線が含まれています。どちらを開きますか？',
+                            uniqueLinks[0].name, // 確認按鈕 1
+                            () => window.open(uniqueLinks[0].url, '_blank'),
+                            uniqueLinks[1].name, // 取消按鈕當作 2
+                            () => window.open(uniqueLinks[1].url, '_blank')
+                        );
+                    } else {
+                        // 最終 Fallback：如果 dialog 引擎沒掛載成功，保底打開第一個
+                        window.open(uniqueLinks[0].url, '_blank');
+                    }
+                }
+                // ====================================================
             } else {
                 window.toggleMainMenu();
             }
