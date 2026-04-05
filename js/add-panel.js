@@ -18,32 +18,14 @@ window.openAddPanel = function () {
             </div>
 
             <div class="add-menu-item" id="add-item-2">
-                <button class="add-menu-btn" onclick="window.toggleAddMenuItem('add-item-2')">
+                <button class="add-menu-btn" onclick="window.openSearchFromAddPanel()">
                     <div class="add-menu-text">
                         <div class="add-menu-title">既存のカードに路線を追加</div>
                     </div>
                     <div class="add-menu-chevron">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                     </div>
                 </button>
-                <div class="add-menu-content-wrapper">
-                    <div class="add-menu-content">
-                        <div class="add-menu-inner" style="padding: 16px;">
-                            
-                            <div style="position: relative; margin-bottom: 12px;">
-                                <input type="text" id="dict-search-input" placeholder="路線名や会社名で検索..." 
-                                       oninput="window.handleDictSearch()"
-                                       style="width: 100%; padding: 12px 16px 12px 38px; border-radius: 12px; border: none; background: rgba(120, 120, 128, 0.12); color: inherit; font-size: 16px; outline: none; box-sizing: border-box;">
-                                <svg style="position: absolute; left: 12px; top: 12px; opacity: 0.5;" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                            </div>
-                            
-                            <div id="dict-search-results" style="max-height: 45vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
-                                <p style="text-align: center; opacity: 0.5; padding: 20px 0; font-size: 0.9em;">追加したい路線を検索してください</p>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <div class="add-menu-item" id="add-item-3">
@@ -741,4 +723,38 @@ window.deleteAllHiddenCards = async function() {
     const visibleCapsules = document.querySelectorAll('#manage-visible-list .manage-card-capsule');
     const visibleIds = Array.from(visibleCapsules).map(c => c.dataset.id);
     if(db.saveDisplayOrder) db.saveDisplayOrder(visibleIds);
+};
+
+// ============================================================================
+// ✨ 點擊「既存のカードに路線を追加」：關閉面板並自動觸發首頁搜尋
+// ============================================================================
+window.openSearchFromAddPanel = function() {
+    // 1. 防呆：如果有正在進行的動畫就阻擋
+    if (window.isAnimating || window.isFlipAnimating) return;
+
+    // 2. 關閉當前的「新增面板」(Universal Page)
+    if (typeof window.closeUniversalPage === 'function') {
+        window.closeUniversalPage(true); // true 代表觸發流暢的退場動畫
+    }
+
+    // 3. 轉場排程：等待 450ms 讓面板關閉動畫完全落地
+    setTimeout(() => {
+        // 尋找首頁頂部的搜尋觸發按鈕並模擬點擊
+        const searchBtn = document.querySelector('.search-trigger') || document.getElementById('search-trigger');
+
+        if (searchBtn) {
+            searchBtn.click(); // 觸發 Header 搜尋列展開
+
+            // 4. 微互動優化：等待搜尋框展開動畫後，自動 Focus 並喚起手機虛擬鍵盤
+            setTimeout(() => {
+                const searchInput = document.getElementById('search-input');
+                if (searchInput) {
+                    searchInput.focus({ preventScroll: true });
+                }
+            }, 300); // 配合 Header 搜尋列展開的動畫時間
+            
+        } else {
+            console.warn('[UX Engine] 找不到搜尋按鈕，無法展開搜尋列');
+        }
+    }, 450); 
 };
