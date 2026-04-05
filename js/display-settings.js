@@ -78,15 +78,6 @@ window.getDisplaySettingsHTML = function() {
         </div>
 
         <div class="settings-group">
-            <div class="settings-row">
-                <span class="settings-label">視差効果を減らす</span>
-                <label class="ios-switch">
-                    <input type="checkbox" id="setting-reduce-motion">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            
-            
             ${isDesktop ? `
             <div class="settings-row">
                 <span class="settings-label">システムカーソルを使用</span>
