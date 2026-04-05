@@ -66,7 +66,7 @@ window.getDisplaySettingsHTML = function() {
         ${browserRecommendationHTML}
 
         <div class="settings-group">
-            <div class="settings-row">
+            <div class="settings-row" style="height: 60px; padding-top: 0; padding-bottom: 0;">
                 <span class="settings-label">描画モード</span>
                 <div class="segmented-control" id="render-mode-control">
                     <div class="seg-bg"></div>
@@ -78,7 +78,7 @@ window.getDisplaySettingsHTML = function() {
 
         ${isDesktop ? `
         <div class="settings-group">
-            <div class="settings-row">
+            <div class="settings-row" style="height: 60px; padding-top: 0; padding-bottom: 0;">
                 <span class="settings-label">システムカーソルを使用</span>
                 <label class="ios-switch">
                     <input type="checkbox" id="setting-default-cursor">
