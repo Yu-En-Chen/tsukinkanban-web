@@ -139,24 +139,22 @@
 }
 
 /* ==========================================
-   🟢 實際套用樣式 (包含修復冒號變色)
+   🟢 實際套用樣式 (地毯式轟炸選擇器，保證抓到冒號！)
 ========================================== */
 
 /* 🟡 1~5 分鐘：黃色警告狀態 */
-#entry-time-display.sync-warning-yellow .new-val,
-#entry-time-display.sync-warning-yellow .old-val,
-#entry-time-display.sync-warning-yellow .clock-colon, 
-#entry-time-display.sync-warning-yellow #clock-colon { /* 確保抓到冒號，無論你是用 class 還是 id */
+/* ✨ 核心魔法：使用 * (萬用字元)，不管裡面的數字、冒號叫什麼名字，全部強制上色！ */
+#entry-time-display.sync-warning-yellow,
+#entry-time-display.sync-warning-yellow * {
     color: var(--sync-yellow-color) !important;
     text-shadow: var(--sync-yellow-glow) !important;
     transition: color 0.5s ease, text-shadow 0.5s ease;
 }
 
 /* 🔴 5 分鐘以上：紅色斷線狀態 */
-#entry-time-display.sync-warning-red .new-val,
-#entry-time-display.sync-warning-red .old-val,
-#entry-time-display.sync-warning-red .clock-colon,
-#entry-time-display.sync-warning-red #clock-colon { /* 確保抓到冒號 */
+/* ✨ 核心魔法：同樣使用 * (萬用字元) 強制覆蓋所有子元素 */
+#entry-time-display.sync-warning-red,
+#entry-time-display.sync-warning-red * {
     color: var(--sync-red-color) !important;
     text-shadow: var(--sync-red-glow) !important;
     transition: color 0.5s ease, text-shadow 0.5s ease;
