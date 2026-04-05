@@ -973,12 +973,12 @@ function handleCardClick(id) {
                 return btn;
             };
 
+            // 刪除原本沒用的 handleTempAdd
             // 🟢 接通新系統：將目前的路線資料打包並傳給 RouteAppender
             const handleAddToExisting = () => {
                 if (isAnimating) return;
 
                 // 1. 📦 精準擷取目前預覽的這條路線資料
-                // (參考你下方 handleCreateNew 的寫法，我們確保能抓到正確的路線 ID)
                 const routeId = (data.detailedLines && data.detailedLines.length > 0) 
                     ? data.detailedLines[0].id 
                     : (data.id || data.targetLineIds[0]);
@@ -1001,6 +1001,29 @@ function handleCardClick(id) {
                         alert("系統模組載入失敗，請重新整理網頁");
                     }
                 }, 300);
+            };
+
+            // ✨ 替換這裡：打包目前的卡片資訊，傳遞給新增引擎！
+            const handleCreateNew = () => {
+                if (isAnimating) return;
+
+                // 📦 擷取這張卡片的精華資料
+                const prefillData = {
+                    name: data.name,
+                    hex: data.hex,
+                    desc: data.desc,
+                    detail: data.detail,
+                    statusFlags: data.statusFlags || [false, false, false, false, false, false, false],
+                    targetLineIds: data.detailedLines && data.detailedLines[0] ? [data.detailedLines[0].id] : (data.targetLineIds || []),
+                    detailedLines: data.detailedLines || []
+                };
+
+                closeAllCards(false);
+                setTimeout(() => {
+                    if (typeof window.createNewCardAndEdit === 'function') {
+                        window.createNewCardAndEdit(prefillData);
+                    }
+                }, 450);
             };
 
             btnContainer.appendChild(createBtn(iconListPlus, '既存カード追加', handleAddToExisting));
