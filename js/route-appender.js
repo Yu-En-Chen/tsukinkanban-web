@@ -56,15 +56,17 @@ window.RouteAppender = {
             const routeCount = card.targetLineIds ? card.targetLineIds.length : 0;
             htmlMessage += `
                 <button class="route-appender-option" data-card-id="${card.id}" style="
-                    width: 100%; padding: 12px 14px; background: ${btnBg}; border: 1px solid ${borderColor};
-                    border-radius: 12px; cursor: pointer; transition: all 0.2s ease; outline: none;
+                    width: 100%; padding: 12px 18px; background: ${btnBg}; border: 1px solid ${borderColor};
+                    border-radius: 999px; cursor: pointer; transition: all 0.2s ease; outline: none;
                     display: flex; align-items: center; gap: 12px; box-sizing: border-box;
                 ">
                     <div class="radio-circle" style="width: 20px; height: 20px; min-width: 20px; border-radius: 50%; border: 1.5px solid #999; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
                         <div class="radio-dot" style="width: 10px; height: 10px; border-radius: 50%; background: transparent; transition: all 0.2s;"></div>
                     </div>
-                    <span style="font-weight: 500; font-size: 1rem; color: ${textColor}; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${card.name}</span>
-                    <span style="font-size: 0.75rem; color: ${subTextColor}; white-space: nowrap;">${routeCount} 路線</span>
+                    
+                    <span style="font-weight: 500; font-size: 1rem; color: ${textColor}; flex: 1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${card.name}</span>
+                    
+                    <span style="font-size: 0.8rem; color: ${subTextColor}; white-space: nowrap; min-width: 45px; text-align: right;">${routeCount} 路線</span>
                 </button>
             `;
         });
