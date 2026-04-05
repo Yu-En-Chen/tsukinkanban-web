@@ -453,27 +453,21 @@ export function initHeader(onSearchCallback, getActiveCardId) {
 
                 let linksToCheck = [];
                 
-                if (currentData.isCustom && currentData.targetLineIds && currentData.targetLineIds.length > 0) {
+                // 💡 關鍵修復：拔除 isCustom 限制。只要卡片有綁定路線 ID，就去字典查官網！
+                if (currentData.targetLineIds && currentData.targetLineIds.length > 0) {
                     currentData.targetLineIds.forEach(id => {
                         const dictRoute = window.MasterRouteDictionary ? window.MasterRouteDictionary[id] : null;
                         if (dictRoute) {
                             const url = dictRoute.url || dictRoute.companyUrl || dictRoute.website;
                             if (url) {
                                 linksToCheck.push({
+                                    // 優先使用公司名稱作為按鈕文字，若無則用路線名稱
                                     name: dictRoute.company || dictRoute.name || '公式サイト',
                                     url: url
                                 });
                             }
                         }
                     });
-                } else {
-                    const url = currentData.url || currentData.companyUrl || currentData.website;
-                    if (url) {
-                        linksToCheck.push({
-                            name: currentData.company || currentData.name || '公式サイト',
-                            url: url
-                        });
-                    }
                 }
 
                 // 過濾重複的網址
