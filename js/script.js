@@ -973,7 +973,6 @@ function handleCardClick(id) {
                 return btn;
             };
 
-            const handleTempAdd = () => { console.log('1日だけ追加 clicked'); };
             const handleAddToExisting = () => { console.log('既存カード追加 clicked'); };
             // ✨ 替換這裡：打包目前的卡片資訊，傳遞給新增引擎！
             const handleCreateNew = () => {
