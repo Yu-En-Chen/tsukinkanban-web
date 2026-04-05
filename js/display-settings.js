@@ -60,7 +60,6 @@ window.getDisplaySettingsHTML = function() {
     console.log(`[偵測結果] Apple: ${isApple}, Safari: ${isSafari}, Blink: ${isBlink}, Firefox: ${isFirefox}`);
 
     return `
-
     <div class="settings-container">
         <p class="settings-description">アプリの動作や視覚効果をカスタマイズできます。</p>
         
@@ -77,8 +76,8 @@ window.getDisplaySettingsHTML = function() {
             </div>
         </div>
 
+        ${isDesktop ? `
         <div class="settings-group">
-            ${isDesktop ? `
             <div class="settings-row">
                 <span class="settings-label">システムカーソルを使用</span>
                 <label class="ios-switch">
@@ -86,8 +85,10 @@ window.getDisplaySettingsHTML = function() {
                     <span class="slider"></span>
                 </label>
             </div>
-            ` : ''}
         </div>
+        ` : ''}
+
+        <div style="height: 40px; flex-shrink: 0; width: 100%; pointer-events: none;"></div>
 
     </div>
     `;
