@@ -85,27 +85,7 @@ window.getDisplaySettingsHTML = function() {
                     <span class="slider"></span>
                 </label>
             </div>
-            <div class="settings-row">
-                <span class="settings-label">透明度を下げる</span>
-                <label class="ios-switch">
-                    <input type="checkbox" id="setting-reduce-blur">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            <div class="settings-row">
-                <span class="settings-label">カラーグラデーションをオフ</span>
-                <label class="ios-switch">
-                    <input type="checkbox" id="setting-disable-gradient">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            <div class="settings-row">
-                <span class="settings-label">ステータスアイコンのコントラストを高める</span>
-                <label class="ios-switch">
-                    <input type="checkbox" id="setting-high-contrast-icons">
-                    <span class="slider"></span>
-                </label>
-            </div>
+            
             
             ${isDesktop ? `
             <div class="settings-row">
