@@ -71,7 +71,7 @@ window.getDisplaySettingsHTML = function() {
                 <div class="segmented-control" id="render-mode-control">
                     <div class="seg-bg"></div>
                     <button class="seg-btn active" data-val="quality">品質</button>
-                    <button class="seg-btn" data-val="performance">動作</button>
+                    <button class="seg-btn" data-val="performance">軽量</button>
                 </div>
             </div>
         </div>
