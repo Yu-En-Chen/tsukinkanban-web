@@ -177,6 +177,18 @@ window.RouteAppender = {
             }
             
             if (window.navigator.vibrate) window.navigator.vibrate(20);
+
+            // ✨ 5. 核心魔法：畫面重繪完成後，自動點開那張被更新的卡片！
+            // 我們稍微等個 100 毫秒，確保 DOM 已經被完全插入畫面中
+            setTimeout(() => {
+                const updatedCardElement = document.getElementById(`card-${targetCardId}`);
+                if (updatedCardElement) {
+                    // 模擬使用者點擊卡片，觸發你原本寫好的 3D 翻轉或展開動畫
+                    updatedCardElement.click(); 
+                } else {
+                    console.warn(`[Route Appender] 找不到 ID 為 card-${targetCardId} 的卡片以執行自動展開`);
+                }
+            }, 100);
             
         } catch (err) {
             console.error("[Route Appender] 儲存失敗", err);
