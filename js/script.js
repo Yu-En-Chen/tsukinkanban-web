@@ -973,30 +973,34 @@ function handleCardClick(id) {
                 return btn;
             };
 
-            const handleAddToExisting = () => { console.log('既存カード追加 clicked'); };
-            // ✨ 替換這裡：打包目前的卡片資訊，傳遞給新增引擎！
-            const handleCreateNew = () => {
+            // 🟢 接通新系統：將目前的路線資料打包並傳給 RouteAppender
+            const handleAddToExisting = () => {
                 if (isAnimating) return;
 
-                // 📦 擷取這張卡片的精華資料 (包含剛剛查出來的路線 ID 與即時狀態)
-                const prefillData = {
-                    name: data.name,
-                    hex: data.hex,
-                    desc: data.desc,
-                    detail: data.detail,
-                    // ✨ 新增這行：把算好的七燈號陣列一起打包帶走！
-                    statusFlags: data.statusFlags || [false, false, false, false, false, false, false],
+                // 1. 📦 精準擷取目前預覽的這條路線資料
+                // (參考你下方 handleCreateNew 的寫法，我們確保能抓到正確的路線 ID)
+                const routeId = (data.detailedLines && data.detailedLines.length > 0) 
+                    ? data.detailedLines[0].id 
+                    : (data.id || data.targetLineIds[0]);
 
-                    targetLineIds: data.detailedLines && data.detailedLines[0] ? [data.detailedLines[0].id] : (data.targetLineIds || []),
-                    detailedLines: data.detailedLines || []
+                const routeData = {
+                    id: routeId,
+                    name: data.name,
+                    company: data.company || "不明"
                 };
 
+                // 2. 收起這張幽靈預覽卡片與搜尋列
                 closeAllCards(false);
+
+                // 3. ✨ 稍微等卡片收起的動畫一下下，然後召喚我們的獨立選擇面板！
                 setTimeout(() => {
-                    if (typeof window.createNewCardAndEdit === 'function') {
-                        window.createNewCardAndEdit(prefillData);
+                    if (window.RouteAppender) {
+                        window.RouteAppender.openPicker(routeData);
+                    } else {
+                        console.error("[系統錯誤] 找不到 RouteAppender，請確認 index.html 有無引入");
+                        alert("系統模組載入失敗，請重新整理網頁");
                     }
-                }, 450);
+                }, 300);
             };
 
             btnContainer.appendChild(createBtn(iconListPlus, '既存カード追加', handleAddToExisting));
