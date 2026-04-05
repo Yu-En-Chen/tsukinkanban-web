@@ -6,10 +6,6 @@ try {
     if (localStorage.getItem('tsukin_setting_useSystemCursor') === 'true') {
         document.body.classList.add('use-system-cursor');
     }
-    // 2. 提高狀態符號對比度
-    if (localStorage.getItem('tsukin_setting_highContrastIcons') === 'true') {
-        document.body.classList.add('high-contrast-icons');
-    }
 } catch (e) { }
 
 import { bottomCardConfig, railwayData } from '../data/data.js';
