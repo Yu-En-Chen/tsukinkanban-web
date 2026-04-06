@@ -97,14 +97,15 @@ export function searchFlights(lowKeyword) {
                     'GateClosed': '搭乗終了',
                     'GoToGate': '搭乗口へ',
                     // ✨ 補上這裡
-                    'InAir': '飛行中'
+                    'InAir': '飛行中',
+                    'LeftGate': '滑行中'
                 };
                 const statusText = statusMap[f.status] || f.status;
 
                 let statusColor = 'inherit';
                 let statusOpacity = '0.6';
 
-                const greenStatuses = ['出発済', '到着済', '着陸済', '搭乗手続中', '飛行中'];
+                const greenStatuses = ['出発済', '到着済', '着陸済', '搭乗手続中', '飛行中', '滑行中'];
                 const redStatuses = ['欠航', '搭乗終了'];
                 // ✨ 將新的狀態加入一般狀態陣列中，才不會變成突兀的橘色
                 const normalStatuses = ['通常', '新規到着', '出発予定', '到着予定', '変更予定'];
@@ -207,7 +208,8 @@ window.generateFlightDataFormat = function (flight, fid) {
         'GateClosed': '搭乗終了',
         'GoToGate': '搭乗口へ',
         // ✨ 補上這裡
-        'InAir': '飛行中'
+        'InAir': '飛行中',
+        'LeftGate': '滑行中'
     };
     const statusText = statusMap[flight.status] || flight.status;
 
@@ -232,7 +234,7 @@ window.generateFlightDataFormat = function (flight, fid) {
 
     const subtleGlow = '0 0 5px rgba(255,255,255,0.4), 0 0 1px rgba(255,255,255,0.6)';
     let statusColor = 'inherit', statusShadow = 'none';
-    const greenStatuses = ['出発済', '到着済', '着陸済', '搭乗手続中'];
+    const greenStatuses = ['出発済', '到着済', '着陸済', '搭乗手続中', '飛行中', '滑行中'];
     const redStatuses = ['欠航'];
     const normalStatuses = ['通常', '新規到着'];
 
