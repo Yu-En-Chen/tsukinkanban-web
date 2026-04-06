@@ -13,7 +13,45 @@ function swapCodeAndName(str) {
     return str;
 }
 
-// ✨ 2. 手動更新預設機場字典為代號在前
+// ✨ 2. 新增備註翻譯與擷取小工具 (共用)
+function translateFlightNote(rawNote) {
+    if (!rawNote) return '';
+    let processedNote = rawNote.trim();
+    if (!processedNote) return '';
+
+    const translationDict = {
+        "due to ": "",
+        "late arrival of aircraft": "使用機到着遅延",
+        "late arrival of the aircraft": "使用機到着遅延",
+        "Late arrival": "使用機到着遅延",
+        "late arrival": "使用機到着遅延",
+        "Equipment change": "機材変更",
+        "Weather condition": "天候不良",
+        "Bad weather": "悪天候",
+        "Maintenance": "機体整備",
+        "Air traffic control": "航空管制",
+        "Operational reason": "運航上の理由",
+        "Typhoon": "台風の影響",
+        "Snow": "降雪の影響",
+        "Heavy rain": "大雨の影響",
+        "Security check": "保安検査場の混雑",
+        "Boarding": "搭乗手続きの遅れ",
+        "Congestion": "空港混雑"
+    };
+
+    Object.keys(translationDict).forEach(key => {
+        const regex = new RegExp(key, "gi");
+        processedNote = processedNote.replace(regex, translationDict[key]);
+    });
+    
+    processedNote = processedNote.charAt(0).toUpperCase() + processedNote.slice(1);
+    if (processedNote.length > 30) {
+        processedNote = processedNote.substring(0, 30) + '...';
+    }
+    return processedNote;
+}
+
+// ✨ 手動更新預設機場字典為代號在前
 const airportNamesJa = {
     'NRT': 'NRT（成田）',
     'HND': 'HND（羽田）'
@@ -67,6 +105,7 @@ export function searchFlights(lowKeyword) {
 
                 const flightTypeIcon = f.type === 'Departure' ? takeoffIconSvg : landingIconSvg;
                 const isTimeChanged = f.scheduled !== f.latest;
+                const processedNote = translateFlightNote(f.note); // ✨ 擷取備註
 
                 let matchedFid = f.fid[0]; 
                 for (let id of f.fid) {
@@ -85,7 +124,9 @@ export function searchFlights(lowKeyword) {
                     if (delayMins < -720) delayMins += 24 * 60; 
                 }
 
-                let flags = [false, false, false, false, false, false, false];
+                // ✨ 如果有備註，直接把第 7 個燈號 (index 6) 設為 true
+                let flags = [false, false, false, false, false, false, !!processedNote];
+                
                 if (sClass === 'status-error') {
                     flags[3] = true; 
                 } else if (sClass === 'status-delayed' || delayMins > 30) {
@@ -161,6 +202,14 @@ export function searchFlights(lowKeyword) {
                         </div>`;
                 }
 
+                // ✨ 如果有備註，在搜尋結果面板底部追加一行警告
+                if (processedNote) {
+                    flightTimeHtml += `
+                        <div style="font-size: 0.85em; color: #ffcc00; margin-top: 6px; padding-top: 6px; border-top: 1px dotted rgba(128,128,128,0.3); line-height: 1.2;">
+                            ⚠️ ${processedNote}
+                        </div>`;
+                }
+
                 const locMatch = f.location.match(/[A-Z]{3}/);
                 const locCode = locMatch ? locMatch[0] : '';
                 const isDomestic = locCode ? domesticCodes.includes(locCode) : false;
@@ -172,7 +221,6 @@ export function searchFlights(lowKeyword) {
                     airportBadge = `<span class="flight-alert-badge">HND（国際）</span>`;
                 }
 
-                // ✨ 3. Flexbox 強制不換行與省略號排版
                 const locSwapped = swapCodeAndName(f.location);
                 let companyHtml = '';
                 if (f.type === 'Departure') {
@@ -212,6 +260,8 @@ export function searchFlights(lowKeyword) {
 // ==========================================
 window.generateFlightDataFormat = function(flight, fid) {
     const isTimeChanged = flight.scheduled !== flight.latest;
+    const processedNote = translateFlightNote(flight.note); // ✨ 擷取備註
+
     const statusMap = {
         'Normal': '通常', 'Delayed': '遅延', 'Cancelled': '欠航',
         'Takeoff': '出発済', 'Landed': '着陸済', 'Arrived': '到着済',
@@ -231,11 +281,10 @@ window.generateFlightDataFormat = function(flight, fid) {
         if (delayMins < -720) delayMins += 24 * 60; 
     }
 
-    let flags = [false, false, false, false, false, false, false];
+    // ✨ 點亮第七顆燈 (如果有備註)
+    let flags = [false, false, false, false, false, false, !!processedNote];
     if (['欠航'].includes(statusText)) {
         flags[3] = true;
-    } else if (['搭乗中', '最終案内', '通常', '新規到着'].includes(statusText) || statusText === '情報なし') {
-        flags[6] = true;
     } else if (isTimeChanged || ['遅延'].includes(statusText)) {
         flags[4] = true;
     } else {
@@ -278,45 +327,11 @@ window.generateFlightDataFormat = function(flight, fid) {
     const rawLocationCode = locMatch2 ? locMatch2[0] : flight.location;
     const isDomestic = rawLocationCode ? domesticCodes.includes(rawLocationCode) : false;
 
-    let rawNote = (flight.note || '').trim();
-    const translationDict = {
-        "due to ": "",
-        "late arrival of aircraft": "使用機到着遅延",
-        "late arrival of the aircraft": "使用機到着遅延",
-        "Late arrival": "使用機到着遅延",
-        "late arrival": "使用機到着遅延",
-        "Equipment change": "機材変更",
-        "Weather condition": "天候不良",
-        "Bad weather": "悪天候",
-        "Maintenance": "機体整備",
-        "Air traffic control": "航空管制",
-        "Operational reason": "運航上の理由",
-        "Typhoon": "台風の影響",
-        "Snow": "降雪の影響",
-        "Heavy rain": "大雨の影響",
-        "Security check": "保安検査場の混雑",
-        "Boarding": "搭乗手続きの遅れ",
-        "Congestion": "空港混雑"
-    };
-
-    let processedNote = rawNote;
-    if (processedNote) {
-        Object.keys(translationDict).forEach(key => {
-            const regex = new RegExp(key, "gi");
-            processedNote = processedNote.replace(regex, translationDict[key]);
-        });
-        processedNote = processedNote.charAt(0).toUpperCase() + processedNote.slice(1);
-        if (processedNote.length > 25) {
-            processedNote = processedNote.substring(0, 25) + '...';
-        }
-    }
-
     let extraInfo = [];
     if (flight.terminal && flight.terminal !== '---') extraInfo.push(`${flight.terminal}`);
     if (flight.gate && flight.gate !== '---') extraInfo.push(`Gate ${flight.gate}`);
     
     let tAndG_string = extraInfo.length > 0 ? ` [${extraInfo.join(' / ')}]` : '';
-    let noteDesc_string = processedNote ? ` | ${processedNote}` : '';
 
     const formattedUpdateTime = flight.system_updated ? flight.system_updated.substring(0, 5) : "--:--";
 
@@ -329,7 +344,6 @@ window.generateFlightDataFormat = function(flight, fid) {
         airportBadge = `<span style="flex-shrink: 0;">${airportBadge}</span>`;
     }
 
-    // ✨ 4. Flexbox 強制不換行與省略號排版 (主卡片用)
     const locSwapped = swapCodeAndName(flight.location);
     let routeHtml = '';
     if (flight.type === 'Departure') {
@@ -352,7 +366,8 @@ window.generateFlightDataFormat = function(flight, fid) {
 
     return {
         flags: flags,
-        desc: `${flight.airline} ${statusText} ${delayText}${tAndG_string}${noteDesc_string}`, 
+        desc: `${flight.airline} ${statusText} ${delayText}${tAndG_string}`, 
+        message: processedNote ? `⚠️ 備考: ${processedNote}` : '', // ✨ 這裡負責觸發主卡片底部的玻璃面板！
         detailArray: [
             `場所: ${flight.terminal || '-'} / Gate: ${flight.gate || '-'}`,
             `備考: ${processedNote || 'なし'}`,
@@ -427,6 +442,7 @@ window.previewFlightFromSearch = function(routeId) {
         name: `${flightTypeIcon}${fid}`, 
         hex: '#0a84ff', 
         desc: formatted.desc, 
+        message: formatted.message, // ✨ 這裡把 message 傳進幽靈卡片裡
         statusFlags: formatted.flags,
         isTemporarySearch: false,
         targetLineIds: [fid], 
