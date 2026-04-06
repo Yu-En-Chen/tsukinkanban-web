@@ -45,9 +45,7 @@ function translateFlightNote(rawNote) {
     });
     
     processedNote = processedNote.charAt(0).toUpperCase() + processedNote.slice(1);
-    if (processedNote.length > 30) {
-        processedNote = processedNote.substring(0, 30) + '...';
-    }
+
     return processedNote;
 }
 
@@ -362,7 +360,7 @@ window.generateFlightDataFormat = function(flight, fid) {
         flags: flags,
         desc: `${flight.airline} ${statusText} ${delayText}${tAndG_string}`, 
         // ✨ 這裡的 message 會在生成主畫面卡片時，於底部實心玻璃面板上渲染出內容
-        message: processedNote ? `⚠️ 備考: ${processedNote}` : '', 
+        message: processedNote ? processedNote : '',
         detailArray: [
             `場所: ${flight.terminal || '-'} / Gate: ${flight.gate || '-'}`,
             `備考: ${processedNote || 'なし'}`,

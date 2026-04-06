@@ -677,13 +677,24 @@ function handleCardClick(id) {
         const arrGate = !isDep ? (fData.gate || '-') : '-';
 
         // 判斷是否有航班備註 (這可能來自 Search 幽靈卡片的 message，或已儲存卡片的 flightData.note)
-        const flightNote = data.message || (fData.note ? `⚠️ 備考: ${fData.note}` : '');
+        let flightNote = data.message || (fData.note ? fData.note : '');
+        if (flightNote && flightNote.startsWith('⚠️ 備考: ')) {
+            flightNote = flightNote.replace('⚠️ 備考: ', '');
+        }
+
         let noteHtml = '';
         if (flightNote) {
+            // ✨ 套用您指定的 SVG 警告圖示
+            const warningSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square-warning-icon lucide-message-square-warning" style="flex-shrink: 0; margin-right: 12px; opacity: 0.8;"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/><path d="M12 15h.01"/><path d="M12 7v4"/></svg>`;
+
+            // ✨ 取消 margin-top (讓 Flex gap 掌控間距)
+            // ✨ 加上 min-height: 56px 確保高度跟按鈕一樣
+            // ✨ 移除黃色字體，自動繼承原生文字色
             noteHtml = `
-            <div class="extension-route-card" style="padding: 16px; margin-top: 16px; border: 1px solid rgba(255,204,0,0.4); background: rgba(255,204,0,0.1);">
-                <div style="color: #ffcc00; font-weight: 800; font-size: 0.95em; line-height: 1.4;">
-                    ${flightNote}
+            <div class="extension-route-card" style="padding: 12px 16px; min-height: 56px; display: flex; align-items: center;">
+                <div style="font-weight: 700; font-size: 0.95em; line-height: 1.4; display: flex; align-items: center; width: 100%;">
+                    ${warningSvg}
+                    <span style="flex: 1;">${flightNote}</span>
                 </div>
             </div>
             `;
