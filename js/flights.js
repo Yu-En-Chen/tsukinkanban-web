@@ -19,7 +19,7 @@ export function initFlights() {
     try {
         const cachedFlights = localStorage.getItem('Tsukin_Cached_Flights');
         if (cachedFlights) window.GlobalFlights = JSON.parse(cachedFlights);
-    } catch (e) {}
+    } catch (e) { }
 
     setTimeout(() => {
         console.log("✈️ 背景延遲載入航班資訊中...");
@@ -44,10 +44,10 @@ export function searchFlights(lowKeyword) {
     if (window.GlobalFlights && lowKeyword.length > 0) {
         window.GlobalFlights.forEach(f => {
             const flightStr = f.fid.join('').toLowerCase().replace(/[\s-]/g, '');
-            
+
             if (flightStr.includes(lowKeyword)) {
                 let sClass = 'status-normal';
-                
+
                 if (f.status === 'Cancelled' || f.status === '欠航') {
                     sClass = 'status-error';
                 } else if (f.status === 'Delayed' || f.status === '遅延') {
@@ -57,7 +57,7 @@ export function searchFlights(lowKeyword) {
                 const flightTypeIcon = f.type === 'Departure' ? takeoffIconSvg : landingIconSvg;
                 const isTimeChanged = f.scheduled !== f.latest;
 
-                let matchedFid = f.fid[0]; 
+                let matchedFid = f.fid[0];
                 for (let id of f.fid) {
                     if (id.toLowerCase().replace(/[\s-]/g, '').includes(lowKeyword)) {
                         matchedFid = id;
@@ -71,18 +71,18 @@ export function searchFlights(lowKeyword) {
                     const [sh, sm] = f.scheduled.split(':').map(Number);
                     const [lh, lm] = f.latest.split(':').map(Number);
                     delayMins = (lh * 60 + lm) - (sh * 60 + sm);
-                    if (delayMins < -720) delayMins += 24 * 60; 
+                    if (delayMins < -720) delayMins += 24 * 60;
                 }
 
                 let flags = [false, false, false, false, false, false, false];
                 if (sClass === 'status-error') {
-                    flags[3] = true; 
+                    flags[3] = true;
                 } else if (sClass === 'status-delayed' || delayMins > 30) {
-                    flags[4] = true; 
+                    flags[4] = true;
                 } else if (isTimeChanged) {
-                    flags[4] = true; 
+                    flags[4] = true;
                 } else {
-                    flags[5] = true; 
+                    flags[5] = true;
                 }
 
                 const statusMap = {
@@ -91,32 +91,35 @@ export function searchFlights(lowKeyword) {
                     'Departed': '出発済', 'NewArrival': '新規到着', 'CheckIn': '搭乗手続中',
                     'NowBoarding': '搭乗中', 'FinalCall': '最終案内',
                     // ✨ 補上新的 API 狀態
-                    'EstimatedDeparture': '出発予定', 
-                    'EstimatedArrival': '到着予定', 
+                    'EstimatedDeparture': '出発予定',
+                    'EstimatedArrival': '到着予定',
                     'Estimated': '変更予定',
-                    'GateClosed': '搭乗終了'
+                    'GateClosed': '搭乗終了',
+                    'GoToGate': '搭乗口へ',
+                    // ✨ 補上這裡
+                    'InAir': '飛行中'
                 };
                 const statusText = statusMap[f.status] || f.status;
 
                 let statusColor = 'inherit';
                 let statusOpacity = '0.6';
 
-                const greenStatuses = ['出発済', '到着済', '着陸済', '搭乗手続中'];
+                const greenStatuses = ['出発済', '到着済', '着陸済', '搭乗手続中', '飛行中'];
                 const redStatuses = ['欠航', '搭乗終了'];
                 // ✨ 將新的狀態加入一般狀態陣列中，才不會變成突兀的橘色
                 const normalStatuses = ['通常', '新規到着', '出発予定', '到着予定', '変更予定'];
 
                 if (greenStatuses.includes(statusText)) {
-                    statusColor = '#32d74b'; 
+                    statusColor = '#32d74b';
                     statusOpacity = '1';
                 } else if (redStatuses.includes(statusText)) {
-                    statusColor = '#ff3b30'; 
+                    statusColor = '#ff3b30';
                     statusOpacity = '1';
                 } else if (normalStatuses.includes(statusText)) {
-                    statusColor = 'inherit'; 
+                    statusColor = 'inherit';
                     statusOpacity = '0.5';
                 } else {
-                    statusColor = '#ff9500'; 
+                    statusColor = '#ff9500';
                     statusOpacity = '1';
                 }
 
@@ -175,11 +178,11 @@ export function searchFlights(lowKeyword) {
 
                 results.push({
                     id: 'flight-' + f.fid[0],
-                    name: `${flightTypeIcon} ${displayFid}`, 
-                    company: companyHtml, 
+                    name: `${flightTypeIcon} ${displayFid}`,
+                    company: companyHtml,
                     statusFlags: flags,
-                    customBottomHtml: flightTimeHtml, 
-                    isFlight: true 
+                    customBottomHtml: flightTimeHtml,
+                    isFlight: true
                 });
             }
         });
@@ -190,7 +193,7 @@ export function searchFlights(lowKeyword) {
 // ==========================================
 // 🟢 航班專屬：共用資料格式化引擎 (給搜尋與重繪共同使用)
 // ==========================================
-window.generateFlightDataFormat = function(flight, fid) {
+window.generateFlightDataFormat = function (flight, fid) {
     const isTimeChanged = flight.scheduled !== flight.latest;
     const statusMap = {
         'Normal': '通常', 'Delayed': '遅延', 'Cancelled': '欠航',
@@ -198,10 +201,13 @@ window.generateFlightDataFormat = function(flight, fid) {
         'Departed': '出発済', 'NewArrival': '新規到着', 'CheckIn': '搭乗手続中',
         'NowBoarding': '搭乗中', 'FinalCall': '最終案内',
         // ✨ 補上新的 API 狀態
-        'EstimatedDeparture': '出発予定', 
-        'EstimatedArrival': '到着予定', 
+        'EstimatedDeparture': '出発予定',
+        'EstimatedArrival': '到着予定',
         'Estimated': '変更予定',
-        'GateClosed': '搭乗終了'
+        'GateClosed': '搭乗終了',
+        'GoToGate': '搭乗口へ',
+        // ✨ 補上這裡
+        'InAir': '飛行中'
     };
     const statusText = statusMap[flight.status] || flight.status;
 
@@ -210,7 +216,7 @@ window.generateFlightDataFormat = function(flight, fid) {
         const [sh, sm] = flight.scheduled.split(':').map(Number);
         const [lh, lm] = flight.latest.split(':').map(Number);
         delayMins = (lh * 60 + lm) - (sh * 60 + sm);
-        if (delayMins < -720) delayMins += 24 * 60; 
+        if (delayMins < -720) delayMins += 24 * 60;
     }
 
     let flags = [false, false, false, false, false, false, false];
@@ -291,7 +297,7 @@ window.generateFlightDataFormat = function(flight, fid) {
         });
         // 字首大寫(若還是英文的話)
         processedNote = processedNote.charAt(0).toUpperCase() + processedNote.slice(1);
-        
+
         // 字數裁切
         if (processedNote.length > 25) {
             processedNote = processedNote.substring(0, 25) + '...';
@@ -302,7 +308,7 @@ window.generateFlightDataFormat = function(flight, fid) {
     let extraInfo = [];
     if (flight.terminal && flight.terminal !== '---') extraInfo.push(`${flight.terminal}`);
     if (flight.gate && flight.gate !== '---') extraInfo.push(`Gate ${flight.gate}`);
-    
+
     let tAndG_string = extraInfo.length > 0 ? ` [${extraInfo.join(' / ')}]` : '';
     let noteDesc_string = processedNote ? ` | ${processedNote}` : '';
 
@@ -341,22 +347,22 @@ window.generateFlightDataFormat = function(flight, fid) {
             routeHtml: routeHtml,
             scheduled: flight.scheduled,
             latest: flight.latest,
-            updateTime: formattedUpdateTime, 
+            updateTime: formattedUpdateTime,
             statusText: statusText,
-            statusColor: statusColor,       
-            statusShadow: statusShadow,     
-            delayColor: delayColor,         
+            statusColor: statusColor,
+            statusShadow: statusShadow,
+            delayColor: delayColor,
             delayShadow: delayShadow,
             delayText: delayText,
             isCancelled: statusText === '欠航',
             type: flight.type,
-            
+
             // 🚨 救命關鍵：讓 downstream 的 script.js 可以拿到最乾淨的代碼來組裝 Google Maps 網址
             airport: rawAirportCode,    // 例如 "NRT"
             location: rawLocationCode,  // 例如 "TPE"
             airportName: flight.airport, // 保留完整的 "成田（NRT）"
-            locationName: flight.location, 
-            
+            locationName: flight.location,
+
             terminal: flight.terminal,
             gate: flight.gate,
             note: processedNote
@@ -367,7 +373,7 @@ window.generateFlightDataFormat = function(flight, fid) {
 // ==========================================
 // 🟢 航班專屬：無縫介接主卡片引擎 (幽靈卡片版)
 // ==========================================
-window.previewFlightFromSearch = function(routeId) {
+window.previewFlightFromSearch = function (routeId) {
     const fid = routeId.replace('flight-', '');
     const flight = window.GlobalFlights.find(f => f.fid.includes(fid));
     if (!flight) return;
@@ -381,19 +387,19 @@ window.previewFlightFromSearch = function(routeId) {
     if (cancelBtn) cancelBtn.click();
 
     if (window.appRailwayData) {
-        const existingCard = window.appRailwayData.find(c => 
-            !c.isTemporarySearch && 
-            c.isFlightCard && 
-            ((c.targetLineIds && c.targetLineIds.includes(fid)) || 
-             (c.flightData && c.flightData.id === fid) || 
-             (c.detailedLines && c.detailedLines.length > 0 && c.detailedLines[0].id === fid))
+        const existingCard = window.appRailwayData.find(c =>
+            !c.isTemporarySearch &&
+            c.isFlightCard &&
+            ((c.targetLineIds && c.targetLineIds.includes(fid)) ||
+                (c.flightData && c.flightData.id === fid) ||
+                (c.detailedLines && c.detailedLines.length > 0 && c.detailedLines[0].id === fid))
         );
-        
+
         if (existingCard) {
             const cardEl = document.getElementById(`card-${existingCard.id}`);
             if (cardEl) {
-                setTimeout(() => cardEl.click(), 300); 
-                return; 
+                setTimeout(() => cardEl.click(), 300);
+                return;
             }
         }
     }
@@ -405,16 +411,16 @@ window.previewFlightFromSearch = function(routeId) {
     const flightTypeIcon = flight.type === 'Departure' ? takeoffIconSvg : landingIconSvg;
 
     const tempCard = {
-        id: 'temp-search-flight', 
-        name: `${flightTypeIcon}${fid}`, 
-        hex: '#0a84ff', 
-        desc: formatted.desc, 
+        id: 'temp-search-flight',
+        name: `${flightTypeIcon}${fid}`,
+        hex: '#0a84ff',
+        desc: formatted.desc,
         statusFlags: formatted.flags,
         isTemporarySearch: false,
-        targetLineIds: [fid], 
+        targetLineIds: [fid],
         detail: formatted.detailArray, // 直接將航廈、登機口、備註匯入詳細對話框面板中！
-        detailedLines: [], 
-        isFlightCard: true, 
+        detailedLines: [],
+        isFlightCard: true,
         flightData: formatted.flightData
     };
 
