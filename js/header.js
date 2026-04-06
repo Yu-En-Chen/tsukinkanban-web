@@ -503,28 +503,39 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                     // 只有一個官網，直接開啟
                     window.open(uniqueLinks[0].url, '_blank');
                 } else {
-                    // 【修復 1】有多個不同官網：正確使用 dialog.js 的 Promise 架構
-                    if (typeof window.iosConfirm === 'function') {
-                        // 擷取前兩個選項 (因為 dialog.js 只有兩個按鈕)
-                        const link1 = uniqueLinks[0];
-                        const link2 = uniqueLinks[1];
+                    // 【全面升級】有多個不同官網：呼叫 iOS Action Sheet (底部垂直表單)
+                    if (typeof window.iosActionSheet === 'function') {
                         
-                        // iosConfirm(title, message, confirmText, cancelText)
+                        // 將 uniqueLinks 陣列轉換成 iosActionSheet 需要的格式 { text, value }
+                        const actionButtons = uniqueLinks.map(link => ({
+                            text: link.name,
+                            value: link.url
+                        }));
+                        
+                        window.iosActionSheet(
+                            '公式サイト',
+                            '複数の路線が含まれています。\nどちらのサイトを開きますか？',
+                            actionButtons
+                        ).then(selectedUrl => {
+                            // 當 Promise resolve 時，檢查是否有選擇網址 (若是點擊取消則 selectedUrl 會是 null)
+                            if (selectedUrl) {
+                                window.open(selectedUrl, '_blank');
+                            }
+                        });
+
+                    } else if (typeof window.iosConfirm === 'function') {
+                        // 防呆降級方案：萬一新函數還沒載入，至少保底用舊的
                         window.iosConfirm(
                             '公式サイト',
                             '複数の路線が含まれています。\nどちらのサイトを開きますか？',
-                            link1.name, // 右側 (主按鈕)
-                            link2.name  // 左側 (次按鈕)
+                            uniqueLinks[0].name, 
+                            uniqueLinks[1].name  
                         ).then(isConfirm => {
-                            // 當 Promise resolve 時，根據結果打開對應網址
-                            if (isConfirm) {
-                                window.open(link1.url, '_blank');
-                            } else {
-                                window.open(link2.url, '_blank');
-                            }
+                            if (isConfirm) window.open(uniqueLinks[0].url, '_blank');
+                            else window.open(uniqueLinks[1].url, '_blank');
                         });
                     } else {
-                        // 保底：如果 dialog.js 失效，直接開第一個
+                        // 最終保底
                         window.open(uniqueLinks[0].url, '_blank');
                     }
                 }
