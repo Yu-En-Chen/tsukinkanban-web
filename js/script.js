@@ -676,7 +676,19 @@ function handleCardClick(id) {
         const arrTerminal = !isDep ? (fData.terminal || '-') : '-';
         const arrGate = !isDep ? (fData.gate || '-') : '-';
 
-        // ✨ 改變對象：塞入精緻的 Native 雙欄風格卡片
+        // 判斷是否有航班備註 (這可能來自 Search 幽靈卡片的 message，或已儲存卡片的 flightData.note)
+        const flightNote = data.message || (fData.note ? `⚠️ 備考: ${fData.note}` : '');
+        let noteHtml = '';
+        if (flightNote) {
+            noteHtml = `
+            <div class="extension-route-card" style="padding: 16px; margin-top: 16px; border: 1px solid rgba(255,204,0,0.4); background: rgba(255,204,0,0.1);">
+                <div style="color: #ffcc00; font-weight: 800; font-size: 0.95em; line-height: 1.4;">
+                    ${flightNote}
+                </div>
+            </div>
+            `;
+        }
+
         // ✨ 改變對象：塞入精緻的 Native 雙欄風格卡片 (引入 CSS Class 支援深淺模式)
         scrollWrapper.innerHTML = `
             <div class="extension-route-card" style="padding: 18px 16px;">
@@ -714,6 +726,7 @@ function handleCardClick(id) {
                     </div>
                 </div>
             </div>
+            ${noteHtml}
         `;
 
         // 5. [終極新增區塊] 增加三個水平排列的玻璃按鈕 (完美對齊版)
