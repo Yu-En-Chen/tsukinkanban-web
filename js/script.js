@@ -691,10 +691,10 @@ function handleCardClick(id) {
             // ✨ 加上 min-height: 56px 確保高度跟按鈕一樣
             // ✨ 移除黃色字體，自動繼承原生文字色
             noteHtml = `
-            <div class="extension-route-card" style="padding: 12px 16px; min-height: 56px; display: flex; align-items: center;">
-                <div style="font-weight: 700; font-size: 0.95em; line-height: 1.4; display: flex; align-items: center; width: 100%;">
+            <div class="extension-route-card" style="padding: 12px 16px; min-height: 84px; display: flex; align-items: center; justify-content: center;">
+                <div style="font-weight: 700; font-size: 0.95em; line-height: 1.4; display: flex; align-items: center; justify-content: center; text-align: center;">
                     ${warningSvg}
-                    <span style="flex: 1;">${flightNote}</span>
+                    <span>${flightNote}</span>
                 </div>
             </div>
             `;
