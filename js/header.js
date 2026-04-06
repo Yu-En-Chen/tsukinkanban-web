@@ -453,8 +453,41 @@ export function initHeader(onSearchCallback, getActiveCardId) {
 
                 let linksToCheck = [];
                 
-                // 💡 關鍵修復：拔除 isCustom 限制。只要卡片有綁定路線 ID，就去字典查官網！
-                if (currentData.targetLineIds && currentData.targetLineIds.length > 0) {
+                // ✨ 新增：判斷是否為飛機卡片 (Flight Card)
+                if (currentData.isFlightCard && currentData.flightData) {
+                    const fData = currentData.flightData;
+                    // 將航空公司字串轉大寫，提高比對容錯率
+                    const airlineStr = (fData.airline || '').toUpperCase();
+                    
+                    // 1. 智慧判斷航空公司並推入專屬官網
+                    if (airlineStr.includes('ANA') || airlineStr.includes('全日本空輸')) {
+                        linksToCheck.push({ name: 'ANA 公式サイト', url: 'https://www.ana.co.jp/' });
+                    } else if (airlineStr.includes('JAL') || airlineStr.includes('日本航空')) {
+                        linksToCheck.push({ name: 'JAL 公式サイト', url: 'https://www.jal.co.jp/' });
+                    } else if (airlineStr.includes('SKYMARK') || airlineStr.includes('スカイマーク')) {
+                        linksToCheck.push({ name: 'Skymark 公式サイト', url: 'https://www.skymark.co.jp/' });
+                    } else if (airlineStr.includes('PEACH') || airlineStr.includes('ピーチ')) {
+                        linksToCheck.push({ name: 'Peach 公式サイト', url: 'https://www.flypeach.com/' });
+                    } else if (airlineStr.includes('JETSTAR') || airlineStr.includes('ジェットスター')) {
+                        linksToCheck.push({ name: 'Jetstar 公式サイト', url: 'https://www.jetstar.com/jp/ja/home' });
+                    } else if (airlineStr.includes('AIRDO') || airlineStr.includes('エア・ドゥ')) {
+                        linksToCheck.push({ name: 'AIRDO 公式サイト', url: 'https://www.airdo.jp/' });
+                    } else if (airlineStr.includes('SOLASEED') || airlineStr.includes('ソラシド')) {
+                        linksToCheck.push({ name: 'ソラシドエア 公式サイト', url: 'https://www.solaseedair.jp/' });
+                    } else if (airlineStr.includes('STARFLYER') || airlineStr.includes('スターフライヤー') || airlineStr.includes('STAR FLYER')) {
+                        linksToCheck.push({ name: 'スターフライヤー 公式サイト', url: 'https://www.starflyer.jp/' });
+                    }
+
+                    // 2. 判斷機場 (HND/NRT) 並推入機場官網
+                    const airportStr = fData.airport || '';
+                    if (airportStr === 'HND' || airportStr === '羽田') {
+                        linksToCheck.push({ name: '羽田空港 公式サイト', url: 'https://tokyo-haneda.com/' });
+                    } else if (airportStr === 'NRT' || airportStr === '成田') {
+                        linksToCheck.push({ name: '成田空港 公式サイト', url: 'https://www.narita-airport.jp/jp/' });
+                    }
+
+                } else if (currentData.targetLineIds && currentData.targetLineIds.length > 0) {
+                    // 🚄 原本的鐵道邏輯：去 MasterRouteDictionary 查字典
                     currentData.targetLineIds.forEach(id => {
                         const dictRoute = window.MasterRouteDictionary ? window.MasterRouteDictionary[id] : null;
                         if (dictRoute) {
@@ -470,7 +503,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                     });
                 }
 
-                // 過濾重複的網址
+                // 過濾重複的網址 (確保選單乾淨)
                 const uniqueLinks = [];
                 const seenUrls = new Set();
                 linksToCheck.forEach(link => {
