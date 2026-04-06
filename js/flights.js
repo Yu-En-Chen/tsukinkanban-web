@@ -3,9 +3,20 @@
 // ✈️ 航班專屬資料與搜尋引擎模組
 // ==========================================
 
+// ✨ 1. 新增文字翻轉小工具：把 "台北/桃園（TPE）" 變成 "TPE（台北/桃園）"
+function swapCodeAndName(str) {
+    if (!str) return '';
+    const match = str.match(/^(.*)（([A-Z]{3})）$/);
+    if (match) {
+        return `${match[2]}（${match[1]}）`;
+    }
+    return str;
+}
+
+// ✨ 2. 手動更新預設機場字典為代號在前
 const airportNamesJa = {
-    'NRT': '成田（NRT）',
-    'HND': '羽田（HND）'
+    'NRT': 'NRT（成田）',
+    'HND': 'HND（羽田）'
 };
 
 const takeoffIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plane-takeoff-icon lucide-plane-takeoff" style="vertical-align: text-bottom; margin-right: 2px;"><path d="M2 22h20"/><path d="M6.36 17.4 4 17l-2-4 1.1-.55a2 2 0 0 1 1.8 0l.17.1a2 2 0 0 0 1.8 0L8 12 5 6l.9-.45a2 2 0 0 1 2.09.2l4.02 3a2 2 0 0 0 2.1.2l4.19-2.06a2.41 2.41 0 0 1 1.73-.17L21 7a1.4 1.4 0 0 1 .87 1.99l-.38.76c-.23.46-.6.84-1.07 1.08L7.58 17.2a2 2 0 0 1-1.22.18Z"/></svg>`;
@@ -19,7 +30,7 @@ export function initFlights() {
     try {
         const cachedFlights = localStorage.getItem('Tsukin_Cached_Flights');
         if (cachedFlights) window.GlobalFlights = JSON.parse(cachedFlights);
-    } catch (e) { }
+    } catch (e) {}
 
     setTimeout(() => {
         console.log("✈️ 背景延遲載入航班資訊中...");
@@ -44,10 +55,10 @@ export function searchFlights(lowKeyword) {
     if (window.GlobalFlights && lowKeyword.length > 0) {
         window.GlobalFlights.forEach(f => {
             const flightStr = f.fid.join('').toLowerCase().replace(/[\s-]/g, '');
-
+            
             if (flightStr.includes(lowKeyword)) {
                 let sClass = 'status-normal';
-
+                
                 if (f.status === 'Cancelled' || f.status === '欠航') {
                     sClass = 'status-error';
                 } else if (f.status === 'Delayed' || f.status === '遅延') {
@@ -57,7 +68,7 @@ export function searchFlights(lowKeyword) {
                 const flightTypeIcon = f.type === 'Departure' ? takeoffIconSvg : landingIconSvg;
                 const isTimeChanged = f.scheduled !== f.latest;
 
-                let matchedFid = f.fid[0];
+                let matchedFid = f.fid[0]; 
                 for (let id of f.fid) {
                     if (id.toLowerCase().replace(/[\s-]/g, '').includes(lowKeyword)) {
                         matchedFid = id;
@@ -71,18 +82,18 @@ export function searchFlights(lowKeyword) {
                     const [sh, sm] = f.scheduled.split(':').map(Number);
                     const [lh, lm] = f.latest.split(':').map(Number);
                     delayMins = (lh * 60 + lm) - (sh * 60 + sm);
-                    if (delayMins < -720) delayMins += 24 * 60;
+                    if (delayMins < -720) delayMins += 24 * 60; 
                 }
 
                 let flags = [false, false, false, false, false, false, false];
                 if (sClass === 'status-error') {
-                    flags[3] = true;
+                    flags[3] = true; 
                 } else if (sClass === 'status-delayed' || delayMins > 30) {
-                    flags[4] = true;
+                    flags[4] = true; 
                 } else if (isTimeChanged) {
-                    flags[4] = true;
+                    flags[4] = true; 
                 } else {
-                    flags[5] = true;
+                    flags[5] = true; 
                 }
 
                 const statusMap = {
@@ -90,15 +101,9 @@ export function searchFlights(lowKeyword) {
                     'Takeoff': '出発済', 'Landed': '着陸済', 'Arrived': '到着済',
                     'Departed': '出発済', 'NewArrival': '新規到着', 'CheckIn': '搭乗手続中',
                     'NowBoarding': '搭乗中', 'FinalCall': '最終案内',
-                    // ✨ 補上新的 API 狀態
-                    'EstimatedDeparture': '出発予定',
-                    'EstimatedArrival': '到着予定',
-                    'Estimated': '変更予定',
-                    'GateClosed': '搭乗終了',
-                    'GoToGate': '搭乗口へ',
-                    // ✨ 補上這裡
-                    'InAir': '飛行中',
-                    'LeftGate': '滑行中'
+                    'EstimatedDeparture': '出発予定', 'EstimatedArrival': '到着予定', 
+                    'Estimated': '変更予定', 'GateClosed': '搭乗終了',
+                    'GoToGate': '搭乗口へ', 'InAir': '飛行中', 'LeftGate': '滑行中'
                 };
                 const statusText = statusMap[f.status] || f.status;
 
@@ -107,20 +112,19 @@ export function searchFlights(lowKeyword) {
 
                 const greenStatuses = ['出発済', '到着済', '着陸済', '搭乗手続中', '飛行中', '滑行中'];
                 const redStatuses = ['欠航', '搭乗終了'];
-                // ✨ 將新的狀態加入一般狀態陣列中，才不會變成突兀的橘色
-                const normalStatuses = ['通常', '新規到着', '出発予定', '到着予定', '変更予定'];
+                const normalStatuses = ['通常', '新規到着', '出発予定', '到着予定', '変更予定', '搭乗口へ'];
 
                 if (greenStatuses.includes(statusText)) {
-                    statusColor = '#32d74b';
+                    statusColor = '#32d74b'; 
                     statusOpacity = '1';
                 } else if (redStatuses.includes(statusText)) {
-                    statusColor = '#ff3b30';
+                    statusColor = '#ff3b30'; 
                     statusOpacity = '1';
                 } else if (normalStatuses.includes(statusText)) {
-                    statusColor = 'inherit';
+                    statusColor = 'inherit'; 
                     statusOpacity = '0.5';
                 } else {
-                    statusColor = '#ff9500';
+                    statusColor = '#ff9500'; 
                     statusOpacity = '1';
                 }
 
@@ -161,29 +165,41 @@ export function searchFlights(lowKeyword) {
                 const locCode = locMatch ? locMatch[0] : '';
                 const isDomestic = locCode ? domesticCodes.includes(locCode) : false;
 
-                let airportBadge = airportNamesJa[f.airport] || f.airport;
+                let airportBadge = airportNamesJa[f.airport] || swapCodeAndName(f.airport);
                 if (f.airport === 'NRT' && isDomestic) {
-                    airportBadge = `<span class="flight-alert-badge">成田（NRT）国内線</span>`;
+                    airportBadge = `<span class="flight-alert-badge">NRT（国内）</span>`;
                 } else if (f.airport === 'HND' && !isDomestic) {
-                    airportBadge = `<span class="flight-alert-badge">羽田（HND）国際線</span>`;
+                    airportBadge = `<span class="flight-alert-badge">HND（国際）</span>`;
                 }
 
+                // ✨ 3. Flexbox 強制不換行與省略號排版
+                const locSwapped = swapCodeAndName(f.location);
                 let companyHtml = '';
                 if (f.type === 'Departure') {
-                    const arrowRightSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px; margin-left: 2px;"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
-                    companyHtml = `${airportBadge} <span style="font-weight: 800; opacity: 0.7; margin: 0 4px;">出発${arrowRightSvg}</span> <span style="font-weight: 800;">${f.location}</span>`;
+                    const arrowRightSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
+                    companyHtml = `
+                    <div style="display: flex; align-items: center; white-space: nowrap; overflow: hidden; width: 100%;">
+                        <span style="flex-shrink: 0;">${airportBadge}</span>
+                        <span style="display: flex; align-items: center; font-weight: 800; opacity: 0.7; margin: 0 4px; flex-shrink: 0;">出発${arrowRightSvg}</span>
+                        <span style="font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${locSwapped}</span>
+                    </div>`;
                 } else {
-                    const arrowLeftSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px; margin-right: 2px;"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>`;
-                    companyHtml = `${airportBadge} <span style="font-weight: 800; opacity: 0.7; margin: 0 4px;">到着${arrowLeftSvg}</span> <span style="font-weight: 800;">${f.location}</span>`;
+                    const arrowLeftSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>`;
+                    companyHtml = `
+                    <div style="display: flex; align-items: center; white-space: nowrap; overflow: hidden; width: 100%;">
+                        <span style="flex-shrink: 0;">${airportBadge}</span>
+                        <span style="display: flex; align-items: center; font-weight: 800; opacity: 0.7; margin: 0 4px; flex-shrink: 0;">到着${arrowLeftSvg}</span>
+                        <span style="font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${locSwapped}</span>
+                    </div>`;
                 }
 
                 results.push({
                     id: 'flight-' + f.fid[0],
-                    name: `${flightTypeIcon} ${displayFid}`,
-                    company: companyHtml,
+                    name: `${flightTypeIcon} ${displayFid}`, 
+                    company: companyHtml, 
                     statusFlags: flags,
-                    customBottomHtml: flightTimeHtml,
-                    isFlight: true
+                    customBottomHtml: flightTimeHtml, 
+                    isFlight: true 
                 });
             }
         });
@@ -194,22 +210,16 @@ export function searchFlights(lowKeyword) {
 // ==========================================
 // 🟢 航班專屬：共用資料格式化引擎 (給搜尋與重繪共同使用)
 // ==========================================
-window.generateFlightDataFormat = function (flight, fid) {
+window.generateFlightDataFormat = function(flight, fid) {
     const isTimeChanged = flight.scheduled !== flight.latest;
     const statusMap = {
         'Normal': '通常', 'Delayed': '遅延', 'Cancelled': '欠航',
         'Takeoff': '出発済', 'Landed': '着陸済', 'Arrived': '到着済',
         'Departed': '出発済', 'NewArrival': '新規到着', 'CheckIn': '搭乗手続中',
         'NowBoarding': '搭乗中', 'FinalCall': '最終案内',
-        // ✨ 補上新的 API 狀態
-        'EstimatedDeparture': '出発予定',
-        'EstimatedArrival': '到着予定',
-        'Estimated': '変更予定',
-        'GateClosed': '搭乗終了',
-        'GoToGate': '搭乗口へ',
-        // ✨ 補上這裡
-        'InAir': '飛行中',
-        'LeftGate': '滑行中'
+        'EstimatedDeparture': '出発予定', 'EstimatedArrival': '到着予定', 
+        'Estimated': '変更予定', 'GateClosed': '搭乗終了',
+        'GoToGate': '搭乗口へ', 'InAir': '飛行中', 'LeftGate': '滑行中'
     };
     const statusText = statusMap[flight.status] || flight.status;
 
@@ -218,7 +228,7 @@ window.generateFlightDataFormat = function (flight, fid) {
         const [sh, sm] = flight.scheduled.split(':').map(Number);
         const [lh, lm] = flight.latest.split(':').map(Number);
         delayMins = (lh * 60 + lm) - (sh * 60 + sm);
-        if (delayMins < -720) delayMins += 24 * 60;
+        if (delayMins < -720) delayMins += 24 * 60; 
     }
 
     let flags = [false, false, false, false, false, false, false];
@@ -235,8 +245,8 @@ window.generateFlightDataFormat = function (flight, fid) {
     const subtleGlow = '0 0 5px rgba(255,255,255,0.4), 0 0 1px rgba(255,255,255,0.6)';
     let statusColor = 'inherit', statusShadow = 'none';
     const greenStatuses = ['出発済', '到着済', '着陸済', '搭乗手続中', '飛行中', '滑行中'];
-    const redStatuses = ['欠航'];
-    const normalStatuses = ['通常', '新規到着'];
+    const redStatuses = ['欠航', '搭乗終了'];
+    const normalStatuses = ['通常', '新規到着', '出発予定', '到着予定', '変更予定', '搭乗口へ'];
 
     if (greenStatuses.includes(statusText)) {
         statusColor = '#32d74b'; statusShadow = subtleGlow;
@@ -261,7 +271,6 @@ window.generateFlightDataFormat = function (flight, fid) {
         }
     }
 
-    // ✨ 1. 修復地圖與官網連結：提取純 3 碼的 IATA 代號 (例如把"成田（NRT）"還原為"NRT")
     const apMatch = (flight.airport || '').match(/[A-Z]{3}/);
     const rawAirportCode = apMatch ? apMatch[0] : flight.airport;
 
@@ -269,7 +278,6 @@ window.generateFlightDataFormat = function (flight, fid) {
     const rawLocationCode = locMatch2 ? locMatch2[0] : flight.location;
     const isDomestic = rawLocationCode ? domesticCodes.includes(rawLocationCode) : false;
 
-    // ✨ 2. 處理過長的英文備註 (自動翻譯為日文 + 字數裁切)
     let rawNote = (flight.note || '').trim();
     const translationDict = {
         "due to ": "",
@@ -297,74 +305,79 @@ window.generateFlightDataFormat = function (flight, fid) {
             const regex = new RegExp(key, "gi");
             processedNote = processedNote.replace(regex, translationDict[key]);
         });
-        // 字首大寫(若還是英文的話)
         processedNote = processedNote.charAt(0).toUpperCase() + processedNote.slice(1);
-
-        // 字數裁切
         if (processedNote.length > 25) {
             processedNote = processedNote.substring(0, 25) + '...';
         }
     }
 
-    // ✨ 3. 組合航廈、登機口與備註，並塞入副標題
     let extraInfo = [];
     if (flight.terminal && flight.terminal !== '---') extraInfo.push(`${flight.terminal}`);
     if (flight.gate && flight.gate !== '---') extraInfo.push(`Gate ${flight.gate}`);
-
+    
     let tAndG_string = extraInfo.length > 0 ? ` [${extraInfo.join(' / ')}]` : '';
     let noteDesc_string = processedNote ? ` | ${processedNote}` : '';
 
     const formattedUpdateTime = flight.system_updated ? flight.system_updated.substring(0, 5) : "--:--";
 
-    let airportBadge = airportNamesJa[flight.airport] || flight.airport;
+    let airportBadge = airportNamesJa[flight.airport] || swapCodeAndName(flight.airport);
     if (flight.airport === 'NRT' && isDomestic) {
-        airportBadge = `<span style="color: #ffcc00;">成田国内線</span>`;
+        airportBadge = `<span style="color: #ffcc00; flex-shrink: 0;">NRT国内線</span>`;
     } else if (flight.airport === 'HND' && !isDomestic) {
-        airportBadge = `<span style="color: #ffcc00;">羽田国際線</span>`;
+        airportBadge = `<span style="color: #ffcc00; flex-shrink: 0;">HND国際線</span>`;
     } else {
-        airportBadge = `<span>${airportBadge}</span>`;
+        airportBadge = `<span style="flex-shrink: 0;">${airportBadge}</span>`;
     }
 
+    // ✨ 4. Flexbox 強制不換行與省略號排版 (主卡片用)
+    const locSwapped = swapCodeAndName(flight.location);
     let routeHtml = '';
     if (flight.type === 'Departure') {
-        const arrowRightSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin: 0 4px;"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
-        routeHtml = `<span style="font-weight: 800;">${airportBadge}</span> <span style="font-weight: 800; opacity: 0.7;">出発${arrowRightSvg}</span> <span style="font-weight: 800;">${flight.location}</span>`;
+        const arrowRightSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
+        routeHtml = `
+        <div style="display: flex; align-items: center; white-space: nowrap; overflow: hidden; width: 100%;">
+            <span style="font-weight: 800; flex-shrink: 0;">${airportBadge}</span>
+            <span style="display: flex; align-items: center; font-weight: 800; opacity: 0.7; margin: 0 4px; flex-shrink: 0;">出発${arrowRightSvg}</span>
+            <span style="font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${locSwapped}</span>
+        </div>`;
     } else {
-        const arrowLeftSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin: 0 4px;"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>`;
-        routeHtml = `<span style="font-weight: 800;">${airportBadge}</span> <span style="font-weight: 800; opacity: 0.7;">到着${arrowLeftSvg}</span> <span style="font-weight: 800;">${flight.location}</span>`;
+        const arrowLeftSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>`;
+        routeHtml = `
+        <div style="display: flex; align-items: center; white-space: nowrap; overflow: hidden; width: 100%;">
+            <span style="font-weight: 800; flex-shrink: 0;">${airportBadge}</span>
+            <span style="display: flex; align-items: center; font-weight: 800; opacity: 0.7; margin: 0 4px; flex-shrink: 0;">到着${arrowLeftSvg}</span>
+            <span style="font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${locSwapped}</span>
+        </div>`;
     }
 
     return {
         flags: flags,
-        desc: `${flight.airline} ${statusText} ${delayText}${tAndG_string}${noteDesc_string}`, // 顯示在主卡片外圍的備註
+        desc: `${flight.airline} ${statusText} ${delayText}${tAndG_string}${noteDesc_string}`, 
         detailArray: [
             `場所: ${flight.terminal || '-'} / Gate: ${flight.gate || '-'}`,
             `備考: ${processedNote || 'なし'}`,
             '-',
             '-'
-        ], // 讓卡片點開後的詳細視窗也能直接吃到資料
+        ], 
         flightData: {
             id: fid,
             airline: flight.airline,
             routeHtml: routeHtml,
             scheduled: flight.scheduled,
             latest: flight.latest,
-            updateTime: formattedUpdateTime,
+            updateTime: formattedUpdateTime, 
             statusText: statusText,
-            statusColor: statusColor,
-            statusShadow: statusShadow,
-            delayColor: delayColor,
+            statusColor: statusColor,       
+            statusShadow: statusShadow,     
+            delayColor: delayColor,         
             delayShadow: delayShadow,
             delayText: delayText,
             isCancelled: statusText === '欠航',
             type: flight.type,
-
-            // 🚨 救命關鍵：讓 downstream 的 script.js 可以拿到最乾淨的代碼來組裝 Google Maps 網址
-            airport: rawAirportCode,    // 例如 "NRT"
-            location: rawLocationCode,  // 例如 "TPE"
-            airportName: flight.airport, // 保留完整的 "成田（NRT）"
-            locationName: flight.location,
-
+            airport: rawAirportCode,    
+            location: rawLocationCode,  
+            airportName: flight.airport, 
+            locationName: flight.location, 
             terminal: flight.terminal,
             gate: flight.gate,
             note: processedNote
@@ -372,10 +385,7 @@ window.generateFlightDataFormat = function (flight, fid) {
     };
 };
 
-// ==========================================
-// 🟢 航班專屬：無縫介接主卡片引擎 (幽靈卡片版)
-// ==========================================
-window.previewFlightFromSearch = function (routeId) {
+window.previewFlightFromSearch = function(routeId) {
     const fid = routeId.replace('flight-', '');
     const flight = window.GlobalFlights.find(f => f.fid.includes(fid));
     if (!flight) return;
@@ -389,19 +399,19 @@ window.previewFlightFromSearch = function (routeId) {
     if (cancelBtn) cancelBtn.click();
 
     if (window.appRailwayData) {
-        const existingCard = window.appRailwayData.find(c =>
-            !c.isTemporarySearch &&
-            c.isFlightCard &&
-            ((c.targetLineIds && c.targetLineIds.includes(fid)) ||
-                (c.flightData && c.flightData.id === fid) ||
-                (c.detailedLines && c.detailedLines.length > 0 && c.detailedLines[0].id === fid))
+        const existingCard = window.appRailwayData.find(c => 
+            !c.isTemporarySearch && 
+            c.isFlightCard && 
+            ((c.targetLineIds && c.targetLineIds.includes(fid)) || 
+             (c.flightData && c.flightData.id === fid) || 
+             (c.detailedLines && c.detailedLines.length > 0 && c.detailedLines[0].id === fid))
         );
-
+        
         if (existingCard) {
             const cardEl = document.getElementById(`card-${existingCard.id}`);
             if (cardEl) {
-                setTimeout(() => cardEl.click(), 300);
-                return;
+                setTimeout(() => cardEl.click(), 300); 
+                return; 
             }
         }
     }
@@ -413,16 +423,16 @@ window.previewFlightFromSearch = function (routeId) {
     const flightTypeIcon = flight.type === 'Departure' ? takeoffIconSvg : landingIconSvg;
 
     const tempCard = {
-        id: 'temp-search-flight',
-        name: `${flightTypeIcon}${fid}`,
-        hex: '#0a84ff',
-        desc: formatted.desc,
+        id: 'temp-search-flight', 
+        name: `${flightTypeIcon}${fid}`, 
+        hex: '#0a84ff', 
+        desc: formatted.desc, 
         statusFlags: formatted.flags,
         isTemporarySearch: false,
-        targetLineIds: [fid],
-        detail: formatted.detailArray, // 直接將航廈、登機口、備註匯入詳細對話框面板中！
-        detailedLines: [],
-        isFlightCard: true,
+        targetLineIds: [fid], 
+        detail: formatted.detailArray, 
+        detailedLines: [], 
+        isFlightCard: true, 
         flightData: formatted.flightData
     };
 
