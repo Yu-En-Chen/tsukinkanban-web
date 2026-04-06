@@ -7,7 +7,9 @@ window.iosConfirm = function(title, message, confirmText = 'OK', cancelText = '�
         overlay.style.cssText = `
             position: fixed; inset: 0; z-index: 999998;
             display: flex; align-items: center; justify-content: center;
-            background: rgba(0, 0, 0, 0.4); opacity: 0;
+            background: rgba(0, 0, 0, 0.25); /* 👈 稍微調淡透明度，讓霧化效果更透澈 */
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); /* 👈 核心：加入背景全域霧化 */
+            opacity: 0;
             transition: opacity 0.2s ease;
         `;
 
@@ -84,10 +86,12 @@ window.iosActionSheet = function(title, message, buttons, cancelText = 'キャ�
         overlay.style.cssText = `
             position: fixed; inset: 0; z-index: 999998;
             display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
-            background: rgba(0, 0, 0, 0.4); opacity: 0;
+            background: rgba(0, 0, 0, 0.25); /* 👈 稍微調淡透明度 */
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); /* 👈 核心：加入背景全域霧化 */
+            opacity: 0;
             transition: opacity 0.25s ease;
             padding: 10px;
-            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); /* 適配瀏海屏底部安全區 */
+            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
         `;
 
         // 自動適應深色/淺色模式
