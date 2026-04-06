@@ -456,10 +456,9 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                 // ✨ 新增：判斷是否為飛機卡片 (Flight Card)
                 if (currentData.isFlightCard && currentData.flightData) {
                     const fData = currentData.flightData;
-                    // 將航空公司字串轉大寫，提高比對容錯率
                     const airlineStr = (fData.airline || '').toUpperCase();
                     
-                    // 1. 智慧判斷航空公司並推入專屬官網
+                    // 1. 無論如何，推入航空公司的專屬官網
                     if (airlineStr.includes('ANA') || airlineStr.includes('全日本空輸')) {
                         linksToCheck.push({ name: 'ANA 公式サイト', url: 'https://www.ana.co.jp/' });
                     } else if (airlineStr.includes('JAL') || airlineStr.includes('日本航空')) {
@@ -478,12 +477,25 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                         linksToCheck.push({ name: 'スターフライヤー 公式サイト', url: 'https://www.starflyer.jp/' });
                     }
 
-                    // 2. 判斷機場 (HND/NRT) 並推入機場官網
-                    const airportStr = fData.airport || '';
-                    if (airportStr === 'HND' || airportStr === '羽田') {
-                        linksToCheck.push({ name: '羽田空港 公式サイト', url: 'https://tokyo-haneda.com/' });
-                    } else if (airportStr === 'NRT' || airportStr === '成田') {
-                        linksToCheck.push({ name: '成田空港 公式サイト', url: 'https://www.narita-airport.jp/jp/' });
+                    // 🌟 核心邏輯：判斷這張卡片是否「已經加入常駐牌組」
+                    let isSavedInDeck = false;
+                    
+                    // 檢查 1：是否存在於全域的儲存路線資料庫中
+                    if (window.db_savedRoutes && Array.isArray(window.db_savedRoutes)) {
+                        isSavedInDeck = window.db_savedRoutes.some(route => route.id === activeId);
+                    } else {
+                        // 檢查 2 (Fallback)：如果找不到 db 變數，用 ID 命名規則判斷 (搜尋卡片通常帶有 search 字眼)
+                        isSavedInDeck = !activeId.includes('search') && !activeId.includes('temp');
+                    }
+
+                    // 2. 只有在「尚未加入常駐」的情況下，才顯示機場官網
+                    if (!isSavedInDeck) {
+                        const airportStr = fData.airport || '';
+                        if (airportStr === 'HND' || airportStr === '羽田') {
+                            linksToCheck.push({ name: '羽田空港 公式サイト', url: 'https://tokyo-haneda.com/' });
+                        } else if (airportStr === 'NRT' || airportStr === '成田') {
+                            linksToCheck.push({ name: '成田空港 公式サイト', url: 'https://www.narita-airport.jp/jp/' });
+                        }
                     }
 
                 } else if (currentData.targetLineIds && currentData.targetLineIds.length > 0) {
