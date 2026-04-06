@@ -105,7 +105,7 @@ export function searchFlights(lowKeyword) {
 
                 const flightTypeIcon = f.type === 'Departure' ? takeoffIconSvg : landingIconSvg;
                 const isTimeChanged = f.scheduled !== f.latest;
-                const processedNote = translateFlightNote(f.note); // ✨ 擷取備註
+                const processedNote = translateFlightNote(f.note); // 擷取備註狀態
 
                 let matchedFid = f.fid[0]; 
                 for (let id of f.fid) {
@@ -124,7 +124,7 @@ export function searchFlights(lowKeyword) {
                     if (delayMins < -720) delayMins += 24 * 60; 
                 }
 
-                // ✨ 如果有備註，直接把第 7 個燈號 (index 6) 設為 true
+                // ✨ 僅在陣列中點亮第 7 顆燈 (index 6)，不在介面上輸出冗長文字
                 let flags = [false, false, false, false, false, false, !!processedNote];
                 
                 if (sClass === 'status-error') {
@@ -202,14 +202,8 @@ export function searchFlights(lowKeyword) {
                         </div>`;
                 }
 
-                // ✨ 如果有備註，在搜尋結果面板底部追加一行警告
-                if (processedNote) {
-                    flightTimeHtml += `
-                        <div style="font-size: 0.85em; color: #ffcc00; margin-top: 6px; padding-top: 6px; border-top: 1px dotted rgba(128,128,128,0.3); line-height: 1.2;">
-                            ⚠️ ${processedNote}
-                        </div>`;
-                }
-
+                // ✨ 已將 searchFlights 中額外添加 Note 文字區塊的邏輯移除！
+                
                 const locMatch = f.location.match(/[A-Z]{3}/);
                 const locCode = locMatch ? locMatch[0] : '';
                 const isDomestic = locCode ? domesticCodes.includes(locCode) : false;
@@ -260,7 +254,7 @@ export function searchFlights(lowKeyword) {
 // ==========================================
 window.generateFlightDataFormat = function(flight, fid) {
     const isTimeChanged = flight.scheduled !== flight.latest;
-    const processedNote = translateFlightNote(flight.note); // ✨ 擷取備註
+    const processedNote = translateFlightNote(flight.note); 
 
     const statusMap = {
         'Normal': '通常', 'Delayed': '遅延', 'Cancelled': '欠航',
@@ -367,7 +361,8 @@ window.generateFlightDataFormat = function(flight, fid) {
     return {
         flags: flags,
         desc: `${flight.airline} ${statusText} ${delayText}${tAndG_string}`, 
-        message: processedNote ? `⚠️ 備考: ${processedNote}` : '', // ✨ 這裡負責觸發主卡片底部的玻璃面板！
+        // ✨ 這裡的 message 會在生成主畫面卡片時，於底部實心玻璃面板上渲染出內容
+        message: processedNote ? `⚠️ 備考: ${processedNote}` : '', 
         detailArray: [
             `場所: ${flight.terminal || '-'} / Gate: ${flight.gate || '-'}`,
             `備考: ${processedNote || 'なし'}`,
@@ -442,7 +437,7 @@ window.previewFlightFromSearch = function(routeId) {
         name: `${flightTypeIcon}${fid}`, 
         hex: '#0a84ff', 
         desc: formatted.desc, 
-        message: formatted.message, // ✨ 這裡把 message 傳進幽靈卡片裡
+        message: formatted.message, // ✨ 會將 message 傳給 UI 去生成玻璃面板
         statusFlags: formatted.flags,
         isTemporarySearch: false,
         targetLineIds: [fid], 
