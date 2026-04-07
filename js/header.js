@@ -548,6 +548,11 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                     // 只有一個官網，直接開啟
                     window.open(uniqueLinks[0].url, '_blank');
                 } else {
+                    // ✨ 核心修復：動態判斷文案，對齊使用者心理模型
+                    const sheetMessage = currentData.isFlightCard 
+                        ? '航空会社と空港のサイトが含まれています。\nどちらのサイトを開きますか？'
+                        : '複数の路線が含まれています。\nどちらのサイトを開きますか？';
+
                     // 【全面升級】有多個不同官網：呼叫 iOS Action Sheet (底部垂直表單)
                     if (typeof window.iosActionSheet === 'function') {
                         
@@ -559,7 +564,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                         
                         window.iosActionSheet(
                             '公式サイト',
-                            '複数の路線が含まれています。\nどちらのサイトを開きますか？',
+                            sheetMessage, // ✨ 帶入動態文案
                             actionButtons
                         ).then(selectedUrl => {
                             // 當 Promise resolve 時，檢查是否有選擇網址 (若是點擊取消則 selectedUrl 會是 null)
@@ -572,7 +577,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                         // 防呆降級方案：萬一新函數還沒載入，至少保底用舊的
                         window.iosConfirm(
                             '公式サイト',
-                            '複数の路線が含まれています。\nどちらのサイトを開きますか？',
+                            sheetMessage, // ✨ 帶入動態文案
                             uniqueLinks[0].name, 
                             uniqueLinks[1].name  
                         ).then(isConfirm => {
