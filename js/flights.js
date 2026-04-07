@@ -122,19 +122,7 @@ export function searchFlights(lowKeyword) {
                     if (delayMins < -720) delayMins += 24 * 60; 
                 }
 
-                // ✨ 僅在陣列中點亮第 7 顆燈 (index 6)，不在介面上輸出冗長文字
-                let flags = [false, false, false, false, false, false, !!processedNote];
-                
-                if (sClass === 'status-error') {
-                    flags[3] = true; 
-                } else if (sClass === 'status-delayed' || delayMins > 30) {
-                    flags[4] = true; 
-                } else if (isTimeChanged) {
-                    flags[4] = true; 
-                } else {
-                    flags[5] = true; 
-                }
-
+                // 🌟 【修改 1】先定義狀態字典，這樣我們才能提早用 statusText 來判斷燈號
                 const statusMap = {
                     'Normal': '通常', 'Delayed': '遅延', 'Cancelled': '欠航',
                     'Takeoff': '出発済', 'Landed': '着陸済', 'Arrived': '到着済',
@@ -145,6 +133,22 @@ export function searchFlights(lowKeyword) {
                     'GoToGate': '搭乗口へ', 'InAir': '飛行中', 'LeftGate': '滑行中'
                 };
                 const statusText = statusMap[f.status] || f.status;
+
+                // ✨ 【修改 2】導入「進度優先」的燈號覆蓋邏輯
+                const forceGreenStatuses = ['出発済', '着陸済', '到着済', '飛行中'];
+                
+                // 保留你原本第七顆燈 (index 6) 的備註判定
+                let flags = [false, false, false, false, false, false, !!processedNote];
+                
+                if (sClass === 'status-error' || statusText === '欠航') {
+                    flags[3] = true; // 紅燈 (取消)
+                } else if (forceGreenStatuses.includes(statusText)) {
+                    flags[5] = true; // 🌟 狀態已進入實質進展，強制洗掉延誤黃燈，改亮綠燈！
+                } else if (sClass === 'status-delayed' || delayMins > 30 || isTimeChanged) {
+                    flags[4] = true; // 黃燈 (延誤尚未出發)
+                } else {
+                    flags[5] = true; // 綠燈 (正常)
+                }
 
                 let statusColor = 'inherit';
                 let statusOpacity = '0.6';
@@ -275,8 +279,12 @@ window.generateFlightDataFormat = function(flight, fid) {
 
     // ✨ 點亮第七顆燈 (如果有備註)
     let flags = [false, false, false, false, false, false, !!processedNote];
+    const forceGreenStatuses = ['出発済', '着陸済', '到着済', '飛行中'];
+
     if (['欠航'].includes(statusText)) {
         flags[3] = true;
+    } else if (forceGreenStatuses.includes(statusText)) {
+        flags[5] = true; // 🌟 強制優先亮綠燈，無視原本的延誤紀錄
     } else if (isTimeChanged || ['遅延'].includes(statusText)) {
         flags[4] = true;
     } else {
