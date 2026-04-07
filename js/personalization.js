@@ -1959,7 +1959,7 @@ window.handlePasteAction = function(e, type, element) {
             els.sharedStatus.style.opacity = '1';
         }
         
-        handleResult('未同意權限', 'error');
+        handleResult('権限拒否', 'error');
     });
 
     function handleResult(msg, resType, val) {
