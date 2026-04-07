@@ -134,20 +134,27 @@ export function searchFlights(lowKeyword) {
                 };
                 const statusText = statusMap[f.status] || f.status;
 
-                // ✨ 【修改 2】導入「進度優先」的燈號覆蓋邏輯
+                // ✨ 導入「進度優先」與「強制寬恕機制」
                 const forceGreenStatuses = ['出発済', '着陸済', '到着済', '飛行中'];
                 
-                // 保留你原本第七顆燈 (index 6) 的備註判定
+                // 計算這是否為「可以容忍的微小時間變動」
+                let isMinorTimeChange = false;
+                if (isTimeChanged && delayMins >= -20 && delayMins <= 15) {
+                    isMinorTimeChange = true;
+                }
+                
                 let flags = [false, false, false, false, false, false, !!processedNote];
                 
                 if (sClass === 'status-error' || statusText === '欠航') {
                     flags[3] = true; // 紅燈 (取消)
                 } else if (forceGreenStatuses.includes(statusText)) {
-                    flags[5] = true; // 🌟 狀態已進入實質進展，強制洗掉延誤黃燈，改亮綠燈！
-                } else if (sClass === 'status-delayed' || delayMins > 30 || isTimeChanged) {
-                    flags[4] = true; // 黃燈 (延誤尚未出發)
+                    flags[5] = true; // 綠燈 (已出發等確定狀態)
+                } else if (delayMins > 15 || delayMins < -20) {
+                    flags[4] = true; // 🌟 黃燈 (我們算出來，明確超過容忍值的延遲或提早)
+                } else if ((sClass === 'status-delayed' || statusText === '遅延') && !isMinorTimeChange) {
+                    flags[4] = true; // 🌟 黃燈保底 (API 說延遲，且我們算不出它是微小延誤，例如 API 沒給具體更改時間)
                 } else {
-                    flags[5] = true; // 綠燈 (正常)
+                    flags[5] = true; // 🌟 綠燈 (正常，或是被我們「強制寬恕」的 15 分鐘內小延遲！)
                 }
 
                 let statusColor = 'inherit';
@@ -280,15 +287,23 @@ window.generateFlightDataFormat = function(flight, fid) {
     // ✨ 點亮第七顆燈 (如果有備註)
     let flags = [false, false, false, false, false, false, !!processedNote];
     const forceGreenStatuses = ['出発済', '着陸済', '到着済', '飛行中'];
+    
+    // 計算這是否為「可以容忍的微小時間變動」
+    let isMinorTimeChange = false;
+    if (isTimeChanged && delayMins >= -20 && delayMins <= 15) {
+        isMinorTimeChange = true;
+    }
 
     if (['欠航'].includes(statusText)) {
         flags[3] = true;
     } else if (forceGreenStatuses.includes(statusText)) {
-        flags[5] = true; // 🌟 強制優先亮綠燈，無視原本的延誤紀錄
-    } else if (isTimeChanged || ['遅延'].includes(statusText)) {
-        flags[4] = true;
+        flags[5] = true; 
+    } else if (delayMins > 15 || delayMins < -20) {
+        flags[4] = true; // 🌟 超過容忍範圍，亮黃燈
+    } else if (['遅延'].includes(statusText) && !isMinorTimeChange) {
+        flags[4] = true; // 🌟 API 說延遲但我們無法證實它是小延遲，保底亮黃燈
     } else {
-        flags[5] = true;
+        flags[5] = true; // 🌟 綠燈 (完美過濾掉太過敏感的警告)
     }
 
     const subtleGlow = '0 0 5px rgba(255,255,255,0.4), 0 0 1px rgba(255,255,255,0.6)';
