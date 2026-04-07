@@ -13,8 +13,10 @@ export const dataSourceContent = `
             
             /* 箭頭基礎樣式 (半透明) 與轉場動畫設定 */
             .ios-accordion-icon {
-                transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+                /* ✨ 核心優化：更換為 Material Design 推薦的緩和曲線 */
+                transition: transform 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
                 opacity: 0.5; /* 配合其他副標題的透明度 */
+                will-change: transform; /* 優化硬體加速 */
             }
             
             /* 當 details 展開時，自動將裡面的箭頭旋轉 180 度 */
@@ -28,8 +30,8 @@ export const dataSourceContent = `
                 対応路線リスト
                 <svg class="ios-accordion-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
-            
-            <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-color, rgba(120, 120, 128, 0.2));">
+            <br>
+            <div style="margin-top: 14px;">
                 
                 <div style="margin-bottom: 18px;">
                     <p style="color: var(--text-main); font-weight: 600; margin: 0 0 6px 0;">完全対応（遅延分数あり）</p>
@@ -41,7 +43,7 @@ export const dataSourceContent = `
 
                 <div style="margin-bottom: 18px;">
                     <p style="color: var(--text-main); font-weight: 600; margin: 0 0 4px 0;">一部対応（公式テキストのみ）</p>
-                    <p style="color: var(--text-secondary); margin: 0 0 6px 0; font-size: 0.8em;">遅延分数は取得できず、各社の発表テキストに依存します。</p>
+                    <p style="color: var(--text-secondary); margin: 0 0 6px 0; font-size: 0.85em;">※遅延分数は取得できず、各社の発表テキストに依存します。</p>
                     <ul style="color: var(--text-secondary); margin: 0; padding-left: 20px; line-height: 1.6;">
                         <li>西武鉄道（池袋線、新宿線 など）</li>
                         <li>京王電鉄（京王線、井の頭線 など）</li>
@@ -50,7 +52,7 @@ export const dataSourceContent = `
 
                 <div style="margin-bottom: 4px;">
                     <p style="color: var(--text-main); font-weight: 600; margin: 0 0 4px 0;">要注意路線</p>
-                    <p style="color: var(--text-secondary); margin: 0 0 6px 0; font-size: 0.8em;">重大な障害時に情報が更新されない事例が確認されています。参考程度に。</p>
+                    <p style="color: var(--text-secondary); margin: 0 0 6px 0; font-size: 0.85em;">※重大な障害時に情報が更新されない事例が確認されています。参考程度に。</p>
                     <ul style="color: var(--text-secondary); margin: 0; padding-left: 20px; line-height: 1.6;">
                         <li>〇〇鉄道（〇〇線）</li>
                     </ul>
