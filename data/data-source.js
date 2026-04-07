@@ -7,21 +7,43 @@ export const dataSourceContent = `
         <p><a href="https://www.odpt.org/overview/" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline; font-weight: 500;">https://www.odpt.org/overview/</a></p>
         <br>
         <style>
-            /* 隱藏原生的醜陋三角形 */
+            /* 1. 隱藏原生的醜陋三角形 */
             .ios-accordion-summary { list-style: none; }
             .ios-accordion-summary::-webkit-details-marker { display: none; }
             
-            /* 箭頭基礎樣式 (半透明) 與轉場動畫設定 */
+            /* 2. 箭頭基礎樣式 (半透明) 與轉場動畫設定 */
             .ios-accordion-icon {
-                /* ✨ 核心優化：更換為 Material Design 推薦的緩和曲線 */
                 transition: transform 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
-                opacity: 0.5; /* 配合其他副標題的透明度 */
-                will-change: transform; /* 優化硬體加速 */
+                opacity: 0.5;
+                will-change: transform;
             }
             
-            /* 當 details 展開時，自動將裡面的箭頭旋轉 180 度 */
+            /* 3. 當 details 展開時，自動將裡面的箭頭旋轉 180 度 */
             details[open] .ios-accordion-icon {
                 transform: rotate(180deg);
+            }
+
+            /* ✨ 核心魔法：利用 CSS Grid 實作高度動畫 */
+            .ios-accordion-content-wrapper {
+                display: grid;
+                grid-template-rows: 0fr; /* 預設收合狀態：高度為 0 */
+                transition: grid-template-rows 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+            }
+            
+            details[open] .ios-accordion-content-wrapper {
+                grid-template-rows: 1fr; /* 展開狀態：高度自動撐開 */
+            }
+
+            .ios-accordion-content-inner {
+                overflow: hidden; /* 確保內容在收合時不會溢出 */
+                opacity: 0;
+                transition: opacity 0.3s ease-out, transform 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+                transform: translateY(-10px); /* 微微往上縮的視差感 */
+            }
+
+            details[open] .ios-accordion-content-inner {
+                opacity: 1;
+                transform: translateY(0);
             }
         </style>
         
@@ -30,34 +52,36 @@ export const dataSourceContent = `
                 対応路線リスト
                 <svg class="ios-accordion-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
-            <br>
-            <div style="margin-top: 14px;">
-                
-                <div style="margin-bottom: 18px;">
-                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 6px 0;">完全対応（遅延分数あり）</p>
-                    <ul style="color: var(--text-secondary); margin: 0; padding-left: 20px; line-height: 1.6;">
-                        <li>JR東日本（山手線、中央線 など）</li>
-                        <li>東京メトロ（銀座線、丸ノ内線 など）</li>
-                    </ul>
-                </div>
+            
+            <div class="ios-accordion-content-wrapper">
+                <div class="ios-accordion-content-inner">
+                    <div style="margin-top: 14px;"> <div style="margin-bottom: 18px;">
+                            <p style="color: var(--text-main); font-weight: 600; margin: 0 0 6px 0;">完全対応（遅延分数あり）</p>
+                            <ul style="color: var(--text-secondary); margin: 0; padding-left: 20px; line-height: 1.6;">
+                                <li>JR東日本（山手線、中央線 など）</li>
+                                <li>東京メトロ（銀座線、丸ノ内線 など）</li>
+                            </ul>
+                        </div>
 
-                <div style="margin-bottom: 18px;">
-                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 4px 0;">一部対応（公式テキストのみ）</p>
-                    <p style="color: var(--text-secondary); margin: 0 0 6px 0; font-size: 0.85em;">※遅延分数は取得できず、各社の発表テキストに依存します。</p>
-                    <ul style="color: var(--text-secondary); margin: 0; padding-left: 20px; line-height: 1.6;">
-                        <li>西武鉄道（池袋線、新宿線 など）</li>
-                        <li>京王電鉄（京王線、井の頭線 など）</li>
-                    </ul>
-                </div>
+                        <div style="margin-bottom: 18px;">
+                            <p style="color: var(--text-main); font-weight: 600; margin: 0 0 4px 0;">一部対応（公式テキストのみ）</p>
+                            <p style="color: var(--text-secondary); margin: 0 0 6px 0; font-size: 0.85em;">※遅延分数は取得できず、各社の発表テキストに依存します。</p>
+                            <ul style="color: var(--text-secondary); margin: 0; padding-left: 20px; line-height: 1.6;">
+                                <li>西武鉄道（池袋線、新宿線 など）</li>
+                                <li>京王電鉄（京王線、井の頭線 など）</li>
+                            </ul>
+                        </div>
 
-                <div style="margin-bottom: 4px;">
-                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 4px 0;">要注意路線</p>
-                    <p style="color: var(--text-secondary); margin: 0 0 6px 0; font-size: 0.85em;">※重大な障害時に情報が更新されない事例が確認されています。参考程度に。</p>
-                    <ul style="color: var(--text-secondary); margin: 0; padding-left: 20px; line-height: 1.6;">
-                        <li>〇〇鉄道（〇〇線）</li>
-                    </ul>
-                </div>
+                        <div style="margin-bottom: 4px;">
+                            <p style="color: var(--text-main); font-weight: 600; margin: 0 0 4px 0;">要注意路線</p>
+                            <p style="color: var(--text-secondary); margin: 0 0 6px 0; font-size: 0.85em;">※重大な障害時に情報が更新されない事例が確認されています。参考程度に。</p>
+                            <ul style="color: var(--text-secondary); margin: 0; padding-left: 20px; line-height: 1.6;">
+                                <li>〇〇鉄道（〇〇線）</li>
+                            </ul>
+                        </div>
 
+                    </div>
+                </div>
             </div>
         </details>
         <div style="padding: 12px 16px; background: rgba(120, 120, 128, 0.08); border-radius: 12px;">
