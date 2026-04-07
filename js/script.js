@@ -2193,6 +2193,7 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
             let hasDelay = false;
             let hasAttention = false;
             let hasNormal = false;
+            let hasMessageNote = false; // ✨ 新增：追蹤這組卡片是否有具體事故文字
 
             finalTargetIds.forEach(lineId => {
                 const dictInfo = routeDict[lineId] || { name: "未知の路線", company: "不明" };
@@ -2214,6 +2215,11 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
 
                 const msg = statusInfo.message || "";
                 const isNormalMsg = msg.includes("ありません") || msg.includes("平常") || msg.includes("正常") || msg.includes("取得しています");
+                
+                // ✨ 只要不是罐頭正常訊息，且有文字內容，就觸發備註燈號！
+                if (!isNormalMsg && msg.trim().length > 0) {
+                    hasMessageNote = true;
+                }
 
                 // 🟢 狀態變數宣告
                 let isDelayedLocal = false;
@@ -2280,7 +2286,7 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
             if (hasError || hasSevere) groupFlags[3] = true; // 第4顆：打叉 ❌ (系統錯誤 或 嚴重延誤停駛)
             if (hasDelay) groupFlags[4] = true; // 第5顆：三角形 ⚠️ (6~15分延誤)
             if (hasNormal) groupFlags[5] = true; // 第6顆：圓形 🟢 (0~5分正常)
-            if (hasAttention) groupFlags[6] = true; // 第7顆：驚嘆號 ❕ (監視中)
+            if (hasAttention || hasMessageNote) groupFlags[6] = true; // ✨ ❕ (監視中，或是官方發布了具體的事故/延誤原因！)
 
             // ✨ 智慧文字描述生成 (依照嚴重程度給予精準說明)
             if (isOffline) {
