@@ -1764,10 +1764,11 @@ function filterCards(keyword) {
                 const statusInfo = liveStatus[rw_id] || { status_type: "監視中", message: "", delay_minutes: 0, status_text: "" };
                 const msg = statusInfo.message || "";
                 const isNormalMsg = msg.includes("ありません") || msg.includes("平常") || msg.includes("正常");
-                
-                // ✨ 提取延遲時間與異常文字判定
+
+                // ✨ 提取延遲時間、異常文字、與具體備註判定
                 const delay = statusInfo.delay_minutes || 0;
                 const isTextAbnormal = !isNormalMsg && (statusInfo.status_text.includes("異常") || msg.includes("遅延") || (statusInfo.status_type && statusInfo.status_type.includes("見合わせ")) || (statusInfo.status_type && statusInfo.status_type.includes("運転変更")));
+                const hasMessageNote = !isNormalMsg && msg.trim().length > 0;
 
                 let isDelayed = false, isError = false, isAttention = false, isSevere = false;
 
@@ -1781,18 +1782,20 @@ function filterCards(keyword) {
                     } else if (delay <= 15) {
                         isDelayed = true; // 6~15分：黃燈警告
                     } else {
-                        isSevere = true;  // ✨ 超過15分：紅燈嚴重異常！
+                        isSevere = true;  // 超過15分：紅燈嚴重異常！
                     }
                 } else if (isTextAbnormal) {
-                    isSevere = true;      // ✨ 無明確時間，但宣告停駛/異常：一律紅燈！
+                    isSevere = true;      // 無明確時間，但宣告停駛/異常：一律紅燈！
                 }
 
-                // ✨ 燈號指派：精準對齊主引擎
+                // ✨ 燈號指派：支援多重燈號共存 (與主畫面完全一致)
                 let flags = [false, false, false, false, false, false, false];
-                if (isError || isSevere) flags[3] = true; // ❌ 紅燈 (系統錯誤 或 嚴重延誤/停駛)
-                else if (isAttention) flags[6] = true;    // ❕ 灰燈 (監視中)
-                else if (isDelayed) flags[4] = true;      // ⚠️ 黃燈 (中度延誤)
-                else flags[5] = true;                     // 🟢 綠燈 (正常或 5 分內微誤)
+                if (isError || isSevere) flags[3] = true; // ❌ 紅燈 (嚴重)
+                else if (isDelayed) flags[4] = true;      // ⚠️ 黃燈 (中度)
+                else if (!isAttention) flags[5] = true;   // 🟢 綠燈 (正常)
+
+                // ✨ 只要有監視狀態，或是官方發布了具體文字原因，就點亮第七顆燈 (❕)
+                if (isAttention || hasMessageNote) flags[6] = true;
 
                 searchResults.push({
                     id: rw_id,
@@ -1929,18 +1932,37 @@ window.previewRouteFromSearch = function (routeId) {
     const msg = statusInfo.message || "";
     const isNormalMsg = msg.includes("ありません") || msg.includes("平常") || msg.includes("正常");
 
-    let isDelayed = false, isError = false, isAttention = false;
-    let flags = [false, false, false, false, false, false, false];
+    // ✨ 同步套用進階與備註判定
+    const delay = statusInfo.delay_minutes || 0;
+    const isTextAbnormal = !isNormalMsg && (statusInfo.status_text.includes("異常") || msg.includes("遅延") || (statusInfo.status_type && statusInfo.status_type.includes("見合わせ")) || (statusInfo.status_type && statusInfo.status_type.includes("運転変更")));
+    const hasMessageNote = !isNormalMsg && msg.trim().length > 0;
+
+    let isDelayed = false, isError = false, isAttention = false, isSevere = false;
 
     if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
-        isError = true; flags[3] = true;
+        isError = true;
     } else if (statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし") {
-        isAttention = true; flags[6] = true;
-    } else if (!isNormalMsg && (statusInfo.delay_minutes > 0 || statusInfo.status_text.includes("異常") || msg.includes("遅延") || (statusInfo.status_type && statusInfo.status_type.includes("見合わせ")) || (statusInfo.status_type && statusInfo.status_type.includes("運転変更")))) {
-        isDelayed = true; flags[4] = true;
-    } else {
-        flags[5] = true;
+        isAttention = true;
+    } else if (delay > 0) {
+        if (delay <= 5) {
+            // 5分內：寬恕機制
+        } else if (delay <= 15) {
+            isDelayed = true;
+        } else {
+            isSevere = true;
+        }
+    } else if (isTextAbnormal) {
+        isSevere = true;
     }
+
+    // ✨ 燈號指派：支援多重燈號共存
+    let flags = [false, false, false, false, false, false, false];
+    if (isError || isSevere) flags[3] = true; // ❌
+    else if (isDelayed) flags[4] = true;      // ⚠️
+    else if (!isAttention) flags[5] = true;   // 🟢
+
+    // ✨ 第七顆燈 (備註/注意)
+    if (isAttention || hasMessageNote) flags[6] = true;
 
     // 打造幽靈卡片資料
     const tempCard = {
