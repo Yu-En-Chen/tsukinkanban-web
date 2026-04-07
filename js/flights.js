@@ -426,6 +426,29 @@ window.previewFlightFromSearch = function(routeId) {
 
     const formatted = window.generateFlightDataFormat(flight, fid);
 
+    // ✨ 新增：企業識別色 (CI) 動態指派引擎
+    let defaultHex = '#0a84ff'; // 預設為航空系統藍
+    const airlineStr = (flight.airline || '').toUpperCase();
+    
+    // 智慧判斷各大航空公司並賦予專屬色彩
+    if (airlineStr.includes('ANA') || airlineStr.includes('全日本空輸')) {
+        defaultHex = '#112233'; // ANA 深藍色
+    } else if (airlineStr.includes('JAL') || airlineStr.includes('日本航空')) {
+        defaultHex = '#8B0000'; // JAL 深紅色
+    } else if (airlineStr.includes('SKYMARK') || airlineStr.includes('スカイマーク')) {
+        defaultHex = '#F3CA00'; // Skymark 標誌黃
+    } else if (airlineStr.includes('PEACH') || airlineStr.includes('ピーチ')) {
+        defaultHex = '#B82A7A'; // Peach 樂桃粉紅
+    } else if (airlineStr.includes('JETSTAR') || airlineStr.includes('ジェットスター')) {
+        defaultHex = '#FF6600'; // Jetstar 橘色
+    } else if (airlineStr.includes('STARFLYER') || airlineStr.includes('スターフライヤー') || airlineStr.includes('STAR FLYER')) {
+        defaultHex = '#1A1A1A'; // StarFlyer 曜石黑
+    } else if (airlineStr.includes('AIRDO') || airlineStr.includes('エア・ドゥ')) {
+        defaultHex = '#00A0E9'; // AIRDO 北海道水藍
+    } else if (airlineStr.includes('SOLASEED') || airlineStr.includes('ソラシド')) {
+        defaultHex = '#87C643'; // Solaseed 九州綠
+    }
+
     const takeoffIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; margin-right: 4px;"><path d="M2 22h20"/><path d="M6.36 17.4 4 17l-2-4 1.1-.55a2 2 0 0 1 1.8 0l.17.1a2 2 0 0 0 1.8 0L8 12 5 6l.9-.45a2 2 0 0 1 2.09.2l4.02 3a2 2 0 0 0 2.1.2l4.19-2.06a2.41 2.41 0 0 1 1.73-.17L21 7a1.4 1.4 0 0 1 .87 1.99l-.38.76c-.23.46-.6.84-1.07 1.08L7.58 17.2a2 2 0 0 1-1.22.18Z"/></svg>`;
     const landingIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; margin-right: 4px;"><path d="M2 22h20"/><path d="M3.77 10.77 2 9l2-4.5 1.1.55c.55.28.9.84.9 1.45s.35 1.17.9 1.45L8 8.5l3-6 1.05.53a2 2 0 0 1 1.09 1.52l.72 5.4a2 2 0 0 0 1.09 1.52l4.4 2.2c.42.22.78.55 1.01.96l.6 1.03c.49.88-.06 1.98-1.06 2.1l-1.18.15c-.47.06-.95-.02-1.37-.24L4.29 11.15a2 2 0 0 1-.52-.38Z"/></svg>`;
     const flightTypeIcon = flight.type === 'Departure' ? takeoffIconSvg : landingIconSvg;
@@ -433,7 +456,7 @@ window.previewFlightFromSearch = function(routeId) {
     const tempCard = {
         id: 'temp-search-flight', 
         name: `${flightTypeIcon}${fid}`, 
-        hex: '#0a84ff', 
+        hex: defaultHex, 
         desc: formatted.desc, 
         message: formatted.message, // ✨ 會將 message 傳給 UI 去生成玻璃面板
         statusFlags: formatted.flags,
