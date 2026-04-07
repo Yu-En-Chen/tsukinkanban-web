@@ -1764,22 +1764,35 @@ function filterCards(keyword) {
                 const statusInfo = liveStatus[rw_id] || { status_type: "監視中", message: "", delay_minutes: 0, status_text: "" };
                 const msg = statusInfo.message || "";
                 const isNormalMsg = msg.includes("ありません") || msg.includes("平常") || msg.includes("正常");
+                
+                // ✨ 提取延遲時間與異常文字判定
+                const delay = statusInfo.delay_minutes || 0;
+                const isTextAbnormal = !isNormalMsg && (statusInfo.status_text.includes("異常") || msg.includes("遅延") || (statusInfo.status_type && statusInfo.status_type.includes("見合わせ")) || (statusInfo.status_type && statusInfo.status_type.includes("運転変更")));
 
-                let isDelayed = false, isError = false, isAttention = false;
+                let isDelayed = false, isError = false, isAttention = false, isSevere = false;
 
                 if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
                     isError = true;
                 } else if (statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし") {
                     isAttention = true;
-                } else if (!isNormalMsg && (statusInfo.delay_minutes > 0 || statusInfo.status_text.includes("異常") || msg.includes("遅延") || (statusInfo.status_type && statusInfo.status_type.includes("見合わせ")) || (statusInfo.status_type && statusInfo.status_type.includes("運転変更")))) {
-                    isDelayed = true;
+                } else if (delay > 0) {
+                    if (delay <= 5) {
+                        // 5分內：寬恕機制，維持綠燈
+                    } else if (delay <= 15) {
+                        isDelayed = true; // 6~15分：黃燈警告
+                    } else {
+                        isSevere = true;  // ✨ 超過15分：紅燈嚴重異常！
+                    }
+                } else if (isTextAbnormal) {
+                    isSevere = true;      // ✨ 無明確時間，但宣告停駛/異常：一律紅燈！
                 }
 
+                // ✨ 燈號指派：精準對齊主引擎
                 let flags = [false, false, false, false, false, false, false];
-                if (isError) flags[3] = true;
-                else if (isAttention) flags[6] = true;
-                else if (isDelayed) flags[4] = true;
-                else flags[5] = true;
+                if (isError || isSevere) flags[3] = true; // ❌ 紅燈 (系統錯誤 或 嚴重延誤/停駛)
+                else if (isAttention) flags[6] = true;    // ❕ 灰燈 (監視中)
+                else if (isDelayed) flags[4] = true;      // ⚠️ 黃燈 (中度延誤)
+                else flags[5] = true;                     // 🟢 綠燈 (正常或 5 分內微誤)
 
                 searchResults.push({
                     id: rw_id,
