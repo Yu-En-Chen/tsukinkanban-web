@@ -1019,8 +1019,23 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                         const flightId = (currentData.flightData && currentData.flightData.id) || 
                                          (currentData.targetLineIds && currentData.targetLineIds[0]) || 
                                          'フライト';
-                        defaultData = { name: flightId, hex: '#2C2C2E' };
-                    } 
+                        
+                        // ✨ 核心修復：讓「還原預設值」也具備動態 CI 顏色辨識能力
+                        let defaultHex = '#0a84ff'; // 預設藍色
+                        if (currentData.flightData && currentData.flightData.airline) {
+                            const airlineStr = currentData.flightData.airline.toUpperCase();
+                            if (airlineStr.includes('ANA') || airlineStr.includes('全日本空輸')) defaultHex = '#112233';
+                            else if (airlineStr.includes('JAL') || airlineStr.includes('日本航空')) defaultHex = '#8B0000';
+                            else if (airlineStr.includes('SKYMARK') || airlineStr.includes('スカイマーク')) defaultHex = '#F3CA00';
+                            else if (airlineStr.includes('PEACH') || airlineStr.includes('ピーチ')) defaultHex = '#B82A7A';
+                            else if (airlineStr.includes('JETSTAR') || airlineStr.includes('ジェットスター')) defaultHex = '#FF6600';
+                            else if (airlineStr.includes('STARFLYER') || airlineStr.includes('スターフライヤー') || airlineStr.includes('STAR FLYER')) defaultHex = '#1A1A1A';
+                            else if (airlineStr.includes('AIRDO') || airlineStr.includes('エア・ドゥ')) defaultHex = '#00A0E9';
+                            else if (airlineStr.includes('SOLASEED') || airlineStr.includes('ソラシド')) defaultHex = '#87C643';
+                        }
+                        
+                        defaultData = { name: flightId, hex: defaultHex };
+                    }
                     // 🚄 狀況 B：如果是綁定雲端字典的火車路線
                     else if (currentData.targetLineIds && currentData.targetLineIds.length > 0 && window.MasterRouteDictionary) {
                         const firstRouteId = currentData.targetLineIds[0];
