@@ -697,17 +697,15 @@ function handleCardClick(id) {
 
         let noteHtml = '';
         if (flightNote) {
-            // ✨ 套用您指定的 SVG 警告圖示
-            const warningSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square-warning-icon lucide-message-square-warning" style="flex-shrink: 0; margin-right: 12px; opacity: 0.8;"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/><path d="M12 15h.01"/><path d="M12 7v4"/></svg>`;
+            // ✨ SVG 魔法：加入 absolute 定位，將其完美「釘死」在左側 16px 的位置
+            const warningSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square-warning-icon lucide-message-square-warning" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); opacity: 0.8;"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/><path d="M12 15h.01"/><path d="M12 7v4"/></svg>`;
 
-            // ✨ 取消 margin-top (讓 Flex gap 掌控間距)
-            // ✨ 加上 min-height: 56px 確保高度跟按鈕一樣
-            // ✨ 移除黃色字體，自動繼承原生文字色
+            // ✨ 外層魔法：設定左右對稱的 padding (44px) 閃避圖示，確保內部文字完美水平置中
             noteHtml = `
-            <div class="extension-route-card" style="padding: 12px 16px; min-height: 84px; display: flex; align-items: center; justify-content: center;">
-                <div style="font-weight: 700; font-size: 0.95em; line-height: 1.4; display: flex; align-items: center; justify-content: center; text-align: center;">
-                    ${warningSvg}
-                    <span>${flightNote}</span>
+            <div class="extension-route-card" style="position: relative; padding: 16px 44px; min-height: 84px; display: flex; align-items: center; justify-content: center;">
+                ${warningSvg}
+                <div style="font-weight: 700; font-size: 0.95em; line-height: 1.4; width: 100%; text-align: center;">
+                    ${flightNote}
                 </div>
             </div>
             `;
