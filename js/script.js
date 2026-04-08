@@ -917,8 +917,11 @@ function handleCardClick(id) {
                 if (line.isError) statusClass = 'status-error';
                 else if (line.isAttention) statusClass = 'status-attention';
                 else if (line.isDelayed) {
-                    if (line.delay > 0 && line.delay <= 5) statusClass = 'status-delayed-minor';
-                    else statusClass = 'status-delayed';
+                    if (line.delay > 15) {
+                        statusClass = 'status-delayed';
+                    } else {
+                        statusClass = 'status-delayed-minor';
+                    }
                 }
 
                 const delayText = line.delay > 0 ? ` (${line.delay}分)` : '';
@@ -3190,8 +3193,11 @@ function silentUpdateExtensionPanel(cardId) {
             if (line.isError) statusClass = 'status-error';
             else if (line.isAttention) statusClass = 'status-attention';
             else if (line.isDelayed) {
-                if (line.delay > 0 && line.delay <= 5) statusClass = 'status-delayed-minor';
-                else statusClass = 'status-delayed';
+                if (line.delay > 15) {
+                    statusClass = 'status-delayed';
+                } else {
+                    statusClass = 'status-delayed-minor';
+                }
             }
 
             const delayText = line.delay > 0 ? ` (${line.delay}分)` : '';
