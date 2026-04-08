@@ -119,7 +119,14 @@ export function searchFlights(lowKeyword) {
                     const [sh, sm] = f.scheduled.split(':').map(Number);
                     const [lh, lm] = f.latest.split(':').map(Number);
                     delayMins = (lh * 60 + lm) - (sh * 60 + sm);
-                    if (delayMins < -720) delayMins += 24 * 60; 
+                    
+                    // ✨ 修復極端跨日大延誤：如果算出提早超過 6 小時 (-360分)，那肯定是嚴重延遲跨到隔天了！
+                    if (delayMins < -360) {
+                        delayMins += 24 * 60; 
+                    } else if (delayMins > 1080) {
+                        // 防呆：如果算出延遲超過 18 小時，極有可能是提早跨過午夜 (例如 00:10 提早到 23:50)
+                        delayMins -= 24 * 60;
+                    }
                 }
 
                 // 🌟 【修改 1】先定義狀態字典，這樣我們才能提早用 statusText 來判斷燈號
@@ -281,7 +288,13 @@ window.generateFlightDataFormat = function(flight, fid) {
         const [sh, sm] = flight.scheduled.split(':').map(Number);
         const [lh, lm] = flight.latest.split(':').map(Number);
         delayMins = (lh * 60 + lm) - (sh * 60 + sm);
-        if (delayMins < -720) delayMins += 24 * 60; 
+        
+        // ✨ 修復極端跨日大延誤
+        if (delayMins < -360) {
+            delayMins += 24 * 60; 
+        } else if (delayMins > 1080) {
+            delayMins -= 24 * 60;
+        }
     }
 
     // ✨ 點亮第七顆燈 (如果有備註)
