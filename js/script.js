@@ -79,7 +79,7 @@ function getDynamicTheme(hex, opacity = 1) {
     const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
 
     const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
-    const isLight = luminance > 0.55;
+    const isLight = luminance > 0.62;
 
     // 🟢 動態漸層幅度分配 (加入極端純黑/純白處理)
     let topShift = 17;
@@ -136,32 +136,27 @@ function getDynamicTheme(hex, opacity = 1) {
     let glareColor, innerGlow;
 
     if (isLight) {
-        const textS = hsl.s > 5 ? 100 : 0;
-        const textL = 35;
+        // 💡 修正：將飽和度降至 25 (避免濁色)，亮度壓低至 25 (創造極高對比)
+        const textS = hsl.s > 5 ? 25 : 0; 
+        const textL = 25; 
 
         textColor = `hsl(${hsl.h}, ${textS}%, ${textL}%)`;
-        textSecondary = `hsl(${hsl.h}, ${textS}%, ${textL + 5}%)`;
-        borderColor = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.35)`;
-        tagBg = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.15)`;
-        textShadow = `0 1px 1px hsla(${hsl.h}, ${textS}%, ${textL - 10}%, 0.2)`;
+        textSecondary = `hsl(${hsl.h}, ${textS}%, ${textL + 25}%)`;
+        borderColor = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.25)`;
+        tagBg = `hsla(${hsl.h}, ${textS}%, ${textL}%, 0.10)`;
+        textShadow = `0 1px 1px hsla(0, 0%, 100%, 0.3)`; // 改用白光陰影托底
 
         const textLTop = textL;
-        const textLBottom = Math.max(0, textL - 12);
-        textBgGradientSecondary = `linear-gradient(135deg, hsl(${hsl.h}, ${textS}%, ${textLTop + 5}%), hsl(${hsl.h}, ${textS}%, ${textLBottom + 5}%))`;
+        const textLBottom = Math.max(0, textL - 10);
+        textBgGradientSecondary = `linear-gradient(135deg, hsl(${hsl.h}, ${textS}%, ${textLTop + 15}%), hsl(${hsl.h}, ${textS}%, ${textLBottom + 15}%))`;
 
         textBgGradientTag = 'none';
         textClip = 'text';
         textFill = 'transparent';
 
-        // 🟢 修正淺色卡片的光影：
-        // 不再使用突兀的 0.9 死白！大幅降低透明度，並保留卡片原有的色相與飽和度基因。
-        // 反光 (Glare) 變得更輕透，邊緣微光層 (Inner Glow) 變成柔和的「同色系淡白光」。
-        glareColor = `hsla(${hsl.h}, ${hsl.s}%, 96%, 0.35)`;
-        innerGlow = `inset 0 1px 1px hsla(${hsl.h}, ${Math.max(30, hsl.s)}%, 100%, 0.45)`;
-        const glowS = hsl.s < 5 ? 0 : Math.max(30, hsl.s);
-
-        glareColor = `hsla(${hsl.h}, ${hsl.s}%, 96%, 0.35)`;
-        innerGlow = `inset 0 1px 1px hsla(${hsl.h}, ${glowS}%, 100%, 0.45)`;
+        // 光影微調：淺色卡的邊緣反光維持純淨白光即可
+        glareColor = `hsla(0, 0%, 100%, 0.45)`;
+        innerGlow = `inset 0 1px 1px hsla(0, 0%, 100%, 0.5)`;
     } else {
         textColor = '#ffffff';
         textSecondary = 'rgba(255, 255, 255, 0.8)';
