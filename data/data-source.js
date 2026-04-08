@@ -82,6 +82,7 @@ export const dataSourceContent = `
                                 <li>東京臨海高速鉄道（りんかい線）</li>
                                 <li>首都圏新都市鉄道（つくばエクスプレス）</li>
                                 <li>多摩都市モノレール（多摩モノレール）</li>
+                                <li>東京メトロ（半蔵門線、副都心線、南北線、千代田線、東西線、日比谷線、丸ノ内線、銀座線）</li>
                             </ul>
                         </div>
 
@@ -89,7 +90,7 @@ export const dataSourceContent = `
                             <p style="color: var(--text-main); font-weight: 600; margin: 0 0 4px 0;">要注意路線</p>
                             <p style="color: var(--text-secondary); margin: 0 0 6px 0; font-size: 0.8em;">重大な障害時に情報が更新されない事例が確認されています。参考程度に。</p>
                             <ul style="color: var(--text-secondary); margin: 0; padding-left: 20px; line-height: 1.6;">
-                                <li>東京メトロ（全線）</li>
+                                <li>東京メトロ（有楽町線）</li>
                             </ul>
                         </div>
 
