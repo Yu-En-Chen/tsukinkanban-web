@@ -313,6 +313,15 @@ window.toggleVisibility = async function(id) {
 
     const dbSandbox = await import('../data/db-add-panel.js');
     let hiddenIds = dbSandbox.getHiddenCards();
+
+    // ✨ 【核心修復】：加入幽靈資料自動清洗引擎！
+    // 確保 hiddenIds 裡面只計算「真實存在於目前系統中的卡片」，排除殘留的壞死資料
+    hiddenIds = hiddenIds.filter(hid => window.appRailwayData.some(c => c.id === hid));
+    
+    // 順手把清理乾淨的陣列存回資料庫，修復 LocalStorage 的殘留問題
+    if (dbSandbox.saveHiddenCards) {
+        dbSandbox.saveHiddenCards(hiddenIds);
+    }
     
     if (hiddenIds.includes(id)) {
         const visibleCount = window.appRailwayData.filter(r => !hiddenIds.includes(r.id)).length;
