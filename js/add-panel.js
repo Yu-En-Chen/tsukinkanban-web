@@ -657,8 +657,8 @@ window.createNewCardAndEdit = async function(prefillData = null) {
         // 🧹 如果系統有綁定舊的 DOM 元素緩存，一併清掉強制系統重繪
         delete newCard.cardElement;
 
-        // 直接將新卡片加入最前面
-        window.appRailwayData.unshift(newCard);
+        // 直接將新卡片加入最後面（圖層最上方）
+        window.appRailwayData.push(newCard);
 
         const updatedVisibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
         const visibleIds = updatedVisibleData.map(c => c.id);
