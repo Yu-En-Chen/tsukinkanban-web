@@ -2250,7 +2250,7 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
 
                 const msg = statusInfo.message || "";
                 const isNormalMsg = msg.includes("ありません") || msg.includes("平常") || msg.includes("正常") || msg.includes("取得しています");
-                
+
                 // ✨ 只要不是罐頭正常訊息，且有文字內容，就觸發備註燈號！
                 if (!isNormalMsg && msg.trim().length > 0) {
                     hasMessageNote = true;
@@ -2286,6 +2286,7 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                     if (delay > worstDelay) worstDelay = delay;
 
                 } else if (isTextAbnormal) {
+                    isDelayedLocal = true; // ✨ 讓子路線自己也記住處於黃燈警告狀態
                     hasDelay = true; // 🌟 核心降級：沒有具體嚴重分鐘數的公告，一律只亮黃燈
                 } else {
                     hasNormal = true;
@@ -2441,14 +2442,14 @@ async function initApp() {
             // 🚨 API 伺服器回傳 500、502，或是休眠叫不醒
             console.warn("⚠️ 狀態 API 伺服器無回應，強制切換至斷線異常狀態");
             // 🛑 丟棄舊資料，強制觸發斷線狀態
-            buildAndRender(userPrefs, cachedDict, {}, true); 
+            buildAndRender(userPrefs, cachedDict, {}, true);
         }
 
     } catch (error) {
         // 🚨 發生無法預期的底層錯誤 (如 DNS 解析失敗、網路完全斷開)
         console.error("系統遭遇嚴重連線錯誤:", error);
         // 🛑 丟棄舊資料，不拿過期的綠燈騙使用者
-        buildAndRender(userPrefs, cachedDict, {}, true); 
+        buildAndRender(userPrefs, cachedDict, {}, true);
     }
     initFlights();
 }
