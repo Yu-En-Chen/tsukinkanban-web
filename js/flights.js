@@ -139,7 +139,15 @@ export function searchFlights(lowKeyword) {
                     'Estimated': '変更予定', 'GateClosed': '搭乗終了',
                     'GoToGate': '搭乗口へ', 'InAir': '飛行中', 'LeftGate': '滑行中'
                 };
-                const statusText = statusMap[f.status] || f.status;
+                let statusText = statusMap[f.status] || f.status;
+
+                // ✨ UX 狀態升級引擎：解決「明明延誤，卻顯示灰字『出発予定』」的視覺脫節
+                // 如果延遲超過 25 分鐘，且 API 給的是平靜狀態，我們強制升級為「遅延」
+                if (delayMins > 25 && ['通常', '出発予定', '到着予定'].includes(statusText)) {
+                    statusText = '遅延';
+                } else if (delayMins < -25 && ['通常', '出発予定', '到着予定'].includes(statusText)) {
+                    statusText = '変更予定'; // 提早很多時，改為變更預定
+                }
 
                 // ✨ 導入「進度優先」與「強制寬恕機制」
                 const forceGreenStatuses = ['出発済', '着陸済', '到着済', '飛行中'];
@@ -281,7 +289,7 @@ window.generateFlightDataFormat = function(flight, fid) {
         'Estimated': '変更予定', 'GateClosed': '搭乗終了',
         'GoToGate': '搭乗口へ', 'InAir': '飛行中', 'LeftGate': '滑行中'
     };
-    const statusText = statusMap[flight.status] || flight.status;
+    let statusText = statusMap[flight.status] || flight.status;
 
     let delayMins = 0;
     if (isTimeChanged && flight.scheduled !== '--:--' && flight.latest !== '--:--') {
@@ -295,6 +303,13 @@ window.generateFlightDataFormat = function(flight, fid) {
         } else if (delayMins > 1080) {
             delayMins -= 24 * 60;
         }
+    }
+
+    // ✨ UX 狀態升級引擎 (主卡片用)
+    if (delayMins > 25 && ['通常', '出発予定', '到着予定'].includes(statusText)) {
+        statusText = '遅延';
+    } else if (delayMins < -25 && ['通常', '出発予定', '到着予定'].includes(statusText)) {
+        statusText = '変更予定';
     }
 
     // ✨ 點亮第七顆燈 (如果有備註)
