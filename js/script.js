@@ -697,14 +697,15 @@ function handleCardClick(id) {
 
         let noteHtml = '';
         if (flightNote) {
-            // ✨ SVG 魔法：加入 absolute 定位，將其完美「釘死」在左側 16px 的位置
+            // SVG 依然完美釘死在左側 16px
             const warningSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square-warning-icon lucide-message-square-warning" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); opacity: 0.8;"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/><path d="M12 15h.01"/><path d="M12 7v4"/></svg>`;
 
-            // ✨ 外層魔法：設定左右對稱的 padding (44px) 閃避圖示，確保內部文字完美水平置中
+            // ✨ 加入 flex-direction: row 抵抗外部 CSS 干擾
+            // ✨ 內部 div 加入 margin: 0 防止預設段落留白推擠
             noteHtml = `
-            <div class="extension-route-card" style="position: relative; padding: 16px 44px; min-height: 84px; display: flex; align-items: center; justify-content: center;">
+            <div class="extension-route-card" style="position: relative; padding: 16px 16px 16px 54px; min-height: 84px; display: flex; flex-direction: row; align-items: center;">
                 ${warningSvg}
-                <div style="font-weight: 700; font-size: 0.95em; line-height: 1.4; width: 100%; text-align: center;">
+                <div style="font-weight: 700; font-size: 0.95em; line-height: 1.5; width: 100%; text-align: left; margin: 0;">
                     ${flightNote}
                 </div>
             </div>
