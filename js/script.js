@@ -1785,7 +1785,7 @@ function filterCards(keyword) {
                         isSevere = true;  // 超過15分：紅燈嚴重異常！
                     }
                 } else if (isTextAbnormal) {
-                    isSevere = true;      // 無明確時間，但宣告停駛/異常：一律紅燈！
+                    isDelayed = true;     // 🌟 核心降級：無明確分鐘數的公告，一律只亮黃燈警告！
                 }
 
                 // ✨ 燈號指派：支援多重燈號共存 (與主畫面完全一致)
@@ -1952,7 +1952,7 @@ window.previewRouteFromSearch = function (routeId) {
             isSevere = true;
         }
     } else if (isTextAbnormal) {
-        isSevere = true;
+        isDelayed = true; // 🌟 核心降級：統一降為黃燈
     }
 
     // ✨ 燈號指派：支援多重燈號共存
@@ -2273,12 +2273,9 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                     if (delay > worstDelay) worstDelay = delay;
 
                 } else if (isTextAbnormal) {
-                    // 👉 沒回報分鐘數，但官方宣佈異常/停駛：
-                    isSevereLocal = true;
-                    hasSevere = true;          // ✨ 一律視為嚴重狀態：亮叉叉
+                    hasDelay = true; // 🌟 核心降級：沒有具體嚴重分鐘數的公告，一律只亮黃燈
                 } else {
-                    // 👉 沒回報分鐘數，且文字顯示平常：
-                    hasNormal = true;          // ✨ 亮綠燈 (圓形)
+                    hasNormal = true;
                 }
 
                 // ✨ 時間萃取邏輯
