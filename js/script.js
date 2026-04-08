@@ -446,8 +446,21 @@ function renderCards(data) {
                 card.style.animationDelay = `${(data.length - index) * 0.08}s`;
             }
 
-            // 先放進畫面中 (這樣下面的 querySelector 才能修改它)
-            mainStack.appendChild(clone);
+            // ✨ DOM 順序校正：確保新卡片永遠安插在「置底卡片」的上方
+            const fixedCard = document.getElementById('fixed-info-card');
+            if (fixedCard) {
+                mainStack.insertBefore(clone, fixedCard);
+            } else {
+                mainStack.appendChild(clone);
+            }
+        } else {
+            // ✨ DOM 順序校正：針對已經存在的卡片，強制依照新陣列的順序在畫面中重新排隊！
+            const fixedCard = document.getElementById('fixed-info-card');
+            if (fixedCard) {
+                mainStack.insertBefore(card, fixedCard);
+            } else {
+                mainStack.appendChild(card);
+            }
         }
 
         // 👉 B. 無縫資料更新 (無論新舊卡片都會執行，且「絕對不會」打斷 CSS 動畫)
