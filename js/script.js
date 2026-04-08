@@ -924,7 +924,6 @@ function handleCardClick(id) {
                     }
                 }
 
-                const delayText = line.delay > 0 ? ` (${line.delay}分)` : '';
                 const row = document.createElement('div');
                 row.className = 'extension-route-card';
 
@@ -957,7 +956,7 @@ function handleCardClick(id) {
                             <div class="ext-route-company">${line.company}</div>
                         </div>
                         <div class="ext-status-badge ${statusClass}">
-                            ${line.status}${delayText}
+                            ${line.status}
                         </div>
                     </div>
                     <div class="ext-card-divider"></div>
@@ -3200,7 +3199,6 @@ function silentUpdateExtensionPanel(cardId) {
                 }
             }
 
-            const delayText = line.delay > 0 ? ` (${line.delay}分)` : '';
             const row = document.createElement('div');
             row.className = 'extension-route-card';
 
@@ -3233,7 +3231,7 @@ function silentUpdateExtensionPanel(cardId) {
                         <div class="ext-route-company">${line.company}</div>
                     </div>
                     <div class="ext-status-badge ${statusClass}">
-                        ${line.status}${delayText}
+                        ${line.status}
                     </div>
                 </div>
                 <div class="ext-card-divider"></div>
