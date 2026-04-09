@@ -46,22 +46,24 @@ document.addEventListener('DOMContentLoaded', () => {
 // 🟢 歷史紀錄抓取引擎 (附加模組)
 // ============================================================================
 
-// 1. 使用「事件委派 (Event Delegation)」全域監聽，保證不破壞原本的選單開關邏輯
+// 1. 🚀 使用「Capture 捕獲階段 (true)」強制攔截點擊，無視任何 stopPropagation！
 document.addEventListener('click', (event) => {
-    // 確保點擊的是漢堡按鈕 (包含點到裡面的 SVG 圖示也能精準捕捉)
     const menuBtn = event.target.closest('#left-menu-btn');
     if (menuBtn) {
-        // 給母艦選單的進場動畫 300 毫秒的時間展開，避免 DOM 還沒準備好
+        console.log("🟢 [History API] 成功攔截漢堡按鈕點擊！準備喚醒 API 引擎...");
+        
+        // 延遲 400 毫秒，等你的母艦動畫跑完
         setTimeout(() => {
+            console.log("🟢 [History API] 開始渲染骨架屏並抓取資料！");
             let historyContainer = document.getElementById('history-content-area');
 
-            // 如果畫面上還沒有歷史紀錄容器，動態建立一個
             if (!historyContainer) {
                 historyContainer = document.createElement('div');
                 historyContainer.id = 'history-content-area';
-                historyContainer.style.cssText = 'margin-top: 24px; width: 100%; padding: 0 16px; box-sizing: border-box;';
+                // 💡 強制加上 z-index: 99999 避免被你的背景或毛玻璃遮擋
+                historyContainer.style.cssText = 'position: relative; z-index: 99999; margin-top: 24px; width: 100%; padding: 0 16px; box-sizing: border-box;';
 
-                // 智慧尋找你的母艦選單容器
+                // 尋找母艦的白色面板，如果找不到就塞進 body
                 const menuBody = document.querySelector('.menu-card-inner') || 
                                  document.querySelector('.main-menu-container') || 
                                  document.body; 
@@ -71,9 +73,9 @@ document.addEventListener('click', (event) => {
 
             // 觸發防彈版 API 引擎
             fetchAndRenderHistory('history-content-area');
-        }, 300); 
+        }, 400); 
     }
-});
+}, true); // 👈 這裡的 true 就是魔法！代表在「捕獲階段」優先執行
 
 // 2. 防彈版歷史紀錄抓取 API (Promise.allSettled)
 async function fetchAndRenderHistory(containerId) {
