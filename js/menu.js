@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const historyHTML = generateHistoryHTML();
         if (window.openUniversalPage) {
             // 呼叫通用底版，畫面會被 universal-active 接管
-            window.openUniversalPage('Timeline', historyHTML);
+            window.openUniversalPage('通知・履歴', historyHTML);
         }
     });
 
@@ -71,10 +71,12 @@ function generateHistoryHTML() {
                     } else {
                         let displayVal = typeof val === 'object' ? JSON.stringify(val) : val;
                         let valColor = displayVal.includes('遅延') || displayVal.includes('見合') ? '#ff453a' : 'inherit';
+                        
+                        // 🟢 優化重點：加入了 width: 100%, flex: 1, min-width: 0 以及 word-break 確保長文字完美折行
                         items.push(`
-                            <div style="display: flex; gap: 12px; align-items: baseline; padding: 4px 0; border-bottom: 1px solid rgba(128,128,128,0.15);">
-                                <span style="font-family: monospace; font-size: 0.9em; opacity: 0.6; width: 45px; flex-shrink: 0;">${key}</span>
-                                <span style="font-weight: 500; font-size: 0.95em; color: ${valColor};">${displayVal}</span>
+                            <div style="display: flex; gap: 12px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid rgba(128,128,128,0.15); width: 100%;">
+                                <span style="font-family: monospace; font-size: 0.9em; opacity: 0.6; width: 60px; flex-shrink: 0;">${key}</span>
+                                <span style="font-weight: 500; font-size: 0.95em; color: ${valColor}; word-break: break-word; overflow-wrap: break-word; flex: 1; min-width: 0; line-height: 1.4;">${displayVal}</span>
                             </div>
                         `);
                     }
