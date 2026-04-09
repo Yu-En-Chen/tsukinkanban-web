@@ -1,5 +1,4 @@
 // menu.js - 左側選單互動邏輯
-import { loadHistoryInto } from './history-api.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const menuBtn = document.getElementById('left-menu-btn');
@@ -217,33 +216,179 @@ function renderHistoryUI(container, historyList) {
 }
 
 // ============================================================================
-// 🟢 歷史紀錄 UI 注入外掛
+// 🟢 歷史紀錄 API 外掛模組 (免 Import 安全版)
 // ============================================================================
+
 document.addEventListener('click', (event) => {
-    // 監聽是否點擊了左上角的漢堡按鈕
+    // 監聽左上角的漢堡按鈕
     const menuBtn = event.target.closest('#left-menu-btn');
     if (menuBtn) {
-        // 延遲 300 毫秒，等待你原本的 menu.js 把通用面板的 DOM 都建立、渲染完畢
+        // 等待 400 毫秒，讓你的通用面板動畫順利滑出
         setTimeout(() => {
-            // 尋找你通用面板的容器 (會自動尋找畫面上最適合的容器)
+            // 尋找通用面板的內容容器
             const panelContainer = document.querySelector('.menu-card-inner') || 
                                    document.querySelector('.main-menu-container') || 
                                    document.body;
 
-            // 建立一個專屬的 div 給歷史紀錄使用
+            // 建立一個專屬的 div 給歷史紀錄
             let historyBox = document.getElementById('history-extension-box');
             if (!historyBox) {
                 historyBox = document.createElement('div');
                 historyBox.id = 'history-extension-box';
-                // 加上一點間距，讓它乖乖排在 supporter 等其他內容的下方
-                historyBox.style.cssText = 'width: 100%; margin-top: 16px; padding: 0 16px; box-sizing: border-box;';
+                // 加上間距，讓它乖乖排在 supporter 等內容的下方
+                historyBox.style.cssText = 'width: 100%; margin-top: 16px; padding: 0 16px 40px 16px; box-sizing: border-box;';
                 
-                // 將這個空盒子塞進通用面板的最底部
                 panelContainer.appendChild(historyBox);
             }
 
-            // 喚醒 API 引擎，把資料灌進這個盒子裡！
-            loadHistoryInto(historyBox);
-        }, 300);
+            // 喚醒底下的歷史紀錄 API 引擎
+            __runHistoryExtensionAPI(historyBox);
+        }, 400);
     }
 });
+
+// 封裝好的 API 引擎 (加上 __ 雙底線避免跟你原本的變數撞名)
+async function __runHistoryExtensionAPI(container) {
+    if (!container) return;
+
+    // 1. 質感 Loading
+    container.innerHTML = `
+        <div style="padding: 30px 20px; text-align: center; color: var(--text-secondary, #8e8e93);">
+            <div style="margin-bottom: 12px; display: flex; justify-content: center; opacity: 0.7;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                </svg>
+            </div>
+            <p style="font-size: 0.85em; font-weight: 600; letter-spacing: 0.5px;">運行履歴を同期中...</p>
+            <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
+        </div>
+    `;
+
+    try {
+        const fetchTasks = [];
+
+        // 2. 蒐集卡片並組裝動態網址
+        if (window.appRailwayData && window.appRailwayData.length > 0) {
+            window.appRailwayData.forEach(card => {
+                if (card.targetLineIds) {
+                    card.targetLineIds.forEach(id => {
+                        const isFlight = card.isFlightCard;
+                        const type = isFlight ? 'flight' : 'railway';
+                        
+                        let finalId = id;
+                        if (isFlight && !id.includes('Departure_') && !id.includes('Arrival_')) {
+                            finalId = `Departure_${id}`; 
+                        }
+
+                        const url = `https://tsukinkanban-odpt.onrender.com/api/history/${type}/${finalId}`;
+                        
+                        let routeName = (window.MasterRouteDictionary && window.MasterRouteDictionary[id]) ? window.MasterRouteDictionary[id].name : id;
+                        routeName = routeName.replace('Departure_', '出發 ').replace('Arrival_', '抵達 ');
+
+                        const requestPromise = fetch(url)
+                            .then(async res => {
+                                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                                const data = await res.json();
+                                return { name: routeName, data: data };
+                            })
+                            .catch(err => null);
+
+                        fetchTasks.push(requestPromise);
+                    });
+                }
+            });
+        }
+
+        if (fetchTasks.length === 0) {
+            container.innerHTML = ``; 
+            return;
+        }
+
+        const results = await Promise.allSettled(fetchTasks);
+
+        const validHistoryList = [];
+        results.forEach(result => {
+            if (result.status === 'fulfilled' && result.value !== null) {
+                const info = result.value;
+                if ((Array.isArray(info.data) && info.data.length > 0) || 
+                    (typeof info.data === 'object' && Object.keys(info.data).length > 0)) {
+                    validHistoryList.push(info);
+                }
+            }
+        });
+
+        // 3. 渲染美化 UI
+        __renderHistoryCards(container, validHistoryList);
+
+    } catch (error) {
+        container.innerHTML = ``; 
+    }
+}
+
+// 封裝好的 UI 渲染引擎
+function __renderHistoryCards(container, historyList) {
+    if (historyList.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    let htmlStr = '<div style="display: flex; flex-direction: column; gap: 12px; padding: 10px 0;">';
+    htmlStr += '<div style="font-size: 0.75em; font-weight: 700; color: var(--text-secondary, #8e8e93); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; padding-left: 4px;">Timeline</div>';
+
+    historyList.forEach(info => {
+        const routeName = info.name;
+        
+        // 清洗冗餘 ID 邏輯
+        const parseHistoryData = (data) => {
+            let items = [];
+            if (Array.isArray(data)) {
+                data.forEach(item => items.push(`<span>${item}</span>`));
+            } else if (typeof data === 'object') {
+                for (const [key, val] of Object.entries(data)) {
+                    if (key.includes('odpt.') || key.includes('Departure_') || key.includes('Arrival_')) {
+                        if (typeof val === 'object') items = items.concat(parseHistoryData(val));
+                    } else {
+                        let displayVal = typeof val === 'object' ? JSON.stringify(val) : val;
+                        let valColor = displayVal.includes('遅延') || displayVal.includes('見合') ? '#ff453a' : '#fff';
+                        
+                        items.push(`
+                            <div style="display: flex; gap: 12px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <span style="font-family: monospace; font-size: 0.9em; opacity: 0.6; width: 45px; flex-shrink: 0;">${key}</span>
+                                <span style="font-weight: 500; font-size: 0.95em; color: ${valColor};">${displayVal}</span>
+                            </div>
+                        `);
+                    }
+                }
+            }
+            return items;
+        };
+
+        const parsedItems = parseHistoryData(info.data);
+
+        if (parsedItems.length > 0) {
+            const displayItems = parsedItems.slice(0, 4); 
+
+            // 暗色毛玻璃卡片 UI
+            htmlStr += `
+                <div class="history-item-card" style="background: rgba(30, 30, 32, 0.5); border-radius: 16px; padding: 16px; border: 1px solid rgba(255, 255, 255, 0.08);">
+                    <div style="font-weight: 700; font-size: 1.05em; color: #fff; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 8px; height: 8px; background: #0a84ff; border-radius: 50%; box-shadow: 0 0 8px rgba(10,132,255,0.6);"></div>
+                        ${routeName}
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        ${displayItems.join('')}
+                    </div>
+                </div>
+            `;
+        }
+    });
+    
+    htmlStr += '</div>';
+
+    container.style.opacity = '0';
+    container.innerHTML = htmlStr;
+    requestAnimationFrame(() => {
+        container.style.transition = 'opacity 0.4s ease';
+        container.style.opacity = '1';
+    });
+}
