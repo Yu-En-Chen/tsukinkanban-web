@@ -43,16 +43,16 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================================================
-// 🟢 歷史紀錄：從 Daemon 快取秒殺渲染 (極速靜態版)
+// 🟢 歷史紀錄：從 Daemon 記憶體秒殺渲染 (精準雷達追蹤版)
 // ============================================================================
 document.addEventListener('click', (event) => {
     const menuBtn = event.target.closest('#left-menu-btn');
     if (menuBtn) {
-        // 等待 400 毫秒讓母艦動畫打開
+        // 稍微拉長一點點等待時間 (500ms)，確保你的通用面板 DOM 完全長出來
         setTimeout(() => {
-            const safeZone = document.querySelector('.menu-card-inner') || 
-                             document.querySelector('.main-menu-container') || 
-                             document.body;
+            // 🚀 升級 3：精準雷達尋找 UI 容器
+            // 這裡涵蓋了絕大多數 tsukinkanban 可能用到的面板內容區塊 Class
+            const safeZone = document.querySelector('.content-area, .menu-content, .menu-card-inner, .panel-content, .main-menu-container');
 
             if (safeZone) {
                 let anchor = document.getElementById('native-history-anchor');
@@ -60,22 +60,37 @@ document.addEventListener('click', (event) => {
                     anchor = document.createElement('div');
                     anchor.id = 'native-history-anchor';
                     anchor.style.cssText = 'margin-top: 32px; width: 100%; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 24px; padding-bottom: 40px;';
+                    // 精準塞進 UI 內容區的底部
                     safeZone.appendChild(anchor);
                 }
 
-                // ⚡ 呼叫靜態渲染器，直接印出記憶體裡的資料
+                // 從記憶體叫出資料並渲染
                 __renderStaticHistory(anchor);
+            } else {
+                console.warn("⚠️ [History UI] 找不到合適的選單容器，請確認你的 HTML Class！");
             }
-        }, 400); 
+        }, 500); 
     }
 });
 
 function __renderStaticHistory(container) {
-    // 直接拿背景精靈準備好的資料
     const historyList = window.appHistoryCache;
 
-    if (!historyList || historyList.length === 0) {
-        container.innerHTML = '<div style="text-align: center; color: var(--text-secondary, #8e8e93); font-size: 0.9em;">履歴データがありません (または同期中)</div>';
+    // 如果精靈還在抓，或是抓不到資料的防呆顯示
+    if (!historyList) {
+        container.innerHTML = `
+            <div style="text-align: center; color: var(--text-secondary, #8e8e93); font-size: 0.9em; padding: 20px;">
+                <div style="opacity: 0.6; margin-bottom: 8px; display: flex; justify-content: center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                </div>
+                履歴データを同期中...
+                <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
+            </div>`;
+        return;
+    }
+
+    if (historyList.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-secondary, #8e8e93); font-size: 0.9em; padding: 20px;">履歴データがありません</div>';
         return;
     }
 
@@ -125,6 +140,6 @@ function __renderStaticHistory(container) {
 
     htmlStr += '</div>';
     
-    // 秒殺顯示，連 fade-in 動畫都不用等太久
+    // 秒殺顯示在面板內
     container.innerHTML = htmlStr;
 }
