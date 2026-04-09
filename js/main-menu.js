@@ -189,27 +189,17 @@ window.openUniversalPage = function(title, contentHTML) {
 
 // ✨ 接收 closeAll 參數 (預設為 false)
 window.closeUniversalPage = function(closeAll = false) {
+    // 1. 移除通用底版的顯示狀態
     document.body.classList.remove('universal-active');
 
-    if (closeAll) {
-        // 1. 如果右側主選單還開著，一起關掉它
-        if (document.body.classList.contains('main-menu-active')) {
-            window.toggleMainMenu();
-        }
-        
-        // 🟢 2. 新增：如果左側歷史選單開著，也一併還原它的動畫狀態
-        if (document.body.classList.contains('hamburger-active')) {
-            const menuBtn = document.getElementById('left-menu-btn');
-            if (menuBtn) {
-                menuBtn.classList.remove('is-expanded');
-            }
-            document.body.classList.remove('menu-active', 'hamburger-active');
-        }
+    // 2. 如果右側的主選單還開著，且使用者按了 X (closeAll)，就一起關掉
+    if (closeAll && document.body.classList.contains('main-menu-active')) {
+        window.toggleMainMenu();
     }
 
     if (window.navigator.vibrate) window.navigator.vibrate(5);
     
-    // 關閉後徹底清理 DOM，保持 HTML 乾淨
+    // 3. 關閉動畫結束後，清理 DOM
     setTimeout(() => {
         const wrapper = document.getElementById('universal-page-wrapper');
         const navBtns = document.getElementById('universal-nav-buttons');

@@ -1,4 +1,4 @@
-// js/menu.js - 左側選單互動邏輯 (已升級對接通用底版引擎)
+// js/menu.js - 左側選單互動邏輯 (極簡觸發器版)
 
 document.addEventListener('DOMContentLoaded', () => {
     const menuBtn = document.getElementById('left-menu-btn');
@@ -10,43 +10,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     menuBtn.onclick = null;
 
-    // 1. 單一且乾淨的點擊事件
+    // 1. 純粹的觸發按鈕，不再切換任何狀態
     menuBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault();
 
-        const isExpanded = menuBtn.classList.toggle('is-expanded');
-
-        // 保持原本的狀態標籤，讓 CSS 的漢堡變 X 動畫能順利執行
-        document.body.classList.toggle('menu-active', isExpanded);
-        document.body.classList.toggle('hamburger-active', isExpanded);
-
-        if (isExpanded) {
-            console.log('Menu: Expanded (Open) - Triggering Universal Page');
-            
-            // 🟢 向記憶體要資料，轉成 HTML 字串
-            const historyHTML = generateHistoryHTML();
-            
-            // 🚀 呼叫主選單系統的通用面板引擎來顯示！
-            if (window.openUniversalPage) {
-                window.openUniversalPage('Timeline', historyHTML);
-            } else {
-                console.warn('⚠️ Universal Page Engine 尚未載入');
-            }
-        } else {
-            console.log('Menu: Collapsed (Close) - Closing Universal Page');
-            // 🔴 如果使用者再次點擊 X，則關閉通用底版
-            if (window.closeUniversalPage) {
-                window.closeUniversalPage(true); 
-            }
+        console.log('Menu Clicked - Opening Universal Page for History');
+        
+        // 🟢 產生 HTML 並直接丟給通用底版
+        const historyHTML = generateHistoryHTML();
+        if (window.openUniversalPage) {
+            // 呼叫通用底版，畫面會被 universal-active 接管
+            window.openUniversalPage('Timeline', historyHTML);
         }
     });
 
-    // Esc 鍵關閉邏輯
+    // 2. Esc 鍵直接連動關閉通用底版
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && menuBtn.classList.contains('is-expanded')) {
-            menuBtn.classList.remove('is-expanded');
-            document.body.classList.remove('menu-active', 'hamburger-active');
+        if (e.key === 'Escape') {
             if (window.closeUniversalPage) window.closeUniversalPage(true);
         }
     });
