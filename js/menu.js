@@ -1,21 +1,67 @@
-// js/menu.js
+// menu.js - 左側選單互動邏輯
 
-// ============================================================================
-// 🟢 1. 綁定「漢堡按鈕 (left-menu-btn)」點擊事件
-// ============================================================================
 document.addEventListener('DOMContentLoaded', () => {
     const menuBtn = document.getElementById('left-menu-btn');
-    if (!menuBtn) return;
 
-    menuBtn.addEventListener('click', () => {
+    // 1. 安全檢查：如果找不到按鈕就報錯停止
+    if (!menuBtn) {
+        console.error('Menu button not found!');
+        return;
+    }
+
+    // 2. 清除 HTML 可能殘留的 onclick 設定
+    menuBtn.onclick = null;
+
+    // 3. 綁定點擊事件
+    menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        const isExpanded = menuBtn.classList.toggle('is-expanded');
+
+        document.body.classList.toggle('menu-active', isExpanded);
+        // 🟢 新增：賦予專屬類別，徹底避免 CSS :has() 導致的當機
+        document.body.classList.toggle('hamburger-active', isExpanded);
+
+        if (isExpanded) {
+            console.log('Menu: Expanded (Open)');
+        } else {
+            console.log('Menu: Collapsed (Close)');
+        }
+    });
+
+    // 4. 點擊 Esc 鍵關閉
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && menuBtn.classList.contains('is-expanded')) {
+            menuBtn.classList.remove('is-expanded');
+            document.body.classList.remove('menu-active');
+            // 🟢 新增：同步移除專屬類別
+            document.body.classList.remove('hamburger-active');
+            console.log('Menu: Closed by ESC');
+        }
+    });
+});
+
+// ============================================================================
+// 🟢 歷史紀錄抓取引擎 (附加模組)
+// ============================================================================
+
+// 1. 使用「事件委派 (Event Delegation)」全域監聽，保證不破壞原本的選單開關邏輯
+document.addEventListener('click', (event) => {
+    // 確保點擊的是漢堡按鈕 (包含點到裡面的 SVG 圖示也能精準捕捉)
+    const menuBtn = event.target.closest('#left-menu-btn');
+    if (menuBtn) {
+        // 給母艦選單的進場動畫 300 毫秒的時間展開，避免 DOM 還沒準備好
         setTimeout(() => {
             let historyContainer = document.getElementById('history-content-area');
 
+            // 如果畫面上還沒有歷史紀錄容器，動態建立一個
             if (!historyContainer) {
                 historyContainer = document.createElement('div');
                 historyContainer.id = 'history-content-area';
                 historyContainer.style.cssText = 'margin-top: 24px; width: 100%; padding: 0 16px; box-sizing: border-box;';
 
+                // 智慧尋找你的母艦選單容器
                 const menuBody = document.querySelector('.menu-card-inner') || 
                                  document.querySelector('.main-menu-container') || 
                                  document.body; 
@@ -23,19 +69,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 menuBody.appendChild(historyContainer);
             }
 
+            // 觸發防彈版 API 引擎
             fetchAndRenderHistory('history-content-area');
-        }, 150); 
-    });
+        }, 300); 
+    }
 });
 
-// ============================================================================
-// 🟢 2. 歷史紀錄抓取引擎 (防彈版：Promise.allSettled)
-// ============================================================================
+// 2. 防彈版歷史紀錄抓取 API (Promise.allSettled)
 async function fetchAndRenderHistory(containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    // A. 鋪上骨架屏
+    // A. 鋪上美觀的骨架屏
     container.innerHTML = `
         <div class="history-loading-state" style="padding: 30px 20px; text-align: center; color: var(--text-secondary);">
             <div style="opacity: 0.6; margin-bottom: 12px; display: flex; justify-content: center;">
@@ -49,9 +94,9 @@ async function fetchAndRenderHistory(containerId) {
     `;
 
     try {
-        const fetchTasks = []; // 裝載所有請求任務的清單
+        const fetchTasks = [];
 
-        // B. 蒐集畫面上所有卡片的 ID，並組裝專屬的網址
+        // B. 蒐集常駐卡片並組裝動態網址
         if (window.appRailwayData && window.appRailwayData.length > 0) {
             window.appRailwayData.forEach(card => {
                 if (card.targetLineIds) {
@@ -59,23 +104,19 @@ async function fetchAndRenderHistory(containerId) {
                         const isFlight = card.isFlightCard;
                         const type = isFlight ? 'flight' : 'railway';
                         
-                        // 針對你提到的航班 ID 問題，做個簡單的防呆猜測
-                        // 如果是飛機，嘗試加上 Departure_ (如果原本沒有的話)，具體看你後端怎麼吃
+                        // 飛機 ID 防呆處理 (嘗試加上 Departure_)
                         let finalId = id;
                         if (isFlight && !id.includes('Departure_') && !id.includes('Arrival_')) {
-                             // 這裡假設預設抓出發，如果你們有 isDeparture 屬性可以改用 card.isDeparture ? 'Departure_' : 'Arrival_'
                             finalId = `Departure_${id}`; 
                         }
 
-                        // 💡 你提供的完美動態網址結構！
                         const url = `https://tsukinkanban-odpt.onrender.com/api/history/${type}/${finalId}`;
 
-                        // 取得顯示名稱
                         const routeName = (window.MasterRouteDictionary && window.MasterRouteDictionary[id]) 
                                      ? window.MasterRouteDictionary[id].name 
                                      : (card.name || finalId);
 
-                        // 🚀 將請求封裝成獨立的 Promise (把錯誤全部攔截在裡面)
+                        // 發送請求，並在內部把 404/CORS 錯誤默默吃掉，不讓系統崩潰
                         const requestPromise = fetch(url)
                             .then(async res => {
                                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -83,9 +124,7 @@ async function fetchAndRenderHistory(containerId) {
                                 return { name: routeName, data: data };
                             })
                             .catch(err => {
-                                // 💡 魔法就在這裡：就算發生 CORS 錯誤，也不會報錯中斷！
-                                // 只會默默在 Console 留個紀錄，然後回傳 null，假裝沒歷史紀錄而已。
-                                console.warn(`[History] ${routeName} 無法取得資料 (可能是後端無資料導致的 CORS 阻擋):`, err);
+                                console.warn(`[History] ${routeName} 無法取得資料 (可能是後端無資料導致的 CORS):`, err);
                                 return null; 
                             });
 
@@ -103,16 +142,14 @@ async function fetchAndRenderHistory(containerId) {
             return;
         }
 
-        // C. 🚀 終極防護：Promise.allSettled
-        // 等待所有請求跑完，不管是成功還是失敗，絕不當機！
+        // C. Promise.allSettled 魔法：成功失敗我都等，絕不當機！
         const results = await Promise.allSettled(fetchTasks);
 
-        // D. 過濾出成功的資料，並去除 null 的空資料
+        // D. 篩選出成功的真實資料
         const validHistoryList = [];
         results.forEach(result => {
             if (result.status === 'fulfilled' && result.value !== null) {
                 const info = result.value;
-                // 確認回傳的 JSON 真的有內容 (陣列有長度 或 物件有 key)
                 if ((Array.isArray(info.data) && info.data.length > 0) || 
                     (typeof info.data === 'object' && Object.keys(info.data).length > 0)) {
                     validHistoryList.push(info);
@@ -124,8 +161,7 @@ async function fetchAndRenderHistory(containerId) {
         renderHistoryUI(container, validHistoryList);
 
     } catch (error) {
-        // 因為上面已經做了最高級別的攔截，這裡幾乎不會被觸發了，除非斷網
-        console.error('[History Engine] 嚴重錯誤:', error);
+        console.error('[History Engine] 嚴重網路錯誤:', error);
         container.innerHTML = `
             <div style="padding: 30px 20px; text-align: center; color: #ff453a; font-size: 0.9em; font-weight: 600; border: 1px solid rgba(255,69,58,0.2); border-radius: 16px; background: rgba(255,69,58,0.05);">
                 ⚠️ ネットワークエラーが発生しました
@@ -133,9 +169,7 @@ async function fetchAndRenderHistory(containerId) {
     }
 }
 
-// ============================================================================
-// 🟢 3. 畫面渲染函式 (UI Renderer)
-// ============================================================================
+// 3. UI 渲染模組
 function renderHistoryUI(container, historyList) {
     let htmlStr = '<div class="history-list-wrapper" style="display: flex; flex-direction: column; gap: 12px;">';
     
@@ -146,7 +180,6 @@ function renderHistoryUI(container, historyList) {
             const routeName = info.name;
             const historyData = info.data;
 
-            // 智慧排版引擎：自適應陣列或物件結構
             let historyHtml = '';
             if (Array.isArray(historyData)) {
                 historyHtml = historyData.map(h => `
