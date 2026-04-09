@@ -137,8 +137,8 @@ function getDynamicTheme(hex, opacity = 1) {
 
     if (isLight) {
         // 💡 修正：將飽和度降至 25 (避免濁色)，亮度壓低至 25 (創造極高對比)
-        const textS = hsl.s > 5 ? 25 : 0; 
-        const textL = 25; 
+        const textS = hsl.s > 5 ? 25 : 0;
+        const textL = 25;
 
         textColor = `hsl(${hsl.h}, ${textS}%, ${textL}%)`;
         textSecondary = `hsl(${hsl.h}, ${textS}%, ${textL + 25}%)`;
@@ -2263,7 +2263,9 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                 let isTextAbnormal = !isNormalMsg && (statusInfo.status_text.includes("異常") || msg.includes("遅延") || (statusInfo.status_type && statusInfo.status_type.includes("見合わせ")) || (statusInfo.status_type && statusInfo.status_type.includes("運転変更")));
 
                 // 🌟 新版精準燈號判定邏輯
-                if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
+                if (statusInfo.status_type === "通信エラー") {
+                    isAttentionLocal = true; hasAttention = true; // ✨ 將斷線降級為注意狀態，不再觸發紅燈 ❌
+                } else if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
                     isErrorLocal = true; hasError = true;
                 } else if (statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし" || statusInfo.status_type === "更新中...") {
                     isAttentionLocal = true; hasAttention = true;

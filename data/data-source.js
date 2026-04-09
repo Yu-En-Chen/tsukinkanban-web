@@ -67,7 +67,7 @@ export const dataSourceContent = `
                             <p style="color: var(--text-main); font-weight: 600; margin: 0 0 6px 0;">完全対応（遅延分数あり）</p>
                             <ul style="color: var(--text-secondary); margin: 0; padding-left: 20px; line-height: 1.6;">
                                 <li>東京都交通局
-                                （都営浅草線、都営三田線、都営新宿線、都営大江戸線）</li>
+                                （都営浅草線、都営三田線、都営新宿線、都営大江戸線、都電荒川線）</li>
                                 <li>横浜市交通局
                                 （横浜ブルーライン、横浜グリーンライン）</li>
                                 <li>日本航空</li>
@@ -83,6 +83,7 @@ export const dataSourceContent = `
                                 <li>首都圏新都市鉄道（つくばエクスプレス）</li>
                                 <li>多摩都市モノレール（多摩モノレール）</li>
                                 <li>東京メトロ（半蔵門線、副都心線、南北線、千代田線、東西線、日比谷線、丸ノ内線、銀座線、有楽町線）</li>
+                                <li>東京都交通局（日暮里・舎人ライナー）</li>
                             </ul>
                         </div>
 
