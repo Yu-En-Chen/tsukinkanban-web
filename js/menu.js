@@ -64,19 +64,25 @@ function generateHistoryHTML() {
             let items = [];
             if (Array.isArray(data)) {
                 data.forEach(item => items.push(`<span>${item}</span>`));
-            } else if (typeof data === 'object') {
+            } else if (typeof data === 'object' && data !== null) { // 加上 null 防呆比較安全
                 for (const [key, val] of Object.entries(data)) {
+                    
+                    // ==========================================
+                    // ✨ 核心修改：遇到這些不需要顯示的欄位，直接跳過不畫出來
+                    // ==========================================
+                    if (key === 'timestamp' || key === 'route_id') {
+                        continue;
+                    }
+
                     if (key.includes('odpt.') || key.includes('Departure_') || key.includes('Arrival_')) {
                         if (typeof val === 'object') items = items.concat(parseData(val));
                     } else {
                         let displayVal = typeof val === 'object' ? JSON.stringify(val) : val;
-                        let valColor = displayVal.includes('遅延') || displayVal.includes('見合') ? '#ff453a' : 'inherit';
                         
-                        // 🟢 優化重點：加入了 width: 100%, flex: 1, min-width: 0 以及 word-break 確保長文字完美折行
                         items.push(`
                             <div style="display: flex; gap: 12px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid rgba(128,128,128,0.15); width: 100%;">
                                 <span style="font-family: monospace; font-size: 0.9em; opacity: 0.6; width: 60px; flex-shrink: 0;">${key}</span>
-                                <span style="font-weight: 500; font-size: 0.95em; color: ${valColor}; word-break: break-word; overflow-wrap: break-word; flex: 1; min-width: 0; line-height: 1.4;">${displayVal}</span>
+                                <span style="font-weight: 500; font-size: 0.95em; color: inherit; word-break: break-word; overflow-wrap: break-word; flex: 1; min-width: 0; line-height: 1.4;">${displayVal}</span>
                             </div>
                         `);
                     }
