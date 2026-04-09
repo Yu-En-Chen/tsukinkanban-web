@@ -191,9 +191,20 @@ window.openUniversalPage = function(title, contentHTML) {
 window.closeUniversalPage = function(closeAll = false) {
     document.body.classList.remove('universal-active');
 
-    // ✨ 核心邏輯：如果使用者按下 X (closeAll 為 true)，且主選單還開著，就一起關掉它！
-    if (closeAll && document.body.classList.contains('main-menu-active')) {
-        window.toggleMainMenu();
+    if (closeAll) {
+        // 1. 如果右側主選單還開著，一起關掉它
+        if (document.body.classList.contains('main-menu-active')) {
+            window.toggleMainMenu();
+        }
+        
+        // 🟢 2. 新增：如果左側歷史選單開著，也一併還原它的動畫狀態
+        if (document.body.classList.contains('hamburger-active')) {
+            const menuBtn = document.getElementById('left-menu-btn');
+            if (menuBtn) {
+                menuBtn.classList.remove('is-expanded');
+            }
+            document.body.classList.remove('menu-active', 'hamburger-active');
+        }
     }
 
     if (window.navigator.vibrate) window.navigator.vibrate(5);
