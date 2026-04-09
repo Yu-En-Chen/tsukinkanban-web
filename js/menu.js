@@ -1,4 +1,5 @@
 // menu.js - 左側選單互動邏輯
+import { loadHistoryInto } from './history-api.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const menuBtn = document.getElementById('left-menu-btn');
@@ -214,3 +215,35 @@ function renderHistoryUI(container, historyList) {
     htmlStr += '</div>';
     container.innerHTML = htmlStr;
 }
+
+// ============================================================================
+// 🟢 歷史紀錄 UI 注入外掛
+// ============================================================================
+document.addEventListener('click', (event) => {
+    // 監聽是否點擊了左上角的漢堡按鈕
+    const menuBtn = event.target.closest('#left-menu-btn');
+    if (menuBtn) {
+        // 延遲 300 毫秒，等待你原本的 menu.js 把通用面板的 DOM 都建立、渲染完畢
+        setTimeout(() => {
+            // 尋找你通用面板的容器 (會自動尋找畫面上最適合的容器)
+            const panelContainer = document.querySelector('.menu-card-inner') || 
+                                   document.querySelector('.main-menu-container') || 
+                                   document.body;
+
+            // 建立一個專屬的 div 給歷史紀錄使用
+            let historyBox = document.getElementById('history-extension-box');
+            if (!historyBox) {
+                historyBox = document.createElement('div');
+                historyBox.id = 'history-extension-box';
+                // 加上一點間距，讓它乖乖排在 supporter 等其他內容的下方
+                historyBox.style.cssText = 'width: 100%; margin-top: 16px; padding: 0 16px; box-sizing: border-box;';
+                
+                // 將這個空盒子塞進通用面板的最底部
+                panelContainer.appendChild(historyBox);
+            }
+
+            // 喚醒 API 引擎，把資料灌進這個盒子裡！
+            loadHistoryInto(historyBox);
+        }, 300);
+    }
+});
