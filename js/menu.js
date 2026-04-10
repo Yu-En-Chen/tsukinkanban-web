@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================================================
-// 🟢 歷史紀錄：HTML 視圖生成器 (卡片分類手風琴版)
+// 🟢 歷史紀錄：HTML 視圖生成器 (全圓角膠囊美學版)
 // ============================================================================
 function generateHistoryHTML() {
     const historyList = window.appHistoryCache;
@@ -53,22 +53,24 @@ function generateHistoryHTML() {
         return '<div style="text-align: center; color: var(--text-secondary, #8e8e93); font-size: 0.9em; padding: 20px;">履歴データがありません</div>';
     }
 
-    // 1. ✨ 注入專屬 CSS：打造 iOS 風格的絲滑手風琴選單 (支援自動適應深淺色模式)
+    // 1. ✨ 注入專屬 CSS：動態形變的膠囊選單
     let htmlStr = `
         <style>
             .history-group {
                 background: rgba(128, 128, 128, 0.08);
-                border-radius: 14px;
+                border-radius: 100px; /* ✨ 閉合時：完美的膠囊形狀 (左右正圓) */
                 overflow: hidden;
                 border: 1px solid rgba(128, 128, 128, 0.15);
                 margin-bottom: 12px;
-                transition: background 0.3s;
+                /* 讓圓角與背景色在點擊時有果凍般的平滑過渡 */
+                transition: all 0.17s cubic-bezier(0.4, 0, 0.2, 1);
             }
             .history-group[open] {
                 background: rgba(128, 128, 128, 0.15);
+                border-radius: 28px; /* ✨ 展開時：稍微減少圓角弧度，避免底下內容被切斷 */
             }
             .history-summary {
-                padding: 16px;
+                padding: 14px 24px; /* ✨ 左右增加 padding (24px) 來完美貼合大圓角 */
                 font-weight: 600;
                 font-size: 1.05em;
                 color: inherit;
@@ -99,7 +101,7 @@ function generateHistoryHTML() {
                 margin-top: 4px;
             }
             .history-content {
-                padding: 0 16px 20px 16px;
+                padding: 0 24px 24px 24px; /* ✨ 配合上方的左右 24px 間距 */
                 display: flex;
                 flex-direction: column;
                 gap: 24px;
@@ -110,7 +112,8 @@ function generateHistoryHTML() {
                 to { opacity: 1; transform: translateY(0); }
             }
         </style>
-        <div style="padding-bottom: 40px;">
+        
+        <div style="padding-top: 18px; padding-bottom: 40px;">
     `;
 
     // 2. 將資料依據卡片名稱進行分群 (Grouping)
@@ -139,19 +142,16 @@ function generateHistoryHTML() {
     let isFirstGroup = true;
 
     for (const [cardName, routes] of Object.entries(groupedData)) {
-        // 過濾掉該卡片底下完全沒有歷史更新的路線
         const validRoutes = routes.filter(info => Array.isArray(info.data) && info.data.length > 0);
         if (validRoutes.length === 0) continue;
 
-        // 預設將第一個包含資料的資料夾打開，其他折疊
         const isOpen = isFirstGroup ? 'open' : '';
         isFirstGroup = false;
 
         htmlStr += `
             <details class="history-group" ${isOpen}>
                 <summary class="history-summary">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0a84ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                    <div style="display: flex; align-items: center;">
                         ${cardName}
                     </div>
                 </summary>
