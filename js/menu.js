@@ -216,29 +216,33 @@ function generateHistoryHTML() {
                             <span style="width: 6px; height: 6px; background: #0a84ff; border-radius: 50%;"></span>
                             ${info.name}
                         </div>
-                        <div style="display: flex; flex-direction: column; gap: 16px; padding-left: 14px; border-left: 2px solid rgba(128,128,128,0.25); margin-left: 3px;">
+                        <div style="display: flex; flex-direction: column; gap: 12px; padding-left: 14px; border-left: 2px solid rgba(128,128,128,0.25); margin-left: 3px;">
                 `;
 
                 snapshots.forEach((snapshot, index) => {
                     const opacity = index === 0 ? '1' : '0.6';
                     
-                    // ✨ 核心升級：偵測這筆紀錄是不是「平常運転」
+                    // ✨ 核心修復：加入歷史紀錄之間的「虛線分隔線」，打破視覺黏連
+                    const isLast = index === snapshots.length - 1;
+                    // 如果不是最後一筆，就在底部加上虛線與 Padding
+                    const dividerStyle = isLast ? '' : 'border-bottom: 1px dashed rgba(128, 128, 128, 0.25); padding-bottom: 12px;';
+
                     const isNormalOperation = snapshot.status_text && (snapshot.status_text.includes('平常') || snapshot.status_text.includes('通常'));
 
                     if (isNormalOperation) {
-                        // 🟢 超極簡模式：如果是平常運転，放棄直列排版！直接將文字與時間「左右對齊」塞進同一行
+                        // 🟢 將 dividerStyle 綁定到外層 div
                         let snapHtml = `
-                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; opacity: ${opacity};">
+                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; opacity: ${opacity}; ${dividerStyle}">
                                 <span style="font-weight: 500; font-size: 0.95em; color: inherit;">${snapshot.status_text}</span>
                                 ${snapshot.update_time ? `<span style="font-size: 0.75em; opacity: 0.45;">${snapshot.update_time}</span>` : ''}
                             </div>
                         `;
                         routeHtml += snapHtml;
-                        return; // 🛑 提早結束這回合！跳過後面的迴圈，徹底不產生任何多餘的 div 或空隙
+                        return; 
                     }
 
-                    // 🔴 異常模式：維持原本的詳細直列排版 (會保留 gap: 8px 用來斷行)
-                    let snapHtml = `<div style="display: flex; flex-direction: column; gap: 8px; opacity: ${opacity};">`;
+                    // 🔴 異常狀態的區塊也綁定 dividerStyle
+                    let snapHtml = `<div style="display: flex; flex-direction: column; gap: 8px; opacity: ${opacity}; ${dividerStyle}">`;
                     
                     for (const [k, v] of Object.entries(snapshot)) {
                         if (skipKeys.includes(k) || v === null || v === "") continue;
