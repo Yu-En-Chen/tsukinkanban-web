@@ -2267,7 +2267,7 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                     isAttentionLocal = true; hasAttention = true; // ✨ 將斷線降級為注意狀態，不再觸發紅燈 ❌
                 } else if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
                     isErrorLocal = true; hasError = true;
-                } else if (statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし" || statusInfo.status_type === "更新中...") {
+                } else if (statusInfo.status_type === "非対応" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし" || statusInfo.status_type === "更新中...") {
                     isAttentionLocal = true; hasAttention = true;
                 } else if (delay > 0) {
                     // 👉 有具體延遲分鐘數時的判斷：
