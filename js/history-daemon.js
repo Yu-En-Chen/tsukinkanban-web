@@ -64,7 +64,14 @@ async function fetchHistoryDaemon() {
                     const req = fetch(url).then(async res => {
                         if (!res.ok) throw new Error(`HTTP ${res.status}`);
                         const json = await res.json();
-                        return { name: routeName, data: json.history || [] };
+                        
+                        // ✨ 升級：把這張卡片的 ID 與名稱也綁定到資料上，供前端進行資料夾分類
+                        return { 
+                            cardId: card.id, 
+                            cardName: card.name || card.title || '卡片路線', // 自動抓取你在設定裡命名的卡片名稱
+                            name: routeName, 
+                            data: json.history || [] 
+                        };
                     }).catch(() => null);
                     
                     fetchTasks.push(req);

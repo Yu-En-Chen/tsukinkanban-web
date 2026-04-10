@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const historyHTML = generateHistoryHTML();
         if (window.openUniversalPage) {
             // ✨ 換上專業的日文標題
-            window.openUniversalPage('通知・履歴', historyHTML);
+            window.openUniversalPage('通知・履歴（Beta）', historyHTML);
         }
     });
 
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================================================
-// 🟢 歷史紀錄：HTML 視圖生成器 (淺色模式修復 & 時間極簡版)
+// 🟢 歷史紀錄：HTML 視圖生成器 (卡片分類手風琴版)
 // ============================================================================
 function generateHistoryHTML() {
     const historyList = window.appHistoryCache;
@@ -53,12 +53,77 @@ function generateHistoryHTML() {
         return '<div style="text-align: center; color: var(--text-secondary, #8e8e93); font-size: 0.9em; padding: 20px;">履歴データがありません</div>';
     }
 
-    let htmlStr = '<div style="display: flex; flex-direction: column; gap: 24px; padding-bottom: 40px;">';
+    // 1. ✨ 注入專屬 CSS：打造 iOS 風格的絲滑手風琴選單 (支援自動適應深淺色模式)
+    let htmlStr = `
+        <style>
+            .history-group {
+                background: rgba(128, 128, 128, 0.08);
+                border-radius: 14px;
+                overflow: hidden;
+                border: 1px solid rgba(128, 128, 128, 0.15);
+                margin-bottom: 12px;
+                transition: background 0.3s;
+            }
+            .history-group[open] {
+                background: rgba(128, 128, 128, 0.15);
+            }
+            .history-summary {
+                padding: 16px;
+                font-weight: 600;
+                font-size: 1.05em;
+                color: inherit;
+                cursor: pointer;
+                list-style: none; /* 隱藏原生箭頭 */
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                user-select: none;
+            }
+            .history-summary::-webkit-details-marker {
+                display: none; /* 針對 Safari 隱藏原生箭頭 */
+            }
+            /* 自訂精緻箭頭 */
+            .history-summary::after {
+                content: '';
+                display: inline-block;
+                width: 8px;
+                height: 8px;
+                border-right: 2px solid rgba(128,128,128,0.8);
+                border-bottom: 2px solid rgba(128,128,128,0.8);
+                transform: rotate(45deg);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                margin-right: 4px;
+            }
+            .history-group[open] .history-summary::after {
+                transform: rotate(225deg);
+                margin-top: 4px;
+            }
+            .history-content {
+                padding: 0 16px 20px 16px;
+                display: flex;
+                flex-direction: column;
+                gap: 24px;
+                animation: slideDown 0.3s ease-out forwards;
+            }
+            @keyframes slideDown {
+                from { opacity: 0; transform: translateY(-5px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        </style>
+        <div style="padding-bottom: 40px;">
+    `;
 
-    // 🚫 定義不需要顯示的系統雜訊欄位 (✨ 加入 update_time 攔截，不讓它當成普通欄位印出)
+    // 2. 將資料依據卡片名稱進行分群 (Grouping)
+    const groupedData = {};
+    historyList.forEach(info => {
+        const groupName = info.cardName || 'その他の路線';
+        if (!groupedData[groupName]) {
+            groupedData[groupName] = [];
+        }
+        groupedData[groupName].push(info);
+    });
+
     const skipKeys = ['timestamp', 'route_id', 'type', 'fid', 'airport', 'url', 'status_type', 'advanced_details', 'update_time'];
-    
-    // 🌐 翻譯字典
     const keyMap = {
         'delay_minutes': '遅延',
         'scheduled': '定刻',
@@ -70,67 +135,83 @@ function generateHistoryHTML() {
         'note': ''         
     };
 
-    historyList.forEach(info => {
-        if (!Array.isArray(info.data) || info.data.length === 0) return;
+    // 3. 渲染出一個個的手風琴資料夾
+    let isFirstGroup = true;
 
-        const snapshots = info.data.slice().reverse().slice(0, 3);
+    for (const [cardName, routes] of Object.entries(groupedData)) {
+        // 過濾掉該卡片底下完全沒有歷史更新的路線
+        const validRoutes = routes.filter(info => Array.isArray(info.data) && info.data.length > 0);
+        if (validRoutes.length === 0) continue;
 
-        // ✨ 修正 1：移除 color: #fff 改用 inherit。並將 border-left 改為中性灰色透明，確保在淺色模式也清晰可見
-        let routeHtml = `
-            <div>
-                <div style="font-weight: 700; font-size: 1.05em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: inherit;">
-                    <span style="width: 8px; height: 8px; background: #0a84ff; border-radius: 50%;"></span>
-                    ${info.name}
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 16px; padding-left: 14px; border-left: 2px solid rgba(128,128,128,0.25); margin-left: 3px;">
+        // 預設將第一個包含資料的資料夾打開，其他折疊
+        const isOpen = isFirstGroup ? 'open' : '';
+        isFirstGroup = false;
+
+        htmlStr += `
+            <details class="history-group" ${isOpen}>
+                <summary class="history-summary">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0a84ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                        ${cardName}
+                    </div>
+                </summary>
+                <div class="history-content">
         `;
 
-        snapshots.forEach((snapshot, index) => {
-            // 第一筆 (最新) 保持全亮，舊的歷史紀錄稍微變暗
-            const opacity = index === 0 ? '1' : '0.6';
+        // 在資料夾內部渲染該卡片專屬的路線
+        validRoutes.forEach(info => {
+            const snapshots = info.data.slice().reverse().slice(0, 3);
 
-            // ✨ 修正 2：徹底移除了本地端計算「xx:xx 更新」的邏輯
-            let snapHtml = `<div style="display: flex; flex-direction: column; gap: 8px; opacity: ${opacity};">`;
-            
-            for (const [k, v] of Object.entries(snapshot)) {
-                if (skipKeys.includes(k) || v === null || v === "") continue;
+            let routeHtml = `
+                <div>
+                    <div style="font-weight: 700; font-size: 0.95em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: inherit; opacity: 0.9;">
+                        <span style="width: 6px; height: 6px; background: #0a84ff; border-radius: 50%;"></span>
+                        ${info.name}
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 16px; padding-left: 14px; border-left: 2px solid rgba(128,128,128,0.25); margin-left: 3px;">
+            `;
 
-                let label = keyMap[k] !== undefined ? keyMap[k] : k;
-                let displayVal = v;
+            snapshots.forEach((snapshot, index) => {
+                const opacity = index === 0 ? '1' : '0.6';
+                let snapHtml = `<div style="display: flex; flex-direction: column; gap: 8px; opacity: ${opacity};">`;
+                
+                for (const [k, v] of Object.entries(snapshot)) {
+                    if (skipKeys.includes(k) || v === null || v === "") continue;
 
-                if (k === 'delay_minutes') {
-                    if (v === 0) continue; 
-                    displayVal = `${v} 分`;
+                    let label = keyMap[k] !== undefined ? keyMap[k] : k;
+                    let displayVal = v;
+
+                    if (k === 'delay_minutes') {
+                        if (v === 0) continue; 
+                        displayVal = `${v} 分`;
+                    }
+
+                    if (label === '') {
+                        snapHtml += `<div style="font-weight: 500; font-size: 0.95em; color: inherit; word-break: break-word; overflow-wrap: break-word; line-height: 1.5;">${displayVal}</div>`;
+                    } else {
+                        snapHtml += `
+                            <div style="display: flex; gap: 12px; align-items: baseline; width: 100%;">
+                                <span style="font-family: monospace; font-size: 0.85em; opacity: 0.6; width: 55px; flex-shrink: 0;">${label}</span>
+                                <span style="font-weight: 500; font-size: 0.95em; color: inherit; word-break: break-word; overflow-wrap: break-word; flex: 1; min-width: 0; line-height: 1.4;">${displayVal}</span>
+                            </div>
+                        `;
+                    }
                 }
 
-                if (label === '') {
-                    snapHtml += `
-                        <div style="font-weight: 500; font-size: 0.95em; color: inherit; word-break: break-word; overflow-wrap: break-word; line-height: 1.5;">
-                            ${displayVal}
-                        </div>
-                    `;
-                } else {
-                    snapHtml += `
-                        <div style="display: flex; gap: 12px; align-items: baseline; width: 100%;">
-                            <span style="font-family: monospace; font-size: 0.85em; opacity: 0.6; width: 55px; flex-shrink: 0;">${label}</span>
-                            <span style="font-weight: 500; font-size: 0.95em; color: inherit; word-break: break-word; overflow-wrap: break-word; flex: 1; min-width: 0; line-height: 1.4;">${displayVal}</span>
-                        </div>
-                    `;
+                if (snapshot.update_time) {
+                    snapHtml += `<div style="text-align: right; font-size: 0.75em; opacity: 0.45; margin-top: 2px;">${snapshot.update_time}</div>`;
                 }
-            }
 
-            // ✨ 修正 3：把原生 API 提供的事件時間 (update_time) 取出，不做任何修飾，直接放在右下角
-            if (snapshot.update_time) {
-                snapHtml += `<div style="text-align: right; font-size: 0.75em; opacity: 0.45; margin-top: 2px;">${snapshot.update_time}</div>`;
-            }
+                snapHtml += `</div>`;
+                routeHtml += snapHtml;
+            });
 
-            snapHtml += `</div>`;
-            routeHtml += snapHtml;
+            routeHtml += `</div></div>`;
+            htmlStr += routeHtml;
         });
 
-        routeHtml += `</div></div>`;
-        htmlStr += routeHtml;
-    });
+        htmlStr += `</div></details>`;
+    }
 
     htmlStr += '</div>';
     return htmlStr;
