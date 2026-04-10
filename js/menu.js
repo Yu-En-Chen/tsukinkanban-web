@@ -208,7 +208,7 @@ function generateHistoryHTML() {
         }
     });
 
-    const skipKeys = ['timestamp', 'route_id', 'type', 'fid', 'airport', 'url', 'status_type', 'advanced_details', 'update_time'];
+    const skipKeys = ['timestamp', 'route_id', 'type', 'fid', 'airport', 'url', 'status_type', 'advanced_details', 'update_time', 'delay_minutes'];
     const keyMap = {
         'delay_minutes': '遅延', 'scheduled': '定刻', 'latest': '変更',
         'gate': '搭乗口', 'terminal': 'ターミナル', 'status_text': '', 
