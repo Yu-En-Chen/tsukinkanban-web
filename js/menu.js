@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================================================
-// 🟢 歷史紀錄：HTML 視圖生成器 (翻譯與過濾升級版)
+// 🟢 歷史紀錄：HTML 視圖生成器 (淺色模式修復 & 時間極簡版)
 // ============================================================================
 function generateHistoryHTML() {
     const historyList = window.appHistoryCache;
@@ -55,75 +55,61 @@ function generateHistoryHTML() {
 
     let htmlStr = '<div style="display: flex; flex-direction: column; gap: 24px; padding-bottom: 40px;">';
 
-    // 🚫 定義不需要顯示的系統雜訊欄位
-    const skipKeys = ['timestamp', 'route_id', 'type', 'fid', 'airport', 'url', 'status_type', 'advanced_details'];
+    // 🚫 定義不需要顯示的系統雜訊欄位 (✨ 加入 update_time 攔截，不讓它當成普通欄位印出)
+    const skipKeys = ['timestamp', 'route_id', 'type', 'fid', 'airport', 'url', 'status_type', 'advanced_details', 'update_time'];
     
-    // 🌐 翻譯字典 (如果設定為空字串 ''，則代表「不顯示標題，只顯示內文」)
+    // 🌐 翻譯字典
     const keyMap = {
         'delay_minutes': '遅延',
         'scheduled': '定刻',
         'latest': '変更',
         'gate': '搭乗口',
         'terminal': 'ターミナル',
-        'status_text': '', // 隱藏標題，只顯示如 "平常運転" 的字眼
-        'message': '',     // 隱藏標題，只顯示公告本文
-        'note': ''         // 隱藏標題，只顯示航班備註
+        'status_text': '', 
+        'message': '',     
+        'note': ''         
     };
 
     historyList.forEach(info => {
-        // 確保資料是陣列
         if (!Array.isArray(info.data) || info.data.length === 0) return;
 
-        // 反轉陣列讓最新資料在最上面，並限制最多顯示 3 筆歷史
         const snapshots = info.data.slice().reverse().slice(0, 3);
 
+        // ✨ 修正 1：移除 color: #fff 改用 inherit。並將 border-left 改為中性灰色透明，確保在淺色模式也清晰可見
         let routeHtml = `
             <div>
-                <div style="font-weight: 700; font-size: 1.05em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: #fff;">
+                <div style="font-weight: 700; font-size: 1.05em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: inherit;">
                     <span style="width: 8px; height: 8px; background: #0a84ff; border-radius: 50%;"></span>
                     ${info.name}
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 16px; padding-left: 14px; border-left: 2px solid rgba(255,255,255,0.15); margin-left: 3px;">
+                <div style="display: flex; flex-direction: column; gap: 16px; padding-left: 14px; border-left: 2px solid rgba(128,128,128,0.25); margin-left: 3px;">
         `;
 
         snapshots.forEach((snapshot, index) => {
-            // 轉換時間格式 (擷取時與分)
-            let timeStr = "";
-            if (snapshot.timestamp) {
-                const d = new Date(snapshot.timestamp);
-                timeStr = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-            }
-
-            // 第一筆 (最新) 保持全亮，舊的歷史紀錄讓它稍微變暗以區分層次
+            // 第一筆 (最新) 保持全亮，舊的歷史紀錄稍微變暗
             const opacity = index === 0 ? '1' : '0.6';
 
+            // ✨ 修正 2：徹底移除了本地端計算「xx:xx 更新」的邏輯
             let snapHtml = `<div style="display: flex; flex-direction: column; gap: 8px; opacity: ${opacity};">`;
             
-            if (timeStr) {
-                snapHtml += `<div style="font-size: 0.75em; color: #0a84ff; font-weight: 600; letter-spacing: 0.5px;">${timeStr} 更新</div>`;
-            }
-
             for (const [k, v] of Object.entries(snapshot)) {
                 if (skipKeys.includes(k) || v === null || v === "") continue;
 
                 let label = keyMap[k] !== undefined ? keyMap[k] : k;
                 let displayVal = v;
 
-                // 針對延遲時間做特別處理
                 if (k === 'delay_minutes') {
-                    if (v === 0) continue; // 沒有延遲(0)就不必顯示這一行了
+                    if (v === 0) continue; 
                     displayVal = `${v} 分`;
                 }
 
                 if (label === '') {
-                    // ✨ 標題為空：只顯示乾淨的內文 (自動換行防呆已經包含在內)
                     snapHtml += `
                         <div style="font-weight: 500; font-size: 0.95em; color: inherit; word-break: break-word; overflow-wrap: break-word; line-height: 1.5;">
                             ${displayVal}
                         </div>
                     `;
                 } else {
-                    // ✨ 有標題：顯示「標題 + 內文」 (使用你上回合要的 Flexbox 排版與自動換行)
                     snapHtml += `
                         <div style="display: flex; gap: 12px; align-items: baseline; width: 100%;">
                             <span style="font-family: monospace; font-size: 0.85em; opacity: 0.6; width: 55px; flex-shrink: 0;">${label}</span>
@@ -132,6 +118,12 @@ function generateHistoryHTML() {
                     `;
                 }
             }
+
+            // ✨ 修正 3：把原生 API 提供的事件時間 (update_time) 取出，不做任何修飾，直接放在右下角
+            if (snapshot.update_time) {
+                snapHtml += `<div style="text-align: right; font-size: 0.75em; opacity: 0.45; margin-top: 2px;">${snapshot.update_time}</div>`;
+            }
+
             snapHtml += `</div>`;
             routeHtml += snapHtml;
         });
