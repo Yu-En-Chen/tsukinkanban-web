@@ -63,11 +63,24 @@ async function fetchHistoryDaemon() {
             }
             // ==========================================
 
+            // ==========================================
             // 👇 只有「真正活在主畫面上、且肉眼可見」的卡片，才會來到這裡發請求
-            if (card.targetLineIds) {
-                card.targetLineIds.forEach(id => {
-                    const type = card.isFlightCard ? 'flight' : 'railway';
+            // ==========================================
+            
+            // 1. 精準辨識是否為飛機卡片
+            const isFlight = card.isFlightCard === true || card.isFlight === true || card.type === 'flight';
+            
+            // 2. ✨ 核心修復：完美兼容鐵路與飛機的路線 ID 陣列
+            const targetIds = card.targetLineIds || card.targetAirports || card.airports || (card.airport ? [card.airport] : []);
+
+            if (targetIds && targetIds.length > 0) {
+                targetIds.forEach(id => {
+                    const type = isFlight ? 'flight' : 'railway';
                     let finalId = id;
+                    
+                    if (isFlight && !id.includes('Departure_') && !id.includes('Arrival_')) {
+                        finalId = `Departure_${id}`; 
+                    }
 
                     const url = `https://tsukinkanban-odpt.onrender.com/api/history/${type}/${finalId}`;
                     let routeName = (window.MasterRouteDictionary && window.MasterRouteDictionary[id]) ? window.MasterRouteDictionary[id].name : id;
@@ -76,12 +89,11 @@ async function fetchHistoryDaemon() {
                     const req = fetch(url).then(async res => {
                         if (!res.ok) throw new Error(`HTTP ${res.status}`);
                         const json = await res.json();
-                        
-                        // ✨ 升級：把這張卡片的 ID 與名稱也綁定到資料上，供前端進行資料夾分類
                         return { 
                             cardId: card.id, 
-                            cardName: card.name || card.title || '卡片路線', // 自動抓取你在設定裡命名的卡片名稱
+                            cardName: card.name || card.title || '卡片路線',
                             name: routeName, 
+                            isFlight: isFlight, // ✨ 將「這是飛機」的標記傳送給選單
                             data: json.history || [] 
                         };
                     }).catch(() => null);
@@ -89,7 +101,7 @@ async function fetchHistoryDaemon() {
                     fetchTasks.push(req);
                 });
             }
-        });
+        }); // 結束 window.appRailwayData.forEach
 
         if (fetchTasks.length === 0) {
             window.appHistoryCache = [];

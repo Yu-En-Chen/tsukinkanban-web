@@ -252,18 +252,31 @@ function generateHistoryHTML() {
                     const isLatest = index === 0;
                     const opacity = isLatest ? '1' : '0.65';
                     const colorStyle = isLatest ? 'color: inherit;' : 'color: #8e8e93;';
+                    // ✨ 恢復：用來控制時間字體透明度的變數
                     const timeOpacity = isLatest ? '0.5' : '0.85'; 
-
+                    
                     const isLast = index === snapshots.length - 1;
                     const dividerStyle = isLast ? '' : 'border-bottom: 1px dashed rgba(128, 128, 128, 0.25); padding-bottom: 12px;';
 
-                    const isNormalOperation = snapshot.status_text && (snapshot.status_text.includes('平常') || snapshot.status_text.includes('通常'));
+                    // ==========================================
+                    // 飛機資料的「預處理」
+                    // ==========================================
+                    if (info.isFlight && snapshot.status && !snapshot.status_text) {
+                        snapshot.status_text = snapshot.status;
+                    }
+
+                    const isNormalOperation = snapshot.status_text && (
+                        snapshot.status_text.includes('平常') || 
+                        snapshot.status_text.includes('通常') ||
+                        (info.isFlight && (snapshot.status_text.includes('定刻') || snapshot.status_text.includes('On Time')))
+                    );
 
                     if (isNormalOperation) {
+                        // 🟢 正常狀態：恢復印出右邊的時間！
                         let snapHtml = `
                             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; opacity: ${opacity}; ${colorStyle} ${dividerStyle}">
                                 <span style="font-weight: 500; font-size: 0.95em; color: inherit;">${snapshot.status_text}</span>
-                                ${snapshot.update_time ? `<span style="font-size: 0.75em; opacity: ${timeOpacity};">${snapshot.update_time}</span>` : ''}
+                                ${snapshot.update_time ? `<span style="font-size: 0.75em; opacity: ${timeOpacity}; flex-shrink: 0;">${snapshot.update_time}</span>` : ''}
                             </div>
                         `;
                         routeHtml += snapHtml;
@@ -274,33 +287,39 @@ function generateHistoryHTML() {
                         snapshot.status_text = '運行異常あり';
                     }
 
+                    // 🔴 異常狀態區塊
                     let snapHtml = `<div style="display: flex; flex-direction: column; gap: 8px; opacity: ${opacity}; ${colorStyle} ${dividerStyle}">`;
-                    let isTimeRendered = false;
+                    let isTimeRendered = false; // ✨ 恢復：追蹤時間是否已經跟著標題印出了
 
                     for (const [k, v] of Object.entries(snapshot)) {
+                        // delay_minutes 一樣在 skipKeys 裡會被無視
                         if (skipKeys.includes(k) || v === null || v === "") continue;
+
+                        // 飛機極簡攔截器
+                        if (info.isFlight && k !== 'status_text' && k !== 'note') {
+                            continue; 
+                        }
 
                         let label = keyMap[k] !== undefined ? keyMap[k] : k;
                         let displayVal = v;
                         
-                        if (k === 'delay_minutes') {
-                            if (v === 0) continue; 
-                            displayVal = `${v} 分`;
-                        }
-
-                        if (label === '') {
-                            if (k === 'status_text') {
-                                snapHtml += `
-                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
-                                        <span style="font-weight: 500; font-size: 0.95em; color: inherit; word-break: break-word; overflow-wrap: break-word; line-height: 1.5; padding-right: 12px;">${displayVal}</span>
-                                        ${snapshot.update_time ? `<span style="font-size: 0.75em; opacity: ${timeOpacity}; flex-shrink: 0; padding-top: 2px;">${snapshot.update_time}</span>` : ''}
-                                    </div>
-                                `;
-                                isTimeRendered = true; 
-                            } else {
-                                snapHtml += `<div style="font-weight: 500; font-size: 0.95em; color: inherit; word-break: break-word; overflow-wrap: break-word; line-height: 1.5;">${displayVal}</div>`;
-                            }
+                        if (k === 'status_text') {
+                            // ✨ 恢復：把時間塞回主狀態標題的右邊對齊！
+                            snapHtml += `
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                                    <span style="font-weight: 500; font-size: 0.95em; color: inherit; word-break: break-word; overflow-wrap: break-word; line-height: 1.5; padding-right: 12px;">${displayVal}</span>
+                                    ${snapshot.update_time ? `<span style="font-size: 0.75em; opacity: ${timeOpacity}; flex-shrink: 0; padding-top: 2px;">${snapshot.update_time}</span>` : ''}
+                                </div>
+                            `;
+                            isTimeRendered = true;
+                        } else if (info.isFlight && k === 'note') {
+                            // 飛機的 note 公告
+                            snapHtml += `<div style="font-weight: 500; font-size: 0.9em; color: inherit; word-break: break-word; overflow-wrap: break-word; line-height: 1.5; opacity: 0.85;">${displayVal}</div>`;
+                        } else if (label === '') {
+                            // 鐵路無標籤文字
+                            snapHtml += `<div style="font-weight: 500; font-size: 0.95em; color: inherit; word-break: break-word; overflow-wrap: break-word; line-height: 1.5;">${displayVal}</div>`;
                         } else {
+                            // 鐵路有標籤文字
                             snapHtml += `
                                 <div style="display: flex; gap: 12px; align-items: baseline; width: 100%;">
                                     <span style="font-family: monospace; font-size: 0.85em; opacity: ${isLatest ? '0.6' : '0.85'}; width: 55px; flex-shrink: 0;">${label}</span>
@@ -310,9 +329,11 @@ function generateHistoryHTML() {
                         }
                     }
 
+                    // ✨ 恢復：如果剛好這筆資料沒有 status_text，就把時間補在最底下當備案
                     if (snapshot.update_time && !isTimeRendered) {
                         snapHtml += `<div style="text-align: right; font-size: 0.75em; opacity: ${timeOpacity}; margin-top: 2px;">${snapshot.update_time}</div>`;
                     }
+
                     snapHtml += `</div>`;
                     routeHtml += snapHtml;
                 });
