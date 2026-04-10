@@ -250,6 +250,9 @@ function generateHistoryHTML() {
                     // 🔴 異常狀態的詳細排版區塊
                     let snapHtml = `<div style="display: flex; flex-direction: column; gap: 8px; opacity: ${opacity}; ${dividerStyle}">`;
                     
+                    // ✨ 新增防呆標籤：用來記錄時間是不是已經提早印出來了
+                    let isTimeRendered = false;
+
                     for (const [k, v] of Object.entries(snapshot)) {
                         if (skipKeys.includes(k) || v === null || v === "") continue;
 
@@ -262,8 +265,21 @@ function generateHistoryHTML() {
                         }
 
                         if (label === '') {
-                            snapHtml += `<div style="font-weight: 500; font-size: 0.95em; color: inherit; word-break: break-word; overflow-wrap: break-word; line-height: 1.5;">${displayVal}</div>`;
+                            // ✨ 核心升級：當印到 status_text（例如: 運行異常あり）時，把時間拉上來左右對齊！
+                            if (k === 'status_text') {
+                                snapHtml += `
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                                        <span style="font-weight: 500; font-size: 0.95em; color: inherit; word-break: break-word; overflow-wrap: break-word; line-height: 1.5; padding-right: 12px;">${displayVal}</span>
+                                        ${snapshot.update_time ? `<span style="font-size: 0.75em; opacity: 0.45; flex-shrink: 0; padding-top: 2px;">${snapshot.update_time}</span>` : ''}
+                                    </div>
+                                `;
+                                isTimeRendered = true; // 標記：時間已經印過了！
+                            } else {
+                                // 其他沒有標題的純文字 (例如 message 公告)
+                                snapHtml += `<div style="font-weight: 500; font-size: 0.95em; color: inherit; word-break: break-word; overflow-wrap: break-word; line-height: 1.5;">${displayVal}</div>`;
+                            }
                         } else {
+                            // 帶有標籤的項目 (例如 遅延: 5分)
                             snapHtml += `
                                 <div style="display: flex; gap: 12px; align-items: baseline; width: 100%;">
                                     <span style="font-family: monospace; font-size: 0.85em; opacity: 0.6; width: 55px; flex-shrink: 0;">${label}</span>
@@ -273,7 +289,8 @@ function generateHistoryHTML() {
                         }
                     }
 
-                    if (snapshot.update_time) {
+                    // ✨ 如果時間沒有被塞進 status_text 裡面 (例如 API 剛好漏給了 status_text)，才把它印在最下面當備案
+                    if (snapshot.update_time && !isTimeRendered) {
                         snapHtml += `<div style="text-align: right; font-size: 0.75em; opacity: 0.45; margin-top: 2px;">${snapshot.update_time}</div>`;
                     }
                     snapHtml += `</div>`;
