@@ -220,37 +220,43 @@ function generateHistoryHTML() {
                 `;
 
                 snapshots.forEach((snapshot, index) => {
-                    const opacity = index === 0 ? '1' : '0.6';
+                    // ==========================================
+                    // ✨ 核心升級：視覺層級強化 (不改變字體大小)
+                    // ==========================================
+                    const isLatest = index === 0;
                     
+                    // 最新資料：100% 不透明度；舊資料：稍微降低透明度至 65%
+                    const opacity = isLatest ? '1' : '0.65';
+                    
+                    // 最新資料：跟隨主色 (亮白/深黑)；舊資料：強制套用 iOS 次要灰 (#8e8e93)
+                    const colorStyle = isLatest ? 'color: inherit;' : 'color: #8e8e93;';
+                    
+                    // 為了避免舊資料的「時間」因為外層變灰又變透明而導致完全看不見，我們做一個透明度補償
+                    const timeOpacity = isLatest ? '0.5' : '0.85'; 
+
                     const isLast = index === snapshots.length - 1;
                     const dividerStyle = isLast ? '' : 'border-bottom: 1px dashed rgba(128, 128, 128, 0.25); padding-bottom: 12px;';
 
-                    // 1. 平常運転的極簡化邏輯
                     const isNormalOperation = snapshot.status_text && (snapshot.status_text.includes('平常') || snapshot.status_text.includes('通常'));
 
                     if (isNormalOperation) {
+                        // 🟢 將 colorStyle 綁定到外層，裡面的 inherit 就會自動變成灰色
                         let snapHtml = `
-                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; opacity: ${opacity}; ${dividerStyle}">
+                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; opacity: ${opacity}; ${colorStyle} ${dividerStyle}">
                                 <span style="font-weight: 500; font-size: 0.95em; color: inherit;">${snapshot.status_text}</span>
-                                ${snapshot.update_time ? `<span style="font-size: 0.75em; opacity: 0.45;">${snapshot.update_time}</span>` : ''}
+                                ${snapshot.update_time ? `<span style="font-size: 0.75em; opacity: ${timeOpacity};">${snapshot.update_time}</span>` : ''}
                             </div>
                         `;
                         routeHtml += snapHtml;
                         return; 
                     }
 
-                    // ==========================================
-                    // ✨ 核心升級：2. 「運行異常あり」的淨化邏輯
-                    // ==========================================
                     if (snapshot.status_text && snapshot.status_text.includes('運行異常あり')) {
-                        // 強制覆寫原本帶有雜訊的文字，只保留乾淨的本體
                         snapshot.status_text = '運行異常あり';
                     }
 
-                    // 🔴 異常狀態的詳細排版區塊
-                    let snapHtml = `<div style="display: flex; flex-direction: column; gap: 8px; opacity: ${opacity}; ${dividerStyle}">`;
-                    
-                    // ✨ 新增防呆標籤：用來記錄時間是不是已經提早印出來了
+                    // 🔴 異常狀態的區塊也綁定 colorStyle
+                    let snapHtml = `<div style="display: flex; flex-direction: column; gap: 8px; opacity: ${opacity}; ${colorStyle} ${dividerStyle}">`;
                     let isTimeRendered = false;
 
                     for (const [k, v] of Object.entries(snapshot)) {
@@ -265,33 +271,29 @@ function generateHistoryHTML() {
                         }
 
                         if (label === '') {
-                            // ✨ 核心升級：當印到 status_text（例如: 運行異常あり）時，把時間拉上來左右對齊！
                             if (k === 'status_text') {
                                 snapHtml += `
                                     <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
                                         <span style="font-weight: 500; font-size: 0.95em; color: inherit; word-break: break-word; overflow-wrap: break-word; line-height: 1.5; padding-right: 12px;">${displayVal}</span>
-                                        ${snapshot.update_time ? `<span style="font-size: 0.75em; opacity: 0.45; flex-shrink: 0; padding-top: 2px;">${snapshot.update_time}</span>` : ''}
+                                        ${snapshot.update_time ? `<span style="font-size: 0.75em; opacity: ${timeOpacity}; flex-shrink: 0; padding-top: 2px;">${snapshot.update_time}</span>` : ''}
                                     </div>
                                 `;
-                                isTimeRendered = true; // 標記：時間已經印過了！
+                                isTimeRendered = true; 
                             } else {
-                                // 其他沒有標題的純文字 (例如 message 公告)
                                 snapHtml += `<div style="font-weight: 500; font-size: 0.95em; color: inherit; word-break: break-word; overflow-wrap: break-word; line-height: 1.5;">${displayVal}</div>`;
                             }
                         } else {
-                            // 帶有標籤的項目 (例如 遅延: 5分)
                             snapHtml += `
                                 <div style="display: flex; gap: 12px; align-items: baseline; width: 100%;">
-                                    <span style="font-family: monospace; font-size: 0.85em; opacity: 0.6; width: 55px; flex-shrink: 0;">${label}</span>
+                                    <span style="font-family: monospace; font-size: 0.85em; opacity: ${isLatest ? '0.6' : '0.85'}; width: 55px; flex-shrink: 0;">${label}</span>
                                     <span style="font-weight: 500; font-size: 0.95em; color: inherit; word-break: break-word; overflow-wrap: break-word; flex: 1; min-width: 0; line-height: 1.4;">${displayVal}</span>
                                 </div>
                             `;
                         }
                     }
 
-                    // ✨ 如果時間沒有被塞進 status_text 裡面 (例如 API 剛好漏給了 status_text)，才把它印在最下面當備案
                     if (snapshot.update_time && !isTimeRendered) {
-                        snapHtml += `<div style="text-align: right; font-size: 0.75em; opacity: 0.45; margin-top: 2px;">${snapshot.update_time}</div>`;
+                        snapHtml += `<div style="text-align: right; font-size: 0.75em; opacity: ${timeOpacity}; margin-top: 2px;">${snapshot.update_time}</div>`;
                     }
                     snapHtml += `</div>`;
                     routeHtml += snapHtml;
