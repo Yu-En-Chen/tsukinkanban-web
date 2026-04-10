@@ -222,15 +222,13 @@ function generateHistoryHTML() {
                 snapshots.forEach((snapshot, index) => {
                     const opacity = index === 0 ? '1' : '0.6';
                     
-                    // ✨ 核心修復：加入歷史紀錄之間的「虛線分隔線」，打破視覺黏連
                     const isLast = index === snapshots.length - 1;
-                    // 如果不是最後一筆，就在底部加上虛線與 Padding
                     const dividerStyle = isLast ? '' : 'border-bottom: 1px dashed rgba(128, 128, 128, 0.25); padding-bottom: 12px;';
 
+                    // 1. 平常運転的極簡化邏輯
                     const isNormalOperation = snapshot.status_text && (snapshot.status_text.includes('平常') || snapshot.status_text.includes('通常'));
 
                     if (isNormalOperation) {
-                        // 🟢 將 dividerStyle 綁定到外層 div
                         let snapHtml = `
                             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; opacity: ${opacity}; ${dividerStyle}">
                                 <span style="font-weight: 500; font-size: 0.95em; color: inherit;">${snapshot.status_text}</span>
@@ -241,7 +239,15 @@ function generateHistoryHTML() {
                         return; 
                     }
 
-                    // 🔴 異常狀態的區塊也綁定 dividerStyle
+                    // ==========================================
+                    // ✨ 核心升級：2. 「運行異常あり」的淨化邏輯
+                    // ==========================================
+                    if (snapshot.status_text && snapshot.status_text.includes('運行異常あり')) {
+                        // 強制覆寫原本帶有雜訊的文字，只保留乾淨的本體
+                        snapshot.status_text = '運行異常あり';
+                    }
+
+                    // 🔴 異常狀態的詳細排版區塊
                     let snapHtml = `<div style="display: flex; flex-direction: column; gap: 8px; opacity: ${opacity}; ${dividerStyle}">`;
                     
                     for (const [k, v] of Object.entries(snapshot)) {
