@@ -1,4 +1,4 @@
-// js/menu.js - 左側選單互動邏輯
+// js/menu.js - 左側選單互動邏輯 (響應式自動更新版)
 
 document.addEventListener('DOMContentLoaded', () => {
     const menuBtn = document.getElementById('left-menu-btn');
@@ -11,21 +11,51 @@ document.addEventListener('DOMContentLoaded', () => {
     menuBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault();
-
-        console.log('Menu Clicked - Opening Universal Page for History');
         
         const historyHTML = generateHistoryHTML();
         if (window.openUniversalPage) {
             window.openUniversalPage('通知・履歴', historyHTML);
-            
-            // ✨ 核心升級：在通用底版渲染完成後，啟動我們的平滑手風琴引擎！
+            setTimeout(() => { initHistoryAccordions(); }, 50);
+        }
+    });
+
+    // ============================================================================
+    // 🚀 核心升級：監聽小精靈的「資料更新」廣播，達成無縫即時替換
+    // ============================================================================
+    window.addEventListener('historyDataUpdated', () => {
+        const root = document.getElementById('history-ui-root');
+        
+        // 只有當「歷史紀錄面板」正在開啟狀態時，我們才執行畫面更新
+        if (root && document.body.classList.contains('universal-active')) {
+            console.log('🔄 背景資料已同步！正在無縫更新歷史紀錄畫面...');
+
+            // 1. 記憶術：掃描現在有哪些資料夾是「展開」的，把名字記下來
+            const openGroups = Array.from(root.querySelectorAll('.history-group.is-open'))
+                                    .map(g => g.querySelector('.history-summary').innerText.trim());
+
+            // 2. 瞬間替換 HTML
+            root.outerHTML = generateHistoryHTML();
+
+            // 3. 重新啟動動畫引擎，並恢復使用者的閱讀進度
             setTimeout(() => {
                 initHistoryAccordions();
+                
+                const newRoot = document.getElementById('history-ui-root');
+                if (newRoot) {
+                    const newGroups = newRoot.querySelectorAll('.history-group');
+                    newGroups.forEach(group => {
+                        const title = group.querySelector('.history-summary').innerText.trim();
+                        // 如果這個資料夾剛剛是打開的，我們就偷偷用程式點擊它一次，讓它優雅地滑開
+                        if (openGroups.includes(title)) {
+                            group.querySelector('.history-summary').click();
+                        }
+                    });
+                }
             }, 50);
         }
     });
 
-    // 2. Esc 鍵直接連動關閉通用底版
+    // Esc 鍵直接連動關閉通用底版
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             if (window.closeUniversalPage) window.closeUniversalPage(true);
@@ -34,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================================================
-// ✨ 物理級滑順動畫引擎 (取代原生生硬的 details)
+// ✨ 物理級滑順動畫引擎
 // ============================================================================
 function initHistoryAccordions() {
     const groups = document.querySelectorAll('.history-group');
@@ -47,11 +77,8 @@ function initHistoryAccordions() {
             const isOpen = group.classList.contains('is-open');
             
             if (isOpen) {
-                // 🔴 準備關閉：先將高度鎖定為當前的 Pixel 數值，讓瀏覽器有動畫的基準點
                 wrapper.style.maxHeight = wrapper.scrollHeight + 'px'; 
                 group.classList.remove('is-open');
-                
-                // 利用 double requestAnimationFrame 強制瀏覽器重繪，再縮成 0
                 requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
                         wrapper.style.maxHeight = '0px';
@@ -59,12 +86,9 @@ function initHistoryAccordions() {
                     });
                 });
             } else {
-                // 🟢 準備展開：計算內部真實高度並設定
                 group.classList.add('is-open');
                 wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
                 wrapper.style.opacity = '1';
-                
-                // 動畫結束後（0.35s），解除高度鎖定，以防未來內部文字換行導致被裁切
                 setTimeout(() => {
                     if (group.classList.contains('is-open')) {
                         wrapper.style.maxHeight = 'none';
@@ -75,21 +99,26 @@ function initHistoryAccordions() {
     });
 }
 
-/// ============================================================================
-// 🟢 歷史紀錄：HTML 視圖生成器 (平常運転極簡化版)
+// ============================================================================
+// 🟢 歷史紀錄：HTML 視圖生成器
 // ============================================================================
 function generateHistoryHTML() {
     const historyList = window.appHistoryCache;
 
+    // 🟢 替整個 UI 包上一層帶有 ID 的防護罩，這是為了讓上面的更新引擎可以整包替換
+    let rootHtmlStr = '<div id="history-ui-root" style="width: 100%;">';
+
+    // 狀態 1：完全沒有快取資料 (等待首度同步)
     if (!historyList) {
-        return `
+        rootHtmlStr += `
             <div style="text-align: center; color: var(--text-secondary, #8e8e93); font-size: 0.9em; padding: 20px;">
                 <div style="opacity: 0.6; margin-bottom: 8px; display: flex; justify-content: center;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                 </div>
                 履歴データを同期中...
                 <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
-            </div>`;
+            </div></div>`;
+        return rootHtmlStr;
     }
 
     let htmlStr = `
@@ -216,22 +245,13 @@ function generateHistoryHTML() {
                             <span style="width: 6px; height: 6px; background: #0a84ff; border-radius: 50%;"></span>
                             ${info.name}
                         </div>
-                        <div style="display: flex; flex-direction: column; gap: 12px; padding-left: 14px; border-left: 2px solid rgba(128,128,128,0.25); margin-left: 3px;">
+                        <div style="display: flex; flex-direction: column; gap: 16px; padding-left: 14px; border-left: 2px solid rgba(128,128,128,0.25); margin-left: 3px;">
                 `;
 
                 snapshots.forEach((snapshot, index) => {
-                    // ==========================================
-                    // ✨ 核心升級：視覺層級強化 (不改變字體大小)
-                    // ==========================================
                     const isLatest = index === 0;
-                    
-                    // 最新資料：100% 不透明度；舊資料：稍微降低透明度至 65%
                     const opacity = isLatest ? '1' : '0.65';
-                    
-                    // 最新資料：跟隨主色 (亮白/深黑)；舊資料：強制套用 iOS 次要灰 (#8e8e93)
                     const colorStyle = isLatest ? 'color: inherit;' : 'color: #8e8e93;';
-                    
-                    // 為了避免舊資料的「時間」因為外層變灰又變透明而導致完全看不見，我們做一個透明度補償
                     const timeOpacity = isLatest ? '0.5' : '0.85'; 
 
                     const isLast = index === snapshots.length - 1;
@@ -240,7 +260,6 @@ function generateHistoryHTML() {
                     const isNormalOperation = snapshot.status_text && (snapshot.status_text.includes('平常') || snapshot.status_text.includes('通常'));
 
                     if (isNormalOperation) {
-                        // 🟢 將 colorStyle 綁定到外層，裡面的 inherit 就會自動變成灰色
                         let snapHtml = `
                             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; opacity: ${opacity}; ${colorStyle} ${dividerStyle}">
                                 <span style="font-weight: 500; font-size: 0.95em; color: inherit;">${snapshot.status_text}</span>
@@ -255,7 +274,6 @@ function generateHistoryHTML() {
                         snapshot.status_text = '運行異常あり';
                     }
 
-                    // 🔴 異常狀態的區塊也綁定 colorStyle
                     let snapHtml = `<div style="display: flex; flex-direction: column; gap: 8px; opacity: ${opacity}; ${colorStyle} ${dividerStyle}">`;
                     let isTimeRendered = false;
 
@@ -307,9 +325,11 @@ function generateHistoryHTML() {
     }
 
     if (groupedData.size === 0) {
-        return '<div style="text-align: center; color: var(--text-secondary, #8e8e93); font-size: 0.9em; padding: 20px;">表示可能な路線がありません</div>';
+        rootHtmlStr += '<div style="text-align: center; color: var(--text-secondary, #8e8e93); font-size: 0.9em; padding: 20px;">表示可能な路線がありません</div></div>';
+        return rootHtmlStr;
     }
 
     htmlStr += '</div>';
-    return htmlStr;
+    rootHtmlStr += htmlStr + '</div>';
+    return rootHtmlStr;
 }

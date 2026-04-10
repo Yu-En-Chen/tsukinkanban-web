@@ -93,6 +93,15 @@ async function fetchHistoryDaemon() {
 
         if (fetchTasks.length === 0) {
             window.appHistoryCache = [];
+            Promise.all(fetchTasks).then(results => {
+                // 原本儲存快取的程式碼
+                window.appHistoryCache = results.filter(r => r !== null);
+                
+                // ==========================================
+                // ✨ 核心升級：廣播訊號！告訴全宇宙「資料更新好了！」
+                // ==========================================
+                window.dispatchEvent(new CustomEvent('historyDataUpdated'));
+            });
             window.isFetchingHistory = false;
             setTimeout(fetchHistoryDaemon, 60000); // 1分鐘後再檢查一次
             return;
@@ -112,6 +121,15 @@ async function fetchHistoryDaemon() {
         // 🚀 升級 2：將最新資料寫入全域變數，並在 Console 報告好消息
         window.appHistoryCache = validList;
         console.log("🟢 [History Daemon] 背景精靈抓取成功！已存入記憶體：", validList);
+        Promise.all(fetchTasks).then(results => {
+            // 原本儲存快取的程式碼
+            window.appHistoryCache = results.filter(r => r !== null);
+            
+            // ==========================================
+            // ✨ 核心升級：廣播訊號！告訴全宇宙「資料更新好了！」
+            // ==========================================
+            window.dispatchEvent(new CustomEvent('historyDataUpdated'));
+        });
 
     } catch (err) {
         console.error("🔴 [History Daemon] 背景更新失敗:", err);
