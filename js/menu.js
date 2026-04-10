@@ -153,14 +153,29 @@ function generateHistoryHTML() {
         <div style="padding-top: 18px; padding-bottom: 40px;">
     `;
 
-    // 2. 將資料依據卡片名稱進行分群
-    const groupedData = {};
+    // 2. ✨ 將資料嚴格依據主畫面的「當前順序」與「顯示狀態」進行分群
+    const groupedData = new Map(); // 使用 Map 來完美繼承 JavaScript 陣列的插入順序
+
+    // 步驟 A：以主畫面卡片為藍圖，建立排序資料夾
+    if (window.appRailwayData) {
+        window.appRailwayData.forEach(card => {
+            // 🟢 瞬間同步：如果卡片在設定中被隱藏，連資料夾都不建！舊快取會自動失效
+            if (card.isHidden === true || card.hidden === true || card.enabled === false || card.visible === false) return;
+            
+            const cardName = card.name || card.title || 'その他の路線';
+            groupedData.set(card.id, {
+                cardName: cardName,
+                routes: []
+            });
+        });
+    }
+
+    // 步驟 B：將快取裡的歷史紀錄，精準投遞到合法資料夾中
     historyList.forEach(info => {
-        const groupName = info.cardName || 'その他の路線';
-        if (!groupedData[groupName]) {
-            groupedData[groupName] = [];
+        // 只有當這筆歷史紀錄的歸屬卡片目前「活在主畫面上」時，才放入資料夾
+        if (info.cardId && groupedData.has(info.cardId)) {
+            groupedData.get(info.cardId).routes.push(info);
         }
-        groupedData[groupName].push(info);
     });
 
     const skipKeys = ['timestamp', 'route_id', 'type', 'fid', 'airport', 'url', 'status_type', 'advanced_details', 'update_time'];
@@ -175,9 +190,12 @@ function generateHistoryHTML() {
         'note': ''         
     };
 
-    // 3. 渲染出一個個的手風琴資料夾
-    for (const [cardName, routes] of Object.entries(groupedData)) {
-        const validRoutes = routes.filter(info => Array.isArray(info.data) && info.data.length > 0);
+    // 3. ✨ 渲染出一個個的手風琴資料夾 (改為讀取 Map)
+    for (const [cardId, group] of groupedData.entries()) {
+        const cardName = group.cardName;
+        
+        // 過濾掉沒有實質歷史資料的路線
+        const validRoutes = group.routes.filter(info => Array.isArray(info.data) && info.data.length > 0);
         if (validRoutes.length === 0) continue;
 
         htmlStr += `
@@ -192,6 +210,7 @@ function generateHistoryHTML() {
                     <div class="history-content">
         `;
 
+        // 在資料夾內部渲染該卡片專屬的路線
         validRoutes.forEach(info => {
             const snapshots = info.data.slice().reverse().slice(0, 3);
 
