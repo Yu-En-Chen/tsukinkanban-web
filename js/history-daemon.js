@@ -32,7 +32,9 @@ async function fetchHistoryDaemon() {
 
                     const req = fetch(url).then(async res => {
                         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                        return { name: routeName, data: await res.json() };
+                        const json = await res.json();
+                        // ✨ 核心修正：只把真正包含資料的 history 陣列抽出來，如果沒有就給空陣列
+                        return { name: routeName, data: json.history || [] };
                     }).catch(() => null);
                     
                     fetchTasks.push(req);
