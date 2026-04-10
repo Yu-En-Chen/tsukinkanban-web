@@ -76,7 +76,7 @@ function initHistoryAccordions() {
 }
 
 // ============================================================================
-// 🟢 歷史紀錄：HTML 視圖生成器
+// 🟢 歷史紀錄：HTML 視圖生成器 (無形變極致滑順版)
 // ============================================================================
 function generateHistoryHTML() {
     const historyList = window.appHistoryCache;
@@ -96,23 +96,25 @@ function generateHistoryHTML() {
         return '<div style="text-align: center; color: var(--text-secondary, #8e8e93); font-size: 0.9em; padding: 20px;">履歴データがありません</div>';
     }
 
-    // 1. ✨ CSS 升級：專為 JS 動畫打造的過渡效果
+    // 1. ✨ CSS 升級：固定圓角，拔除形變抽搐感
     let htmlStr = `
         <style>
             .history-group {
                 background: rgba(128, 128, 128, 0.08);
-                border-radius: 100px; /* 閉合時：完美膠囊 */
+                /* ✨ 核心修正：固定 32px。閉合時它會自動形成完美膠囊，展開時會成為平滑拉長的大圓角 */
+                border-radius: 32px; 
                 overflow: hidden;
                 border: 1px solid rgba(128, 128, 128, 0.15);
                 margin-bottom: 12px;
-                transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1); /* ✨ 精調的彈性過渡曲線 */
+                /* ✨ 拔除了 border-radius 的動畫，現在只過渡背景色，視覺極度穩定 */
+                transition: background 0.35s ease; 
             }
             .history-group.is-open {
                 background: rgba(128, 128, 128, 0.15);
-                border-radius: 28px; /* 展開時：平滑變為圓角矩形 */
+                /* 🔴 不再改變 border-radius */
             }
             .history-summary {
-                padding: 14px 24px;
+                padding: 16px 24px; /* ✨ 稍微增加上下 padding，讓膠囊更飽滿完美 */
                 font-weight: 600;
                 font-size: 1.05em;
                 color: inherit;
@@ -124,9 +126,8 @@ function generateHistoryHTML() {
                 transition: opacity 0.2s;
             }
             .history-summary:active {
-                opacity: 0.7; /* 按下時的微回饋 */
+                opacity: 0.7; 
             }
-            /* 自訂精緻箭頭 */
             .history-arrow {
                 width: 8px;
                 height: 8px;
@@ -140,9 +141,8 @@ function generateHistoryHTML() {
                 transform: rotate(225deg);
                 margin-top: 4px;
             }
-            /* ✨ 動畫外掛層：負責精準控制高度與淡入淡出 */
             .history-content-wrapper {
-                max-height: 0px; /* 初始完美隱藏 */
+                max-height: 0px; 
                 opacity: 0;
                 overflow: hidden;
                 transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -180,12 +180,11 @@ function generateHistoryHTML() {
         'note': ''         
     };
 
-    // 3. 渲染出一個個的手風琴資料夾 (✨ 移除 isFirstGroup 邏輯，預設全部關閉)
+    // 3. 渲染出一個個的手風琴資料夾
     for (const [cardName, routes] of Object.entries(groupedData)) {
         const validRoutes = routes.filter(info => Array.isArray(info.data) && info.data.length > 0);
         if (validRoutes.length === 0) continue;
 
-        // ✨ 拋棄 <details> 標籤，改用純 <div> 配合 JS 引擎
         htmlStr += `
             <div class="history-group">
                 <div class="history-summary">
@@ -249,7 +248,7 @@ function generateHistoryHTML() {
             htmlStr += routeHtml;
         });
 
-        htmlStr += `</div></div></div>`; // 補齊 wrapper 與 group 的關閉標籤
+        htmlStr += `</div></div></div>`; 
     }
 
     htmlStr += '</div>';
