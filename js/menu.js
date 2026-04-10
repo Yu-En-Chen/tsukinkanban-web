@@ -75,8 +75,8 @@ function initHistoryAccordions() {
     });
 }
 
-// ============================================================================
-// 🟢 歷史紀錄：HTML 視圖生成器 (所見即所得 & 局部 Loading 版)
+/// ============================================================================
+// 🟢 歷史紀錄：HTML 視圖生成器 (平常運転極簡化版)
 // ============================================================================
 function generateHistoryHTML() {
     const historyList = window.appHistoryCache;
@@ -146,25 +146,20 @@ function generateHistoryHTML() {
     const groupedData = new Map();
     const hasAnyCardRendered = document.querySelector('.card') !== null;
 
-    // 1. ✨ 所見即所得：嚴格依照主畫面的「實體 DOM 狀態」來建立資料夾
     if (window.appRailwayData) {
         window.appRailwayData.forEach(card => {
             if (card.isHidden === true || card.hidden === true || card.enabled === false || card.visible === false) return;
             
-            // 加入視覺雷達：去畫面上找這張卡片
             let domCard = document.querySelector(`.card#${card.id}`) || 
                           document.querySelector(`.card#card-${card.id}`) || 
                           document.querySelector(`.card[data-id="${card.id}"]`);
             
-            if (!domCard) {
-                 domCard = document.getElementById(`card-${card.id}`); 
-            }
+            if (!domCard) domCard = document.getElementById(`card-${card.id}`); 
 
             if (!domCard) {
-                if (hasAnyCardRendered) return; // 畫面上有其他卡片，唯獨找不到它，代表被徹底移除
+                if (hasAnyCardRendered) return; 
             } else {
                 const style = window.getComputedStyle(domCard);
-                // 如果它在畫面上被 CSS 隱藏了，選單裡的資料夾也瞬間蒸發！
                 if (style.display === 'none' || domCard.classList.contains('hidden') || domCard.closest('.hidden')) {
                     return; 
                 }
@@ -191,7 +186,6 @@ function generateHistoryHTML() {
         'message': '', 'note': ''         
     };
 
-    // 2. ✨ 渲染資料夾
     for (const [cardId, group] of groupedData.entries()) {
         const cardName = group.cardName;
         const validRoutes = group.routes.filter(info => Array.isArray(info.data) && info.data.length > 0);
@@ -206,7 +200,6 @@ function generateHistoryHTML() {
                     <div class="history-content">
         `;
 
-        // ✨ 核心 UX 升級：如果剛新增/解開隱藏，還沒抓到資料，不要隱藏資料夾！顯示局部 Loading！
         if (validRoutes.length === 0) {
             htmlStr += `
                 <div style="text-align: center; padding: 12px 0; color: inherit; opacity: 0.5; font-size: 0.9em; display: flex; flex-direction: column; align-items: center; gap: 8px;">
@@ -215,7 +208,6 @@ function generateHistoryHTML() {
                 </div>
             `;
         } else {
-            // 渲染正常的歷史資料
             validRoutes.forEach(info => {
                 const snapshots = info.data.slice().reverse().slice(0, 3);
                 let routeHtml = `
@@ -231,8 +223,14 @@ function generateHistoryHTML() {
                     const opacity = index === 0 ? '1' : '0.6';
                     let snapHtml = `<div style="display: flex; flex-direction: column; gap: 8px; opacity: ${opacity};">`;
                     
+                    // ✨ 核心升級：偵測這筆紀錄是不是「平常運転」
+                    const isNormalOperation = snapshot.status_text && (snapshot.status_text.includes('平常') || snapshot.status_text.includes('通常'));
+
                     for (const [k, v] of Object.entries(snapshot)) {
                         if (skipKeys.includes(k) || v === null || v === "") continue;
+
+                        // ✨ 攔截器：如果發現是平常運転，我們「只」允許畫出 status_text，其餘全部跳過！
+                        if (isNormalOperation && k !== 'status_text') continue;
 
                         let label = keyMap[k] !== undefined ? keyMap[k] : k;
                         let displayVal = v;
@@ -267,7 +265,6 @@ function generateHistoryHTML() {
         htmlStr += `</div></div></div>`; 
     }
 
-    // 防呆：如果全畫面上沒有半張卡片，顯示空狀態
     if (groupedData.size === 0) {
         return '<div style="text-align: center; color: var(--text-secondary, #8e8e93); font-size: 0.9em; padding: 20px;">表示可能な路線がありません</div>';
     }
