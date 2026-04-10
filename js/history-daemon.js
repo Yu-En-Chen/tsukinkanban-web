@@ -18,6 +18,28 @@ async function fetchHistoryDaemon() {
 
         const fetchTasks = [];
         window.appRailwayData.forEach(card => {
+            
+            // ==========================================
+            // ✨ 效能優化：智慧攔截「已隱藏」的卡片
+            // ==========================================
+            // 1. 資料層攔截：如果屬性被標記為隱藏，直接跳過
+            if (card.isHidden === true || card.hidden === true) return;
+
+            // 2. 視圖層攔截：去畫面上找這張卡片，如果被 CSS 隱藏了 (例如 display: none)，也跳過
+            // (支援多種常見的 ID 命名與 data 綁定方式，確保一定找得到)
+            const domCard = document.getElementById(card.id) || 
+                            document.getElementById(`card-${card.id}`) || 
+                            document.querySelector(`[data-id="${card.id}"]`);
+            
+            if (domCard) {
+                const style = window.getComputedStyle(domCard);
+                // 只要卡片在畫面上消失，就不浪費資源去抓它的 API
+                if (style.display === 'none' || domCard.classList.contains('hidden')) {
+                    return; // return 在 forEach 中等同於 continue，會跳過這張卡片進入下一張
+                }
+            }
+            // ==========================================
+
             if (card.targetLineIds) {
                 card.targetLineIds.forEach(id => {
                     const type = card.isFlightCard ? 'flight' : 'railway';
@@ -33,7 +55,7 @@ async function fetchHistoryDaemon() {
                     const req = fetch(url).then(async res => {
                         if (!res.ok) throw new Error(`HTTP ${res.status}`);
                         const json = await res.json();
-                        // ✨ 核心修正：只把真正包含資料的 history 陣列抽出來，如果沒有就給空陣列
+                        // 只抽取有效的 history 陣列
                         return { name: routeName, data: json.history || [] };
                     }).catch(() => null);
                     
