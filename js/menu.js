@@ -129,17 +129,12 @@ function generateHistoryHTML() {
                 opacity: 0.7; 
             }
             .history-arrow {
-                width: 8px;
-                height: 8px;
-                border-right: 2px solid rgba(128,128,128,0.8);
-                border-bottom: 2px solid rgba(128,128,128,0.8);
-                transform: rotate(45deg);
                 transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-                margin-right: 4px;
+                opacity: 0.6; /* 讓圖示稍微帶有透明度，質感更好 */
             }
+            /* ✨ 展開時，讓 SVG 旋轉 180 度變成向上 */
             .history-group.is-open .history-arrow {
-                transform: rotate(225deg);
-                margin-top: 4px;
+                transform: rotate(-180deg);
             }
             .history-content-wrapper {
                 max-height: 0px; 
@@ -191,7 +186,7 @@ function generateHistoryHTML() {
                     <div style="display: flex; align-items: center;">
                         ${cardName}
                     </div>
-                    <div class="history-arrow"></div>
+                    <svg class="history-arrow" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                 </div>
                 <div class="history-content-wrapper">
                     <div class="history-content">
