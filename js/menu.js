@@ -1,16 +1,13 @@
-// js/menu.js - 左側選單互動邏輯 (極簡觸發器版)
+// js/menu.js - 左側選單互動邏輯
 
 document.addEventListener('DOMContentLoaded', () => {
     const menuBtn = document.getElementById('left-menu-btn');
 
-    if (!menuBtn) {
-        console.error('Menu button not found!');
-        return;
-    }
+    if (!menuBtn) return;
 
     menuBtn.onclick = null;
 
-    // 1. 純粹的觸發按鈕，不再切換任何狀態
+    // 1. 純粹的觸發按鈕
     menuBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault();
@@ -19,8 +16,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const historyHTML = generateHistoryHTML();
         if (window.openUniversalPage) {
-            // ✨ 換上專業的日文標題
-            window.openUniversalPage('通知・履歴（Beta）', historyHTML);
+            window.openUniversalPage('通知・履歴', historyHTML);
+            
+            // ✨ 核心升級：在通用底版渲染完成後，啟動我們的平滑手風琴引擎！
+            setTimeout(() => {
+                initHistoryAccordions();
+            }, 50);
         }
     });
 
@@ -33,7 +34,49 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================================================
-// 🟢 歷史紀錄：HTML 視圖生成器 (全圓角膠囊美學版)
+// ✨ 物理級滑順動畫引擎 (取代原生生硬的 details)
+// ============================================================================
+function initHistoryAccordions() {
+    const groups = document.querySelectorAll('.history-group');
+    
+    groups.forEach(group => {
+        const summary = group.querySelector('.history-summary');
+        const wrapper = group.querySelector('.history-content-wrapper');
+        
+        summary.addEventListener('click', () => {
+            const isOpen = group.classList.contains('is-open');
+            
+            if (isOpen) {
+                // 🔴 準備關閉：先將高度鎖定為當前的 Pixel 數值，讓瀏覽器有動畫的基準點
+                wrapper.style.maxHeight = wrapper.scrollHeight + 'px'; 
+                group.classList.remove('is-open');
+                
+                // 利用 double requestAnimationFrame 強制瀏覽器重繪，再縮成 0
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        wrapper.style.maxHeight = '0px';
+                        wrapper.style.opacity = '0';
+                    });
+                });
+            } else {
+                // 🟢 準備展開：計算內部真實高度並設定
+                group.classList.add('is-open');
+                wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
+                wrapper.style.opacity = '1';
+                
+                // 動畫結束後（0.35s），解除高度鎖定，以防未來內部文字換行導致被裁切
+                setTimeout(() => {
+                    if (group.classList.contains('is-open')) {
+                        wrapper.style.maxHeight = 'none';
+                    }
+                }, 350);
+            }
+        });
+    });
+}
+
+// ============================================================================
+// 🟢 歷史紀錄：HTML 視圖生成器
 // ============================================================================
 function generateHistoryHTML() {
     const historyList = window.appHistoryCache;
@@ -53,70 +96,69 @@ function generateHistoryHTML() {
         return '<div style="text-align: center; color: var(--text-secondary, #8e8e93); font-size: 0.9em; padding: 20px;">履歴データがありません</div>';
     }
 
-    // 1. ✨ 注入專屬 CSS：動態形變的膠囊選單
+    // 1. ✨ CSS 升級：專為 JS 動畫打造的過渡效果
     let htmlStr = `
         <style>
             .history-group {
                 background: rgba(128, 128, 128, 0.08);
-                border-radius: 100px; /* ✨ 閉合時：完美的膠囊形狀 (左右正圓) */
+                border-radius: 100px; /* 閉合時：完美膠囊 */
                 overflow: hidden;
                 border: 1px solid rgba(128, 128, 128, 0.15);
                 margin-bottom: 12px;
-                /* 讓圓角與背景色在點擊時有果凍般的平滑過渡 */
-                transition: all 0.17s cubic-bezier(0.4, 0, 0.2, 1);
+                transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1); /* ✨ 精調的彈性過渡曲線 */
             }
-            .history-group[open] {
+            .history-group.is-open {
                 background: rgba(128, 128, 128, 0.15);
-                border-radius: 28px; /* ✨ 展開時：稍微減少圓角弧度，避免底下內容被切斷 */
+                border-radius: 28px; /* 展開時：平滑變為圓角矩形 */
             }
             .history-summary {
-                padding: 14px 24px; /* ✨ 左右增加 padding (24px) 來完美貼合大圓角 */
+                padding: 14px 24px;
                 font-weight: 600;
                 font-size: 1.05em;
                 color: inherit;
                 cursor: pointer;
-                list-style: none; /* 隱藏原生箭頭 */
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
                 user-select: none;
+                transition: opacity 0.2s;
             }
-            .history-summary::-webkit-details-marker {
-                display: none; /* 針對 Safari 隱藏原生箭頭 */
+            .history-summary:active {
+                opacity: 0.7; /* 按下時的微回饋 */
             }
             /* 自訂精緻箭頭 */
-            .history-summary::after {
-                content: '';
-                display: inline-block;
+            .history-arrow {
                 width: 8px;
                 height: 8px;
                 border-right: 2px solid rgba(128,128,128,0.8);
                 border-bottom: 2px solid rgba(128,128,128,0.8);
                 transform: rotate(45deg);
-                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
                 margin-right: 4px;
             }
-            .history-group[open] .history-summary::after {
+            .history-group.is-open .history-arrow {
                 transform: rotate(225deg);
                 margin-top: 4px;
             }
+            /* ✨ 動畫外掛層：負責精準控制高度與淡入淡出 */
+            .history-content-wrapper {
+                max-height: 0px; /* 初始完美隱藏 */
+                opacity: 0;
+                overflow: hidden;
+                transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            }
             .history-content {
-                padding: 0 24px 24px 24px; /* ✨ 配合上方的左右 24px 間距 */
+                padding: 0 24px 24px 24px;
                 display: flex;
                 flex-direction: column;
                 gap: 24px;
-                animation: slideDown 0.3s ease-out forwards;
-            }
-            @keyframes slideDown {
-                from { opacity: 0; transform: translateY(-5px); }
-                to { opacity: 1; transform: translateY(0); }
             }
         </style>
         
         <div style="padding-top: 18px; padding-bottom: 40px;">
     `;
 
-    // 2. 將資料依據卡片名稱進行分群 (Grouping)
+    // 2. 將資料依據卡片名稱進行分群
     const groupedData = {};
     historyList.forEach(info => {
         const groupName = info.cardName || 'その他の路線';
@@ -138,27 +180,24 @@ function generateHistoryHTML() {
         'note': ''         
     };
 
-    // 3. 渲染出一個個的手風琴資料夾
-    let isFirstGroup = true;
-
+    // 3. 渲染出一個個的手風琴資料夾 (✨ 移除 isFirstGroup 邏輯，預設全部關閉)
     for (const [cardName, routes] of Object.entries(groupedData)) {
         const validRoutes = routes.filter(info => Array.isArray(info.data) && info.data.length > 0);
         if (validRoutes.length === 0) continue;
 
-        const isOpen = isFirstGroup ? 'open' : '';
-        isFirstGroup = false;
-
+        // ✨ 拋棄 <details> 標籤，改用純 <div> 配合 JS 引擎
         htmlStr += `
-            <details class="history-group" ${isOpen}>
-                <summary class="history-summary">
+            <div class="history-group">
+                <div class="history-summary">
                     <div style="display: flex; align-items: center;">
                         ${cardName}
                     </div>
-                </summary>
-                <div class="history-content">
+                    <div class="history-arrow"></div>
+                </div>
+                <div class="history-content-wrapper">
+                    <div class="history-content">
         `;
 
-        // 在資料夾內部渲染該卡片專屬的路線
         validRoutes.forEach(info => {
             const snapshots = info.data.slice().reverse().slice(0, 3);
 
@@ -210,7 +249,7 @@ function generateHistoryHTML() {
             htmlStr += routeHtml;
         });
 
-        htmlStr += `</div></details>`;
+        htmlStr += `</div></div></div>`; // 補齊 wrapper 與 group 的關閉標籤
     }
 
     htmlStr += '</div>';
