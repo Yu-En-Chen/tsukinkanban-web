@@ -74,7 +74,7 @@ export const dataSourceContent = `
                                 <li>全日空</li>
                             </ul>
                         </div>
-
+                        <br>
                         <div style="margin-bottom: 18px;">
                             <p style="color: var(--text-main); font-weight: 600; margin: 0 0 4px 0;">一部対応（公式テキストのみ）</p>
                             <p style="color: var(--text-secondary); margin: 0 0 6px 0; font-size: 0.8em;">遅延分数は取得できず、各社の発表テキストに依存します。</p>
@@ -84,14 +84,6 @@ export const dataSourceContent = `
                                 <li>多摩都市モノレール（多摩モノレール）</li>
                                 <li>東京メトロ（半蔵門線、副都心線、南北線、千代田線、東西線、日比谷線、丸ノ内線、銀座線、有楽町線）</li>
                                 <li>東京都交通局（日暮里・舎人ライナー）</li>
-                            </ul>
-                        </div>
-
-                        <div style="margin-bottom: 4px;">
-                            <p style="color: var(--text-main); font-weight: 600; margin: 0 0 4px 0;">要注意路線</p>
-                            <p style="color: var(--text-secondary); margin: 0 0 6px 0; font-size: 0.8em;">実測での情報更新が不安定な路線です。公式情報と併せて参考にしてください。</p>
-                            <ul style="color: var(--text-secondary); margin: 0; padding-left: 20px; line-height: 1.6;">
-                                <li>東京メトロ（全線）</li>
                             </ul>
                         </div>
 
