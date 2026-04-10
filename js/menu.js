@@ -221,19 +221,31 @@ function generateHistoryHTML() {
 
                 snapshots.forEach((snapshot, index) => {
                     const opacity = index === 0 ? '1' : '0.6';
-                    let snapHtml = `<div style="display: flex; flex-direction: column; gap: 8px; opacity: ${opacity};">`;
                     
                     // ✨ 核心升級：偵測這筆紀錄是不是「平常運転」
                     const isNormalOperation = snapshot.status_text && (snapshot.status_text.includes('平常') || snapshot.status_text.includes('通常'));
 
+                    if (isNormalOperation) {
+                        // 🟢 超極簡模式：如果是平常運転，放棄直列排版！直接將文字與時間「左右對齊」塞進同一行
+                        let snapHtml = `
+                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; opacity: ${opacity};">
+                                <span style="font-weight: 500; font-size: 0.95em; color: inherit;">${snapshot.status_text}</span>
+                                ${snapshot.update_time ? `<span style="font-size: 0.75em; opacity: 0.45;">${snapshot.update_time}</span>` : ''}
+                            </div>
+                        `;
+                        routeHtml += snapHtml;
+                        return; // 🛑 提早結束這回合！跳過後面的迴圈，徹底不產生任何多餘的 div 或空隙
+                    }
+
+                    // 🔴 異常模式：維持原本的詳細直列排版 (會保留 gap: 8px 用來斷行)
+                    let snapHtml = `<div style="display: flex; flex-direction: column; gap: 8px; opacity: ${opacity};">`;
+                    
                     for (const [k, v] of Object.entries(snapshot)) {
                         if (skipKeys.includes(k) || v === null || v === "") continue;
 
-                        // ✨ 攔截器：如果發現是平常運転，我們「只」允許畫出 status_text，其餘全部跳過！
-                        if (isNormalOperation && k !== 'status_text') continue;
-
                         let label = keyMap[k] !== undefined ? keyMap[k] : k;
                         let displayVal = v;
+                        
                         if (k === 'delay_minutes') {
                             if (v === 0) continue; 
                             displayVal = `${v} 分`;
