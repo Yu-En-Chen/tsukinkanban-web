@@ -16,46 +16,58 @@ async function fetchHistoryDaemon() {
             return;
         }
 
-        // 🚀 升級：用來確認主畫面是否「已經有卡片渲染出來」了
+        // 🚀 升級：確認主畫面是否「已經有卡片渲染出來」
         const hasAnyCardRendered = document.querySelector('.card') !== null;
 
         const fetchTasks = [];
         window.appRailwayData.forEach(card => {
             
             // ==========================================
-            // ✨ 效能優化：終極視圖攔截器 (修復幽靈卡片 Bug)
+            // ✨ 效能優化：終極防漏網智慧攔截器 (修復設定選單干擾 Bug)
             // ==========================================
-            // 1. 資料層攔截
-            if (card.isHidden === true || card.hidden === true) return;
+            // 1. 資料層擴充攔截：涵蓋各種常見的「關閉/隱藏」資料標籤
+            if (card.isHidden === true || 
+                card.hidden === true || 
+                card.enabled === false || 
+                card.visible === false || 
+                card.display === false) {
+                return; 
+            }
 
-            // 2. 尋找畫面上的實體卡片
-            const domCard = document.getElementById(card.id) || 
-                            document.getElementById(`card-${card.id}`) || 
-                            document.querySelector(`[data-id="${card.id}"]`);
+            // 2. ✨ 精準視覺尋找 (Scoped Selector)
+            // 強制只找帶有 .card 類別的元素，絕對不抓「設定選單」裡面的同名開關！
+            let domCard = document.querySelector(`.card#${card.id}`) || 
+                          document.querySelector(`.card#card-${card.id}`) || 
+                          document.querySelector(`.card[data-id="${card.id}"]`);
             
+            // 防呆：如果你的卡片忘記加上 .card 類別，退一步只找特定 ID 格式
             if (!domCard) {
-                // 🔴 關鍵修復：如果畫面已經畫好其他卡片了，但偏偏「找不到」這張卡片
-                // 代表這張卡片根本沒被產生在 HTML 裡 (被使用者的隱藏設定過濾掉了)
+                 domCard = document.getElementById(`card-${card.id}`); 
+            }
+
+            if (!domCard) {
+                // 🔴 如果畫面上已經有其他卡片了，但偏偏「找不到」這張主卡片
+                // 代表這張卡片被設定面板從 HTML 裡徹底移除了
                 if (hasAnyCardRendered) {
                     return; // 🛑 徹底終止！不發送 API
                 }
             } else {
-                // 如果卡片還存在 DOM 裡，檢查它是不是被 CSS 隱藏了 (例如 display: none)
+                // 🟢 檢查這張實體卡片是不是被加上了隱藏用的 class
                 const style = window.getComputedStyle(domCard);
-                if (style.display === 'none' || domCard.classList.contains('hidden') || domCard.closest('.hidden')) {
+                if (style.display === 'none' || 
+                    domCard.classList.contains('hidden') || 
+                    domCard.classList.contains('is-hidden') || 
+                    domCard.closest('.hidden')) {
                     return; // 🛑 隱藏中，不發送 API
                 }
             }
             // ==========================================
 
-            // 👇 只有「真正活在畫面上、且肉眼可見」的卡片，才會來到這裡發請求
+            // 👇 只有「真正活在主畫面上、且肉眼可見」的卡片，才會來到這裡發請求
             if (card.targetLineIds) {
                 card.targetLineIds.forEach(id => {
                     const type = card.isFlightCard ? 'flight' : 'railway';
                     let finalId = id;
-                    if (card.isFlightCard && !id.includes('Departure_') && !id.includes('Arrival_')) {
-                        finalId = `Departure_${id}`; 
-                    }
 
                     const url = `https://tsukinkanban-odpt.onrender.com/api/history/${type}/${finalId}`;
                     let routeName = (window.MasterRouteDictionary && window.MasterRouteDictionary[id]) ? window.MasterRouteDictionary[id].name : id;
