@@ -219,23 +219,41 @@ function generateHistoryHTML() {
         const validRoutes = group.routes.filter(info => Array.isArray(info.data) && info.data.length > 0);
 
         // ==========================================
-        // ✨ 核心升級：路線智慧排序引擎 (最新更新的路線置頂)
+        // ✨ 核心升級：跨夜智慧排序引擎 (凌晨 0~3 點完美置頂)
         // ==========================================
         validRoutes.sort((a, b) => {
-            // 取得 A 路線與 B 路線的「最新一筆」紀錄 (陣列的最後一個元素)
             const latestA = a.data[a.data.length - 1] || {};
             const latestB = b.data[b.data.length - 1] || {};
             
-            // 兼容抓取鐵路 (update_time) 或飛機 (system_updated) 的時間
             const timeA = latestA.update_time || latestA.system_updated || "";
             const timeB = latestB.update_time || latestB.system_updated || "";
             
-            // 使用字串比對進行「降冪排序」(時間越新的越上面)
-            // 因為 ISO 時間或 HH:MM:SS 格式都具備完美的字串可比對性
-            return timeB.localeCompare(timeA);
+            // 🟢 時間權重轉換器 (將 HH:MM 轉換為絕對分鐘數)
+            const getSortWeight = (timeStr) => {
+                if (!timeStr) return -1;
+                
+                // 用正規表達式安全地提取出小時與分鐘 (支援 "23:45" 或 "04:01:07")
+                const match = timeStr.match(/(\d{1,2}):(\d{2})/);
+                if (match) {
+                    let hour = parseInt(match[1], 10);
+                    const minute = parseInt(match[2], 10);
+                    
+                    // 🦉 跨夜魔法：如果是凌晨 0~3 點，加 24 小時視為「昨天的延伸」
+                    if (hour >= 0 && hour <= 3) {
+                        hour += 24;
+                    }
+                    
+                    // 回傳絕對的「分鐘權重」
+                    return (hour * 60) + minute;
+                }
+                return 0; 
+            };
+
+            // 降冪排序：權重數字越大的 (越新的時間)，排在越前面
+            return getSortWeight(timeB) - getSortWeight(timeA);
         });
         // ==========================================
-
+        
         htmlStr += `
             <div class="history-group">
                 <div class="history-summary">
