@@ -136,8 +136,8 @@ function generateHistoryHTML() {
             }
             .history-summary {
                 padding: 16px 24px;
-                font-weight: 600;
-                font-size: 1.05em;
+                font-weight: 700; /* ✨ 變更為標準粗體 */
+                font-size: 0.95em;
                 color: inherit;
                 cursor: pointer;
                 display: flex;
