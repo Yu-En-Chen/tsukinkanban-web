@@ -1783,7 +1783,7 @@ function filterCards(keyword) {
 
                 if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
                     isError = true;
-                } else if (statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし") {
+                } else if (statusInfo.status_type === "非対応" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし") {
                     isAttention = true;
                 } else if (delay > 0) {
                     if (delay <= 5) {
@@ -1950,7 +1950,7 @@ window.previewRouteFromSearch = function (routeId) {
 
     if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
         isError = true;
-    } else if (statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし") {
+    } else if (statusInfo.status_type === "非対応" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし") {
         isAttention = true;
     } else if (delay > 0) {
         if (delay <= 5) {
