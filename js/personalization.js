@@ -276,7 +276,8 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
     </style>
 
     <div id="p-edit-row" style="--btn-height: 44px; display: flex; gap: 8px; position: relative;
-        width: calc(100% + 30px); margin-left: -15px; padding: 20px 15px; margin-top: -20px; margin-bottom: -8px; 
+        width: calc(100% + 30px); margin-left: -15px; 
+        padding: 20px 15px; margin-top: -20px; margin-bottom: -8px; 
         -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);
         mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);">
         
@@ -329,7 +330,8 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
     </p>
 
     <div id="p-color-edit-row" style="--btn-height: 44px; display: flex; gap: 8px; position: relative;
-        width: calc(100% + 30px); margin-left: -15px; padding: 0px 15px; margin-bottom: 12px; 
+        width: calc(100% + 30px); margin-left: -15px; 
+        padding: 20px 15px; margin-top: -20px; margin-bottom: -8px;
         -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);
         mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);">
         
