@@ -4,6 +4,64 @@ let isSandboxInitialized = false;
 
 window.openAddPanel = function () {
     const contentHTML = `
+        <style>
+            /* ============================================================================ */
+            /* ✨ 完美對齊 menu.js 的極簡卡片美學 (像素級同步) */
+            /* ============================================================================ */
+            .add-panel-container {
+                padding-top: 18px; /* ✨ 對齊歷史紀錄的頂部起始高度 */
+                padding-bottom: 40px;
+            }
+            .add-menu-item {
+                background: rgba(128, 128, 128, 0.08);
+                border-radius: 32px; 
+                overflow: hidden;
+                margin-bottom: 12px;
+                transition: background 0.35s ease; 
+                border: none; /* ✨ 確保無邊框設計 */
+            }
+            .add-menu-item.is-expanded {
+                background: rgba(128, 128, 128, 0.15); /* 展開時稍微變深 */
+            }
+            .add-menu-btn {
+                width: 100%;
+                background: transparent;
+                border: none;
+                outline: none;
+                text-align: left;
+                padding: 16px 24px; /* ✨ 對齊歷史面板的完美呼吸空間 */
+                font-weight: 700;   /* ✨ 同步標準粗體 */
+                font-size: 0.95em;  /* ✨ 同步字體大小 */
+                color: inherit;
+                cursor: pointer;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                user-select: none;
+                transition: opacity 0.2s;
+                font-family: inherit;
+            }
+            .add-menu-btn:active { 
+                opacity: 0.7; 
+            }
+            .add-menu-text {
+                display: flex;
+                align-items: center;
+            }
+            .add-menu-title {
+                margin: 0;
+            }
+            .add-menu-chevron {
+                transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+                opacity: 0.6;
+                display: flex;
+                align-items: center;
+            }
+            .add-menu-item.is-expanded .add-menu-chevron {
+                transform: rotate(-180deg);
+            }
+        </style>
+        
         <div class="add-panel-container" id="add-panel-container">
             
             <div class="add-menu-item" id="add-item-1">
