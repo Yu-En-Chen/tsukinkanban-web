@@ -16,7 +16,6 @@ window.openAddPanel = function () {
                 background: rgba(128, 128, 128, 0.08);
                 border-radius: 32px; 
                 overflow: hidden;
-                margin-bottom: 12px;
                 transition: background 0.35s ease; 
                 border: none; /* ✨ 確保無邊框設計 */
             }
