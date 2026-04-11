@@ -59,6 +59,25 @@ window.openAddPanel = function () {
             .add-menu-item.is-expanded .add-menu-chevron {
                 transform: rotate(-180deg);
             }
+            /* ============================================================================ */
+            /* ✨ 破除舊版生硬的 Grid 展開動畫，注入 menu.js 的物理級絲滑引擎 */
+            /* ============================================================================ */
+            .add-menu-content-wrapper {
+                display: block !important; /* 🛑 破除生硬的 Grid 封印 */
+                max-height: 0px; 
+                opacity: 0;
+                overflow: hidden;
+                /* ✨ 注入與歷史紀錄完全相同的貝茲曲線動畫 */
+                transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            }
+            .add-menu-inner {
+                opacity: 1 !important; /* 🛑 移除舊版 translateY 造成的延遲感 */
+                transform: none !important;
+                height: auto !important; /* 讓內容自然撐開 */
+                max-height: none !important;
+                min-height: 0 !important;
+                padding: 0 24px 24px 24px !important; 
+            }
         </style>
         
         <div class="add-panel-container" id="add-panel-container">
@@ -201,31 +220,52 @@ window.selectDictionaryRoute = async function(routeId) {
     }
 };
 
+// ============================================================================
+// 🟢 卡片管理選單展開切換 (升級物理級絲滑引擎版)
+// ============================================================================
 window.toggleAddMenuItem = function (id) {
-    const container = document.getElementById('add-panel-container');
     const item = document.getElementById(id);
-    const isExpanded = item.classList.contains('is-expanded');
+    const container = document.getElementById('add-panel-container');
+    const wrapper = item.querySelector('.add-menu-content-wrapper');
+    const isOpen = item.classList.contains('is-expanded');
 
-    const uniContent = document.getElementById('universal-page-content');
-    const uniWrapper = document.getElementById('universal-page-wrapper');
-
-    if (isExpanded) {
+    if (isOpen) {
+        // 🟢 關閉動畫：與 menu.js 完全一致的回彈壓縮
+        if (wrapper) {
+            wrapper.style.maxHeight = wrapper.scrollHeight + 'px'; 
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    wrapper.style.maxHeight = '0px';
+                    wrapper.style.opacity = '0';
+                });
+            });
+        }
         item.classList.remove('is-expanded');
         container.classList.remove('has-expanded');
-
-        if (uniContent) uniContent.style.overflowY = '';
-        if (uniWrapper) uniWrapper.style.overflowY = '';
-        document.body.style.overflow = '';
     } else {
-        document.querySelectorAll('.add-menu-item').forEach(el => {
-            el.classList.remove('is-expanded');
-        });
+        // 🟢 展開動畫
         item.classList.add('is-expanded');
         container.classList.add('has-expanded');
+        
+        // 觸發加載資料的邏輯 (維持不變)
+        if (id === 'add-item-3' && window.loadManageCards) {
+            window.loadManageCards();
+        }
 
-        if (uniContent) uniContent.style.overflowY = 'hidden';
-        if (uniWrapper) uniWrapper.style.overflowY = 'hidden';
-        document.body.style.overflow = 'hidden';
+        if (wrapper) {
+            // 給 JS 10ms 的時間渲染 Loading 字樣，然後瞬間啟動物理平滑展開
+            setTimeout(() => {
+                wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
+                wrapper.style.opacity = '1';
+                
+                // 動畫結束後解除高度封印，這樣當資料真的讀取完成時，它才能無縫繼續往下延伸！
+                setTimeout(() => {
+                    if (item.classList.contains('is-expanded')) {
+                        wrapper.style.maxHeight = 'none';
+                    }
+                }, 350);
+            }, 10); 
+        }
     }
 };
 
