@@ -15,11 +15,18 @@ window.RouteAppender = {
             return;
         }
 
-        // 精準抓取首頁前五張卡片
+        // 🌟 核心修復：即時讀取目前的「隱藏清單」，確保不會把被隱藏的卡片抓出來！
+        let hiddenIds = [];
+        try {
+            hiddenIds = JSON.parse(localStorage.getItem('TsukinKanban_HiddenCards') || '[]');
+        } catch (e) { }
+
+        // 🌟 精準抓取首頁前五張卡片 (排除幽靈卡、置底卡，以及被隱藏的卡片！)
         const homeCards = (window.appRailwayData || []).filter(c => 
             !c.isTemporarySearch && 
             c.id !== 'fixed-bottom' &&
-            c.id !== 'search-temp'
+            c.id !== 'search-temp' &&
+            !hiddenIds.includes(c.id) // 👈 加入這行防護網
         ).slice(0, 5);
 
         if (homeCards.length === 0) {
