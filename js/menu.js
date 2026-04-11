@@ -272,13 +272,23 @@ function generateHistoryHTML() {
                     );
 
                     if (isNormalOperation) {
-                        // 🟢 正常狀態：恢復印出右邊的時間！
-                        let snapHtml = `
-                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; opacity: ${opacity}; ${colorStyle} ${dividerStyle}">
+                        // 🟢 正常狀態：改為直列容器，以相容可能出現的飛機公告 (note)
+                        let snapHtml = `<div style="display: flex; flex-direction: column; gap: 6px; width: 100%; opacity: ${opacity}; ${colorStyle} ${dividerStyle}">`;
+                        
+                        // 1. 印出主狀態 (平常運転 / 定刻) 與右邊的時間
+                        snapHtml += `
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
                                 <span style="font-weight: 500; font-size: 0.95em; color: inherit;">${snapshot.status_text}</span>
-                                ${snapshot.update_time ? `<span style="font-size: 0.75em; opacity: ${timeOpacity}; flex-shrink: 0;">${snapshot.update_time}</span>` : ''}
+                                ${snapshot.update_time ? `<span style="font-size: 0.75em; opacity: ${timeOpacity}; flex-shrink: 0; padding-top: 2px;">${snapshot.update_time}</span>` : ''}
                             </div>
                         `;
+
+                        // 2. ✨ 飛機專屬升級：如果航班雖然定刻，但附帶了 note (例如登機門變更)，依然印在下方！
+                        if (info.isFlight && snapshot.note) {
+                            snapHtml += `<div style="font-weight: 500; font-size: 0.9em; color: inherit; word-break: break-word; overflow-wrap: break-word; line-height: 1.5; opacity: 0.85;">${snapshot.note}</div>`;
+                        }
+                        
+                        snapHtml += `</div>`;
                         routeHtml += snapHtml;
                         return; 
                     }
