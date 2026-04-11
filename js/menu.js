@@ -256,7 +256,7 @@ function generateHistoryHTML() {
             `;
         } else {
             validRoutes.forEach(info => {
-                const snapshots = info.data.slice().reverse().slice(0, 3);
+                const snapshots = info.data.slice().reverse();
                 let routeHtml = `
                     <div>
                         <div style="font-weight: 700; font-size: 0.95em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: inherit; opacity: 0.9;">
