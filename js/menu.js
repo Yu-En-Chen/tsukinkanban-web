@@ -263,13 +263,25 @@ function generateHistoryHTML() {
                     let displayTime = snapshot.update_time || snapshot.system_updated;
                     
                     if (displayTime && typeof displayTime === 'string') {
-                        // 🟢 秒數消除器：如果格式是 HH:MM:SS (例如 "04:01:07")，強制轉為 HH:MM ("04:01")
                         displayTime = displayTime.replace(/(\d{2}:\d{2}):\d{2}/, '$1');
                     }
 
+                    // ==========================================
                     // 飛機資料的「預處理」
-                    if (info.isFlight && snapshot.status && !snapshot.status_text) {
-                        snapshot.status_text = snapshot.status;
+                    // ==========================================
+                    if (info.isFlight) {
+                        if (snapshot.status && !snapshot.status_text) {
+                            snapshot.status_text = snapshot.status;
+                        }
+
+                        // 🟢 ✨ 核心升級：括號淨化器
+                        // 將 "【狀況】 內容..." 轉換為優雅的 "狀況: 內容..."；若無內容則只留 "狀況"
+                        if (typeof snapshot.status_text === 'string') {
+                            snapshot.status_text = snapshot.status_text.replace(/【/g, '').replace(/】\s*/g, '　：　').replace(/: $/, '');
+                        }
+                        if (typeof snapshot.note === 'string') {
+                            snapshot.note = snapshot.note.replace(/【/g, '').replace(/】\s*/g, ': ').replace(/: $/, '');
+                        }
                     }
 
                     const isNormalOperation = snapshot.status_text && (
@@ -277,7 +289,7 @@ function generateHistoryHTML() {
                         snapshot.status_text.includes('通常') ||
                         (info.isFlight && (snapshot.status_text.includes('定刻') || snapshot.status_text.includes('On Time')))
                     );
-
+                    
                     if (isNormalOperation) {
                         let snapHtml = `<div style="display: flex; flex-direction: column; gap: 6px; width: 100%; opacity: ${opacity}; ${colorStyle} ${dividerStyle}">`;
                         
@@ -306,7 +318,20 @@ function generateHistoryHTML() {
                     let snapHtml = `<div style="display: flex; flex-direction: column; gap: 8px; opacity: ${opacity}; ${colorStyle} ${dividerStyle}">`;
                     let isTimeRendered = false; 
 
-                    for (const [k, v] of Object.entries(snapshot)) {
+                    // ==========================================
+                    // ✨ 核心升級：強制資訊層級排序器
+                    // 保證「狀態」永遠在最上面，「備註/公告」永遠在最下面
+                    // ==========================================
+                    const sortedEntries = Object.entries(snapshot).sort((a, b) => {
+                        if (a[0] === 'status_text') return -1; // 把 status_text 往上推
+                        if (b[0] === 'status_text') return 1;
+                        if (a[0] === 'note') return 1;         // 把 note 往下壓
+                        if (b[0] === 'note') return -1;
+                        return 0;
+                    });
+
+                    // ✨ 迴圈改為讀取排好序的 sortedEntries
+                    for (const [k, v] of sortedEntries) {
                         if (skipKeys.includes(k) || v === null || v === "") continue;
 
                         if (info.isFlight && k !== 'status_text' && k !== 'note') {
@@ -317,7 +342,6 @@ function generateHistoryHTML() {
                         let displayVal = v;
                         
                         if (k === 'status_text') {
-                            // ✨ 將時間變數改為 displayTime
                             snapHtml += `
                                 <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
                                     <span style="font-weight: 500; font-size: 0.95em; color: inherit; word-break: break-word; overflow-wrap: break-word; line-height: 1.5; padding-right: 12px;">${displayVal}</span>
@@ -339,7 +363,6 @@ function generateHistoryHTML() {
                         }
                     }
 
-                    // ✨ 將備用時間變數改為 displayTime
                     if (displayTime && !isTimeRendered) {
                         snapHtml += `<div style="text-align: right; font-size: 0.75em; opacity: ${timeOpacity}; margin-top: 2px;">${displayTime}</div>`;
                     }
