@@ -219,6 +219,24 @@ function generateHistoryHTML() {
         const cardName = group.cardName;
         const validRoutes = group.routes.filter(info => Array.isArray(info.data) && info.data.length > 0);
 
+        // ==========================================
+        // ✨ 核心升級：路線智慧排序引擎 (最新更新的路線置頂)
+        // ==========================================
+        validRoutes.sort((a, b) => {
+            // 取得 A 路線與 B 路線的「最新一筆」紀錄 (陣列的最後一個元素)
+            const latestA = a.data[a.data.length - 1] || {};
+            const latestB = b.data[b.data.length - 1] || {};
+            
+            // 兼容抓取鐵路 (update_time) 或飛機 (system_updated) 的時間
+            const timeA = latestA.update_time || latestA.system_updated || "";
+            const timeB = latestB.update_time || latestB.system_updated || "";
+            
+            // 使用字串比對進行「降冪排序」(時間越新的越上面)
+            // 因為 ISO 時間或 HH:MM:SS 格式都具備完美的字串可比對性
+            return timeB.localeCompare(timeA);
+        });
+        // ==========================================
+
         htmlStr += `
             <div class="history-group">
                 <div class="history-summary">
