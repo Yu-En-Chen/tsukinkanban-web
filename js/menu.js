@@ -258,9 +258,14 @@ function generateHistoryHTML() {
                     const dividerStyle = isLast ? '' : 'border-bottom: 1px dashed rgba(128, 128, 128, 0.25); padding-bottom: 12px;';
 
                     // ==========================================
-                    // ✨ 核心修復：抓取「鐵路時間」或「飛機時間」
+                    // ✨ 核心修復：抓取「鐵路時間」或「飛機時間」並過濾秒數
                     // ==========================================
-                    const displayTime = snapshot.update_time || snapshot.system_updated;
+                    let displayTime = snapshot.update_time || snapshot.system_updated;
+                    
+                    if (displayTime && typeof displayTime === 'string') {
+                        // 🟢 秒數消除器：如果格式是 HH:MM:SS (例如 "04:01:07")，強制轉為 HH:MM ("04:01")
+                        displayTime = displayTime.replace(/(\d{2}:\d{2}):\d{2}/, '$1');
+                    }
 
                     // 飛機資料的「預處理」
                     if (info.isFlight && snapshot.status && !snapshot.status_text) {
