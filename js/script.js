@@ -967,14 +967,14 @@ function handleCardClick(id) {
             });
 
         } else {
-            // 無追蹤路線時的空狀態
+            // 無追蹤路線時的空狀態 
             scrollWrapper.innerHTML = `
-                <div style="background: rgba(30, 30, 32, 0.65); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px 20px; text-align: center; color: var(--text-secondary); box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
-                    <div style="opacity: 0.6; margin-bottom: 12px; display: flex; justify-content: center;">
+            <div style="background: var(--tag-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid var(--border-color); border-radius: 24px; padding: 40px 20px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
+                    <div style="opacity: 0.7; margin-bottom: 12px; display: flex; justify-content: center; color: var(--card-text-color);">
                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                     </div>
-                    <div style="font-size: 1.05em; font-weight: 800; color: #fff;">追跡している路線はありません</div>
-                    <div style="font-size: 0.85em; margin-top: 8px; opacity: 0.7;">よく使う路線を追加しましょう</div>
+                    <div style="font-size: 1.05em; font-weight: 800; color: var(--card-text-color);">追跡している路線はありません</div>
+                    <div style="font-size: 0.85em; margin-top: 8px; opacity: 0.8; color: var(--text-secondary);">よく使う路線を追加しましょう</div>
                 </div>
             `;
         }
@@ -3243,15 +3243,16 @@ function silentUpdateExtensionPanel(cardId) {
             fragment.appendChild(row);
         });
     } else {
-        // 如果刪到一條不剩，補回空狀態
+        // 如果刪到一條不剩，補回空狀態  
         const emptyState = document.createElement('div');
-        emptyState.style.cssText = 'background: rgba(30, 30, 32, 0.65); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px 20px; text-align: center; color: var(--text-secondary); box-shadow: 0 8px 24px rgba(0,0,0,0.15);';
+        // 替換背景與邊框變數
+        emptyState.style.cssText = 'background: var(--tag-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid var(--border-color); border-radius: 24px; padding: 40px 20px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.15);';
         emptyState.innerHTML = `
-            <div style="opacity: 0.6; margin-bottom: 12px; display: flex; justify-content: center;">
+            <div style="opacity: 0.7; margin-bottom: 12px; display: flex; justify-content: center; color: var(--card-text-color);">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
             </div>
-            <div style="font-size: 1.05em; font-weight: 800; color: #fff;">追跡している路線はありません</div>
-            <div style="font-size: 0.85em; margin-top: 8px; opacity: 0.7;">よく使う路線を追加しましょう</div>
+            <div style="font-size: 1.05em; font-weight: 800; color: var(--card-text-color);">追跡している路線はありません</div>
+            <div style="font-size: 0.85em; margin-top: 8px; opacity: 0.8; color: var(--text-secondary);">よく使う路線を追加しましょう</div>
         `;
         fragment.appendChild(emptyState);
     }
