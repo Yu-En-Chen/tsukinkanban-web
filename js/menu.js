@@ -219,7 +219,7 @@ function generateHistoryHTML() {
         const validRoutes = group.routes.filter(info => Array.isArray(info.data) && info.data.length > 0);
 
         // ==========================================
-        // ✨ 核心升級：跨夜智慧排序引擎 (凌晨 0~3 點完美置頂)
+        // ✨ 核心升級：跨夜智慧排序引擎 (精準鎖定 00:00 ~ 02:30)
         // ==========================================
         validRoutes.sort((a, b) => {
             const latestA = a.data[a.data.length - 1] || {};
@@ -228,32 +228,33 @@ function generateHistoryHTML() {
             const timeA = latestA.update_time || latestA.system_updated || "";
             const timeB = latestB.update_time || latestB.system_updated || "";
             
-            // 🟢 時間權重轉換器 (將 HH:MM 轉換為絕對分鐘數)
+            // 🟢 時間權重轉換器
             const getSortWeight = (timeStr) => {
                 if (!timeStr) return -1;
                 
-                // 用正規表達式安全地提取出小時與分鐘 (支援 "23:45" 或 "04:01:07")
                 const match = timeStr.match(/(\d{1,2}):(\d{2})/);
                 if (match) {
-                    let hour = parseInt(match[1], 10);
+                    const hour = parseInt(match[1], 10);
                     const minute = parseInt(match[2], 10);
                     
-                    // 🦉 跨夜魔法：如果是凌晨 0~3 點，加 24 小時視為「昨天的延伸」
-                    if (hour >= 0 && hour <= 3) {
-                        hour += 24;
+                    // 先算出當天從 00:00 開始的「絕對總分鐘數」
+                    let totalMinutes = (hour * 60) + minute;
+                    
+                    // 🦉 精密跨夜魔法：如果時間落在 00:00 ~ 02:30 (總分鐘數 <= 150)
+                    // 我們才把它加上 24 小時 (1440 分鐘) 當作昨天的延伸
+                    if (totalMinutes <= 150) {
+                        totalMinutes += 1440;
                     }
                     
-                    // 回傳絕對的「分鐘權重」
-                    return (hour * 60) + minute;
+                    return totalMinutes;
                 }
                 return 0; 
             };
 
-            // 降冪排序：權重數字越大的 (越新的時間)，排在越前面
             return getSortWeight(timeB) - getSortWeight(timeA);
         });
         // ==========================================
-        
+
         htmlStr += `
             <div class="history-group">
                 <div class="history-summary">
