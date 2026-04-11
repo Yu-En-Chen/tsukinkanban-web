@@ -974,7 +974,7 @@ function handleCardClick(id) {
                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                     </div>
                     <div style="font-size: 1.05em; font-weight: 800; color: #fff;">追跡している路線はありません</div>
-                    <div style="font-size: 0.85em; margin-top: 8px; opacity: 0.7;">右上の「＋」から路線を追加してください</div>
+                    <div style="font-size: 0.85em; margin-top: 8px; opacity: 0.7;">よく使う路線を追加しましょう</div>
                 </div>
             `;
         }
@@ -3251,7 +3251,7 @@ function silentUpdateExtensionPanel(cardId) {
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
             </div>
             <div style="font-size: 1.05em; font-weight: 800; color: #fff;">追跡している路線はありません</div>
-            <div style="font-size: 0.85em; margin-top: 8px; opacity: 0.7;">右上の「＋」から路線を追加してください</div>
+            <div style="font-size: 0.85em; margin-top: 8px; opacity: 0.7;">よく使う路線を追加しましょう</div>
         `;
         fragment.appendChild(emptyState);
     }
