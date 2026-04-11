@@ -401,6 +401,16 @@ function generateHistoryHTML() {
         return rootHtmlStr;
     }
 
+    // ==========================================
+    // ✨ 核心升級：加入底部系統規則說明
+    // ==========================================
+    htmlStr += `
+        <div style="text-align: center; margin-top: 24px; padding-bottom: 8px; font-size: 0.75em; color: #8e8e93; opacity: 0.8; line-height: 1.6; letter-spacing: 0.02em;">
+             各路線の履歴は最新5件まで表示されます。<br>
+             鉄道の履歴データは毎日03:00にリセットされます。
+        </div>
+    `;
+
     htmlStr += '</div>';
     rootHtmlStr += htmlStr + '</div>';
     return rootHtmlStr;
