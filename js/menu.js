@@ -125,10 +125,9 @@ function generateHistoryHTML() {
         <style>
             @keyframes spin { 100% { transform: rotate(360deg); } }
             .history-group {
-                background: rgba(128, 128, 128, 0.08);
+                background: rgba(128, 128, 128, 0.1);
                 border-radius: 32px; 
                 overflow: hidden;
-                border: 1px solid rgba(128, 128, 128, 0.15);
                 margin-bottom: 12px;
                 transition: background 0.35s ease; 
             }
