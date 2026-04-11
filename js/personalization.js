@@ -276,11 +276,15 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
     </style>
 
     <div id="p-edit-row" style="--btn-height: 44px; display: flex; gap: 8px; position: relative;
-        width: calc(100% + 30px); margin-left: -15px; 
-        padding: 20px 15px; margin-top: -20px; margin-bottom: -8px; 
-        -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);
-        mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);">
-        
+        /* 👇 左右安全區擴展至 25px */
+        width: calc(100% + 50px); margin-left: -25px; 
+        /* 👇 上下安全區擴展至 35px，保證吃下 33px 的陰影 */
+        padding: 35px 25px; 
+        margin-top: -35px; margin-bottom: -23px; 
+        /* 👇 遮罩漸層也必須同步向內推 25px */
+        -webkit-mask-image: linear-gradient(to right, transparent 0%, black 25px, black calc(100% - 25px), transparent 100%);
+        mask-image: linear-gradient(to right, transparent 0%, black 25px, black calc(100% - 25px), transparent 100%);">
+
         <button id="p-btn-label" class="info-tag-item interactive-btn" onclick="window.toggleGhostEditMode('name', event, this)" style="
             cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; white-space: nowrap; flex-shrink: 0; max-width: 120px; overflow: hidden; transition: transform 0.4s var(--apple-spring), max-width 0.4s var(--apple-spring), padding 0.4s var(--apple-spring), margin 0.4s var(--apple-spring);">
             <span style="white-space: nowrap;">表示名</span>
@@ -330,11 +334,15 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
     </p>
 
     <div id="p-color-edit-row" style="--btn-height: 44px; display: flex; gap: 8px; position: relative;
-        width: calc(100% + 30px); margin-left: -15px; 
-        padding: 20px 15px; margin-top: -20px; margin-bottom: -8px;
-        -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);
-        mask-image: linear-gradient(to right, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%);">
-        
+        /* 👇 左右安全區擴展至 25px */
+        width: calc(100% + 50px); margin-left: -25px; 
+        /* 👇 上下安全區擴展至 35px，保證吃下 33px 的陰影 */
+        padding: 35px 25px; 
+        margin-top: -35px; margin-bottom: -23px; 
+        /* 👇 遮罩漸層也必須同步向內推 25px */
+        -webkit-mask-image: linear-gradient(to right, transparent 0%, black 25px, black calc(100% - 25px), transparent 100%);
+        mask-image: linear-gradient(to right, transparent 0%, black 25px, black calc(100% - 25px), transparent 100%);">
+
         <button id="p-btn-color-label" class="info-tag-item interactive-btn" onclick="window.toggleGhostEditMode('color', event, this)" style="
             cursor: pointer; height: var(--btn-height); padding: 0 16px; border-radius: 100px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; white-space: nowrap; flex-shrink: 0; max-width: 120px; overflow: hidden; transition: transform 0.4s var(--apple-spring), max-width 0.4s var(--apple-spring), padding 0.4s var(--apple-spring), margin 0.4s var(--apple-spring);">
             <span style="white-space: nowrap;">カラー</span>
