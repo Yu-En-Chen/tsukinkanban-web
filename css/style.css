@@ -1721,7 +1721,7 @@ body.searching .dismiss-icon {
     .action-capsule:not(.menu-expanded):hover,
     .cancel-circle-btn:hover,
     .interactive-btn:hover {
-        scale: 1.05;
+        scale: 1.01;
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
     }
 }
@@ -1732,7 +1732,7 @@ body.searching .dismiss-icon {
 }
 
 .touch-lifted-btn {
-    scale: 1.05;
+    scale: 1.01;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
 }
 
