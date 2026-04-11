@@ -18,48 +18,48 @@
 /* =========================================
    🟢 膠囊本人 (完美繼承原本的狀態)
    ========================================= */
-.add-menu-item {
+/* =========================================
+   🟢 主按鈕面板 (完美同步 menu.js 的設計)
+   ========================================= */
+   .add-menu-item {
     display: flex;
     flex-direction: column;
     width: 100%;
     
-    /* 點開前保持本來的狀態：999px 完美膠囊外觀與底色 */
-    background: rgba(120, 120, 128, 0.13);
-    border-radius: 999px; 
+    /* ✨ 徹底拔除膠囊感：統一改為 32px 圓角與相同的微透明灰色背景 */
+    background: rgba(128, 128, 128, 0.08);
+    border-radius: 32px; 
     overflow: hidden;
     
     max-height: 1000px;
     opacity: 1;
     transform: scale(1);
     
-    /* ✨ 修正 1：把變形動畫改為平滑減速 (cubic-bezier)，拔除彈簧感，解決用力過猛的拉扯問題 */
+    /* 拔除 border-radius 動畫，因為它現在永遠是 32px，不需變形了 */
     transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
-                border-radius 0.4s cubic-bezier(0.16, 1, 0.3, 1),
                 background 0.3s ease,
                 opacity 0.3s ease, 
                 transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
                 margin 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     
-    will-change: max-height, opacity, transform, border-radius;
+    will-change: max-height, opacity, transform;
 }
 
-/* 將原本的 Hover 與 Active 微縮放效果加在外層膠囊上，保持本來的手感 */
 @media (any-hover: hover) {
     .add-menu-item:not(.is-expanded):hover {
-        background: rgba(120, 120, 128, 0.12);
+        background: rgba(128, 128, 128, 0.12);
         transform: scale(1.02);
     }
 }
 
 .add-menu-item:not(.is-expanded):active {
     transform: scale(0.96) !important;
-    background: rgba(120, 120, 128, 0.16);
+    background: rgba(128, 128, 128, 0.16);
 }
 
-/* ✨ 展開後：膠囊本人變形成大面板 */
+/* ✨ 展開後：加上更深的背景色 (與歷史紀錄展開時完全相同) */
 .add-menu-item.is-expanded {
-    /* ✨ 修正 2：拔除多餘的 background 變色，只保留圓角的平滑收斂 */
-    border-radius: 32px; 
+    background: rgba(128, 128, 128, 0.15);
 }
 
 /* 🛑 終極消滅魔法：當有人展開時，把「不是展開的膠囊」徹底隱藏並縮小！ */
