@@ -1,77 +1,116 @@
 // data/sponsors.js
 
-// 🟢 1. 贊助商資料庫 (未來你要換照片或連結，只要改這裡！)
-export const sponsorsData = [
+// 🟢 1. 預設贊助商資料庫 (Fallback)
+// 萬一 API 壞掉或無網路時的備用資料，確保畫面不會空白
+const fallbackSponsorsData = [
     {
         id: 1,
-        image: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=600&auto=format&fit=crop', // 第一張圖 (預設為優美的風景或品牌圖)
-        link: 'https://example.com/sponsor1',
-        alt: '贊助商 1'
+        image: '',
+        link: '',
+        alt: '支援者 1'
     },
     {
         id: 2,
-        image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=600&auto=format&fit=crop', // 第二張圖
-        link: 'https://example.com/sponsor2',
-        alt: '贊助商 2'
+        image: '',
+        link: '',
+        alt: '支援者 2'
     },
     {
         id: 3,
-        image: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?q=80&w=600&auto=format&fit=crop', // 第三張圖
-        link: 'https://example.com/sponsor3',
-        alt: '贊助商 3'
+        image: '',
+        link: '',
+        alt: '支援者 3'
     }
 ];
 
-// 🟢 2. 輪播引擎邏輯 (導出給主程式呼叫)
-export function initSponsorCarousel() {
+// 🟢 API 網址 (Sheety Google Sheets API)
+const API_URL = 'https://api.sheety.co/03889dae5a97d60b333440d273df6520/%E5%8D%94%E8%B3%9B/%E9%80%9A%E5%8B%A4%E7%9C%8B%E6%9D%BF';
+
+// 🟢 2. 輪播引擎邏輯 (改為非同步 async 函式)
+export async function initSponsorCarousel() {
     const track = document.getElementById('sponsor-track');
     const dotsContainer = document.getElementById('sponsor-dots');
     if (!track || !dotsContainer) return;
 
-    // 清空重置
-    track.innerHTML = '';
+    // 清空重置並顯示骨架/讀取中狀態 (避免破圖)
+    track.innerHTML = `
+        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-main); opacity: 0.5;">
+            <span style="font-size: 0.9em;">Loading...</span>
+        </div>`;
     dotsContainer.innerHTML = '';
 
-    // 生成圖片與圓點
+    let sponsorsData = fallbackSponsorsData;
+
+    // 🟢 3. 讀取 API 資料邏輯
+    try {
+        // 使用 SessionStorage 建立快取，避免每次打開都浪費 API 額度
+        const cachedData = sessionStorage.getItem('sponsorsData');
+        const cacheTime = sessionStorage.getItem('sponsorsCacheTime');
+        const now = new Date().getTime();
+
+        // 如果有快取，且距離上次抓取不到 1 小時 (3600000毫秒)，就用快取的
+        if (cachedData && cacheTime && (now - parseInt(cacheTime)) < 3600000) {
+            sponsorsData = JSON.parse(cachedData);
+        } else {
+            // 沒有快取或已過期，向 API 請求新資料
+            const response = await fetch(API_URL);
+            if (!response.ok) throw new Error('API 請求失敗');
+            
+            const data = await response.json();
+            
+            // 解析 JSON，確保裡面有 "通勤看板" 陣列且有資料
+            if (data && data["通勤看板"] && data["通勤看板"].length > 0) {
+                sponsorsData = data["通勤看板"];
+                // 將資料存入快取
+                sessionStorage.setItem('sponsorsData', JSON.stringify(sponsorsData));
+                sessionStorage.setItem('sponsorsCacheTime', now.toString());
+            }
+        }
+    } catch (error) {
+        console.error("輪播圖 API 讀取失敗，使用預設資料:", error);
+        // 如果失敗，會繼續往下使用 fallbackSponsorsData
+    }
+
+    // 🟢 4. 生成圖片與圓點 (資料抓完後開始渲染)
+    track.innerHTML = ''; // 清除 Loading 文字
     sponsorsData.forEach((sponsor, index) => {
-        // 幻燈片本身 (可點擊的連結)
         const slide = document.createElement('a');
         slide.href = sponsor.link;
         slide.target = '_blank';
         slide.rel = 'noopener noreferrer';
 
-        // ✨ 新增：點擊時的「防誤觸與跳轉確認」提示 (自訂 iOS 視窗版)
+        // ✨ 點擊時的「防誤觸與跳轉確認」提示 (自訂 iOS 視窗版)
         slide.addEventListener('click', async (e) => {
-            // 1. 絕對防禦：因為 await 會打斷事件的同步性，所以我們必須第一時間「先斬後奏」攔截跳轉！
             e.preventDefault(); 
             
-            // 2. 呼叫我們自訂的頂級 iOS 視窗
-            const isConfirmed = await window.iosConfirm(
-                "外部サイトへ移動", 
-                "以下のリンクを開きますか？\n\n" + sponsor.link,
-                "開く",      // 確定按鈕文字
-                "キャンセル" // 取消按鈕文字
-            );
-            
-            // 3. 如果使用者按下「開く (確定)」，我們再用程式手動幫他打開新分頁
-            if (isConfirmed) {
+            // 檢查 window.iosConfirm 是否存在 (你的對話框系統)
+            if (typeof window.iosConfirm === 'function') {
+                const isConfirmed = await window.iosConfirm(
+                    "外部サイトへ移動", 
+                    "以下のリンクを開きますか？\n\n" + sponsor.link,
+                    "開く",      
+                    "キャンセル" 
+                );
+                if (isConfirmed) {
+                    window.open(sponsor.link, '_blank', 'noopener,noreferrer');
+                }
+            } else {
+                // 若沒載入對話框組件，直接跳轉
                 window.open(sponsor.link, '_blank', 'noopener,noreferrer');
             }
         });
         
-        // 🟢 實心灰色背景
         slide.style.cssText = `
             flex: 0 0 100%;
             height: 100%;
             display: block;
             position: relative;
-            background: rgba(120, 120, 128, 0.15); /* 漂亮的實心灰 */
+            background: rgba(120, 120, 128, 0.15); 
             -webkit-user-drag: none;
             text-decoration: none;
             overflow: hidden;
         `;
 
-        // 🟢 聰明的雙層設計：底層是「歡迎贊助」文字，上層是真實圖片
         slide.innerHTML = `
             <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-main); opacity: 0.4;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px;">
@@ -88,7 +127,7 @@ export function initSponsorCarousel() {
         `;
         track.appendChild(slide);
 
-        // 底部小圓點 (維持不變)
+        // 底部小圓點
         const dot = document.createElement('div');
         dot.style.cssText = `
             width: 6px; height: 6px; border-radius: 50%;
@@ -113,7 +152,7 @@ export function initSponsorCarousel() {
         });
     }
 
-    // 自動播放邏輯 (每 5 秒)
+    // 自動播放邏輯
     function nextSlide() {
         if (!document.getElementById('sponsor-track')) {
             stopAutoPlay();
@@ -123,7 +162,6 @@ export function initSponsorCarousel() {
         updateCarousel();
     }
 
-    // 🟢 新增：往前一張邏輯
     function prevSlide() {
         if (!document.getElementById('sponsor-track')) {
             stopAutoPlay();
@@ -142,20 +180,19 @@ export function initSponsorCarousel() {
         if (autoPlayTimer) clearInterval(autoPlayTimer);
     }
 
-    // 初始化狀態
     updateCarousel();
     startAutoPlay();
 
-    // 🟢 新增：電腦版左右按鈕點擊事件綁定
+    // 電腦版左右按鈕事件
     const prevBtn = document.getElementById('sponsor-prev-btn');
     const nextBtn = document.getElementById('sponsor-next-btn');
 
     if (prevBtn) {
         prevBtn.addEventListener('click', (e) => {
             e.preventDefault(); 
-            e.stopPropagation(); // 阻止點擊事件穿透到後面的圖片連結
+            e.stopPropagation(); 
             prevSlide();
-            startAutoPlay(); // 點擊後重置自動播放的計時器
+            startAutoPlay(); 
         });
     }
 
@@ -164,65 +201,63 @@ export function initSponsorCarousel() {
             e.preventDefault();
             e.stopPropagation();
             nextSlide();
-            startAutoPlay(); // 點擊後重置自動播放的計時器
+            startAutoPlay(); 
         });
     }
 
-    // 🟢 3. 頂級觸控手勢綁定 (滑動與長按)
+    // 🟢 5. 頂級觸控手勢綁定
     let startX = 0;
     let currentX = 0;
     let isDragging = false;
     let longPressTimer;
     const container = document.getElementById('sponsor-carousel-container');
 
-    container.addEventListener('touchstart', (e) => {
-        startX = e.touches[0].clientX;
-        currentX = startX;
-        isDragging = true;
-        stopAutoPlay(); // 碰到就暫停自動播放
+    if(container) {
+        container.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            currentX = startX;
+            isDragging = true;
+            stopAutoPlay();
 
-        // 偵測長按 (按住 250ms 會有微微縮小的視覺回饋)
-        longPressTimer = setTimeout(() => {
-            track.style.transform = `translateX(-${currentIndex * 100}%) scale(0.97)`;
-            track.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
-        }, 250);
-    }, { passive: true });
+            longPressTimer = setTimeout(() => {
+                track.style.transform = `translateX(-${currentIndex * 100}%) scale(0.97)`;
+                track.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
+            }, 250);
+        }, { passive: true });
 
-    container.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        currentX = e.touches[0].clientX;
-        const diffX = currentX - startX;
+        container.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            currentX = e.touches[0].clientX;
+            const diffX = currentX - startX;
 
-        // 如果手指有滑動，取消長按判定，讓卡片跟著手指微調
-        if (Math.abs(diffX) > 10) {
-            clearTimeout(longPressTimer);
-            track.style.transition = 'none'; // 移除動畫，跟隨手指
-            track.style.transform = `translateX(calc(-${currentIndex * 100}% + ${diffX}px))`;
-        }
-    }, { passive: true });
-
-    container.addEventListener('touchend', (e) => {
-        if (!isDragging) return;
-        isDragging = false;
-        clearTimeout(longPressTimer);
-
-        track.style.transition = 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)'; // 恢復滑順彈性動畫
-        const diffX = currentX - startX;
-        
-        // 判斷是否滑動超過 40px，觸發換張 (且支援無限循環)
-        if (Math.abs(diffX) > 40) {
-            if (diffX > 0) {
-                currentIndex = (currentIndex - 1 + totalSlides) % totalSlides; // 往右滑，上一張
-            } else {
-                currentIndex = (currentIndex + 1) % totalSlides; // 往左滑，下一張
+            if (Math.abs(diffX) > 10) {
+                clearTimeout(longPressTimer);
+                track.style.transition = 'none'; 
+                track.style.transform = `translateX(calc(-${currentIndex * 100}% + ${diffX}px))`;
             }
-        }
-        
-        updateCarousel();
-        startAutoPlay(); // 放開手後重新開始計時
-    });
+        }, { passive: true });
 
-    // 電腦版滑鼠支援 (Hover 暫停)
-    container.addEventListener('mouseenter', stopAutoPlay);
-    container.addEventListener('mouseleave', startAutoPlay);
+        container.addEventListener('touchend', (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            clearTimeout(longPressTimer);
+
+            track.style.transition = 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)'; 
+            const diffX = currentX - startX;
+            
+            if (Math.abs(diffX) > 40) {
+                if (diffX > 0) {
+                    currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
+                } else {
+                    currentIndex = (currentIndex + 1) % totalSlides;
+                }
+            }
+            
+            updateCarousel();
+            startAutoPlay();
+        });
+
+        container.addEventListener('mouseenter', stopAutoPlay);
+        container.addEventListener('mouseleave', startAutoPlay);
+    }
 }
