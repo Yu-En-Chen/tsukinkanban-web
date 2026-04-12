@@ -978,7 +978,7 @@ function handleCardClick(id) {
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                 </div>
                 <div style="font-size: 1.05em; font-weight: 800; color: var(--card-text-color);">追跡している路線はありません</div>
-                <div style="font-size: 0.85em; margin-top: 8px; opacity: 0.8; color: var(--text-secondary);">タップして路線を追加してください</div>
+                <div style="font-size: 0.85em; margin-top: 8px; opacity: 0.8; color: var(--text-secondary);">よく使う路線を追加しましょう</div>
             `;
 
             // 🌟 點擊直接觸發「新增路線」的完整動畫流程
@@ -3273,8 +3273,9 @@ function silentUpdateExtensionPanel(cardId) {
     } else {
         // 如果刪到一條不剩，補回空狀態  
         const emptyState = document.createElement('div');
-        // 替換背景與邊框變數
-        emptyState.style.cssText = 'background: var(--tag-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid var(--border-color); border-radius: 24px; padding: 40px 20px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.15);';
+        emptyState.className = 'interactive-btn'; // 🌟 掛上 Hover 動畫
+        emptyState.style.cssText = 'cursor: pointer; background: var(--tag-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid var(--border-color); border-radius: 24px; padding: 40px 20px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.15);';
+        
         emptyState.innerHTML = `
             <div style="opacity: 0.7; margin-bottom: 12px; display: flex; justify-content: center; color: var(--card-text-color);">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -3282,6 +3283,27 @@ function silentUpdateExtensionPanel(cardId) {
             <div style="font-size: 1.05em; font-weight: 800; color: var(--card-text-color);">追跡している路線はありません</div>
             <div style="font-size: 0.85em; margin-top: 8px; opacity: 0.8; color: var(--text-secondary);">よく使う路線を追加しましょう</div>
         `;
+
+        emptyState.onclick = (e) => {
+            e.stopPropagation();
+            if (isAnimating) return;
+            if (navigator.vibrate) navigator.vibrate(50);
+            
+            window.targetCardIdForAdd = data.id;
+            closeAllCards(false);
+            
+            setTimeout(() => {
+                const searchBtn = document.querySelector('.search-trigger') || document.getElementById('search-trigger');
+                if (searchBtn) {
+                    searchBtn.click();
+                    setTimeout(() => {
+                        const searchInput = document.getElementById('search-input');
+                        if (searchInput) searchInput.focus({ preventScroll: true });
+                    }, 300);
+                }
+            }, 500);
+        };
+
         fragment.appendChild(emptyState);
     }
 
