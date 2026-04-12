@@ -85,9 +85,9 @@ export const supporterContent = `
         </div>
 
         <p style="font-size: 0.95em; margin-bottom: 24px;">当サイトは個人で開発・運営を行っており、サーバー維持費などは皆様からの温かいご支援によって成り立っています。</p>
-        <p style="font-size: 0.95em; margin-bottom: 24px;">今後もより便利で快適なサービスを継続して提供するため、サポートをお願いいたします。</p>
+        <p style="font-size: 0.95em; margin-bottom: 24px;">今後もより便利で快適なサービスを継続して提供するため、感謝のしるしとして『限定デジタル特典パック』をご用意いたしました。ぜひサポートをお願いいたします。</p>
         <br>
-        <p style="color: var(--text-main); font-weight: 600; margin-bottom: 8px;">開発者をサポートする</p>
+        <p style="color: var(--text-main); font-weight: 600; margin-bottom: 8px;">特典パックを購入して開発を応援する</p>
         
         <a href="https://buy.stripe.com/test_aFa5kD80s7AYdjbd0TaIM00" target="_blank" rel="noopener noreferrer" style="display: flex; justify-content: center; align-items: center; gap: 8px; background: var(--text-main); color: var(--bg-color); padding: 14px; border-radius: 12px; font-weight: 600; font-size: 1.05em; text-decoration: none; margin-bottom: 8px; transition: transform 0.2s ease, opacity 0.2s ease; transform: translateZ(0); backface-visibility: hidden;">
             
@@ -96,7 +96,7 @@ export const supporterContent = `
                 <line x1="2" x2="22" y1="10" y2="10"></line>
             </svg>
             
-            <span style="transform: translateZ(0);">支援ページへ進む</span>
+            <span style="transform: translateZ(0);">購入ページへ進む</span>
         </a>
 
         <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 24px; color: var(--text-main);">
@@ -126,11 +126,12 @@ export const supporterContent = `
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;">
                     <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>
                 </svg>
-                ご支援に関する注意事項
+                ご購入に関する注意事項
             </p>
             <ul style="padding-left: 20px; font-size: 0.85em; opacity: 0.9; margin-bottom: 0;">
-                <li style="margin-bottom: 8px;"><strong>ご支援は任意です。</strong>本決済は当サイトの開発・運営に対するご支援を目的としており、物理的な商品（グッズ等）の発送や、特定のサービス提供を伴うものではありません。</li>
-                <li style="margin-bottom: 8px;"><strong>サポートの有無によって本サービスの機能制限や利用体験に違いが生じることは一切ありません。</strong>すべての機能を無料でご利用いただけます。</li>
+                <li style="margin-bottom: 8px;"><strong>本テーマパックのご購入は任意です。</strong>本決済は「デジタル特典パック（PDFノートおよびカスタムカラーコード集）」のご購入となります。決済完了後、ダウンロードリンクが提供されます。物理的な商品（グッズ等）の発送はございません。</li>
+                <li style="margin-bottom: 8px;"><strong>購入の有無によって本サービスの機能制限や利用体験に違いが生じることは一切ありません。</strong>すべての機能を無料でご利用いただけます。</li>
+                <li style="margin-bottom: 8px;">本商品の売上は、当サイトのサーバー維持費や今後の開発資金として大切に活用させていただきます。皆様の温かい応援が開発の励みになります。</li>
                 <li style="margin-bottom: 8px;">ご利用のクレジットカード会社によっては、別途「<strong>海外決済手数料</strong>（為替手数料など）」が発生する場合があります。</li>
                 <li style="margin-bottom: 8px;">万が一返金をご希望の場合は、<strong>決済完了後7日以内</strong>にご連絡ください。なお、返金金額からは決済プラットフォームが徴収する<strong>決済手数料</strong>が差し引かれますのでご注意ください。実際の返金が口座に反映されるまでの日数は各カード会社等の規定に準じますが、ご連絡をいただき次第、速やかに手続きを行います。</li>
                 
