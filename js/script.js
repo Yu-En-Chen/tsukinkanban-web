@@ -6,6 +6,9 @@ try {
     if (localStorage.getItem('tsukin_setting_useSystemCursor') === 'true') {
         document.body.classList.add('use-system-cursor');
     }
+    // 2. 描畫模式：預設為 'performance'
+    const savedRenderMode = localStorage.getItem('tsukin_setting_renderMode') || 'performance';
+    document.body.classList.add(`render-mode-${savedRenderMode}`);
 } catch (e) { }
 
 import { bottomCardConfig, railwayData } from '../data/data.js';
