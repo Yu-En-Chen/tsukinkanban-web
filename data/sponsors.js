@@ -173,7 +173,7 @@ export async function initSponsorCarousel() {
 
     function startAutoPlay() {
         stopAutoPlay();
-        autoPlayTimer = setInterval(nextSlide, 5000);
+        autoPlayTimer = setInterval(nextSlide, 2500);
     }
     
     function stopAutoPlay() {
