@@ -5,11 +5,13 @@ export const bottomCardConfig = {
     hue: 50,             
     title: '運行情報',     
     status: 'Info',       
-    description: '運行状況に関する詳細な情報は、各カードをタップして確認してください。', 
+    description: '', 
     borderColorOpacity: 0.15, 
     tagBgOpacity: 0.25        
 };
+//上方沒在用但不可刪除會異常
 
+//實際預設牌組
 export const railwayData = [
     { 
         id: 'tokyo', name: '遅れやすい通勤路線', kana: '', status: '正常運転', hex: '#009100', desc: '', detail: [''],
@@ -32,8 +34,8 @@ export const railwayData = [
         targetLineIds: ['odpt.Railway:Toei.NipporiToneri', 'odpt.Railway:TamaMonorail.TamaMonorail', 'odpt.Railway:Toei.Arakawa']
     },
     { 
-        id: 'personal', name: 'マイカード', kana: '', status: '正常運転', hex: '#707038', desc: '', detail: [''],
+        id: 'personal', name: 'マイカード', kana: '', status: '正常運転', hex: '#C9CABD', desc: '', detail: [''],
 
-        targetLineIds: ['odpt.Railway:Toei.Oedo']
+        targetLineIds: []
     }
 ];

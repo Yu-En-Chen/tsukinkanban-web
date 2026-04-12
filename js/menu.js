@@ -194,9 +194,13 @@ function generateHistoryHTML() {
             }
 
             const cardName = card.name || card.title || 'その他の路線';
+            // ✨ 判斷這張卡片是否有設定任何路線 (相容鐵道與飛機格式)
+            const targetIds = card.targetLineIds || card.targetAirports || card.airports || (card.airport ? [card.airport] : []);
+            
             groupedData.set(card.id, {
                 cardName: cardName,
-                routes: []
+                routes: [],
+                hasRoutes: targetIds.length > 0 // 👈 標記這張卡片是否為空
             });
         });
     }
@@ -265,10 +269,18 @@ function generateHistoryHTML() {
                     <div class="history-content">
         `;
 
-        if (validRoutes.length === 0) {
+        if (!group.hasRoutes) {
+            // ✨ 狀態 A：這張卡片裡面根本沒有路線
             htmlStr += `
-                <div style="text-align: center; padding: 12px 0; color: inherit; opacity: 0.5; font-size: 0.9em; display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                <div style="text-align: center; padding: 16px 0; color: inherit; opacity: 0.6; font-size: 0.9em; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    追跡している路線はありません
+                </div>
+            `;
+        } else if (validRoutes.length === 0) {
+            // ✨ 狀態 B：有路線，但資料還在跟伺服器同步中
+            htmlStr += `
+                <div style="text-align: center; padding: 16px 0; color: inherit; opacity: 0.6; font-size: 0.9em; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                     履歴データを同期中...
                 </div>
             `;
