@@ -1809,9 +1809,11 @@ function filterCards(keyword) {
 
                 let isDelayed = false, isError = false, isAttention = false, isSevere = false;
 
-                if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
+                if (statusInfo.status_type === "通信エラー") {
+                    isAttention = true; // ✨ 優先攔截「通信エラー」，降級為注意狀態
+                } else if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
                     isError = true;
-                } else if (statusInfo.status_type === "非対応" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし") {
+                } else if (statusInfo.status_type === "非対応" || statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし" || statusInfo.status_type === "更新中...") {
                     isAttention = true;
                 } else if (delay > 0) {
                     if (delay <= 5) {
@@ -1976,9 +1978,11 @@ window.previewRouteFromSearch = function (routeId) {
 
     let isDelayed = false, isError = false, isAttention = false, isSevere = false;
 
-    if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
+    if (statusInfo.status_type === "通信エラー") {
+        isAttention = true; // ✨ 優先攔截「通信エラー」，降級為注意狀態
+    } else if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
         isError = true;
-    } else if (statusInfo.status_type === "非対応" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし") {
+    } else if (statusInfo.status_type === "非対応" || statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし" || statusInfo.status_type === "更新中...") {
         isAttention = true;
     } else if (delay > 0) {
         if (delay <= 5) {
