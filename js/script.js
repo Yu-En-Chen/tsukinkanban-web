@@ -968,15 +968,43 @@ function handleCardClick(id) {
 
         } else {
             // 無追蹤路線時的空狀態 
-            scrollWrapper.innerHTML = `
-            <div style="background: var(--tag-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid var(--border-color); border-radius: 24px; padding: 40px 20px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
-                    <div style="opacity: 0.7; margin-bottom: 12px; display: flex; justify-content: center; color: var(--card-text-color);">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                    </div>
-                    <div style="font-size: 1.05em; font-weight: 800; color: var(--card-text-color);">追跡している路線はありません</div>
-                    <div style="font-size: 0.85em; margin-top: 8px; opacity: 0.8; color: var(--text-secondary);">よく使う路線を追加しましょう</div>
+            const emptyState = document.createElement('div');
+            emptyState.className = 'interactive-btn'; // 🌟 掛上你優雅的 scale: 1.01 微互動
+            emptyState.style.cssText = 'cursor: pointer; background: var(--tag-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid var(--border-color); border-radius: 24px; padding: 40px 20px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.15);';
+            
+            // 💡 UX 微調：將文字改為「點擊以新增路線」
+            emptyState.innerHTML = `
+                <div style="opacity: 0.7; margin-bottom: 12px; display: flex; justify-content: center; color: var(--card-text-color);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                 </div>
+                <div style="font-size: 1.05em; font-weight: 800; color: var(--card-text-color);">追跡している路線はありません</div>
+                <div style="font-size: 0.85em; margin-top: 8px; opacity: 0.8; color: var(--text-secondary);">タップして路線を追加してください</div>
             `;
+
+            // 🌟 點擊直接觸發「新增路線」的完整動畫流程
+            emptyState.onclick = (e) => {
+                e.stopPropagation();
+                if (isAnimating) return;
+                if (navigator.vibrate) navigator.vibrate(50); // 觸覺回饋
+                
+                window.targetCardIdForAdd = data.id; // 記憶要加在哪張卡片
+                closeAllCards(false); // 先流暢地關閉目前面板
+                
+                // 等待 500ms 讓 Z-index 退場乾淨，再自動點擊頂部搜尋按鈕
+                setTimeout(() => {
+                    const searchBtn = document.querySelector('.search-trigger') || document.getElementById('search-trigger');
+                    if (searchBtn) {
+                        searchBtn.click();
+                        // 再等 300ms 搜尋列展開後，自動對焦喚起虛擬鍵盤
+                        setTimeout(() => {
+                            const searchInput = document.getElementById('search-input');
+                            if (searchInput) searchInput.focus({ preventScroll: true });
+                        }, 300);
+                    }
+                }, 500);
+            };
+
+            scrollWrapper.appendChild(emptyState);
         }
 
         // =========================================================
