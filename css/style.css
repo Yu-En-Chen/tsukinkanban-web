@@ -3347,3 +3347,16 @@ html.is-android-fallback .info-circle {
         border: 1px solid rgba(255,255,255,0.1) !important;
     }
 }
+/* ==========================================================================
+   🟢 Android 景深覆蓋修正：用「完全實心背景」蓋過縮小的卡片
+   ========================================================================== */
+
+/* 1. 搜尋/選單遮罩 (.search-mask)
+   2. 卡片展開時的底層 (.detail-overlay)
+   原本是半透明或全透明，現在只要是 Android，一律強制填滿「系統底色」。
+   這樣當背景卡片往後縮小時，就會被這個實心顏色完美蓋住，不會有透明穿幫的問題！
+*/
+html.is-android-fallback .search-mask,
+html.is-android-fallback .detail-overlay {
+    background: var(--bg-color) !important;
+}
