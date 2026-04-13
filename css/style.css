@@ -3360,3 +3360,34 @@ html.is-android-fallback .search-mask,
 html.is-android-fallback .detail-overlay {
     background: var(--bg-color) !important;
 }
+/* =========================================
+   📱 彈出視窗 (Dialog & Action Sheet) 實心替換
+   ========================================= */
+
+/* 1. 彈窗的背景遮罩：加深純黑半透明，確實蓋住後方畫面 */
+html.is-android-fallback .ios-dialog-overlay,
+html.is-android-fallback .ios-action-overlay {
+    background: rgba(0, 0, 0, 0.5) !important; 
+}
+
+/* 2. 彈窗主體：淺色模式實心珍珠白 */
+html.is-android-fallback .ios-dialog-box,
+html.is-android-fallback .ios-action-block {
+    background: rgb(245, 245, 247) !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important; /* 加深陰影產生立體感 */
+}
+
+/* 3. 深色模式自動適應 */
+@media (prefers-color-scheme: dark) {
+    html.is-android-fallback .ios-dialog-overlay,
+    html.is-android-fallback .ios-action-overlay {
+        background: rgba(0, 0, 0, 0.7) !important; /* 夜間模式遮罩更深 */
+    }
+
+    /* 彈窗主體：深色模式實心深灰 */
+    html.is-android-fallback .ios-dialog-box,
+    html.is-android-fallback .ios-action-block {
+        background: rgb(44, 44, 46) !important;
+        border: 1px solid rgba(255,255,255,0.1) !important; /* 加上微光邊框區分層次 */
+    }
+}

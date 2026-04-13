@@ -4,6 +4,7 @@
 window.iosConfirm = function(title, message, confirmText = 'OK', cancelText = 'キャンセル', isDestructive = false) {
     return new Promise((resolve) => {
         const overlay = document.createElement('div');
+        overlay.className = 'ios-dialog-overlay';
         overlay.style.cssText = `
             position: fixed; inset: 0; z-index: 999998;
             display: flex; align-items: center; justify-content: center;
@@ -14,6 +15,7 @@ window.iosConfirm = function(title, message, confirmText = 'OK', cancelText = '�
         `;
 
         const box = document.createElement('div');
+        box.className = 'ios-dialog-box';
         const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         box.style.cssText = `
             width: 320px; border-radius: 36px; text-align: center;
@@ -83,6 +85,7 @@ window.iosActionSheet = function(title, message, buttons, cancelText = 'キャ�
     return new Promise((resolve) => {
         // 1. 建立背景遮罩
         const overlay = document.createElement('div');
+        overlay.className = 'ios-action-overlay';
         overlay.style.cssText = `
             position: fixed; inset: 0; z-index: 999998;
             display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
@@ -111,6 +114,7 @@ window.iosActionSheet = function(title, message, buttons, cancelText = 'キャ�
 
         // 3. 上半部區塊：包含標題、說明、與所有選項按鈕
         const mainBlock = document.createElement('div');
+        mainBlock.className = 'ios-action-block';
         mainBlock.style.cssText = `
             border-radius: 32px; background: ${bg};
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
@@ -145,6 +149,7 @@ window.iosActionSheet = function(title, message, buttons, cancelText = 'キャ�
 
         // 4. 下半部區塊：獨立的取消按鈕 (字體加粗)
         const cancelBlock = document.createElement('div');
+        cancelBlock.className = 'ios-action-block';
         cancelBlock.style.cssText = `
             border-radius: 999px; background: ${bg};
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
