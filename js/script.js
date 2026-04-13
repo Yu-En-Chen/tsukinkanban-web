@@ -41,7 +41,7 @@ window.getStatusIconsHTML = function (activeFlags = [false, false, false, false,
 //Android系統專屬偵測，為 html 標籤打上標記
 const ua = navigator.userAgent;
 if (/Android/i.test(ua)) {
-    document.documentElement.classList.add('is-android-blink');
+    document.documentElement.classList.add('is-android-fallback');
 }
 
 // 狀態旗標

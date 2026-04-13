@@ -1748,19 +1748,19 @@ body.searching .dismiss-icon {
 }
 
 /* ==========================================================================
-   🟢 Android Blink 引擎專屬防閃爍修復 (動態降級法)
+   🟢 Android 專屬防閃爍修復 (動態降級)
    ========================================================================== */
-html.is-android-blink .card::after,
-html.is-android-blink .fixed-bottom-card::after,
-html.is-android-blink .detail-card-inner::after {
+html.is-android-fallback .card::after,
+html.is-android-fallback .fixed-bottom-card::after,
+html.is-android-fallback .detail-card-inner::after {
     background-image: none !important;
     filter: none !important;
     opacity: 0.65 !important;
 }
 
-html.is-android-blink .card-stack.dragging .card::after,
-html.is-android-blink .card-stack.bounce-back .card::after,
-html.is-android-blink .card-stack.bounce-back-wheel .card::after {
+html.is-android-fallback .card-stack.dragging .card::after,
+html.is-android-fallback .card-stack.bounce-back .card::after,
+html.is-android-fallback .card-stack.bounce-back-wheel .card::after {
     mix-blend-mode: normal !important;
     -webkit-mask-image: none !important;
     mask-image: none !important;
@@ -1769,9 +1769,9 @@ html.is-android-blink .card-stack.bounce-back-wheel .card::after {
     transition: none !important;
 }
 
-html.is-android-blink .card-stack.dragging .card,
-html.is-android-blink .card-stack.bounce-back .card,
-html.is-android-blink .card-stack.bounce-back-wheel .card {
+html.is-android-fallback .card-stack.dragging .card,
+html.is-android-fallback .card-stack.bounce-back .card,
+html.is-android-fallback .card-stack.bounce-back-wheel .card {
     will-change: transform;
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
