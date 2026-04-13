@@ -3,12 +3,12 @@
 // ============================================================================
 
 // 🟢 1. 負責生成設定面板的 HTML 結構
-window.getDisplaySettingsHTML = function() {
+window.getDisplaySettingsHTML = function () {
     const isDesktop = window.matchMedia('(pointer: fine)').matches;
-    
+
     const ua = navigator.userAgent;
     const platform = navigator.platform || '';
-    
+
     // ✨ 終極精準偵測引擎
     // 1. 判斷是否為 Apple 裝置 (iOS 或 Mac)
     const isApple = /(Mac|iPhone|iPod|iPad)/i.test(platform) || /(Mac|iPhone|iPod|iPad)/i.test(ua);
@@ -16,10 +16,10 @@ window.getDisplaySettingsHTML = function() {
     // 2. 判斷是否為「純正」的 Safari
     // 關鍵：Safari 的 UA 必須包含 Safari 但「絕對不能」包含 Chrome, CriOS, Edg... 等字眼
     const isSafari = isApple && /Safari/i.test(ua) && !/Chrome|CriOS|Edg|OPR|FxiOS|Firefox|Line|FBAV|FBAN|Instagram|MicroMessenger|WeChat|Threads|Twitter/i.test(ua);
-    
+
     // 3. 判斷是否為 Blink 核心 (Chrome, Edge, Opera)
     const isBlink = /Chrome|CriOS|Edg|OPR/i.test(ua);
-    
+
     // 4. 判斷是否為 Firefox
     const isFirefox = /Firefox|FxiOS/i.test(ua);
 
@@ -41,23 +41,26 @@ window.getDisplaySettingsHTML = function() {
                 </div>
             </div>
         `;
-    } 
-    // B. Windows/Android 使用 Blink 卻不是用 Firefox (你的特殊建議)
-    else if (isWindowsOrAndroid && isBlink && !isFirefox) {
-         browserRecommendationHTML = `
-            <div class="settings-browser-recommendation">
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
-                </svg>
-                <div class="recommendation-text">
-                    最高のパフォーマンスと視覚効果を得るため、<br><strong>Firefox</strong> ブラウザのご利用を推奨します。
-                </div>
-            </div>
-        `;
     }
-    
-    // 偵測 Debug Log (開發完可刪除)
-    console.log(`[偵測結果] Apple: ${isApple}, Safari: ${isSafari}, Blink: ${isBlink}, Firefox: ${isFirefox}`);
+    // B. Windows/Android
+    else if (isWindowsOrAndroid) {
+        // 💡 UserAgentをチェックして、AndroidかWindowsかを動的に判定する
+        const isAndroidDevice = /Android/i.test(navigator.userAgent);
+        const deviceName = isAndroidDevice ? 'Android' : 'Windows';
+
+        browserRecommendationHTML = `
+        <div class="settings-browser-recommendation">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+            </svg>
+            <div class="recommendation-text">
+                最高の視覚効果と物理アニメーションは、<strong>iOS の Safari</strong> に最適化されています。
+                <br>
+                ${deviceName} 端末では、一部の視覚効果が制限されます。
+            </div>
+        </div>
+    `;
+    }
 
     return `
     <div class="settings-container">
@@ -95,29 +98,29 @@ window.getDisplaySettingsHTML = function() {
 };
 
 // 🟢 2. 負責綁定面板內的微互動、拖曳與點擊事件
-window.initDisplaySettingsEvents = function() {
+window.initDisplaySettingsEvents = function () {
     const segControl = document.getElementById('render-mode-control');
     const segBtns = document.querySelectorAll('#render-mode-control .seg-btn');
     const segBg = document.querySelector('#render-mode-control .seg-bg');
-    
+
     let activeIndex = 0; // 0=品質, 1=動作
     let startX = 0;
     let currentTranslate = 0;
     let bgWidth = 0;
-    
+
     // ✨ 核心升級：用來精準區分「點擊」還是「刻意滑動」的旗標
-    let hasMoved = false; 
+    let hasMoved = false;
 
     // 🎯 核心切換功能
     function setSegment(index) {
         activeIndex = index;
         segBtns.forEach(b => b.classList.remove('active'));
         segBtns[index].classList.add('active');
-        
+
         segBg.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15)';
         if (index === 0) segBg.style.transform = 'translateX(0)';
         else segBg.style.transform = 'translateX(100%)';
-        
+
         console.log('描画モード切り替え：', segBtns[index].dataset.val);
         if (window.navigator.vibrate) window.navigator.vibrate(10);
     }
@@ -134,10 +137,10 @@ window.initDisplaySettingsEvents = function() {
     if (segControl && segBg) {
         segControl.addEventListener('touchstart', (e) => {
             startX = e.touches[0].clientX;
-            bgWidth = segBg.offsetWidth; 
+            bgWidth = segBg.offsetWidth;
             currentTranslate = activeIndex === 0 ? 0 : bgWidth;
             hasMoved = false; // 每次觸碰螢幕時重置
-            
+
             // 準備跟隨手指，拔除延遲動畫
             segBg.style.transition = 'none';
         }, { passive: true });
@@ -166,7 +169,7 @@ window.initDisplaySettingsEvents = function() {
                 segBg.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15)';
                 return;
             }
-            
+
             // 如果是「拖曳放開」，執行物理吸附
             const match = segBg.style.transform.match(/translateX\(([-\d.]+)px\)/);
             if (match) {
@@ -176,7 +179,7 @@ window.initDisplaySettingsEvents = function() {
             } else {
                 setSegment(activeIndex);
             }
-            
+
             // 給予 50ms 延遲解除狀態，防止原生點擊事件趁虛而入
             setTimeout(() => { hasMoved = false; }, 50);
         });
@@ -185,11 +188,11 @@ window.initDisplaySettingsEvents = function() {
     // C. 動態設定開關邏輯 (連接資料庫)
     // ✨ 這裡改成引入 db-settings.js
     import('../data/db-settings.js').then(dbSettings => {
-        
+
         // 🎯 1. 系統鼠標設定 (預設為 false：代表啟用自訂鼠標)
         const cursorSwitch = document.getElementById('setting-default-cursor');
         if (cursorSwitch && dbSettings.getDisplaySetting) {
-            
+
             // 初始化：從資料庫讀取並設定開關狀態
             dbSettings.getDisplaySetting('useSystemCursor', false).then(useSystem => {
                 cursorSwitch.checked = useSystem;
@@ -199,14 +202,14 @@ window.initDisplaySettingsEvents = function() {
             cursorSwitch.addEventListener('change', (e) => {
                 const isChecked = e.target.checked;
                 dbSettings.saveDisplaySetting('useSystemCursor', isChecked); // 寫入雙引擎資料庫
-                
+
                 // 立即套用視覺效果
                 if (isChecked) {
                     document.body.classList.add('use-system-cursor');
                 } else {
                     document.body.classList.remove('use-system-cursor');
                 }
-                
+
                 console.log(`設定 [系統鼠標] 切換為：`, isChecked ? '開啟 (隱藏自訂)' : '關閉 (顯示自訂)');
                 if (window.navigator.vibrate) window.navigator.vibrate(5);
             });
@@ -223,10 +226,10 @@ window.initDisplaySettingsEvents = function() {
             highContrastSwitch.addEventListener('change', (e) => {
                 const isChecked = e.target.checked;
                 dbSettings.saveDisplaySetting('highContrastIcons', isChecked);
-                
+
                 // 立即套用 Class 讓 CSS 能夠抓取
                 document.body.classList.toggle('high-contrast-icons', isChecked);
-                
+
                 console.log(`設定 [提高狀態符號對比度] 切換為：`, isChecked);
                 if (window.navigator.vibrate) window.navigator.vibrate(5);
             });
