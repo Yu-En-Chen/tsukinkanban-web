@@ -44,8 +44,8 @@ window.getStatusIconsHTML = function (activeFlags = [false, false, false, false,
 const ua = navigator.userAgent;
 
 // 💡 精準判定是否為蘋果生態系 (Mac, iOS)，包含防禦 iPadOS 桌面模式
-const isAppleDevice = /Macintosh|iPhone|iPad|iPod/i.test(ua) || 
-                      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isAppleDevice = /Macintosh|iPhone|iPad|iPod/i.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 // 讀取使用者的設定紀錄
 let savedLiteMode = localStorage.getItem('tsukin_lite_mode');
 
@@ -65,19 +65,19 @@ if (!isAppleDevice) {
 // 🪟 Windows 系統專屬偵測 (字體渲染優化與動態載入 Noto Sans JP)
 if (/Windows/i.test(ua)) {
     document.documentElement.classList.add('is-windows-rendering');
-    
+
     // 動態載入 Google Fonts，不拖累 iOS/Android 效能
     // 加入 preconnect 加速 DNS 解析
     const preconnect1 = document.createElement('link');
     preconnect1.rel = 'preconnect'; preconnect1.href = 'https://fonts.googleapis.com';
     const preconnect2 = document.createElement('link');
     preconnect2.rel = 'preconnect'; preconnect2.href = 'https://fonts.gstatic.com'; preconnect2.crossOrigin = 'anonymous';
-    
+
     // 請求 Noto Sans JP (包含 400一般, 500中等, 600半粗, 700粗體)
     const fontLink = document.createElement('link');
     fontLink.rel = 'stylesheet';
     fontLink.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap';
-    
+
     document.head.appendChild(preconnect1);
     document.head.appendChild(preconnect2);
     document.head.appendChild(fontLink);
@@ -821,14 +821,14 @@ function handleCardClick(id) {
         // 💎 教授級 UX 細節：如果 API 有給航廈，直接幫使用者導航到「專屬航廈」！
         // 這樣 Google Maps 會直接開啟該航廈的「室內地圖」
         const mainTerminal = isDep ? depTerminal : arrTerminal;
-        
+
         // 🟢 核心修復：嚴謹的航廈有效性驗證 (防禦 null, undefined, 空白, 以及各種長度的破折號如 -, --, ---)
         const isValidTerminal = mainTerminal && !/^-+$/.test(mainTerminal.toString().trim());
 
         if (mapQuery !== '' && isValidTerminal) {
             // 確保加上 "第Xターミナル" 讓 Google Maps 定位精準到棟
-            const terminalSuffix = mainTerminal.toString().includes('ターミナル') 
-                ? mainTerminal 
+            const terminalSuffix = mainTerminal.toString().includes('ターミナル')
+                ? mainTerminal
                 : `${mainTerminal}ターミナル`;
             mapQuery += ` ${terminalSuffix}`;
         }
@@ -1019,7 +1019,7 @@ function handleCardClick(id) {
             const emptyState = document.createElement('div');
             emptyState.className = 'interactive-btn'; // 🌟 掛上你優雅的 scale: 1.01 微互動
             emptyState.style.cssText = 'cursor: pointer; background: var(--tag-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid var(--border-color); border-radius: 24px; padding: 40px 20px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.15);';
-            
+
             // 💡 UX 微調：將文字改為「點擊以新增路線」
             emptyState.innerHTML = `
                 <div style="opacity: 0.7; margin-bottom: 12px; display: flex; justify-content: center; color: var(--card-text-color);">
@@ -1034,10 +1034,10 @@ function handleCardClick(id) {
                 e.stopPropagation();
                 if (isAnimating) return;
                 if (navigator.vibrate) navigator.vibrate(50); // 觸覺回饋
-                
+
                 window.targetCardIdForAdd = data.id; // 記憶要加在哪張卡片
                 closeAllCards(false); // 先流暢地關閉目前面板
-                
+
                 // 等待 500ms 讓 Z-index 退場乾淨，再自動點擊頂部搜尋按鈕
                 setTimeout(() => {
                     const searchBtn = document.querySelector('.search-trigger') || document.getElementById('search-trigger');
@@ -1883,6 +1883,10 @@ function filterCards(keyword) {
 
                 // ✨ 只要有監視狀態，或是官方發布了具體文字原因，就點亮第七顆燈 (❕)
                 if (isAttention || hasMessageNote) flags[6] = true;
+                // 🟢 新增：偵測天候與地震獨立燈號
+                if (msg.includes('地震')) flags[0] = true;
+                if (msg.includes('雨')) flags[1] = true;
+                if (msg.includes('雪')) flags[2] = true;
 
                 searchResults.push({
                     id: rw_id,
@@ -2052,6 +2056,10 @@ window.previewRouteFromSearch = function (routeId) {
 
     // ✨ 第七顆燈 (備註/注意)
     if (isAttention || hasMessageNote) flags[6] = true;
+    // 🟢 新增：偵測天候與地震獨立燈號
+    if (msg.includes('地震')) flags[0] = true;
+    if (msg.includes('雨')) flags[1] = true;
+    if (msg.includes('雪')) flags[2] = true;
 
     // 打造幽靈卡片資料
     const tempCard = {
@@ -2269,6 +2277,12 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                     groupFlags = formatted.flags;
                     groupDesc = formatted.desc;
                     groupUpdateTime = formatted.flightData.updateTime;
+                    // 🟢 新增：飛機卡片獨立判斷天氣與天災燈號
+                    // 從航班的備註 (note) 或狀態描述中尋找關鍵字
+                    const flightMsg = (formatted.flightData.note || groupDesc || "");
+                    if (flightMsg.includes('地震')) groupFlags[0] = true;
+                    if (flightMsg.includes('雨')) groupFlags[1] = true;
+                    if (flightMsg.includes('雪')) groupFlags[2] = true;
                 } else {
                     // ⚠️ 找不到航班 (已落地移除或 API 異常)：給予幽靈防護罩，防止跌回火車排版！
                     groupDesc = "フライト情報が終了したか、取得できません";
@@ -2306,6 +2320,11 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
             let hasNormal = false;
             let hasMessageNote = false; // ✨ 新增：追蹤這組卡片是否有具體事故文字
 
+            // 🟢 新增：追蹤這組卡片內是否有天氣與天災狀況
+            let hasEarthquake = false;
+            let hasRain = false;
+            let hasSnow = false;
+
             finalTargetIds.forEach(lineId => {
                 const dictInfo = routeDict[lineId] || { name: "未知の路線", company: "不明" };
 
@@ -2331,6 +2350,10 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                 if (!isNormalMsg && msg.trim().length > 0) {
                     hasMessageNote = true;
                 }
+                // 🟢 新增：檢查該路線訊息是否包含天候或地震字眼
+                if (msg.includes('地震')) hasEarthquake = true;
+                if (msg.includes('雨')) hasRain = true;
+                if (msg.includes('雪')) hasSnow = true;
 
                 // 🟢 狀態變數宣告
                 let isDelayedLocal = false;
@@ -2394,10 +2417,13 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
             });
 
             // 🟢 多重燈號共存寫入陣列
+            if (hasEarthquake) groupFlags[0] = true; // 第1顆：地震
+            if (hasRain) groupFlags[1] = true;       // 第2顆：雨天
+            if (hasSnow) groupFlags[2] = true;       // 第3顆：雪天
             if (hasError || hasSevere) groupFlags[3] = true; // 第4顆：打叉 ❌ (系統錯誤 或 嚴重延誤停駛)
             if (hasDelay) groupFlags[4] = true; // 第5顆：三角形 ⚠️ (6~15分延誤)
             if (hasNormal) groupFlags[5] = true; // 第6顆：圓形 🟢 (0~5分正常)
-            if (hasAttention || hasMessageNote) groupFlags[6] = true; // ✨ ❕ (監視中，或是官方發布了具體的事故/延誤原因！)
+            if (hasAttention || hasMessageNote) groupFlags[6] = true; // ✨ ❕ (非対応，或是官方發布了具體的事故/延誤原因！)
 
             // ✨ 智慧文字描述生成 (依照嚴重程度給予精準說明)
             if (isOffline) {
@@ -3327,7 +3353,7 @@ function silentUpdateExtensionPanel(cardId) {
         const emptyState = document.createElement('div');
         emptyState.className = 'interactive-btn'; // 🌟 掛上 Hover 動畫
         emptyState.style.cssText = 'cursor: pointer; background: var(--tag-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid var(--border-color); border-radius: 24px; padding: 40px 20px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.15);';
-        
+
         emptyState.innerHTML = `
             <div style="opacity: 0.7; margin-bottom: 12px; display: flex; justify-content: center; color: var(--card-text-color);">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -3340,10 +3366,10 @@ function silentUpdateExtensionPanel(cardId) {
             e.stopPropagation();
             if (isAnimating) return;
             if (navigator.vibrate) navigator.vibrate(50);
-            
+
             window.targetCardIdForAdd = data.id;
             closeAllCards(false);
-            
+
             setTimeout(() => {
                 const searchBtn = document.querySelector('.search-trigger') || document.getElementById('search-trigger');
                 if (searchBtn) {
