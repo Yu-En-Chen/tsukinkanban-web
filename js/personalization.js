@@ -1726,13 +1726,32 @@ window.toggleGhostEditMode = function(type, e, element) {
         if (countElement) countElement.style.opacity = '0';
     }
 
-    // 🟢 核心修復：利用 DOM Injection，讓輸入框直接成為容器的子元素
-    // 它會完全跟隨容器的 0.4s 動畫自動拉伸，不再受限於初期的靜態寬度！
-    els.container.appendChild(ghost);
-    ghost.style.top = '0px';
-    ghost.style.left = '0px';
-    ghost.style.width = '100%';
-    ghost.style.height = '100%';
+    // 🟢 核心修復：放棄 appendChild 遷移，改用 RAF 視覺追蹤引擎 (拯救 Android 鍵盤與絲滑度)
+    // 1. 將輸入框永遠鎖定在 wrapper 根部，絕對不跨容器移動 DOM，確保 Android 系統不收起鍵盤！
+    if (ghost.parentNode !== wrapper) {
+        wrapper.appendChild(ghost);
+    }
+    
+    // 2. 鎖定 Y 軸與高度 (這兩個不會隨動畫變動)
+    const offset = getOffset(els.container, wrapper);
+    ghost.style.top = offset.top + 'px';
+    ghost.style.height = els.container.offsetHeight + 'px';
+    
+    // 3. 啟動 60fps 追蹤迴圈，讓隱形輸入框跟隨 Flexbox 動畫一起變大與平移
+    const startTime = Date.now();
+    const trackAnim = () => {
+        if (window.pActiveEditType !== type) return; // 終止條件：使用者切換到其他框
+        
+        const currentOffset = getOffset(els.container, wrapper);
+        ghost.style.left = currentOffset.left + 'px';
+        ghost.style.width = els.container.offsetWidth + 'px';
+        
+        // 追蹤 500ms (確保涵蓋 400ms 的 spring 動畫與一點點緩衝)
+        if (Date.now() - startTime < 500) {
+            requestAnimationFrame(trackAnim);
+        }
+    };
+    trackAnim();
     
     ghost.style.pointerEvents = 'auto';
     ghost.focus({ preventScroll: true });
