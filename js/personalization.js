@@ -394,10 +394,12 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         onblur="window.handleGhostBlur(event)" 
         style="
         position: absolute;
+        box-sizing: border-box; /* 👈 新增：完美貼合容器尺寸 */
         height: 44px;
         margin: 0; padding: 0 16px;
         background: transparent; border: none; outline: none;
-        color: inherit; font-size: 0.95rem; font-weight: inherit; text-align: left;
+        color: inherit; font-size: 0.95rem; font-weight: inherit; 
+        text-align: center; /* 👈 修改：原生輸入法即時置中引擎 */
         opacity: 0; pointer-events: none; z-index: 100;
         transition: opacity 0.25s ease;
     ">
@@ -1724,10 +1726,13 @@ window.toggleGhostEditMode = function(type, e, element) {
         if (countElement) countElement.style.opacity = '0';
     }
 
-    const offset = getOffset(els.container, wrapper);
-    ghost.style.top = offset.top + 'px';
-    ghost.style.left = (offset.left + 16) + 'px';
-    ghost.style.width = (els.container.offsetWidth - 32) + 'px';
+    // 🟢 核心修復：利用 DOM Injection，讓輸入框直接成為容器的子元素
+    // 它會完全跟隨容器的 0.4s 動畫自動拉伸，不再受限於初期的靜態寬度！
+    els.container.appendChild(ghost);
+    ghost.style.top = '0px';
+    ghost.style.left = '0px';
+    ghost.style.width = '100%';
+    ghost.style.height = '100%';
     
     ghost.style.pointerEvents = 'auto';
     ghost.focus({ preventScroll: true });
