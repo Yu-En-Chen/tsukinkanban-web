@@ -3264,3 +3264,86 @@ body.keyboard-active .card,
 body.keyboard-active #fixed-info-card {
     pointer-events: none !important;
 }
+/* ==========================================================================
+   🟢 Android 全局效能降級 (終極流暢版：移除所有毛玻璃與景深，改為實心背景)
+   ========================================================================== */
+
+/* 1. 暴力拔除全站所有的毛玻璃濾鏡 (直接對所有元素下達禁令) */
+html.is-android-fallback * {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+/* 2. 暴力拔除 Z 軸景深的背景模糊 (這在 Android 上極度消耗 GPU) */
+html.is-android-fallback .card-stack,
+html.is-android-fallback #detail-card-container,
+html.is-android-fallback .fixed-bottom-card {
+    filter: none !important;
+}
+
+/* =========================================
+   🎨 實心背景替換工程 (淺色模式預設)
+   ========================================= */
+
+/* 搜尋全螢幕遮罩：改為純粹的半透明黑底 */
+html.is-android-fallback .search-mask { 
+    background: rgba(0, 0, 0, 0.5) !important; 
+}
+
+/* 大型面板與卡片：替換為實心珍珠白 */
+html.is-android-fallback .search-container::after,
+html.is-android-fallback .detail-extension-card,
+html.is-android-fallback .extension-route-card,
+html.is-android-fallback .flight-action-btn,
+html.is-android-fallback .search-empty-state,
+html.is-android-fallback .search-result-item {
+    background: rgb(245, 245, 247) !important; 
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important; /* 加強陰影以彌補失去的立體感 */
+}
+
+/* 小型按鈕與膠囊類：替換為實心純白 */
+html.is-android-fallback .left-circle-btn,
+html.is-android-fallback .search-trigger,
+html.is-android-fallback .action-capsule,
+html.is-android-fallback .cancel-circle-btn,
+html.is-android-fallback .search-input-box,
+html.is-android-fallback .left-capsule,
+html.is-android-fallback .info-tag-item,
+html.is-android-fallback .info-capsule,
+html.is-android-fallback .info-circle {
+    background: rgb(255, 255, 255) !important; 
+}
+
+/* =========================================
+   🌃 實心背景替換工程 (深色模式自動覆蓋)
+   ========================================= */
+@media (prefers-color-scheme: dark) {
+    html.is-android-fallback .search-mask { 
+        background: rgba(0, 0, 0, 0.7) !important; 
+    }
+
+    /* 大型面板與卡片：替換為實心深鈦灰 */
+    html.is-android-fallback .search-container::after,
+    html.is-android-fallback .detail-extension-card,
+    html.is-android-fallback .extension-route-card,
+    html.is-android-fallback .flight-action-btn,
+    html.is-android-fallback .search-empty-state,
+    html.is-android-fallback .search-result-item {
+        background: rgb(28, 28, 30) !important; 
+        border: 1px solid rgba(255,255,255,0.1) !important; /* 深色模式需要實心邊框切分層次 */
+    }
+
+    /* 小型按鈕與膠囊類：替換為實心深灰 */
+    html.is-android-fallback .left-circle-btn,
+    html.is-android-fallback .search-trigger,
+    html.is-android-fallback .action-capsule,
+    html.is-android-fallback .cancel-circle-btn,
+    html.is-android-fallback .search-input-box,
+    html.is-android-fallback .left-capsule,
+    html.is-android-fallback .info-tag-item,
+    html.is-android-fallback .info-capsule,
+    html.is-android-fallback .info-circle {
+        background: rgb(44, 44, 46) !important; 
+        border: 1px solid rgba(255,255,255,0.1) !important;
+    }
+}
