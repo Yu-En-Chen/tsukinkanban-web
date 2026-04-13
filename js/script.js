@@ -38,9 +38,9 @@ window.getStatusIconsHTML = function (activeFlags = [false, false, false, false,
 `.trim();
 };
 
-//Blink 引擎系統專屬偵測，為 html 標籤打上標記
+//Android系統專屬偵測，為 html 標籤打上標記
 const ua = navigator.userAgent;
-if (/Android/i.test(ua) && /Chrome/i.test(ua)) {
+if (/Android/i.test(ua)) {
     document.documentElement.classList.add('is-android-blink');
 }
 
