@@ -38,10 +38,28 @@ window.getStatusIconsHTML = function (activeFlags = [false, false, false, false,
 `.trim();
 };
 
-//Android系統專屬偵測，為 html 標籤打上標記
+// ==========================================
+// 🚀 1. 系統環境判定與效能模式 (Lite Mode) 初始化
+// ==========================================
 const ua = navigator.userAgent;
-if (/Android/i.test(ua)) {
+
+// 💡 精準判定是否為蘋果生態系 (Mac, iOS)，包含防禦 iPadOS 桌面模式
+const isAppleDevice = /Macintosh|iPhone|iPad|iPod/i.test(ua) || 
+                      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+// 讀取使用者的設定紀錄
+let savedLiteMode = localStorage.getItem('tsukin_lite_mode');
+
+if (!isAppleDevice) {
+    // 🤖 非蘋果設備 (Android, Windows 等)：強制鎖定開啟輕量化模式 (強制打上標籤)
+    localStorage.setItem('tsukin_lite_mode', 'true');
     document.documentElement.classList.add('is-android-fallback');
+} else {
+    // 🍎 蘋果設備：允許自由開關。若從未設定過，預設為 null -> 也就是 false (維持最高品質)
+    if (savedLiteMode === 'true') {
+        document.documentElement.classList.add('is-android-fallback');
+    } else {
+        document.documentElement.classList.remove('is-android-fallback');
+    }
 }
 
 // 🪟 Windows 系統專屬偵測 (字體渲染優化與動態載入 Noto Sans JP)
