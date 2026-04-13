@@ -3417,3 +3417,33 @@ html.is-android-fallback .detail-card-inner .interactive-btn {
 html.is-android-fallback #p-ghost-input {
     color: currentColor !important;
 }
+
+/* ==========================================================================
+   🪟 Windows 專屬字體渲染優化 (強制套用線上 Noto Sans JP)
+   ========================================================================== */
+   html.is-windows-rendering body {
+    /* 1. 絕對優先使用剛下載好的 Noto Sans JP，並以微軟正黑體為最後防線 */
+    font-family: "Noto Sans JP", "Meiryo", "Segoe UI", sans-serif !important;
+    
+    /* 2. 強制開啟瀏覽器最高級別的字體平滑處理 */
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    text-rendering: optimizeLegibility !important;
+}
+
+/* 3. 解決 Windows 渲染殘留的發虛問題 (如果套用 Noto Sans JP 後覺得夠粗了，這段可視情況刪除) */
+html.is-windows-rendering .card-text-color,
+html.is-windows-rendering .line-name,
+html.is-windows-rendering .description,
+html.is-windows-rendering .info-capsule {
+    text-shadow: 0 0 0.2px rgba(255, 255, 255, 0.1) !important;
+}
+
+@media (prefers-color-scheme: light) {
+    html.is-windows-rendering .card-text-color,
+    html.is-windows-rendering .line-name,
+    html.is-windows-rendering .description,
+    html.is-windows-rendering .info-capsule {
+        text-shadow: 0 0 0.2px rgba(0, 0, 0, 0.1) !important;
+    }
+}

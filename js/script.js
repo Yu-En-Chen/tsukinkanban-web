@@ -44,6 +44,27 @@ if (/Android/i.test(ua)) {
     document.documentElement.classList.add('is-android-fallback');
 }
 
+// 🪟 Windows 系統專屬偵測 (字體渲染優化與動態載入 Noto Sans JP)
+if (/Windows/i.test(ua)) {
+    document.documentElement.classList.add('is-windows-rendering');
+    
+    // 動態載入 Google Fonts，不拖累 iOS/Android 效能
+    // 加入 preconnect 加速 DNS 解析
+    const preconnect1 = document.createElement('link');
+    preconnect1.rel = 'preconnect'; preconnect1.href = 'https://fonts.googleapis.com';
+    const preconnect2 = document.createElement('link');
+    preconnect2.rel = 'preconnect'; preconnect2.href = 'https://fonts.gstatic.com'; preconnect2.crossOrigin = 'anonymous';
+    
+    // 請求 Noto Sans JP (包含 400一般, 500中等, 600半粗, 700粗體)
+    const fontLink = document.createElement('link');
+    fontLink.rel = 'stylesheet';
+    fontLink.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap';
+    
+    document.head.appendChild(preconnect1);
+    document.head.appendChild(preconnect2);
+    document.head.appendChild(fontLink);
+}
+
 // 狀態旗標
 let isInitialLoad = true;
 let isAnimating = false;
