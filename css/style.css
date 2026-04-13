@@ -3391,3 +3391,29 @@ html.is-android-fallback .ios-action-block {
         border: 1px solid rgba(255,255,255,0.1) !important; /* 加上微光邊框區分層次 */
     }
 }
+
+/* ==========================================================================
+   🎨 Android 卡片內部按鈕修正：動態適應卡片主題顏色
+   ========================================================================== */
+
+/* 只針對「卡片內部 (.detail-card-inner)」的按鈕進行解鎖。
+   利用 currentColor 自動抓取卡片的文字顏色 (黑或白)，
+   並混合 12% 的透明度作為背景，20% 作為邊框。
+*/
+html.is-android-fallback .detail-card-inner .info-tag-item,
+html.is-android-fallback .detail-card-inner .interactive-btn {
+    /* 舊版 Android 瀏覽器的安全備案 (萬用半透明灰) */
+    background: rgba(128, 128, 128, 0.2) !important;
+    border: 1px solid rgba(128, 128, 128, 0.3) !important;
+    
+    /* 現代 Android 瀏覽器的完美智能混色 */
+    background: color-mix(in srgb, currentColor 12%, transparent) !important;
+    border: 1px solid color-mix(in srgb, currentColor 20%, transparent) !important;
+    
+    box-shadow: none !important; /* 移除多餘陰影，保持 Native iOS/Android 扁平質感 */
+}
+
+/* 針對輸入框 (ghost input) 的文字顏色保護 */
+html.is-android-fallback #p-ghost-input {
+    color: currentColor !important;
+}
