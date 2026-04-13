@@ -803,9 +803,15 @@ function handleCardClick(id) {
         // 💎 教授級 UX 細節：如果 API 有給航廈，直接幫使用者導航到「專屬航廈」！
         // 這樣 Google Maps 會直接開啟該航廈的「室內地圖」
         const mainTerminal = isDep ? depTerminal : arrTerminal;
-        if (mapQuery !== '' && mainTerminal !== '-') {
+        
+        // 🟢 核心修復：嚴謹的航廈有效性驗證 (防禦 null, undefined, 空白, 以及各種長度的破折號如 -, --, ---)
+        const isValidTerminal = mainTerminal && !/^-+$/.test(mainTerminal.toString().trim());
+
+        if (mapQuery !== '' && isValidTerminal) {
             // 確保加上 "第Xターミナル" 讓 Google Maps 定位精準到棟
-            const terminalSuffix = mainTerminal.toString().includes('ターミナル') ? mainTerminal : `第${mainTerminal}ターミナル`;
+            const terminalSuffix = mainTerminal.toString().includes('ターミナル') 
+                ? mainTerminal 
+                : `${mainTerminal}ターミナル`;
             mapQuery += ` ${terminalSuffix}`;
         }
 
