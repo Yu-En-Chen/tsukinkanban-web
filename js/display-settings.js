@@ -62,6 +62,12 @@ window.getDisplaySettingsHTML = function () {
     `;
     }
 
+    // 🟢 讀取目前的效能模式狀態
+    const isLiteMode = localStorage.getItem('tsukin_lite_mode') === 'true';
+    
+    // 🟢 判斷是否需要強制鎖定 (非蘋果設備)
+    const isLocked = !isApple;
+
     return `
     <div class="settings-container">
         <p class="settings-description">アプリの動作や視覚効果をカスタマイズできます。</p>
@@ -70,11 +76,14 @@ window.getDisplaySettingsHTML = function () {
 
         <div class="settings-group">
             <div class="settings-row" style="height: 60px; padding-top: 0; padding-bottom: 0;">
-                <span class="settings-label">描画モード</span>
-                <div class="segmented-control" id="render-mode-control">
-                    <div class="seg-bg"></div>
-                    <button class="seg-btn active" data-val="performance">品質</button>
-                    <button class="seg-btn" data-val="quality">軽量</button>
+                <div style="display: flex; flex-direction: column; justify-content: center;">
+                    <span class="settings-label">描画モード</span>
+                </div>
+                
+                <div class="segmented-control" id="render-mode-control" style="${isLocked ? 'opacity: 0.6; pointer-events: none;' : ''}">
+                    <div class="seg-bg" style="transform: translateX(${isLiteMode ? '100%' : '0'});"></div>
+                    <button class="seg-btn ${!isLiteMode ? 'active' : ''}" data-val="performance">品質</button>
+                    <button class="seg-btn ${isLiteMode ? 'active' : ''}" data-val="quality">軽量</button>
                 </div>
             </div>
         </div>
