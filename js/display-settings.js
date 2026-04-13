@@ -107,30 +107,63 @@ window.getDisplaySettingsHTML = function () {
 };
 
 // 🟢 2. 負責綁定面板內的微互動、拖曳與點擊事件
-window.initDisplaySettingsEvents = function () {
+window.initDisplaySettingsEvents = function() {
     const segControl = document.getElementById('render-mode-control');
     const segBtns = document.querySelectorAll('#render-mode-control .seg-btn');
     const segBg = document.querySelector('#render-mode-control .seg-bg');
-
-    let activeIndex = 0; // 0=品質, 1=動作
+    
+    // ==========================================
+    // ✨ 升級細節 1：精準初始化
+    // 在綁定事件前，先讀取記憶體，確保 JS 內部的 index 與畫面一模一樣
+    // ==========================================
+    const isAppleDevice = /Macintosh|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    
+    // 如果 localStorage 裡面記住的是 true (輕量模式)，就把 activeIndex 設為 1 (右邊)，否則設為 0 (左邊)
+    let activeIndex = localStorage.getItem('tsukin_lite_mode') === 'true' ? 1 : 0; 
+    
     let startX = 0;
     let currentTranslate = 0;
     let bgWidth = 0;
+    let hasMoved = false; 
 
-    // ✨ 核心升級：用來精準區分「點擊」還是「刻意滑動」的旗標
-    let hasMoved = false;
-
-    // 🎯 核心切換功能
+    // ==========================================
+    // 🎯 核心切換功能 (連接資料庫與畫面渲染)
+    // ==========================================
     function setSegment(index) {
+        // ✨ 升級細節 2：雙重防呆鎖定
+        // 雖然我們在 HTML 把 Android 按鈕變半透明了，但為了防止有使用者亂點或系統 Bug，
+        // 這裡再加一道鎖：只要不是蘋果設備，嚴格禁止 index 變成 0 (品質模式)
+        if (!isAppleDevice && index === 0) return;
+
+        // 1. 更新按鈕的視覺 UI (文字變色)
         activeIndex = index;
         segBtns.forEach(b => b.classList.remove('active'));
         segBtns[index].classList.add('active');
-
+        
+        // 準備滑塊的彈簧動畫
         segBg.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15)';
-        if (index === 0) segBg.style.transform = 'translateX(0)';
-        else segBg.style.transform = 'translateX(100%)';
-
-        console.log('描画モード切り替え：', segBtns[index].dataset.val);
+        
+        // ✨ 升級細節 3：執行真正的資料儲存與畫面渲染
+        if (index === 0) {
+            // 🍎 選擇「品質」模式
+            segBg.style.transform = 'translateX(0)'; // 滑塊推到左邊
+            localStorage.setItem('tsukin_lite_mode', 'false'); // 存入記憶體
+            
+            // 【關鍵魔法】瞬間拔除降級標籤，網頁會立刻恢復毛玻璃特效！
+            document.documentElement.classList.remove('is-android-fallback');
+            console.log('描画モード：品質 (高階視覺開啟)');
+            
+        } else {
+            // 🚀 選擇「軽量」模式
+            segBg.style.transform = 'translateX(100%)'; // 滑塊推到右邊
+            localStorage.setItem('tsukin_lite_mode', 'true'); // 存入記憶體
+            
+            // 【關鍵魔法】瞬間打上降級標籤，網頁會立刻變成流暢的實心背景！
+            document.documentElement.classList.add('is-android-fallback');
+            console.log('描画モード：軽量 (效能模式開啟)');
+        }
+        
+        // 觸發手機微震動回饋，增加 Native App 手感
         if (window.navigator.vibrate) window.navigator.vibrate(10);
     }
 
