@@ -618,6 +618,10 @@ export async function importDataAndOverwrite(jsonString) {
         // ==========================================
         const db = await initDB();
 
+        // ✨ 破除隱藏封印：強制清除 UI 層偷偷記錄的隱藏黑名單！
+        // 這是確保卡片 100% 會出現在畫面上的絕對關鍵
+        localStorage.removeItem('TsukinKanban_HiddenCards');
+
         // 模式 A：LocalStorage
         if (useFallback || !db) {
             localStorage.setItem(FALLBACK_KEY, JSON.stringify(newDbData));
@@ -639,7 +643,7 @@ export async function importDataAndOverwrite(jsonString) {
                 
                 if (keys.length === 0) resolve(0);
 
-                // 2. 寫入帶有「強制顯示標籤」的全新資料
+                // 2. 寫入全新的、乾淨的資料
                 keys.forEach(key => {
                     store.put(newDbData[key]).onsuccess = () => {
                         processed++;
