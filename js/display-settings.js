@@ -64,7 +64,7 @@ window.getDisplaySettingsHTML = function () {
 
     // 🟢 讀取目前的效能模式狀態
     const isLiteMode = localStorage.getItem('tsukin_lite_mode') === 'true';
-    
+
     // 🟢 判斷是否需要強制鎖定 (非蘋果設備)
     const isLocked = !isApple;
 
@@ -102,29 +102,40 @@ window.getDisplaySettingsHTML = function () {
 
         <div style="height: 40px; flex-shrink: 0; width: 100%; pointer-events: none;"></div>
 
+        <div class="settings-group">
+            <div class="settings-row" style="height: 60px;">
+                <span class="settings-label">設定をエクスポート</span>
+                <button class="settings-btn" id="btn-export-all">匯出</button>
+            </div>
+            <div class="settings-row" style="height: 60px;">
+                <span class="settings-label">設定をインポート</span>
+                <button class="settings-btn" id="btn-import-all">匯入</button>
+            </div>
+        </div>
+
     </div>
     `;
 };
 
 // 🟢 2. 負責綁定面板內的微互動、拖曳與點擊事件
-window.initDisplaySettingsEvents = function() {
+window.initDisplaySettingsEvents = function () {
     const segControl = document.getElementById('render-mode-control');
     const segBtns = document.querySelectorAll('#render-mode-control .seg-btn');
     const segBg = document.querySelector('#render-mode-control .seg-bg');
-    
+
     // ==========================================
     // ✨ 升級細節 1：精準初始化
     // 在綁定事件前，先讀取記憶體，確保 JS 內部的 index 與畫面一模一樣
     // ==========================================
     const isAppleDevice = /Macintosh|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    
+
     // 如果 localStorage 裡面記住的是 true (輕量模式)，就把 activeIndex 設為 1 (右邊)，否則設為 0 (左邊)
-    let activeIndex = localStorage.getItem('tsukin_lite_mode') === 'true' ? 1 : 0; 
-    
+    let activeIndex = localStorage.getItem('tsukin_lite_mode') === 'true' ? 1 : 0;
+
     let startX = 0;
     let currentTranslate = 0;
     let bgWidth = 0;
-    let hasMoved = false; 
+    let hasMoved = false;
 
     // ==========================================
     // 🎯 核心切換功能 (連接資料庫與畫面渲染)
@@ -139,30 +150,30 @@ window.initDisplaySettingsEvents = function() {
         activeIndex = index;
         segBtns.forEach(b => b.classList.remove('active'));
         segBtns[index].classList.add('active');
-        
+
         // 準備滑塊的彈簧動畫
         segBg.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15)';
-        
+
         // ✨ 升級細節 3：執行真正的資料儲存與畫面渲染
         if (index === 0) {
             // 🍎 選擇「品質」模式
             segBg.style.transform = 'translateX(0)'; // 滑塊推到左邊
             localStorage.setItem('tsukin_lite_mode', 'false'); // 存入記憶體
-            
+
             // 【關鍵魔法】瞬間拔除降級標籤，網頁會立刻恢復毛玻璃特效！
             document.documentElement.classList.remove('is-android-fallback');
             console.log('描画モード：品質 (高階視覺開啟)');
-            
+
         } else {
             // 🚀 選擇「軽量」模式
             segBg.style.transform = 'translateX(100%)'; // 滑塊推到右邊
             localStorage.setItem('tsukin_lite_mode', 'true'); // 存入記憶體
-            
+
             // 【關鍵魔法】瞬間打上降級標籤，網頁會立刻變成流暢的實心背景！
             document.documentElement.classList.add('is-android-fallback');
             console.log('描画モード：軽量 (效能模式開啟)');
         }
-        
+
         // 觸發手機微震動回饋，增加 Native App 手感
         if (window.navigator.vibrate) window.navigator.vibrate(10);
     }
@@ -225,6 +236,63 @@ window.initDisplaySettingsEvents = function() {
             // 給予 50ms 延遲解除狀態，防止原生點擊事件趁虛而入
             setTimeout(() => { hasMoved = false; }, 50);
         });
+        // ==========================================
+        // 💾 資料備份按鈕互動 (暫時先做樣式與點擊測試)
+        // ==========================================
+        const exportBtn = document.getElementById('btn-export-all');
+        const importBtn = document.getElementById('btn-import-all');
+
+        if (exportBtn) {
+            exportBtn.addEventListener('click', async () => {
+                console.log('點擊了匯出按鈕');
+                // 未來這裡對接 window.DEBUG_DB.exportAll()
+                if (window.navigator.vibrate) window.navigator.vibrate(10);
+            });
+        }
+
+        if (importBtn) {
+            importBtn.addEventListener('click', async () => {
+                console.log('點擊了匯入按鈕');
+                // 未來這裡對接 window.DEBUG_DB.importAll()
+                if (window.navigator.vibrate) window.navigator.vibrate(10);
+            });
+        }
+
+        // ✨ 注入按鈕樣式 (確保形狀、大小、顏色與切換器一致)
+        if (!document.getElementById('settings-btn-style')) {
+            const style = document.createElement('style');
+            style.id = 'settings-btn-style';
+            style.innerHTML = `
+            .settings-btn {
+                background: rgba(255, 255, 255, 0.1);
+                border: none;
+                color: white;
+                padding: 8px 20px;
+                border-radius: 12px;
+                font-size: 14px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1);
+                -webkit-tap-highlight-color: transparent;
+                min-width: 80px;
+                height: 36px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .settings-btn:active {
+                background: rgba(255, 255, 255, 0.25);
+                transform: scale(0.92);
+            }
+            /* 為了跟 iOS Switch 對齊，讓按鈕靠右 */
+            .settings-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+        `;
+            document.head.appendChild(style);
+        }
     }
 
     // C. 動態設定開關邏輯 (連接資料庫)
