@@ -496,3 +496,157 @@ export async function updateCardRoutes(id, newTargetLineIds) {
         }
     });
 }
+
+// ============================================================================
+// 🟢 匯出與匯入引擎 (Data Export / Import Engine)
+// ============================================================================
+
+/**
+ * 將所有卡片設定匯出並複製到剪貼簿
+ */
+export async function exportDataToClipboard() {
+    try {
+        const allData = await getAllUserPreferences();
+        // 轉為帶有縮排的 JSON 字串，方便使用者閱讀與修改
+        const jsonString = JSON.stringify(allData, null, 2);
+        
+        await navigator.clipboard.writeText(jsonString);
+        console.log('[DB] 資料已成功複製到剪貼簿');
+        return true;
+    } catch (error) {
+        console.error('[DB] 匯出失敗:', error);
+        return false;
+    }
+}
+
+/**
+ * 匯入並嚴格驗證 JSON 字串，通過後覆寫資料庫
+ */
+export async function importDataAndOverwrite(jsonString) {
+    try {
+        const parsedData = JSON.parse(jsonString);
+
+        if (typeof parsedData !== 'object' || parsedData === null) {
+            throw new Error("格式錯誤：不是有效的設定檔物件");
+        }
+
+        // ==========================================
+        // 🛡️ 第 1 關：驗證卡片總數量
+        // ==========================================
+        // 排除掉系統用來記錄排序的保留字
+        const cardKeys = Object.keys(parsedData).filter(key => key !== '__DISPLAY_ORDER__');
+        
+        if (cardKeys.length > 5) {
+            throw new Error(`匯入失敗：卡片數量不可大於 5 張 (目前為 ${cardKeys.length} 張)`);
+        }
+
+        // ==========================================
+        // 🛡️ 準備環境：獲取全域路線字典 (用來檢查路線是否存在)
+        // ==========================================
+        let routeDict = {};
+        try {
+            if (window.MasterRouteDictionary) {
+                routeDict = window.MasterRouteDictionary;
+            } else {
+                // 如果 window 尚未掛載，嘗試從 LocalStorage 抓快取
+                const cachedDict = localStorage.getItem('Tsukin_Cached_Dict');
+                if (cachedDict) routeDict = JSON.parse(cachedDict);
+            }
+        } catch (e) {
+            console.warn('[DB] 無法取得路線字典，跳過路線存在性驗證');
+        }
+        const hasDict = Object.keys(routeDict).length > 0;
+        
+        // 建立色碼正規表達式 (支援 #FFF 與 #FFFFFF 格式)
+        const hexRegex = /^#([0-9A-F]{3}){1,2}$/i;
+
+        // ==========================================
+        // 🛡️ 第 2 關：逐一驗證每張卡片的細節參數
+        // ==========================================
+        for (const key of cardKeys) {
+            const card = parsedData[key];
+            const displayId = card.customName || key;
+
+            // 1. 檢查名稱長度
+            if (card.customName && card.customName.length > 10) {
+                throw new Error(`匯入失敗：卡片 [${displayId}] 的名稱不可超過 10 個字元`);
+            }
+
+            // 2. 檢查色碼格式
+            if (card.customHex && !hexRegex.test(card.customHex)) {
+                throw new Error(`匯入失敗：卡片 [${displayId}] 的色碼格式不正確 (${card.customHex})`);
+            }
+
+            // 3. 檢查追蹤路線
+            if (card.targetLineIds) {
+                if (!Array.isArray(card.targetLineIds)) {
+                    throw new Error(`匯入失敗：卡片 [${displayId}] 的追蹤路線格式錯誤`);
+                }
+                
+                // 檢查數量 (小於 6，也就是最多 5 條)
+                if (card.targetLineIds.length >= 6) {
+                    throw new Error(`匯入失敗：卡片 [${displayId}] 的路線總數不可大於 5 條`);
+                }
+
+                // 檢查路線是否真實存在
+                if (hasDict) {
+                    for (const routeId of card.targetLineIds) {
+                        // ✈️ 飛機航班防呆：航班 ID 通常不會有 '.' 或 ':'
+                        // 我們只針對「鐵路」做字典驗證，放行飛機
+                        const isLikelyFlight = !routeId.includes('.') && !routeId.includes(':');
+                        
+                        if (!isLikelyFlight && !routeDict[routeId]) {
+                            throw new Error(`匯入失敗：系統字典中找不到路線代碼 [${routeId}]`);
+                        }
+                    }
+                }
+            }
+        }
+
+        // ==========================================
+        // 💾 驗證全數通過，開始安全覆寫資料庫
+        // ==========================================
+        const db = await initDB();
+
+        // 🟢 備用模式 (LocalStorage)
+        if (useFallback || !db) {
+            localStorage.setItem(FALLBACK_KEY, JSON.stringify(parsedData));
+            console.log('[DB-Fallback] 匯入成功，資料已完全覆寫');
+            return true;
+        }
+
+        // 🟢 IndexedDB 模式
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(STORE_NAME, 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            
+            // 暴力清空目前資料庫
+            const clearRequest = store.clear();
+            
+            clearRequest.onsuccess = () => {
+                const keys = Object.keys(parsedData);
+                let completed = 0;
+
+                if (keys.length === 0) {
+                    resolve(true); // 匯入空資料也算成功
+                    return;
+                }
+
+                keys.forEach(key => {
+                    const putReq = store.put(parsedData[key]);
+                    putReq.onsuccess = () => {
+                        completed++;
+                        if (completed === keys.length) resolve(true);
+                    };
+                    putReq.onerror = () => reject(new Error("寫入單筆資料發生異常"));
+                });
+            };
+            
+            clearRequest.onerror = () => reject(new Error("無法清空舊資料庫"));
+        });
+
+    } catch (error) {
+        console.error('[DB-Import] 拒絕匯入:', error.message);
+        throw error; // 必須往上丟，讓 UI 層的 Alert 可以抓到錯誤訊息！
+    }
+}
