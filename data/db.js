@@ -544,91 +544,112 @@ export async function exportDataToClipboard() {
 }
 
 /**
- * 匯入完整資料陣列，並依序覆寫目前畫面的卡片
- * 具備嚴格驗證機制：名稱長度、色碼格式、路線數量
+ * 匯入完整資料陣列 (Nuke & Pave 徹底重建版)
+ * 特性：清空現有資料庫，使用預設 ID 強制重建，具備自我修復 (Self-Healing) 能力。
  */
 export async function importDataAndOverwrite(jsonString) {
     try {
         const parsedList = JSON.parse(jsonString);
 
-        // 🛡️ 驗證：必須是陣列且不可超過 5 筆
-        if (!Array.isArray(parsedList)) throw new Error("格式錯誤：不是有效的備份資料");
-        if (parsedList.length > 5) throw new Error("匯入失敗：資料不可大於 5 張卡片");
+        // ==========================================
+        // 🛡️ 第一階段：全域與格式嚴格驗證 (Fail-Fast)
+        // ==========================================
+        if (!Array.isArray(parsedList)) throw new Error("フォーマットエラー：無効なバックアップデータです。");
+        if (parsedList.length > 5) throw new Error("インポート失敗：カードは最大5枚までです。(最多 5 張卡片)");
 
-        // 🛡️ 內部欄位驗證
         const hexRegex = /^#([0-9A-F]{3}){1,2}$/i;
+        
         parsedList.forEach((item, index) => {
-            if (item.name && item.name.length > 10) throw new Error(`第 ${index+1} 張卡片名稱過長`);
-            if (item.hex && !hexRegex.test(item.hex)) throw new Error(`第 ${index+1} 張卡片色碼格式錯誤`);
-            if (item.routes && item.routes.length > 6) throw new Error(`第 ${index+1} 張卡片路線過多`);
+            const cardNum = index + 1;
+            if (item.name && item.name.length > 10) throw new Error(`${cardNum}枚目のカード名が長すぎます。(名稱過長)`);
+            if (item.hex && !hexRegex.test(item.hex)) throw new Error(`${cardNum}枚目のカラーコードが不正です。(色碼格式錯誤)`);
+            
+            if (item.routes) {
+                // 驗證：每張卡片最多 6 條追蹤路線
+                if (item.routes.length > 6) throw new Error(`${cardNum}枚目の追跡路線は最大6つまでです。(路線不可超過6條)`);
+                
+                // ✈️ 驗證：飛機航班不可與鐵道混合
+                // 判斷邏輯：沒有包含 ':' 或 '.' 的通常是航班 (如 CI100)，有包含的是 ODPT 鐵道 ID
+                const hasFlight = item.routes.some(r => !r.includes(':') && !r.includes('.'));
+                const hasTrain = item.routes.some(r => r.includes(':') || r.includes('.'));
+                
+                if (hasFlight && hasTrain) {
+                    throw new Error(`${cardNum}枚目のカード：飛行機の便と鉄道を同じカードに混ぜることはできません。(飛機與鐵道不可混搭)`);
+                }
+            }
         });
 
+        // ==========================================
+        // 🎯 第二階段：準備乾淨的資料與固定 ID
+        // ==========================================
+        // 使用系統最穩定的 5 個原生 ID 作為宿主
+        const FIXED_IDS = ['tokyo', 'kanagawa', 'saitama', 'chiba', 'airport'];
+        const newOrder = [];
+        const newDbData = {};
+
+        // 將匯入的資料，依序灌入這些原生 ID 中
+        parsedList.forEach((source, index) => {
+            const cardId = FIXED_IDS[index];
+            newOrder.push(cardId);
+            newDbData[cardId] = {
+                id: cardId,
+                customName: source.name || '',
+                customHex: source.hex || '',
+                targetLineIds: source.routes || [],
+                updatedAt: Date.now()
+            };
+        });
+
+        // 🟢 強制生成新的排序檔，徹底切斷與舊髒資料的連結
+        newDbData['__DISPLAY_ORDER__'] = {
+            order: newOrder,
+            updatedAt: Date.now()
+        };
+
+        // ==========================================
+        // 💥 第三階段：核平資料庫並寫入 (Nuke and Pave)
+        // ==========================================
         const db = await initDB();
-        const allData = await getAllUserPreferences();
-        const displayOrder = allData['__DISPLAY_ORDER__'];
-        
-        // 🎯 取得目前畫面的卡片 ID 順序
-        let visibleIds = [];
-        if (displayOrder && Array.isArray(displayOrder.order)) {
-            visibleIds = displayOrder.order;
-        } else if (window.appRailwayData) {
-            visibleIds = window.appRailwayData.map(c => c.id);
-        }
 
-        if (visibleIds.length === 0) throw new Error("適用するカードがありません。");
-
-        let updatedCount = 0;
-        const maxItems = Math.min(parsedList.length, visibleIds.length);
-
-        // ==========================================
-        // 🟢 備用模式與 IndexedDB 模式的局部覆寫邏輯
-        // ==========================================
+        // 模式 A：LocalStorage
         if (useFallback || !db) {
-            const map = getFallbackData();
-            for (let i = 0; i < maxItems; i++) {
-                const cardId = visibleIds[i];
-                const source = parsedList[i];
-                if (!map[cardId]) map[cardId] = { id: cardId };
-                
-                // 覆寫核心欄位
-                map[cardId].customName = source.name;
-                map[cardId].customHex = source.hex;
-                map[cardId].targetLineIds = source.routes;
-                map[cardId].updatedAt = Date.now();
-                updatedCount++;
-            }
-            localStorage.setItem(FALLBACK_KEY, JSON.stringify(map));
-            return updatedCount;
+            // 直接無情覆寫整個 LocalStorage，連清空都不用，直接蓋過去
+            localStorage.setItem(FALLBACK_KEY, JSON.stringify(newDbData));
+            console.log('[DB-Fallback] 髒資料已徹底清除，系統透過匯入完成重建');
+            return parsedList.length;
         }
 
-        // IndexedDB 模式
+        // 模式 B：IndexedDB
         return new Promise((resolve, reject) => {
             const transaction = db.transaction(STORE_NAME, 'readwrite');
             const store = transaction.objectStore(STORE_NAME);
-            let processed = 0;
+            
+            // 1. 暴力清空目前資料庫內的所有卡片與排序檔
+            const clearReq = store.clear();
+            
+            clearReq.onsuccess = () => {
+                let processed = 0;
+                const keys = Object.keys(newDbData);
+                
+                if (keys.length === 0) resolve(0);
 
-            for (let i = 0; i < maxItems; i++) {
-                const cardId = visibleIds[i];
-                const source = parsedList[i];
-
-                const getReq = store.get(cardId);
-                getReq.onsuccess = () => {
-                    const cardData = getReq.result || { id: cardId };
-                    cardData.customName = source.name;
-                    cardData.customHex = source.hex;
-                    cardData.targetLineIds = source.routes;
-                    cardData.updatedAt = Date.now();
-                    
-                    store.put(cardData).onsuccess = () => {
-                        updatedCount++;
+                // 2. 寫入全新的、乾淨的資料
+                keys.forEach(key => {
+                    store.put(newDbData[key]).onsuccess = () => {
                         processed++;
-                        if (processed === maxItems) resolve(updatedCount);
+                        if (processed === keys.length) {
+                            console.log('[DB] 髒資料已徹底清除，系統透過匯入完成重建');
+                            resolve(parsedList.length);
+                        }
                     };
-                };
-            }
+                });
+            };
+            
+            clearReq.onerror = () => reject(new Error("古いデータのクリアに失敗しました。(舊資料清空失敗)"));
         });
 
     } catch (error) {
+        console.error('[DB-Import] 拒絕匯入，維持原狀:', error.message);
         throw error;
     }
 }
