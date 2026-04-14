@@ -679,3 +679,146 @@ export async function importDataAndOverwrite(jsonString) {
         throw error; // 必須往上丟，讓 UI 層的 Alert 可以抓到錯誤訊息！
     }
 }
+// ============================================================================
+// 🎨 純色票主題引擎 (Color Theme Export / Import Engine)
+// ============================================================================
+
+/**
+ * 只匯出卡片的「顏色」設定 (忽略名稱與路線)
+ */
+export async function exportColorsToClipboard() {
+    try {
+        const allData = await getAllUserPreferences();
+        const colorTheme = {};
+
+        // 遍歷資料庫，只挑出有設定顏色的卡片
+        for (const key in allData) {
+            // 排除系統排序檔，且確認該卡片真的有 customHex
+            if (key !== '__DISPLAY_ORDER__' && allData[key].customHex) {
+                colorTheme[key] = allData[key].customHex;
+            }
+        }
+
+        // 防呆：如果根本沒有設定過顏色
+        if (Object.keys(colorTheme).length === 0) {
+            throw new Error("目前沒有任何自訂顏色可以匯出");
+        }
+
+        const jsonString = JSON.stringify(colorTheme, null, 2);
+        await navigator.clipboard.writeText(jsonString);
+        
+        console.log('[DB] 顏色主題已匯出:', colorTheme);
+        return true;
+    } catch (error) {
+        console.error('[DB] 顏色匯出失敗:', error);
+        throw error; // 讓 UI 層能接住錯誤
+    }
+}
+
+/**
+ * 匯入純色票，只更新現有卡片的顏色，絕對不碰其他設定
+ */
+export async function importColorsOnly(jsonString) {
+    try {
+        const parsedColors = JSON.parse(jsonString);
+
+        if (typeof parsedColors !== 'object' || parsedColors === null) {
+            throw new Error("格式錯誤：不是有效的色票設定檔");
+        }
+
+        const hexRegex = /^#([0-9A-F]{3}){1,2}$/i;
+
+        // ==========================================
+        // 🛡️ 第 1 關：驗證所有色碼的格式是否安全
+        // ==========================================
+        for (const [cardId, hex] of Object.entries(parsedColors)) {
+            if (typeof hex !== 'string' || !hexRegex.test(hex)) {
+                throw new Error(`匯入失敗：色碼格式不正確 (${hex})`);
+            }
+        }
+
+        const db = await initDB();
+
+        // ==========================================
+        // 🟢 備用模式 (LocalStorage) 的局部更新邏輯
+        // ==========================================
+        if (useFallback || !db) {
+            const map = getFallbackData();
+            let updatedCount = 0;
+
+            for (const [cardId, hex] of Object.entries(parsedColors)) {
+                // 核心邏輯：只針對「資料庫裡已經存在的卡片」進行顏色抽換
+                if (map[cardId]) {
+                    map[cardId].customHex = hex;
+                    map[cardId].updatedAt = Date.now();
+                    updatedCount++;
+                }
+            }
+
+            if (updatedCount === 0) {
+                throw new Error("匯入的色票與您目前的卡片不吻合，沒有任何卡片被更新");
+            }
+
+            localStorage.setItem(FALLBACK_KEY, JSON.stringify(map));
+            console.log(`[DB-Fallback] 成功套用 ${updatedCount} 張卡片的顏色`);
+            return updatedCount;
+        }
+
+        // ==========================================
+        // 🟢 IndexedDB 模式的局部更新邏輯
+        // ==========================================
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(STORE_NAME, 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            
+            let updatedCount = 0;
+            let processedCount = 0;
+            const entries = Object.entries(parsedColors);
+
+            if (entries.length === 0) {
+                reject(new Error("色票檔案是空的"));
+                return;
+            }
+
+            entries.forEach(([cardId, hex]) => {
+                // 先把該卡片的完整舊資料拿出來
+                const getReq = store.get(cardId);
+                
+                getReq.onsuccess = () => {
+                    const cardData = getReq.result;
+                    
+                    // 如果這張卡片存在於使用者的畫面上
+                    if (cardData) {
+                        // ⭐️ 神奇魔法：只覆寫顏色，其他不動！
+                        cardData.customHex = hex;
+                        cardData.updatedAt = Date.now();
+                        
+                        // 再塞回去
+                        store.put(cardData);
+                        updatedCount++;
+                    }
+                    
+                    processedCount++;
+                    // 當所有色票都比對完畢後，結束 Promise
+                    if (processedCount === entries.length) {
+                        if (updatedCount === 0) {
+                            reject(new Error("匯入的色票與您目前的卡片不吻合，沒有任何卡片被更新"));
+                        } else {
+                            console.log(`[DB] 成功套用 ${updatedCount} 張卡片的顏色`);
+                            resolve(updatedCount);
+                        }
+                    }
+                };
+                
+                getReq.onerror = () => {
+                    processedCount++;
+                    if (processedCount === entries.length) resolve(updatedCount);
+                };
+            });
+        });
+
+    } catch (error) {
+        console.error('[DB-Import-Color] 顏色匯入失敗:', error.message);
+        throw error;
+    }
+}
