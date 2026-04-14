@@ -247,7 +247,7 @@ window.initDisplaySettingsEvents = function () {
             rowExport.addEventListener('click', async () => {
                 // 1. 觸發微震動，給予使用者物理回饋
                 if (window.navigator.vibrate) window.navigator.vibrate(10);
-    
+
                 // 2. 呼叫底部選單 (Action Sheet)
                 const exportChoice = await window.iosActionSheet(
                     'エクスポート', // 標題
@@ -258,24 +258,48 @@ window.initDisplaySettingsEvents = function () {
                     ],
                     'キャンセル' // 取消按鈕
                 );
-    
-                // 3. 根據使用者的選擇執行動作
+
+                // 如果使用者點擊取消或背景 (回傳 null)，就直接結束流程
+                if (!exportChoice) return;
+
                 try {
+                    // ==========================================
+                    // ✨ 正式架構：動態載入 db.js 並呼叫對應函式
+                    // ==========================================
+                    const db = await import('../data/db.js');
+
                     if (exportChoice === 'all') {
-                        await window.DEBUG_DB.exportAll();
-                        
-                        // 利用 iosConfirm 來做單按鈕的「成功提示」(將 cancelText 設為 null 即可隱藏取消按鈕)
-                        await window.iosConfirm('エクスポート完了', 'すべての設定をクリップボードにコピーしました！', 'OK', null);
-                        
+                        // 執行：全部匯出
+                        await db.exportDataToClipboard();
+
+                        await window.iosConfirm(
+                            'エクスポート完了',
+                            'すべての設定をクリップボードにコピーしました！',
+                            'OK',
+                            null
+                        );
+
                     } else if (exportChoice === 'colors') {
-                        await window.DEBUG_DB.exportColors();
-                        
-                        await window.iosConfirm('エクスポート完了', 'カラーテーマをクリップボードにコピーしました！\n友達にシェアしてみましょう。', 'OK', null);
+                        // 執行：只匯出顏色
+                        await db.exportColorsToClipboard();
+
+                        await window.iosConfirm(
+                            'エクスポート完了',
+                            'カラーテーマをクリップボードにコピーしました！\n友達にシェアしてみましょう。',
+                            'OK',
+                            null
+                        );
                     }
-                    // 如果 exportChoice 是 null (代表使用者點擊了取消或背景)，則什麼都不做，完美結束。
+
                 } catch (err) {
-                    // 如果匯出失敗 (例如根本還沒設定過顏色)
-                    await window.iosConfirm('エラー', err.message, 'OK', null);
+                    // 錯誤捕捉：如果 db.js 裡面 throw new Error，會在這裡被接住並彈出視窗
+                    console.error('[Export Error]', err);
+                    await window.iosConfirm(
+                        'エラー',
+                        err.message || 'エクスポートに失敗しました。',
+                        'OK',
+                        null
+                    );
                 }
             });
         }
