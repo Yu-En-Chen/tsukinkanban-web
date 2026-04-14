@@ -680,70 +680,67 @@ export async function importDataAndOverwrite(jsonString) {
     }
 }
 // ============================================================================
-// 🎨 純色票主題引擎 (Color Theme Export / Import Engine) - Array 版
+// 🎨 純色票主題引擎 (Color Theme Export / Import Engine) - 完美對接畫面版
 // ============================================================================
 
 /**
- * 依照主畫面顯示順序，匯出當前「可見卡片」的色票陣列
+ * 依照主畫面顯示順序，匯出當前「可見卡片」的色票陣列 (支援混合預設色)
  */
 export async function exportColorsToClipboard() {
     try {
         const allData = await getAllUserPreferences();
         const displayOrder = allData['__DISPLAY_ORDER__'];
-        const colorTheme = []; // 改用純陣列
+        const colorTheme = []; 
 
+        // 🎯 獲取目前畫面上卡片的 ID 陣列
+        let visibleCardIds = [];
         if (displayOrder && Array.isArray(displayOrder.order)) {
-            // 🟢 精準篩選：只遍歷「目前顯示在畫面上」的卡片
-            displayOrder.order.forEach(cardId => {
-                const card = allData[cardId];
-                // 如果這張卡片有自訂顏色，就推入陣列；如果沒有，推入空字串或 null 維持順序對齊也可以，
-                // 但為了色票乾淨，我們只匯出有設定的顏色
-                if (card && card.customHex) {
-                    colorTheme.push(card.customHex);
-                }
-            });
-        } else {
-            // 🟡 防呆：如果沒有排序設定，抓取前 5 個有顏色的卡片
-            for (const key in allData) {
-                if (key !== '__DISPLAY_ORDER__' && allData[key].customHex) {
-                    colorTheme.push(allData[key].customHex);
-                    if (colorTheme.length >= 5) break;
-                }
+            visibleCardIds = displayOrder.order;
+        } else if (window.appRailwayData && window.appRailwayData.length > 0) {
+            // 如果沒排序過，直接從畫面的全域變數抓取
+            visibleCardIds = window.appRailwayData.map(card => card.id);
+        }
+
+        // 遍歷卡片，抓出使用者自訂顏色，若無自訂則抓取預設顏色
+        visibleCardIds.forEach(cardId => {
+            const dbCard = allData[cardId];
+            const domCard = window.appRailwayData ? window.appRailwayData.find(c => c.id === cardId) : null;
+            
+            // 優先使用自訂色，其次使用系統預設色
+            const finalHex = (dbCard && dbCard.customHex) ? dbCard.customHex : (domCard ? domCard.hex : null);
+            
+            if (finalHex) {
+                colorTheme.push(finalHex);
             }
-        }
+        });
 
-        // 擋下無意義的匯出
         if (colorTheme.length === 0) {
-            throw new Error("現在表示されているカードにカスタムカラーがありません。(目前沒有可匯出的顏色)");
+            throw new Error("エクスポートできるカラーがありません。");
         }
 
-        // 將陣列轉為 JSON (例如：["#FF0000", "#00FF00"])
         const jsonString = JSON.stringify(colorTheme);
         await navigator.clipboard.writeText(jsonString);
         
-        console.log('[DB] 顏色主題已匯出:', colorTheme);
+        console.log('[DB] 顏色主題已匯出 (包含預設色):', colorTheme);
         return true;
     } catch (error) {
         console.error('[DB] 顏色匯出失敗:', error);
-        throw error; // 讓 UI 層能接住錯誤並顯示
+        throw error; 
     }
 }
 
 /**
- * 匯入純色票陣列，並依照「當下畫面」的卡片順序依序套用 (熱更新)
+ * 匯入純色票陣列，並依照「當下畫面」的卡片順序依序套用 (自動為未編輯卡片建檔)
  */
 export async function importColorsOnly(jsonString) {
     try {
         const parsedColors = JSON.parse(jsonString);
 
-        // 🛡️ 驗證 1：必須是 Array (陣列)
         if (!Array.isArray(parsedColors)) {
-            throw new Error("フォーマットエラー：有効なカラーテーマではありません。(格式錯誤：不是有效的色票陣列)");
+            throw new Error("フォーマットエラー：有効なカラーテーマではありません。");
         }
 
         const hexRegex = /^#([0-9A-F]{3}){1,2}$/i;
-
-        // 🛡️ 驗證 2：檢查陣列內的每一個色碼格式是否安全
         for (const hex of parsedColors) {
             if (typeof hex !== 'string' || !hexRegex.test(hex)) {
                 throw new Error(`インポート失敗：カラーコードの形式が正しくありません (${hex})`);
@@ -754,20 +751,23 @@ export async function importColorsOnly(jsonString) {
         const allData = await getAllUserPreferences();
         const displayOrder = allData['__DISPLAY_ORDER__'];
         
-        // 🎯 取得目前使用者畫面上「可見」的卡片順序
+        // 🎯 取得目前使用者畫面上「可見」的卡片順序 (解決全新狀態找不到卡片的 Bug)
         let visibleCardIds = [];
         if (displayOrder && Array.isArray(displayOrder.order)) {
             visibleCardIds = displayOrder.order;
+        } else if (window.appRailwayData && window.appRailwayData.length > 0) {
+            // 🟢 神奇魔法：從 script.js 的全域變數取得實際在畫面上的卡片順序
+            visibleCardIds = window.appRailwayData.map(card => card.id);
         } else {
-            // 防呆處理
             visibleCardIds = Object.keys(allData).filter(k => k !== '__DISPLAY_ORDER__').slice(0, 5);
         }
 
-        if (visibleCardIds.length === 0) {
-            throw new Error("適用するカードがありません。(沒有可以套用顏色的卡片)");
-        }
-
         let updatedCount = 0;
+        const maxItems = Math.min(parsedColors.length, visibleCardIds.length);
+
+        if (maxItems === 0) {
+            throw new Error("適用するカードがありません。");
+        }
 
         // ==========================================
         // 🟢 備用模式 (LocalStorage)
@@ -775,22 +775,20 @@ export async function importColorsOnly(jsonString) {
         if (useFallback || !db) {
             const map = getFallbackData();
 
-            // 核心邏輯：將匯入的顏色陣列，依序對應到畫面上的卡片 ID
-            // Math.min 確保就算匯入了 5 個顏色，但我只有 3 張卡，也只會套用前 3 個
-            const maxItems = Math.min(parsedColors.length, visibleCardIds.length);
             for (let i = 0; i < maxItems; i++) {
                 const cardId = visibleCardIds[i];
-                if (map[cardId]) {
-                    map[cardId].customHex = parsedColors[i];
-                    map[cardId].updatedAt = Date.now();
-                    updatedCount++;
+                
+                // ✨ 核心修復：如果這張卡片從來沒被編輯過（不在 DB 內），就幫它動態建檔！
+                if (!map[cardId]) {
+                    map[cardId] = { id: cardId };
                 }
+                map[cardId].customHex = parsedColors[i];
+                map[cardId].updatedAt = Date.now();
+                updatedCount++;
             }
 
-            if (updatedCount === 0) throw new Error("カラーを適用できませんでした。");
-
             localStorage.setItem(FALLBACK_KEY, JSON.stringify(map));
-            console.log(`[DB-Fallback] 成功套用 ${updatedCount} 張卡片的顏色`);
+            console.log(`[DB-Fallback] 成功套用 ${updatedCount} 張卡片的顏色並強制建檔`);
             return updatedCount;
         }
 
@@ -802,12 +800,6 @@ export async function importColorsOnly(jsonString) {
             const store = transaction.objectStore(STORE_NAME);
             
             let processedCount = 0;
-            const maxItems = Math.min(parsedColors.length, visibleCardIds.length);
-
-            if (maxItems === 0) {
-                reject(new Error("適用するカードがありません。"));
-                return;
-            }
 
             for (let i = 0; i < maxItems; i++) {
                 const cardId = visibleCardIds[i];
@@ -816,19 +808,24 @@ export async function importColorsOnly(jsonString) {
                 const getReq = store.get(cardId);
                 
                 getReq.onsuccess = () => {
-                    const cardData = getReq.result;
-                    if (cardData) {
-                        cardData.customHex = newHex; // 覆寫顏色
-                        cardData.updatedAt = Date.now();
-                        store.put(cardData);
-                        updatedCount++;
-                    }
+                    // ✨ 核心修復：如果 getReq.result 是 undefined (也就是全新卡片)
+                    // 我們就在這裡生成一個包含基礎 ID 的全新物件！
+                    const cardData = getReq.result || { id: cardId };
                     
-                    processedCount++;
-                    if (processedCount === maxItems) {
-                        if (updatedCount > 0) resolve(updatedCount);
-                        else reject(new Error("カラーを適用できませんでした。"));
-                    }
+                    cardData.customHex = newHex; // 強制寫入新顏色
+                    cardData.updatedAt = Date.now();
+                    
+                    const putReq = store.put(cardData); // 存進資料庫
+                    
+                    putReq.onsuccess = () => {
+                        updatedCount++;
+                        processedCount++;
+                        if (processedCount === maxItems) resolve(updatedCount);
+                    };
+                    putReq.onerror = () => {
+                        processedCount++;
+                        if (processedCount === maxItems) resolve(updatedCount);
+                    };
                 };
                 
                 getReq.onerror = () => {
