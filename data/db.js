@@ -502,16 +502,45 @@ export async function updateCardRoutes(id, newTargetLineIds) {
 // ============================================================================
 
 /**
- * 將所有卡片設定匯出並複製到剪貼簿
+ * 將目前「有顯示在畫面上」的卡片設定匯出並複製到剪貼簿
  */
 export async function exportDataToClipboard() {
     try {
+        // 1. 抓取資料庫內所有的資料 (包含顯示中與被隱藏的)
         const allData = await getAllUserPreferences();
-        // 轉為帶有縮排的 JSON 字串，方便使用者閱讀與修改
-        const jsonString = JSON.stringify(allData, null, 2);
         
+        let exportData = {};
+        
+        // 2. 獲取負責記錄「畫面上有哪些卡片」的順序陣列
+        const displayOrder = allData['__DISPLAY_ORDER__'];
+        
+        if (displayOrder && Array.isArray(displayOrder.order)) {
+            // 🟢 狀況 A：有排序清單，進行精準篩選
+            
+            // 遍歷排序陣列，只把「有顯示」的卡片挑出來放入 exportData
+            displayOrder.order.forEach(cardId => {
+                if (allData[cardId]) {
+                    exportData[cardId] = allData[cardId];
+                }
+            });
+            
+            // 🚨 非常重要：必須把排序設定檔本身也打包進去！
+            // 否則匯入後，系統會不知道卡片的先後順序
+            exportData['__DISPLAY_ORDER__'] = displayOrder;
+            
+        } else {
+            // 🟡 狀況 B：如果連排序清單都沒有 (可能是全新或未排序過的狀態)
+            // 就退一步，匯出所有資料
+            exportData = allData;
+        }
+
+        // 3. 轉為帶有縮排的 JSON 字串，方便閱讀
+        const jsonString = JSON.stringify(exportData, null, 2);
+        
+        // 4. 寫入剪貼簿
         await navigator.clipboard.writeText(jsonString);
-        console.log('[DB] 資料已成功複製到剪貼簿');
+        console.log('[DB] 已成功匯出「顯示中」的卡片資料到剪貼簿');
+        
         return true;
     } catch (error) {
         console.error('[DB] 匯出失敗:', error);
