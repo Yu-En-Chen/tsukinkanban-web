@@ -103,13 +103,14 @@ window.getDisplaySettingsHTML = function () {
         <div style="height: 40px; flex-shrink: 0; width: 100%; pointer-events: none;"></div>
 
         <div class="settings-group">
-            <div class="settings-row" style="height: 60px;">
+            <div class="settings-row clickable-row" id="row-export-all">
                 <span class="settings-label">設定をエクスポート</span>
-                <button class="settings-btn" id="btn-export-all">匯出</button>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right-icon lucide-chevron-right"><path d="m9 18 6-6-6-6"/></svg>
             </div>
-            <div class="settings-row" style="height: 60px;">
+            
+            <div class="settings-row clickable-row" id="row-import-all">
                 <span class="settings-label">設定をインポート</span>
-                <button class="settings-btn" id="btn-import-all">匯入</button>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right-icon lucide-chevron-right"><path d="m9 18 6-6-6-6"/></svg>
             </div>
         </div>
 
@@ -239,58 +240,54 @@ window.initDisplaySettingsEvents = function () {
         // ==========================================
         // 💾 資料備份按鈕互動 (暫時先做樣式與點擊測試)
         // ==========================================
-        const exportBtn = document.getElementById('btn-export-all');
-        const importBtn = document.getElementById('btn-import-all');
+        const rowExport = document.getElementById('row-export-all');
+        const rowImport = document.getElementById('row-import-all');
 
-        if (exportBtn) {
-            exportBtn.addEventListener('click', async () => {
-                console.log('點擊了匯出按鈕');
-                // 未來這裡對接 window.DEBUG_DB.exportAll()
+        if (rowExport) {
+            rowExport.addEventListener('click', () => {
+                console.log('執行：設定導出');
+                // 未來對接：window.DEBUG_DB.exportAll();
                 if (window.navigator.vibrate) window.navigator.vibrate(10);
             });
         }
 
-        if (importBtn) {
-            importBtn.addEventListener('click', async () => {
-                console.log('點擊了匯入按鈕');
-                // 未來這裡對接 window.DEBUG_DB.importAll()
+        if (rowImport) {
+            rowImport.addEventListener('click', () => {
+                console.log('執行：設定導入');
+                // 未來對接：window.DEBUG_DB.importAll();
                 if (window.navigator.vibrate) window.navigator.vibrate(10);
             });
         }
 
         // ✨ 注入按鈕樣式 (確保形狀、大小、顏色與切換器一致)
-        if (!document.getElementById('settings-btn-style')) {
+        if (!document.getElementById('clickable-row-style')) {
             const style = document.createElement('style');
-            style.id = 'settings-btn-style';
+            style.id = 'clickable-row-style';
             style.innerHTML = `
-            .settings-btn {
-                background: rgba(255, 255, 255, 0.1);
-                border: none;
-                color: white;
-                padding: 8px 20px;
-                border-radius: 12px;
-                font-size: 14px;
-                font-weight: 500;
-                cursor: pointer;
-                transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1);
-                -webkit-tap-highlight-color: transparent;
-                min-width: 80px;
-                height: 36px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            .settings-btn:active {
-                background: rgba(255, 255, 255, 0.25);
-                transform: scale(0.92);
-            }
-            /* 為了跟 iOS Switch 對齊，讓按鈕靠右 */
-            .settings-row {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-        `;
+                .clickable-row {
+                    cursor: pointer;
+                    transition: background-color 0.2s ease, transform 0.1s ease;
+                    -webkit-tap-highlight-color: transparent;
+                    user-select: none;
+                }
+                /* 滑鼠懸停效果 */
+                .clickable-row:hover {
+                    background-color: rgba(255, 255, 255, 0.05);
+                }
+                /* 按下時的物理縮放與變色 */
+                .clickable-row:active {
+                    background-color: rgba(255, 255, 255, 0.12);
+                    transform: scale(0.98);
+                }
+                /* Icon 顏色與標籤一致 */
+                .settings-icon {
+                    color: rgba(255, 255, 255, 0.6);
+                    transition: color 0.2s ease;
+                }
+                .clickable-row:active .settings-icon {
+                    color: white;
+                }
+            `;
             document.head.appendChild(style);
         }
     }
