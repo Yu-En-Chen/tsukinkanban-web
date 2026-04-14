@@ -579,15 +579,13 @@ export async function importDataAndOverwrite(jsonString) {
             }
         });
 
-        // ==========================================
+// ==========================================
         // 🎯 第二階段：準備乾淨的資料與固定 ID
         // ==========================================
-        // 使用系統最穩定的 5 個原生 ID 作為宿主
         const FIXED_IDS = ['tokyo', 'kanagawa', 'saitama', 'chiba', 'airport'];
         const newOrder = [];
         const newDbData = {};
 
-        // 將匯入的資料，依序灌入這些原生 ID 中
         parsedList.forEach((source, index) => {
             const cardId = FIXED_IDS[index];
             newOrder.push(cardId);
@@ -596,13 +594,22 @@ export async function importDataAndOverwrite(jsonString) {
                 customName: source.name || '',
                 customHex: source.hex || '',
                 targetLineIds: source.routes || [],
+                // ✨ 核心修復：強制加上明確的顯示狀態，防禦 UI 層的隱藏判斷
+                isHidden: false,  
+                isVisible: true,
                 updatedAt: Date.now()
             };
         });
 
-        // 🟢 強制生成新的排序檔，徹底切斷與舊髒資料的連結
+        // 🟢 強制生成新的排序檔，確保這幾張卡片都在「顯示列」中
         newDbData['__DISPLAY_ORDER__'] = {
             order: newOrder,
+            updatedAt: Date.now()
+        };
+
+        // 🟢 防禦性清除：如果你的系統有獨立記錄隱藏卡片的陣列，在這裡強制清空
+        newDbData['__HIDDEN_CARDS__'] = {
+            list: [],
             updatedAt: Date.now()
         };
 
@@ -613,9 +620,8 @@ export async function importDataAndOverwrite(jsonString) {
 
         // 模式 A：LocalStorage
         if (useFallback || !db) {
-            // 直接無情覆寫整個 LocalStorage，連清空都不用，直接蓋過去
             localStorage.setItem(FALLBACK_KEY, JSON.stringify(newDbData));
-            console.log('[DB-Fallback] 髒資料已徹底清除，系統透過匯入完成重建');
+            console.log('[DB-Fallback] 髒資料與隱藏狀態已徹底清除，系統重建完成');
             return parsedList.length;
         }
 
@@ -633,12 +639,12 @@ export async function importDataAndOverwrite(jsonString) {
                 
                 if (keys.length === 0) resolve(0);
 
-                // 2. 寫入全新的、乾淨的資料
+                // 2. 寫入帶有「強制顯示標籤」的全新資料
                 keys.forEach(key => {
                     store.put(newDbData[key]).onsuccess = () => {
                         processed++;
                         if (processed === keys.length) {
-                            console.log('[DB] 髒資料已徹底清除，系統透過匯入完成重建');
+                            console.log('[DB] 髒資料與隱藏狀態已徹底清除，系統重建完成');
                             resolve(parsedList.length);
                         }
                     };
