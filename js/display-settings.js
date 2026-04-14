@@ -305,10 +305,77 @@ window.initDisplaySettingsEvents = function () {
         }
 
         if (rowImport) {
-            rowImport.addEventListener('click', () => {
-                console.log('執行：設定導入');
-                // 未來對接：window.DEBUG_DB.importAll();
+            rowImport.addEventListener('click', async () => {
+                // 1. 觸發物理震動回饋
                 if (window.navigator.vibrate) window.navigator.vibrate(10);
+    
+                try {
+                    // 2. 取得讀取剪貼簿權限並讀取內容
+                    // 注意：在部分瀏覽器或非 HTTPS 環境，navigator.clipboard.readText() 可能會報錯
+                    const jsonString = await navigator.clipboard.readText();
+                    
+                    if (!jsonString || jsonString.trim() === '') {
+                        throw new Error("クリップボードにデータが見つかりません。設定コードをコピーしてから再度お試しください。");
+                    }
+    
+                    // 3. 動態載入資料庫模組以進行驗證
+                    const db = await import('../data/db.js');
+    
+                    // 4. 第一階段：顯示 Action Sheet 要求選擇匯入模式
+                    const importChoice = await window.iosActionSheet(
+                        'インポート',
+                        'クリップボードからデータを検知しました。\n実行する操作を選択してください。',
+                        [
+                            { text: 'すべての設定を上書き復元', value: 'all' },
+                            { text: 'カラーテーマのみ適用', value: 'colors' }
+                        ],
+                        'キャンセル'
+                    );
+    
+                    // 如果點擊取消或背景則終止
+                    if (!importChoice) return;
+    
+                    // 5. 第二階段：顯示「不可還原」的終極確認
+                    // 使用 isDestructive: true 讓執行按鈕變成紅色
+                    const isConfirmed = await window.iosConfirm(
+                        '最終確認',
+                        'この操作は現在の設定を上書きします。実行後、元の状態に戻すことはできません。\n\n本当に続行しますか？',
+                        '実行する',
+                        'キャンセル',
+                        true // 👈 關鍵：標記為破壞性操作，按鈕會變紅
+                    );
+    
+                    if (!isConfirmed) return;
+    
+                    // 6. 第三階段：執行驗證與寫入
+                    if (importChoice === 'all') {
+                        // 呼叫 db.js 裡具備「數量、格式、路線存在性」三重驗證的匯入函式
+                        await db.importDataAndOverwrite(jsonString);
+                    } else {
+                        // 呼叫 db.js 裡專門驗證「色碼格式」的純色票匯入函式
+                        await db.importColorsOnly(jsonString);
+                    }
+    
+                    // 7. 成功反饋與頁面重載
+                    await window.iosConfirm(
+                        'インポート成功', 
+                        'データが正常に反映されました。設定を有効にするため、アプリを再起動します。', 
+                        'OK', 
+                        null
+                    );
+                    
+                    window.location.reload(); // 重新整理網頁以套用新設定
+    
+                } catch (err) {
+                    // 處理所有可能的錯誤（包括剪貼簿權限、JSON 格式錯誤、或 db.js 拋出的驗證失敗訊息）
+                    console.error('[Import Error]', err);
+                    await window.iosConfirm(
+                        'インポート失敗', 
+                        err.message || '予期せぬエラーが発生しました。データの形式を確認してください。', 
+                        'OK', 
+                        null
+                    );
+                }
             });
         }
 
