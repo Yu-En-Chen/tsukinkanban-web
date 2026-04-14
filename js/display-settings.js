@@ -244,10 +244,39 @@ window.initDisplaySettingsEvents = function () {
         const rowImport = document.getElementById('row-import-all');
 
         if (rowExport) {
-            rowExport.addEventListener('click', () => {
-                console.log('執行：設定導出');
-                // 未來對接：window.DEBUG_DB.exportAll();
+            rowExport.addEventListener('click', async () => {
+                // 1. 觸發微震動，給予使用者物理回饋
                 if (window.navigator.vibrate) window.navigator.vibrate(10);
+    
+                // 2. 呼叫底部選單 (Action Sheet)
+                const exportChoice = await window.iosActionSheet(
+                    'エクスポート', // 標題
+                    'どのデータをエクスポートしますか？', // 說明文字
+                    [
+                        { text: 'すべての設定をエクスポート', value: 'all' },
+                        { text: 'カラーテーマのみエクスポート', value: 'colors' }
+                    ],
+                    'キャンセル' // 取消按鈕
+                );
+    
+                // 3. 根據使用者的選擇執行動作
+                try {
+                    if (exportChoice === 'all') {
+                        await window.DEBUG_DB.exportAll();
+                        
+                        // 利用 iosConfirm 來做單按鈕的「成功提示」(將 cancelText 設為 null 即可隱藏取消按鈕)
+                        await window.iosConfirm('エクスポート完了', 'すべての設定をクリップボードにコピーしました！', 'OK', null);
+                        
+                    } else if (exportChoice === 'colors') {
+                        await window.DEBUG_DB.exportColors();
+                        
+                        await window.iosConfirm('エクスポート完了', 'カラーテーマをクリップボードにコピーしました！\n友達にシェアしてみましょう。', 'OK', null);
+                    }
+                    // 如果 exportChoice 是 null (代表使用者點擊了取消或背景)，則什麼都不做，完美結束。
+                } catch (err) {
+                    // 如果匯出失敗 (例如根本還沒設定過顏色)
+                    await window.iosConfirm('エラー', err.message, 'OK', null);
+                }
             });
         }
 
