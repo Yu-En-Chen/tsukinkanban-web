@@ -71,7 +71,7 @@ export function initFlights() {
     setTimeout(() => {
         console.log("✈️ 背景延遲載入航班資訊中...");
         const timestamp = new Date().getTime();
-        const FLIGHTS_API_URL = `https://tsukinkanban-odpt.onrender.com/api/flights?t=${timestamp}`;
+        const FLIGHTS_API_URL = `https://tsukinkanban-odpt.onrender.com/api/flights`;
 
         fetch(FLIGHTS_API_URL, { cache: 'no-store' })
             .then(res => res.json())

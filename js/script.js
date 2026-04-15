@@ -2509,7 +2509,7 @@ async function initApp() {
 
         // ✨ 這裡也加上相同的快取破壞者！
         const timestamp = new Date().getTime();
-        const STATUS_API_URL = `https://tsukinkanban-odpt.onrender.com/api/status?t=${timestamp}`;
+        const STATUS_API_URL = `https://tsukinkanban-odpt.onrender.com/api/status`;
 
         const [routeDict, statusRes] = await Promise.all([
             syncAndLoadDictionary(DICTIONARY_API_URL).catch(() => null),
@@ -3142,8 +3142,8 @@ window.triggerBackgroundUpdate = async function () {
         console.log("⏱️ 時鐘膠囊收縮：觸發背景 API 靜默更新...");
 
         const timestamp = new Date().getTime();
-        const STATUS_API_URL = `https://tsukinkanban-odpt.onrender.com/api/status?t=${timestamp}`;
-        const FLIGHTS_API_URL = `https://tsukinkanban-odpt.onrender.com/api/flights?t=${timestamp}`; // ✨ 加入航班 API
+        const STATUS_API_URL = `https://tsukinkanban-odpt.onrender.com/api/status`;
+        const FLIGHTS_API_URL = `https://tsukinkanban-odpt.onrender.com/api/flights`; // ✨ 加入航班 API
 
         // ✨ 同時發送火車與飛機的請求
         const [statusRes, flightRes] = await Promise.all([
