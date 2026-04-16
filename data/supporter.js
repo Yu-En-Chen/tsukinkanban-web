@@ -89,7 +89,7 @@ export const supporterContent = `
         <br>
         <p style="color: var(--text-main); font-weight: 600; margin-bottom: 8px;">特典パックを購入して開発を応援する</p>
         
-        <a href="https://buy.stripe.com/test_aFa5kD80s7AYdjbd0TaIM00" target="_blank" rel="noopener noreferrer" style="display: flex; justify-content: center; align-items: center; gap: 8px; background: var(--text-main); color: var(--bg-color); padding: 14px; border-radius: 12px; font-weight: 600; font-size: 1.05em; text-decoration: none; margin-bottom: 8px; transition: transform 0.2s ease, opacity 0.2s ease; transform: translateZ(0); backface-visibility: hidden;">
+        <a href="https://store.tsukinkanban.com/checkout/buy/0fe87749-e0bf-44a1-9aeb-cf26c8db34e1" target="_blank" rel="noopener noreferrer" style="display: flex; justify-content: center; align-items: center; gap: 8px; background: var(--text-main); color: var(--bg-color); padding: 14px; border-radius: 12px; font-weight: 600; font-size: 1.05em; text-decoration: none; margin-bottom: 8px; transition: transform 0.2s ease, opacity 0.2s ease; transform: translateZ(0); backface-visibility: hidden;">
             
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: block; transform: translateZ(0); backface-visibility: hidden; animation: none !important;">
                 <rect width="20" height="14" x="2" y="5" rx="2"></rect>
