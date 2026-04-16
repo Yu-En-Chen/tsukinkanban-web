@@ -71,7 +71,7 @@ export const dataSourceContent = `
                                 <li>横浜市交通局
                                 （横浜ブルーライン、横浜グリーンライン）</li>
                                 <li>日本航空</li>
-                                <li>全日空</li>
+                                <li>全日本空輸</li>
                             </ul>
                         </div>
                         <br>
