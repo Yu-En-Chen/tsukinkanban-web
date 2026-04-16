@@ -86,7 +86,7 @@ async function fetchHistoryDaemon() {
                     let routeName = (window.MasterRouteDictionary && window.MasterRouteDictionary[id]) ? window.MasterRouteDictionary[id].name : id;
                     routeName = routeName.replace('Departure_', '出發 ').replace('Arrival_', '抵達 ');
 
-                    const req = fetch(url).then(async res => {
+                    const req = fetch(url, { cache: 'no-store' }).then(async res => {
                         if (!res.ok) throw new Error(`HTTP ${res.status}`);
                         const json = await res.json();
                         return { 

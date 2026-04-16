@@ -35,7 +35,7 @@ export async function loadNativeHistory(targetId) {
                         let routeName = (window.MasterRouteDictionary && window.MasterRouteDictionary[id]) ? window.MasterRouteDictionary[id].name : id;
                         routeName = routeName.replace('Departure_', '出發 ').replace('Arrival_', '抵達 ');
 
-                        const requestPromise = fetch(url)
+                        const requestPromise = fetch(url, { cache: 'no-store' })
                             .then(async res => {
                                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                                 return { name: routeName, data: await res.json() };
