@@ -82,7 +82,7 @@ async function fetchHistoryDaemon() {
                         finalId = `Departure_${id}`; 
                     }
 
-                    const url = `https://api.tsukinkanban.com/api/history/${type}/${finalId}`;
+                    const url = `https://api.tsukinkanban.com/api/history/${type}/${finalId}?t=${Date.now()}`;
                     let routeName = (window.MasterRouteDictionary && window.MasterRouteDictionary[id]) ? window.MasterRouteDictionary[id].name : id;
                     routeName = routeName.replace('Departure_', '出發 ').replace('Arrival_', '抵達 ');
 
