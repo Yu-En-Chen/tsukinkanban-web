@@ -89,7 +89,7 @@ export const supporterContent = `
         <br>
         <p style="color: var(--text-main); font-weight: 600; margin-bottom: 8px;">特典パックを購入して開発を応援する</p>
         
-        <a href="https://store.tsukinkanban.com/checkout/buy/0fe87749-e0bf-44a1-9aeb-cf26c8db34e1" target="_blank" rel="noopener noreferrer" style="display: flex; justify-content: center; align-items: center; gap: 8px; background: var(--text-main); color: var(--bg-color); padding: 14px; border-radius: 12px; font-weight: 600; font-size: 1.05em; text-decoration: none; margin-bottom: 8px; transition: transform 0.2s ease, opacity 0.2s ease; transform: translateZ(0); backface-visibility: hidden;">
+        <a href="https://store.tsukinkanban.com" target="_blank" rel="noopener noreferrer" style="display: flex; justify-content: center; align-items: center; gap: 8px; background: var(--text-main); color: var(--bg-color); padding: 14px; border-radius: 12px; font-weight: 600; font-size: 1.05em; text-decoration: none; margin-bottom: 8px; transition: transform 0.2s ease, opacity 0.2s ease; transform: translateZ(0); backface-visibility: hidden;">
             
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: block; transform: translateZ(0); backface-visibility: hidden; animation: none !important;">
                 <rect width="20" height="14" x="2" y="5" rx="2"></rect>
@@ -133,9 +133,9 @@ export const supporterContent = `
                 <li style="margin-bottom: 8px;"><strong>購入の有無によって本サービスの機能制限や利用体験に違いが生じることは一切ありません。</strong>すべての機能を無料でご利用いただけます。</li>
                 <li style="margin-bottom: 8px;">本商品の売上は、当サイトのサーバー維持費や今後の開発資金として大切に活用させていただきます。皆様の温かい応援が開発の励みになります。</li>
                 <li style="margin-bottom: 8px;">ご利用のクレジットカード会社によっては、別途「<strong>海外決済手数料</strong>（為替手数料など）」が発生する場合があります。</li>
-                <li style="margin-bottom: 8px;">万が一返金をご希望の場合は、<strong>決済完了後7日以内</strong>にご連絡ください。なお、返金金額からは決済プラットフォームが徴収する<strong>決済手数料</strong>が差し引かれますのでご注意ください。実際の返金が口座に反映されるまでの日数は各カード会社等の規定に準じますが、ご連絡をいただき次第、速やかに手続きを行います。</li>
+                <li style="margin-bottom: 8px;">万が一返金をご希望の場合は、<strong>決済完了後7日以内</strong>にご連絡ください。なお、返金金額からは決済プラットフォームが徴収する<strong>決済手数料（総額の5% ＋ 1決済につき50セント）</strong>が差し引かれますのでご注意ください。実際の返金が口座に反映されるまでの日数は各カード会社等の規定に準じますが、ご連絡をいただき次第、速やかに手続きを行います。</li>
                 
-                <li>決済完了後、ご入力いただいたメールアドレス宛に決済IDを含む確認メールが1通のみ送信されます。<strong>それ以外に当サイトからメール、SMS、お電話等でご連絡を差し上げることは一切ございません</strong>。当サイトを装った不審な連絡を受け取った場合は、絶対にリンク等を開かず、<strong>警察相談窓口（#9110）</strong>や<strong>消費者ホットライン（188）</strong>へご相談ください。</li>
+                <li>決済完了後、ご入力いただいたメールアドレス宛に決済IDを含む確認メール送信されます。<strong>それ以外に当サイトからメール、SMS、お電話等でご連絡を差し上げることは一切ございません</strong>。当サイトを装った不審な連絡を受け取った場合は、絶対にリンク等を開かず、<strong>警察相談窓口（#9110）</strong>や<strong>消費者ホットライン（188）</strong>へご相談ください。</li>
             </ul>
         </div>
 
