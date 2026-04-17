@@ -82,6 +82,9 @@ export async function initSponsorCarousel() {
         // ✨ 點擊時的「防誤觸與跳轉確認」提示 (自訂 iOS 視窗版)
         slide.addEventListener('click', async (e) => {
             e.preventDefault(); 
+
+            // 🛡️ 防呆魔法：如果根本沒有網址，直接中斷動作，不要打開空白頁！
+            if (!sponsor.link || sponsor.link.trim() === '') return;
             
             // 檢查 window.iosConfirm 是否存在 (你的對話框系統)
             if (typeof window.iosConfirm === 'function') {
