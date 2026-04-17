@@ -101,7 +101,7 @@ export const dataSourceContent = `
             お問い合わせについてのお願い
             </p>
             <p style="font-size: 0.9em; opacity: 0.9;">本サービスは個人が開発・運営する非公式のサードパーティアプリであり、ODPT（公共交通オープンデータ協議会）および各鉄道・交通事業者とは<strong>一切関係がありません</strong>。当サイトの機能や表示、データに関するご質問・ご指摘は、ODPTや各交通事業者ではなく、必ず当サイトの開発者まで直接ご連絡ください。<br><br>
-            連絡先：<a href="mailto:testtest@test.com" style="color: inherit; text-decoration: underline; font-weight: 500;">testtest@test.com</a></p>
+            連絡先：<a href="mailto:support@tsukinkanban.com" style="color: inherit; text-decoration: underline; font-weight: 500;">support@tsukinkanban.com</a></p>
         </div>
         <br>
         <p style="color: var(--text-main); font-weight: 600; margin-bottom: 4px;">UI アイコン（SVG）</p>
