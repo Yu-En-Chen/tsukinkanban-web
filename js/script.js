@@ -1817,9 +1817,11 @@ function filterCards(keyword) {
     if (searchKeywords.length === 0) {
         dropdown.style.display = 'none';
         mainStack.style.transition = 'opacity 0.3s ease, filter 0.3s ease';
-        mainStack.style.opacity = '1';
-        mainStack.style.pointerEvents = 'auto';
-        mainStack.style.filter = 'none';
+        
+        // ✨ 拔除 JS 行內樣式，把控制權完美交還給 CSS 狀態機 (如 .has-active)
+        mainStack.style.removeProperty('opacity');
+        mainStack.style.removeProperty('pointer-events');
+        mainStack.style.removeProperty('filter'); 
         return;
     }
 
