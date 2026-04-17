@@ -3063,6 +3063,7 @@ document.addEventListener('DOMContentLoaded', () => {
         val = val.replace(/[^A-Z0-9\u3005\u3040-\u30FF\u4E00-\u9FAF\u3400-\u4DBF\uFF65-\uFF9F\-\、]/g, '');
 
         // 5. 符號防呆處理
+        val = val.replace(/--+/g, '、');
         val = val.replace(/-+/g, '-');
         val = val.replace(/、+/g, '、');
         val = val.replace(/-、/g, '、');
