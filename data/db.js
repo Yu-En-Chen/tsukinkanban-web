@@ -531,7 +531,7 @@ export async function exportDataToClipboard() {
             };
         });
 
-        if (exportList.length === 0) throw new Error("エクスポートするデータがありません。");
+        if (exportList.length === 0) throw new Error("少なくとも5枚のカードが登録されている必要があります。");
 
         // 3. 複製 JSON 到剪貼簿
         await navigator.clipboard.writeText(JSON.stringify(exportList));
@@ -699,7 +699,7 @@ export async function exportColorsToClipboard() {
         });
 
         if (colorTheme.length === 0) {
-            throw new Error("エクスポートできるカラーがありません。");
+            throw new Error("少なくとも5枚のカードが登録されている必要があります。");
         }
 
         const jsonString = JSON.stringify(colorTheme);
