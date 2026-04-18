@@ -6,19 +6,19 @@ const fallbackSponsorsData = [
     {
         id: 1,
         image: '',
-        link: 'https://forms.cloud.microsoft/r/AG28XAZfWF',
+        link: '',
         alt: '支援者 1'
     },
     {
         id: 2,
         image: '',
-        link: 'https://forms.cloud.microsoft/r/AG28XAZfWF',
+        link: '',
         alt: '支援者 2'
     },
     {
         id: 3,
         image: '',
-        link: 'https://forms.cloud.microsoft/r/AG28XAZfWF',
+        link: '',
         alt: '支援者 3'
     }
 ];
