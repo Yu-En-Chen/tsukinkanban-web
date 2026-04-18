@@ -19,6 +19,18 @@ async function fetchHistoryDaemon() {
         // 🚀 升級：確認主畫面是否「已經有卡片渲染出來」
         const hasAnyCardRendered = document.querySelector('.card') !== null;
 
+        // 🚀 新增：在迴圈開始前，一次性把整包歷史紀錄載下來！(Cloudflare 快取極速回傳)
+        let allHistoryData = { railway: {}, flight: {} };
+        try {
+            // 注意：這裡不加 ?t=時間戳記，完美享受 Cloudflare 1 分鐘邊緣快取
+            const allRes = await fetch('https://api.tsukinkanban.com/api/history/all');
+            if (allRes.ok) {
+                allHistoryData = await allRes.json();
+            }
+        } catch (e) {
+            console.error("🔴 無法獲取整包歷史資料:", e);
+        }
+
         const fetchTasks = [];
         window.appRailwayData.forEach(card => {
             
@@ -69,8 +81,6 @@ async function fetchHistoryDaemon() {
             
             // 1. 精準辨識是否為飛機卡片
             const isFlight = card.isFlightCard === true || card.isFlight === true || card.type === 'flight';
-            
-            // 2. ✨ 核心修復：完美兼容鐵路與飛機的路線 ID 陣列
             const targetIds = card.targetLineIds || card.targetAirports || card.airports || (card.airport ? [card.airport] : []);
 
             if (targetIds && targetIds.length > 0) {
@@ -82,21 +92,20 @@ async function fetchHistoryDaemon() {
                         finalId = `Departure_${id}`; 
                     }
 
-                    const url = `https://api.tsukinkanban.com/api/history/${type}/${finalId}?t=${Date.now()}`;
                     let routeName = (window.MasterRouteDictionary && window.MasterRouteDictionary[id]) ? window.MasterRouteDictionary[id].name : id;
                     routeName = routeName.replace('Departure_', '出發 ').replace('Arrival_', '抵達 ');
+                    
+                    // 🚀 核心改動：不再對外發送 fetch，而是直接從剛剛下載的 allHistoryData 裡面「挑出」資料！
+                    const routeHistory = (allHistoryData[type] && allHistoryData[type][finalId]) ? allHistoryData[type][finalId] : [];
 
-                    const req = fetch(url, { cache: 'no-store' }).then(async res => {
-                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                        const json = await res.json();
-                        return { 
-                            cardId: card.id, 
-                            cardName: card.name || card.title || '卡片路線',
-                            name: routeName, 
-                            isFlight: isFlight, // ✨ 將「這是飛機」的標記傳送給選單
-                            data: json.history || [] 
-                        };
-                    }).catch(() => null);
+                    // 🚀 用 Promise.resolve() 偽裝成原本 fetch API 剛解析完 JSON 的樣子，丟給原有的架構處理！
+                    const req = Promise.resolve({ 
+                        cardId: card.id, 
+                        cardName: card.name || card.title || '卡片路線',
+                        name: routeName, 
+                        isFlight: isFlight,
+                        data: routeHistory // 這裡直接餵給它陣列，跟原本的 json.history 一模一樣
+                    });
                     
                     fetchTasks.push(req);
                 });
