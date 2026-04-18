@@ -1817,11 +1817,11 @@ function filterCards(keyword) {
     if (searchKeywords.length === 0) {
         dropdown.style.display = 'none';
         mainStack.style.transition = 'opacity 0.3s ease, filter 0.3s ease';
-        
+
         // ✨ 拔除 JS 行內樣式，把控制權完美交還給 CSS 狀態機 (如 .has-active)
         mainStack.style.removeProperty('opacity');
         mainStack.style.removeProperty('pointer-events');
-        mainStack.style.removeProperty('filter'); 
+        mainStack.style.removeProperty('filter');
         return;
     }
 
@@ -1855,7 +1855,7 @@ function filterCards(keyword) {
                 // ✨ 提取延遲時間、異常文字、與具體備註判定
                 const delay = statusInfo.delay_minutes || 0;
                 const isTextAbnormal = !isNormalMsg && (statusInfo.status_text.includes("異常") || msg.includes("遅延") || (statusInfo.status_type && statusInfo.status_type.includes("見合わせ")) || (statusInfo.status_type && statusInfo.status_type.includes("運転変更")));
-                const hasMessageNote = !isNormalMsg && msg.trim().length > 0;
+                const hasMessageNote = (!isNormalMsg && msg.trim().length > 0) || (statusInfo.status_type && statusInfo.status_type.includes("お知らせ")) || msg.includes("お知らせ");
 
                 let isDelayed = false, isError = false, isAttention = false, isSevere = false;
 
@@ -2028,7 +2028,7 @@ window.previewRouteFromSearch = function (routeId) {
     // ✨ 同步套用進階與備註判定
     const delay = statusInfo.delay_minutes || 0;
     const isTextAbnormal = !isNormalMsg && (statusInfo.status_text.includes("異常") || msg.includes("遅延") || (statusInfo.status_type && statusInfo.status_type.includes("見合わせ")) || (statusInfo.status_type && statusInfo.status_type.includes("運転変更")));
-    const hasMessageNote = !isNormalMsg && msg.trim().length > 0;
+    const hasMessageNote = (!isNormalMsg && msg.trim().length > 0) || (statusInfo.status_type && statusInfo.status_type.includes("お知らせ")) || msg.includes("お知らせ");
 
     let isDelayed = false, isError = false, isAttention = false, isSevere = false;
 
@@ -2348,8 +2348,8 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                 const msg = statusInfo.message || "";
                 const isNormalMsg = msg.includes("ありません") || msg.includes("平常") || msg.includes("正常") || msg.includes("取得しています");
 
-                // ✨ 只要不是罐頭正常訊息，且有文字內容，就觸發備註燈號！
-                if (!isNormalMsg && msg.trim().length > 0) {
+                // ✨ 只要不是罐頭正常訊息，或是官方明確標示為「お知らせ」，就觸發備註燈號！
+                if ((!isNormalMsg && msg.trim().length > 0) || (statusInfo.status_type && statusInfo.status_type.includes("お知らせ")) || msg.includes("お知らせ")) {
                     hasMessageNote = true;
                 }
                 // 🟢 新增：檢查該路線訊息是否包含天候或地震字眼
