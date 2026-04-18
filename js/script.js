@@ -1889,7 +1889,6 @@ function filterCards(keyword) {
                 if (msg.includes('地震')) flags[0] = true;
                 if (msg.includes('雨')) flags[1] = true;
                 if (msg.includes('雪')) flags[2] = true;
-                if (msg.includes('お知らせ')) flags[6] = true;
 
                 searchResults.push({
                     id: rw_id,
@@ -2063,7 +2062,6 @@ window.previewRouteFromSearch = function (routeId) {
     if (msg.includes('地震')) flags[0] = true;
     if (msg.includes('雨')) flags[1] = true;
     if (msg.includes('雪')) flags[2] = true;
-    if (msg.includes('お知らせ')) flags[6] = true;
 
     // 打造幽靈卡片資料
     const tempCard = {
@@ -2287,7 +2285,6 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                     if (flightMsg.includes('地震')) groupFlags[0] = true;
                     if (flightMsg.includes('雨')) groupFlags[1] = true;
                     if (flightMsg.includes('雪')) groupFlags[2] = true;
-                    if (msg.includes('お知らせ')) flags[6] = true;
                 } else {
                     // ⚠️ 找不到航班 (已落地移除或 API 異常)：給予幽靈防護罩，防止跌回火車排版！
                     groupDesc = "フライト情報が終了したか、取得できません";
@@ -2359,7 +2356,6 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                 if (msg.includes('地震')) hasEarthquake = true;
                 if (msg.includes('雨')) hasRain = true;
                 if (msg.includes('雪')) hasSnow = true;
-                if (msg.includes('お知らせ')) flags[6] = true;
 
                 // 🟢 狀態變數宣告
                 let isDelayedLocal = false;
