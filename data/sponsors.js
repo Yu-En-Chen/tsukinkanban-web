@@ -24,7 +24,7 @@ const fallbackSponsorsData = [
 ];
 
 // 🟢 API 網址 (Sheety Google Sheets API)
-const API_URL = 'https://googleapi.eqq1029.workers.dev';
+const API_URL = 'https://googleapi.tsukinkanban.com';
 
 // 🟢 2. 輪播引擎邏輯 (改為非同步 async 函式)
 export async function initSponsorCarousel() {
