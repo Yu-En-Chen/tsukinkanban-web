@@ -71,7 +71,7 @@ export const supporterContent = `
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </button>
 
-            <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 36px; background: linear-gradient(to top, rgba(0,0,0,0.3), transparent); pointer-events: none;"></div>
+            <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 44px; background: linear-gradient(to top, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.33) 15%, rgba(0,0,0,0.22) 30%, rgba(0,0,0,0.13) 45%, rgba(0,0,0,0.07) 60%, rgba(0,0,0,0.03) 75%, rgba(0,0,0,0.01) 88%, rgba(0,0,0,0) 100%); pointer-events: none;"></div>
 
             <div id="sponsor-dots" style="
                 position: absolute;
