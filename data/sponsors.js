@@ -52,23 +52,56 @@ export async function initSponsorCarousel() {
         if (cachedData && cacheTime && (now - parseInt(cacheTime)) < 3600000) {
             sponsorsData = JSON.parse(cachedData);
         } else {
-            // 沒有快取或已過期，向 API 請求新資料
-            const response = await fetch(API_URL);
-            if (!response.ok) throw new Error('API 請求失敗');
-            
-            const data = await response.json();
-            
-            // 解析 JSON，確保裡面有 "通勤看板" 陣列且有資料
-            if (data && data["通勤看板"] && data["通勤看板"].length > 0) {
-                sponsorsData = data["通勤看板"];
-                // 將資料存入快取
-                sessionStorage.setItem('sponsorsData', JSON.stringify(sponsorsData));
-                sessionStorage.setItem('sponsorsCacheTime', now.toString());
+
+            // ✨ 加入 Retry (重試) 引擎：對付 Cloudflare 與上游 API 的冷啟動
+            let retries = 3;
+            let fetchSuccess = false;
+
+            while (retries > 0 && !fetchSuccess) {
+                try {
+                    const response = await fetch(API_URL);
+
+                    // 如果 Cloudflare 因為冷啟動瞬間回傳 502/503，主動拋出例外讓它進入重試
+                    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+
+                    const data = await response.json();
+
+                    // 解析 JSON，確保裡面有資料
+                    if (data && data["通勤看板"] && data["通勤看板"].length > 0) {
+                        sponsorsData = data["通勤看板"];
+                        // 將資料存入快取
+                        sessionStorage.setItem('sponsorsData', JSON.stringify(sponsorsData));
+                        sessionStorage.setItem('sponsorsCacheTime', now.toString());
+                        fetchSuccess = true; // 成功取得資料！打破迴圈
+                    } else {
+                        throw new Error("回傳格式不符或無資料");
+                    }
+                } catch (err) {
+                    retries--;
+                    console.warn(`API 讀取失敗，等待重試。剩餘次數: ${retries}。原因:`, err);
+
+                    if (retries > 0) {
+                        // 提示使用者伺服器正在甦醒，並加入簡單的旋轉動畫安撫等待情緒
+                        track.innerHTML = `
+                        <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-main); opacity: 0.6;">
+                            <style>@keyframes sponsorLoadingSpin { 100% { transform: rotate(360deg); } }</style>
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px; animation: sponsorLoadingSpin 1.2s linear infinite;">
+                                <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                            </svg>
+                            <span style="font-size: 0.85em; font-weight: 500;">サーバー起動中... (${3 - retries}/3)</span>
+                        </div>`;
+
+                        // 延遲 2 秒後再試一次 (讓 Cloudflare 有足夠時間去上游把快取拉回來)
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                    } else {
+                        throw new Error('已達最大重試次數'); // 拋出給外層的 catch，啟用預設的灰色方塊
+                    }
+                }
             }
         }
     } catch (error) {
-        console.error("輪播圖 API 讀取失敗，使用預設資料:", error);
-        // 如果失敗，會繼續往下使用 fallbackSponsorsData
+        console.error("輪播圖 API 徹底讀取失敗，已切換為預設資料:", error);
+        // 如果 3 次都失敗，程式碼會繼續往下執行，並使用一開始宣告好的 fallbackSponsorsData
     }
 
     // 🟢 4. 生成圖片與圓點 (資料抓完後開始渲染)
@@ -81,15 +114,15 @@ export async function initSponsorCarousel() {
 
         // ✨ 點擊時的「防誤觸與跳轉確認」提示 (自訂 iOS 視窗版)
         slide.addEventListener('click', async (e) => {
-            e.preventDefault(); 
-            
+            e.preventDefault();
+
             // 檢查 window.iosConfirm 是否存在 (你的對話框系統)
             if (typeof window.iosConfirm === 'function') {
                 const isConfirmed = await window.iosConfirm(
-                    "外部サイトへ移動", 
+                    "外部サイトへ移動",
                     "以下のリンクを開きますか？\n\n" + sponsor.link,
-                    "開く",      
-                    "キャンセル" 
+                    "開く",
+                    "キャンセル"
                 );
                 if (isConfirmed) {
                     window.open(sponsor.link, '_blank', 'noopener,noreferrer');
@@ -99,7 +132,7 @@ export async function initSponsorCarousel() {
                 window.open(sponsor.link, '_blank', 'noopener,noreferrer');
             }
         });
-        
+
         slide.style.cssText = `
             flex: 0 0 100%;
             height: 100%;
@@ -175,7 +208,7 @@ export async function initSponsorCarousel() {
         stopAutoPlay();
         autoPlayTimer = setInterval(nextSlide, 2500);
     }
-    
+
     function stopAutoPlay() {
         if (autoPlayTimer) clearInterval(autoPlayTimer);
     }
@@ -189,10 +222,10 @@ export async function initSponsorCarousel() {
 
     if (prevBtn) {
         prevBtn.addEventListener('click', (e) => {
-            e.preventDefault(); 
-            e.stopPropagation(); 
+            e.preventDefault();
+            e.stopPropagation();
             prevSlide();
-            startAutoPlay(); 
+            startAutoPlay();
         });
     }
 
@@ -201,7 +234,7 @@ export async function initSponsorCarousel() {
             e.preventDefault();
             e.stopPropagation();
             nextSlide();
-            startAutoPlay(); 
+            startAutoPlay();
         });
     }
 
@@ -212,7 +245,7 @@ export async function initSponsorCarousel() {
     let longPressTimer;
     const container = document.getElementById('sponsor-carousel-container');
 
-    if(container) {
+    if (container) {
         container.addEventListener('touchstart', (e) => {
             startX = e.touches[0].clientX;
             currentX = startX;
@@ -232,7 +265,7 @@ export async function initSponsorCarousel() {
 
             if (Math.abs(diffX) > 10) {
                 clearTimeout(longPressTimer);
-                track.style.transition = 'none'; 
+                track.style.transition = 'none';
                 track.style.transform = `translateX(calc(-${currentIndex * 100}% + ${diffX}px))`;
             }
         }, { passive: true });
@@ -242,9 +275,9 @@ export async function initSponsorCarousel() {
             isDragging = false;
             clearTimeout(longPressTimer);
 
-            track.style.transition = 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)'; 
+            track.style.transition = 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)';
             const diffX = currentX - startX;
-            
+
             if (Math.abs(diffX) > 40) {
                 if (diffX > 0) {
                     currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
@@ -252,7 +285,7 @@ export async function initSponsorCarousel() {
                     currentIndex = (currentIndex + 1) % totalSlides;
                 }
             }
-            
+
             updateCarousel();
             startAutoPlay();
         });
