@@ -975,8 +975,8 @@ function handleCardClick(id) {
                         <div class="adv-details-container">
                             ${line.advancedDetails.map(adv => {
                         let dirDelayHtml = `<span class="adv-normal-text">平常</span>`;
-                        if (adv.max_delay > 0) {
-                            if (adv.max_delay <= 5) dirDelayHtml = `<span class="adv-delay-minor-text">${adv.max_delay}分遅れ</span>`;
+                        if (adv.max_delay > 6) {
+                            if (adv.max_delay <= 15) dirDelayHtml = `<span class="adv-delay-minor-text">${adv.max_delay}分遅れ</span>`;
                             else dirDelayHtml = `<span class="adv-delay-text">${adv.max_delay}分遅れ</span>`;
                         }
                         const trainCountHtml = adv.train_count > 0 ? `<span class="adv-train-count">(${adv.train_count}列車)</span>` : '';
@@ -1937,8 +1937,8 @@ function filterCards(keyword) {
         dropdown.innerHTML = searchResults.slice(0, 30).map(route => {
             let delayHtml = route.customRightHtml || '';
 
-            if (!route.customRightHtml && route.delayMinutes > 0) {
-                if (route.delayMinutes <= 5) {
+            if (!route.customRightHtml && route.delayMinutes > 6) {
+                if (route.delayMinutes <= 15) {
                     delayHtml = `<div class="search-delay-minor">${route.delayMinutes}分遅れ</div>`;
                 } else {
                     delayHtml = `<div class="search-delay-major">${route.delayMinutes}分遅れ</div>`;
@@ -2377,7 +2377,7 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                 } else if (delay > 0) {
                     // 👉 有具體延遲分鐘數時的判斷：
                     if (delay <= 5) {
-                        isDelayedLocal = true; // 讓詳細卡片內保持黃色輕微延誤字眼
+                        isDelayedLocal = false; // 關閉詳細卡片內黃色輕微延誤字眼
                         hasNormal = true;      // ✨ 5分(含)以內：主卡片亮綠燈 (圓形)
                     } else if (delay <= 15) {
                         isDelayedLocal = true;
@@ -3313,8 +3313,8 @@ function silentUpdateExtensionPanel(cardId) {
                     <div class="adv-details-container">
                         ${line.advancedDetails.map(adv => {
                     let dirDelayHtml = `<span class="adv-normal-text">平常</span>`;
-                    if (adv.max_delay > 0) {
-                        if (adv.max_delay <= 5) dirDelayHtml = `<span class="adv-delay-minor-text">${adv.max_delay}分遅れ</span>`;
+                    if (adv.max_delay > 6) {
+                        if (adv.max_delay <= 15) dirDelayHtml = `<span class="adv-delay-minor-text">${adv.max_delay}分遅れ</span>`;
                         else dirDelayHtml = `<span class="adv-delay-text">${adv.max_delay}分遅れ</span>`;
                     }
                     const trainCountHtml = adv.train_count > 0 ? `<span class="adv-train-count">(${adv.train_count}列車)</span>` : '';
