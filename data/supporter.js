@@ -129,7 +129,7 @@ export const supporterContent = `
                 ご購入に関する注意事項
             </p>
             <ul style="padding-left: 20px; font-size: 0.85em; opacity: 0.9; margin-bottom: 0;">
-                <li style="margin-bottom: 8px;"><strong>本テーマパックのご購入は任意です。</strong>本決済は「デジタル特典パック（PDFノートおよびカスタムカラーコード集）」のご購入となります。決済完了後、ダウンロードリンクが提供されます。物理的な商品（グッズ等）の発送はございません。</li>
+                <li style="margin-bottom: 8px;"><strong>本テーマパックのご購入は任意です。</strong>本決済は「デジタル特典パック（カスタムカラーコード集 PDF）」のご購入となります。決済完了後、ダウンロードリンクが提供されます。物理的な商品（グッズ等）の発送はございません。</li>
                 <li style="margin-bottom: 8px;"><strong>購入の有無によって本サービスの機能制限や利用体験に違いが生じることは一切ありません。</strong>すべての機能を無料でご利用いただけます。</li>
                 <li style="margin-bottom: 8px;">本商品の売上は、当サイトのサーバー維持費や今後の開発資金として大切に活用させていただきます。皆様の温かい応援が開発の励みになります。</li>
                 <li style="margin-bottom: 8px;">ご利用のクレジットカード会社によっては、別途「<strong>海外決済手数料</strong>（為替手数料など）」が発生する場合があります。</li>
