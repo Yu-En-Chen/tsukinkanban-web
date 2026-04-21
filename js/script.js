@@ -975,7 +975,7 @@ function handleCardClick(id) {
                         <div class="adv-details-container">
                             ${line.advancedDetails.map(adv => {
                         let dirDelayHtml = `<span class="adv-normal-text">平常</span>`;
-                        if (adv.max_delay > 6) {
+                        if (adv.max_delay > 5) {
                             if (adv.max_delay <= 15) dirDelayHtml = `<span class="adv-delay-minor-text">${adv.max_delay}分遅れ</span>`;
                             else dirDelayHtml = `<span class="adv-delay-text">${adv.max_delay}分遅れ</span>`;
                         }
@@ -3313,7 +3313,7 @@ function silentUpdateExtensionPanel(cardId) {
                     <div class="adv-details-container">
                         ${line.advancedDetails.map(adv => {
                     let dirDelayHtml = `<span class="adv-normal-text">平常</span>`;
-                    if (adv.max_delay > 6) {
+                    if (adv.max_delay > 5) {
                         if (adv.max_delay <= 15) dirDelayHtml = `<span class="adv-delay-minor-text">${adv.max_delay}分遅れ</span>`;
                         else dirDelayHtml = `<span class="adv-delay-text">${adv.max_delay}分遅れ</span>`;
                     }
