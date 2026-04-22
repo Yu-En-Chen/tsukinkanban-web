@@ -1944,7 +1944,7 @@ window.handlePasteAction = function(e, type, element) {
                     finalVal = colorVal.startsWith('#') ? colorVal : '#' + colorVal;
                 } else {
                     resType = 'error';
-                    errorMsg = '格式錯誤';
+                    errorMsg = '形式エラー';
                 }
             } else if (type === 'name') {
                 finalVal = val;
