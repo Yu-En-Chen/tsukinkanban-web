@@ -43,7 +43,7 @@ export const supporterContent = `
             }
         </style>
 
-        <p style="font-size: 0.85em; opacity: 0.9; margin-bottom: 12px;">当サイトの運営・開発を支えてくださる協賛企業・団体様です。</p>
+        <p style="font-size: 0.85em; opacity: 0.9; margin-bottom: 12px;">当サイトのチャリティ趣旨にご賛同いただき、ご寄付を通じて本企画をご支援いただいているパートナー企業・団体様です。</p>
 
         <div id="sponsor-carousel-container" style="
             position: relative;
@@ -149,7 +149,7 @@ export const supporterContent = `
             <ul style="padding-left: 20px; font-size: 0.85em; opacity: 0.9; margin-bottom: 0;">
                 <li style="margin-bottom: 8px;">クレジットカードによるご決済につきましては、
                 関連情報はすべて安全な決済代行プラットフォーム（Lemon Squeezy）によって処理されます。当サイトでは最低限の識別情報のみを保持し、カード情報は一切保存しません。</li>
-                <li>協賛パートナー枠は画像とリンクのみの構成となっており、サードパーティの広告プラットフォームは使用していません。ただし、リンク先のウェブサイトで閲覧履歴などを追跡する仕組み（トラッキング等）が使用されているかについて、当サイトでは管理・把握しておりません。プライバシーにご不安がある場合は、リンクのクリックをお控えください（クリックしない限り、勝手にデータが送信されることはありません）。</li>
+                <li>チャリティ協賛パートナー枠は画像とリンクのみの構成となっており、サードパーティの広告プラットフォームは使用していません。ただし、リンク先のウェブサイトで閲覧履歴などを追跡する仕組み（トラッキング等）が使用されているかについて、当サイトでは管理・把握しておりません。プライバシーにご不安がある場合は、リンクのクリックをお控えください（クリックしない限り、勝手にデータが送信されることはありません）。</li>
             </ul>
         </div>
 
@@ -160,7 +160,7 @@ export const supporterContent = `
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                     <polyline points="22,6 12,13 2,6"></polyline>
                 </svg>
-                協賛のご相談
+                チャリティ掲載
             </a>
 
             <a href="https://forms.gle/nKKsQd3yx41VPUAZ9" target="_blank" rel="noopener noreferrer" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: rgba(120, 120, 128, 0.08); color: var(--text-main); padding: 14px 8px; border-radius: 12px; text-decoration: none; font-size: 0.85em; font-weight: 600; transition: background 0.2s ease, transform 0.2s ease;">
