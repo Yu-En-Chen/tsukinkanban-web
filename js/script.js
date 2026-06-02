@@ -1887,7 +1887,7 @@ function filterCards(keyword) {
                 if (isAttention || hasMessageNote) flags[6] = true;
                 // 🟢 新增：偵測天候與地震獨立燈號
                 if (msg.includes('地震')) flags[0] = true;
-                if (msg.includes('雨')) flags[1] = true;
+                if (msg.includes('雨') || msg.includes('台風')) flags[1] = true;
                 if (msg.includes('雪')) flags[2] = true;
 
                 searchResults.push({
@@ -2060,7 +2060,7 @@ window.previewRouteFromSearch = function (routeId) {
     if (isAttention || hasMessageNote) flags[6] = true;
     // 🟢 新增：偵測天候與地震獨立燈號
     if (msg.includes('地震')) flags[0] = true;
-    if (msg.includes('雨')) flags[1] = true;
+    if (msg.includes('雨') || msg.includes('台風')) flags[1] = true;
     if (msg.includes('雪')) flags[2] = true;
 
     // 打造幽靈卡片資料
@@ -2283,7 +2283,7 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                     // 從航班的備註 (note) 或狀態描述中尋找關鍵字
                     const flightMsg = (formatted.flightData.note || groupDesc || "");
                     if (flightMsg.includes('地震')) groupFlags[0] = true;
-                    if (flightMsg.includes('雨')) groupFlags[1] = true;
+                    if (flightMsg.includes('雨') || flightMsg.includes('台風')) groupFlags[1] = true;
                     if (flightMsg.includes('雪')) groupFlags[2] = true;
                 } else {
                     // ⚠️ 找不到航班 (已落地移除或 API 異常)：給予幽靈防護罩，防止跌回火車排版！
@@ -2354,7 +2354,7 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                 }
                 // 🟢 新增：檢查該路線訊息是否包含天候或地震字眼
                 if (msg.includes('地震')) hasEarthquake = true;
-                if (msg.includes('雨')) hasRain = true;
+                if (msg.includes('雨') || msg.includes('台風')) hasRain = true;
                 if (msg.includes('雪')) hasSnow = true;
 
                 // 🟢 狀態變數宣告
