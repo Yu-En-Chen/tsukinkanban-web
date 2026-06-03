@@ -160,6 +160,11 @@ export function searchFlights(lowKeyword) {
                 
                 let flags = [false, false, false, false, false, false, !!processedNote];
                 
+                // 🟢 新增：飛機搜尋列表的天候與天災燈號判定
+                if (processedNote.includes('地震')) { flags[0] = true; flags[6] = true; }
+                if (processedNote.includes('雨') || processedNote.includes('台風') || processedNote.includes('颱風')) { flags[1] = true; flags[6] = true; }
+                if (processedNote.includes('雪')) { flags[2] = true; flags[6] = true; }
+
                 if (sClass === 'status-error' || statusText === '欠航') {
                     flags[3] = true; // 紅燈 (取消)
                 } else if (forceGreenStatuses.includes(statusText)) {
@@ -314,6 +319,12 @@ window.generateFlightDataFormat = function(flight, fid) {
 
     // ✨ 點亮第七顆燈 (如果有備註)
     let flags = [false, false, false, false, false, false, !!processedNote];
+    
+    // 🟢 新增：飛機預覽卡片的天候與天災燈號判定
+    if (processedNote.includes('地震')) { flags[0] = true; flags[6] = true; }
+    if (processedNote.includes('雨') || processedNote.includes('台風') || processedNote.includes('颱風')) { flags[1] = true; flags[6] = true; }
+    if (processedNote.includes('雪')) { flags[2] = true; flags[6] = true; }
+
     const forceGreenStatuses = ['出発済', '着陸済', '到着済', '飛行中'];
     
     // 計算這是否為「可以容忍的微小時間變動」
