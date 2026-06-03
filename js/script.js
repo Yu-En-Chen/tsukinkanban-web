@@ -1886,9 +1886,9 @@ function filterCards(keyword) {
                 // ✨ 只要有監視狀態，或是官方發布了具體文字原因，就點亮第七顆燈 (❕)
                 if (isAttention || hasMessageNote) flags[6] = true;
                 // 🟢 新增：偵測天候與地震獨立燈號
-                if (msg.includes('地震')) flags[0] = true;
-                if (msg.includes('雨') || msg.includes('台風')) flags[1] = true;
-                if (msg.includes('雪')) flags[2] = true;
+                if (msg.includes('地震')) { flags[0] = true; flags[6] = true; }
+                if (msg.includes('雨') || msg.includes('台風')) { flags[1] = true; flags[6] = true; }
+                if (msg.includes('雪')) { flags[2] = true; flags[6] = true; }
 
                 searchResults.push({
                     id: rw_id,
@@ -2059,9 +2059,9 @@ window.previewRouteFromSearch = function (routeId) {
     // ✨ 第七顆燈 (備註/注意)
     if (isAttention || hasMessageNote) flags[6] = true;
     // 🟢 新增：偵測天候與地震獨立燈號
-    if (msg.includes('地震')) flags[0] = true;
-    if (msg.includes('雨') || msg.includes('台風')) flags[1] = true;
-    if (msg.includes('雪')) flags[2] = true;
+    if (msg.includes('地震')) { flags[0] = true; flags[6] = true; }
+    if (msg.includes('雨') || msg.includes('台風')) { flags[1] = true; flags[6] = true; }
+    if (msg.includes('雪')) { flags[2] = true; flags[6] = true; }
 
     // 打造幽靈卡片資料
     const tempCard = {
@@ -2282,9 +2282,9 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                     // 🟢 新增：飛機卡片獨立判斷天氣與天災燈號
                     // 從航班的備註 (note) 或狀態描述中尋找關鍵字
                     const flightMsg = (formatted.flightData.note || groupDesc || "");
-                    if (flightMsg.includes('地震')) groupFlags[0] = true;
-                    if (flightMsg.includes('雨') || flightMsg.includes('台風')) groupFlags[1] = true;
-                    if (flightMsg.includes('雪')) groupFlags[2] = true;
+                    if (flightMsg.includes('地震')) { groupFlags[0] = true; groupFlags[6] = true; }
+                    if (flightMsg.includes('雨') || flightMsg.includes('台風')) { groupFlags[1] = true; groupFlags[6] = true; }
+                    if (flightMsg.includes('雪')) { groupFlags[2] = true; groupFlags[6] = true; }
                 } else {
                     // ⚠️ 找不到航班 (已落地移除或 API 異常)：給予幽靈防護罩，防止跌回火車排版！
                     groupDesc = "フライト情報が終了したか、取得できません";
@@ -2425,7 +2425,7 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
             if (hasError || hasSevere) groupFlags[3] = true; // 第4顆：打叉 ❌ (系統錯誤 或 嚴重延誤停駛)
             if (hasDelay) groupFlags[4] = true; // 第5顆：三角形 ⚠️ (6~15分延誤)
             if (hasNormal) groupFlags[5] = true; // 第6顆：圓形 🟢 (0~5分正常)
-            if (hasAttention || hasMessageNote) groupFlags[6] = true; // ✨ ❕ (非対応，或是官方發布了具體的事故/延誤原因！)
+            if (hasAttention || hasMessageNote || hasEarthquake || hasRain || hasSnow) groupFlags[6] = true; // ✨ ❕ (非対応，或是官方發布了具體的事故/延誤原因，或是包含天候因素！)
 
             // ✨ 智慧文字描述生成 (依照嚴重程度給予精準說明)
             if (isOffline) {
