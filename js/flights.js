@@ -160,11 +160,6 @@ export function searchFlights(lowKeyword) {
                 
                 let flags = [false, false, false, false, false, false, !!processedNote];
                 
-                // 🟢 新增：飛機搜尋列表的天候與天災燈號判定
-                if (processedNote.includes('地震')) { flags[0] = true; flags[6] = true; }
-                if (processedNote.includes('雨') || processedNote.includes('台風') || processedNote.includes('颱風')) { flags[1] = true; flags[6] = true; }
-                if (processedNote.includes('雪')) { flags[2] = true; flags[6] = true; }
-
                 if (sClass === 'status-error' || statusText === '欠航') {
                     flags[3] = true; // 紅燈 (取消)
                 } else if (forceGreenStatuses.includes(statusText)) {
