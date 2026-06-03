@@ -68,7 +68,6 @@ export const supporterContent = `
             <ul style="padding-left: 20px; font-size: 0.85em; opacity: 0.9; margin-bottom: 0;">
                 <li style="margin-bottom: 8px;">クレジットカードによるご決済につきましては、
                 関連情報はすべて安全な決済代行プラットフォーム（Lemon Squeezy）によって処理されます。当サイトでは最低限の識別情報のみを保持し、カード情報は一切保存しません。</li>
-                <li>当サイトでは、サードパーティの広告プラットフォームは使用していません。プライバシーにご不安がある場合は、外部リンクのクリックをお控えください。</li>
             </ul>
         </div>
 
