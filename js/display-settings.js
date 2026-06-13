@@ -245,61 +245,53 @@ window.initDisplaySettingsEvents = function () {
 
         if (rowExport) {
             rowExport.addEventListener('click', async () => {
-                // 1. 觸發微震動，給予使用者物理回饋
                 if (window.navigator.vibrate) window.navigator.vibrate(10);
 
-                // 2. 呼叫底部選單 (Action Sheet)
-                const exportChoice = await window.iosActionSheet(
-                    'エクスポート', // 標題
-                    'どのデータをエクスポートしますか？', // 說明文字
-                    [
-                        { text: 'すべての設定をエクスポート', value: 'all' },
-                        { text: 'カラーテーマのみエクスポート', value: 'colors' }
-                    ],
-                    'キャンセル' // 取消按鈕
-                );
-
-                // 如果使用者點擊取消或背景 (回傳 null)，就直接結束流程
-                if (!exportChoice) return;
-
                 try {
-                    // ==========================================
-                    // ✨ 正式架構：動態載入 db.js 並呼叫對應函式
-                    // ==========================================
+                    // 🌟 1. 預先載入資料：在打開 Action Sheet 前，就把要複製的字串準備好
                     const db = await import('../data/db.js');
+                    const allDataStr = await db.getExportDataString();
+                    const colorsStr = await db.getExportColorsString();
 
+                    // 🌟 2. 準備一個同步複製的 Callback 函式
+                    const copyToClipboardSync = (text) => {
+                        if (navigator.clipboard) {
+                            // 這裡執行時擁有 Safari 的最高點擊授權，絕對不會被擋
+                            navigator.clipboard.writeText(text).catch(err => console.error("Clipboard Error:", err));
+                        }
+                    };
+
+                    // 3. 呼叫底部選單 (傳入 action)
+                    const exportChoice = await window.iosActionSheet(
+                        'エクスポート',
+                        'どのデータをエクスポートしますか？',
+                        [
+                            {
+                                text: 'すべての設定をエクスポート',
+                                value: 'all',
+                                action: () => copyToClipboardSync(allDataStr) // 同步綁定
+                            },
+                            {
+                                text: 'カラーテーマのみエクスポート',
+                                value: 'colors',
+                                action: () => copyToClipboardSync(colorsStr)  // 同步綁定
+                            }
+                        ],
+                        'キャンセル'
+                    );
+
+                    if (!exportChoice) return;
+
+                    // 4. 顯示成功對話框
                     if (exportChoice === 'all') {
-                        // 執行：全部匯出
-                        await db.exportDataToClipboard();
-
-                        await window.iosConfirm(
-                            'エクスポート完了',
-                            'すべての設定をクリップボードにコピーしました！',
-                            'OK',
-                            null
-                        );
-
+                        await window.iosConfirm('エクスポート完了', 'すべての設定をクリップボードにコピーしました！', 'OK', null);
                     } else if (exportChoice === 'colors') {
-                        // 執行：只匯出顏色
-                        await db.exportColorsToClipboard();
-
-                        await window.iosConfirm(
-                            'エクスポート完了',
-                            'カラーテーマをクリップボードにコピーしました！\n友達にシェアしてみましょう。',
-                            'OK',
-                            null
-                        );
+                        await window.iosConfirm('エクスポート完了', 'カラーテーマをクリップボードにコピーしました！\n友達にシェアしてみましょう。', 'OK', null);
                     }
 
                 } catch (err) {
-                    // 錯誤捕捉：如果 db.js 裡面 throw new Error，會在這裡被接住並彈出視窗
                     console.error('[Export Error]', err);
-                    await window.iosConfirm(
-                        'エラー',
-                        err.message || 'エクスポートに失敗しました。',
-                        'OK',
-                        null
-                    );
+                    await window.iosConfirm('エラー', err.message || 'エクスポートに失敗しました。', 'OK', null);
                 }
             });
         }
@@ -308,15 +300,15 @@ window.initDisplaySettingsEvents = function () {
             rowImport.addEventListener('click', async () => {
                 // 1. 觸發物理震動回饋
                 if (window.navigator.vibrate) window.navigator.vibrate(10);
-    
+
                 try {
                     // 2. 取得剪貼簿內容
                     const jsonString = await navigator.clipboard.readText();
-                    
+
                     if (!jsonString || jsonString.trim() === '') {
                         throw new Error("クリップボードにデータが見つかりません。");
                     }
-    
+
                     // 3. 智慧型預檢 (Smart Pre-check)
                     let parsedData;
                     try {
@@ -324,23 +316,23 @@ window.initDisplaySettingsEvents = function () {
                     } catch (e) {
                         throw new Error("フォーマットエラー：有効なデータではありません。");
                     }
-    
+
                     if (!Array.isArray(parsedData) || parsedData.length === 0) {
                         throw new Error("フォーマットエラー：有効な配列データではありません。");
                     }
-    
+
                     // 判斷資料類型：純色票 (Array of Strings) 還是完整設定 (Array of Objects)
                     const isColorOnly = typeof parsedData[0] === 'string';
                     const isFullData = typeof parsedData[0] === 'object' && parsedData[0] !== null;
-    
+
                     if (!isColorOnly && !isFullData) {
                         throw new Error("サポートされていないデータ形式です。");
                     }
-    
+
                     // 4. 動態載入資料庫模組
                     const db = await import('../data/db.js');
                     let importMode = null;
-    
+
                     // ==========================================
                     // 🚦 流程 A：偵測到「純色票」
                     // ==========================================
@@ -354,7 +346,7 @@ window.initDisplaySettingsEvents = function () {
                         );
                         if (!confirmApply) return;
                         importMode = 'colors_only_data'; // 標記為使用純色票資料匯入
-                    } 
+                    }
                     // ==========================================
                     // 🚦 流程 B：偵測到「完整設定」
                     // ==========================================
@@ -368,9 +360,9 @@ window.initDisplaySettingsEvents = function () {
                             ],
                             'キャンセル'
                         );
-    
+
                         if (!importChoice) return;
-    
+
                         // 針對危險的完全覆寫，給予二次警告
                         if (importChoice === 'all') {
                             const isConfirmed = await window.iosConfirm(
@@ -386,39 +378,39 @@ window.initDisplaySettingsEvents = function () {
                             importMode = 'extract_colors';
                         }
                     }
-    
+
                     // 5. 執行對應的匯入邏輯
                     if (importMode === 'colors_only_data') {
                         // 直接傳入原本的字串 (Array of Strings)
                         await db.importColorsOnly(jsonString);
-                    } 
+                    }
                     else if (importMode === 'full_overwrite') {
                         // 傳入完整字串 (Array of Objects) 進行核平重建
                         await db.importDataAndOverwrite(jsonString);
-                    } 
+                    }
                     else if (importMode === 'extract_colors') {
                         // 🟢 神奇魔法：從完整資料物件中，手動抽出色碼，組裝成純色票陣列再餵給 importColorsOnly
                         const extractedColors = parsedData.map(item => item.hex || '');
                         const colorJsonString = JSON.stringify(extractedColors);
                         await db.importColorsOnly(colorJsonString);
                     }
-    
+
                     // 6. 成功反饋與頁面重載
                     await window.iosConfirm(
-                        'インポート成功', 
-                        'データが正常に反映されました。設定を有効にするため、アプリを再起動します。', 
-                        'OK', 
+                        'インポート成功',
+                        'データが正常に反映されました。設定を有効にするため、アプリを再起動します。',
+                        'OK',
                         null
                     );
-                    
-                    window.location.reload(); 
-    
+
+                    window.location.reload();
+
                 } catch (err) {
                     console.error('[Import Error]', err);
                     await window.iosConfirm(
-                        'エラー', 
-                        err.message || '予期せぬエラーが発生しました。', 
-                        'OK', 
+                        'エラー',
+                        err.message || '予期せぬエラーが発生しました。',
+                        'OK',
                         null
                     );
                 }

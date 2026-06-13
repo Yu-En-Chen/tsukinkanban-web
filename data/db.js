@@ -824,3 +824,53 @@ export async function importColorsOnly(jsonString) {
         throw error;
     }
 }
+
+// 取得完整設定的 JSON 字串 (但不直接複製)
+export async function getExportDataString() {
+    const allData = await getAllUserPreferences();
+    const displayOrder = allData['__DISPLAY_ORDER__'];
+    
+    let visibleIds = [];
+    if (displayOrder && Array.isArray(displayOrder.order)) {
+        visibleIds = displayOrder.order;
+    } else if (window.appRailwayData) {
+        visibleIds = window.appRailwayData.map(c => c.id);
+    }
+
+    const exportList = visibleIds.map(id => {
+        const dbCard = allData[id] || {};
+        const domCard = window.appRailwayData ? window.appRailwayData.find(c => c.id === id) : null;
+        return {
+            name: dbCard.customName || (domCard ? domCard.name : ""),
+            hex: dbCard.customHex || (domCard ? domCard.hex : ""),
+            routes: dbCard.targetLineIds || (domCard ? domCard.targetLineIds : [])
+        };
+    });
+
+    if (exportList.length === 0) throw new Error("少なくとも5枚のカードが登録されている必要があります。");
+    return JSON.stringify(exportList);
+}
+
+// 取得顏色主題的 JSON 字串 (但不直接複製)
+export async function getExportColorsString() {
+    const allData = await getAllUserPreferences();
+    const displayOrder = allData['__DISPLAY_ORDER__'];
+    const colorTheme = []; 
+
+    let visibleCardIds = [];
+    if (displayOrder && Array.isArray(displayOrder.order)) {
+        visibleCardIds = displayOrder.order;
+    } else if (window.appRailwayData && window.appRailwayData.length > 0) {
+        visibleCardIds = window.appRailwayData.map(card => card.id);
+    }
+
+    visibleCardIds.forEach(cardId => {
+        const dbCard = allData[cardId];
+        const domCard = window.appRailwayData ? window.appRailwayData.find(c => c.id === cardId) : null;
+        const finalHex = (dbCard && dbCard.customHex) ? dbCard.customHex : (domCard ? domCard.hex : null);
+        if (finalHex) colorTheme.push(finalHex);
+    });
+
+    if (colorTheme.length === 0) throw new Error("少なくとも5枚のカードが登録されている必要があります。");
+    return JSON.stringify(colorTheme);
+}

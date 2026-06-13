@@ -1,7 +1,7 @@
 // ============================================================================
 // js/dialog.js - 全域通用的 iOS 原生風格自訂對話框引擎
 // ============================================================================
-window.iosConfirm = function(title, message, confirmText = 'OK', cancelText = 'キャンセル', isDestructive = false) {
+window.iosConfirm = function (title, message, confirmText = 'OK', cancelText = 'キャンセル', isDestructive = false) {
     return new Promise((resolve) => {
         const overlay = document.createElement('div');
         overlay.className = 'ios-dialog-overlay';
@@ -67,7 +67,7 @@ window.iosConfirm = function(title, message, confirmText = 'OK', cancelText = '�
             overlay.style.opacity = '0';
             box.style.transform = 'scale(0.95)';
             setTimeout(() => overlay.remove(), 200);
-            resolve(result); 
+            resolve(result);
         };
 
         const btnConfirm = box.querySelector('#ios-btn-confirm');
@@ -81,7 +81,7 @@ window.iosConfirm = function(title, message, confirmText = 'OK', cancelText = '�
 // ============================================================================
 // 新增：iOS 原生風格 Action Sheet (底部動作選單) - 支援無限數量的垂直按鈕
 // ============================================================================
-window.iosActionSheet = function(title, message, buttons, cancelText = 'キャンセル') {
+window.iosActionSheet = function (title, message, buttons, cancelText = 'キャンセル') {
     return new Promise((resolve) => {
         // 1. 建立背景遮罩
         const overlay = document.createElement('div');
@@ -126,8 +126,8 @@ window.iosActionSheet = function(title, message, buttons, cancelText = 'キャ�
         if (title || message) {
             html += `
                 <div style="padding: 14px 16px; text-align: center; border-bottom: 1px solid ${borderColor};">
-                    ${title ? `<div style="font-size: 0.85rem; font-weight: 600; color: rgba(${isDarkMode?'255,255,255':'0,0,0'}, 0.5); margin-bottom: 4px;">${title}</div>` : ''}
-                    ${message ? `<div style="font-size: 0.85rem; color: rgba(${isDarkMode?'255,255,255':'0,0,0'}, 0.5);">${message}</div>` : ''}
+                    ${title ? `<div style="font-size: 0.85rem; font-weight: 600; color: rgba(${isDarkMode ? '255,255,255' : '0,0,0'}, 0.5); margin-bottom: 4px;">${title}</div>` : ''}
+                    ${message ? `<div style="font-size: 0.85rem; color: rgba(${isDarkMode ? '255,255,255' : '0,0,0'}, 0.5);">${message}</div>` : ''}
                 </div>
             `;
         }
@@ -196,7 +196,15 @@ window.iosActionSheet = function(title, message, buttons, cancelText = 'キャ�
         const actionBtns = mainBlock.querySelectorAll('.ios-action-btn');
         actionBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
-                closeDialog(e.target.getAttribute('data-value'));
+                const val = e.target.getAttribute('data-value');
+
+                //  修復：找出對應的按鈕設定，在點擊當下「同步 (Synchronous)」執行動作
+                const clickedBtn = buttons.find(b => b.value === val);
+                if (clickedBtn && typeof clickedBtn.action === 'function') {
+                    clickedBtn.action(); 
+                }
+
+                closeDialog(val);
             });
         });
     });
