@@ -510,36 +510,72 @@ export async function exportDataToClipboard() {
         const allData = await getAllUserPreferences();
         const displayOrder = allData['__DISPLAY_ORDER__'];
         
-        // 1. 取得目前畫面上卡片的 ID 順序
+        // 🛡️ 確保陣列裡面「真的有東西」才採用，否則強制抓取畫面元素
         let visibleIds = [];
-        if (displayOrder && Array.isArray(displayOrder.order)) {
+        if (displayOrder && Array.isArray(displayOrder.order) && displayOrder.order.length > 0) {
             visibleIds = displayOrder.order;
-        } else if (window.appRailwayData) {
+        } else if (window.appRailwayData && window.appRailwayData.length > 0) {
             visibleIds = window.appRailwayData.map(c => c.id);
+        } else {
+            // 如果前兩個都失效，直接從 HTML 畫面抓取真實存在的卡片！
+            const domCards = document.querySelectorAll('#main-stack .card');
+            visibleIds = Array.from(domCards).map(c => c.id.replace('card-', ''));
         }
 
-        // 2. 轉換為去識別化的結構陣列 (不含 Card ID)
+        if (visibleIds.length === 0) throw new Error("少なくとも1枚のカードが登録されている必要があります。");
+
         const exportList = visibleIds.map(id => {
             const dbCard = allData[id] || {};
             const domCard = window.appRailwayData ? window.appRailwayData.find(c => c.id === id) : null;
-            
             return {
                 name: dbCard.customName || (domCard ? domCard.name : ""),
                 hex: dbCard.customHex || (domCard ? domCard.hex : ""),
-                // 匯出 targetLineIds 並維持其陣列順序
                 routes: dbCard.targetLineIds || (domCard ? domCard.targetLineIds : [])
             };
         });
 
-        if (exportList.length === 0) throw new Error("少なくとも5枚のカードが登録されている必要があります。");
-
-        // 3. 複製 JSON 到剪貼簿
-        await navigator.clipboard.writeText(JSON.stringify(exportList));
+        // 呼叫複製函式
+        await fallbackSafeCopy(JSON.stringify(exportList));
         console.log('[DB] 完整設定已匯出 (去識別化):', exportList);
         return true;
     } catch (error) {
         console.error('[DB] 匯出失敗:', error);
         throw error;
+    }
+}
+
+export async function exportColorsToClipboard() {
+    try {
+        const allData = await getAllUserPreferences();
+        const displayOrder = allData['__DISPLAY_ORDER__'];
+        const colorTheme = []; 
+
+        let visibleCardIds = [];
+        if (displayOrder && Array.isArray(displayOrder.order) && displayOrder.order.length > 0) {
+            visibleCardIds = displayOrder.order;
+        } else if (window.appRailwayData && window.appRailwayData.length > 0) {
+            visibleCardIds = window.appRailwayData.map(card => card.id);
+        } else {
+            const domCards = document.querySelectorAll('#main-stack .card');
+            visibleCardIds = Array.from(domCards).map(c => c.id.replace('card-', ''));
+        }
+
+        visibleCardIds.forEach(cardId => {
+            const dbCard = allData[cardId];
+            const domCard = window.appRailwayData ? window.appRailwayData.find(c => c.id === cardId) : null;
+            const finalHex = (dbCard && dbCard.customHex) ? dbCard.customHex : (domCard ? domCard.hex : null);
+            if (finalHex) colorTheme.push(finalHex);
+        });
+
+        if (colorTheme.length === 0) throw new Error("少なくとも1枚のカードが登録されている必要があります。");
+
+        // 呼叫複製函式
+        await fallbackSafeCopy(JSON.stringify(colorTheme));
+        console.log('[DB] 顏色主題已匯出 (包含預設色):', colorTheme);
+        return true;
+    } catch (error) {
+        console.error('[DB] 顏色匯出失敗:', error);
+        throw error; 
     }
 }
 
@@ -720,9 +756,7 @@ export async function importColorsOnly(jsonString) {
     try {
         const parsedColors = JSON.parse(jsonString);
 
-        if (!Array.isArray(parsedColors)) {
-            throw new Error("フォーマットエラー：有効なカラーテーマではありません。");
-        }
+        if (!Array.isArray(parsedColors)) throw new Error("フォーマットエラー：有効なカラーテーマではありません。");
 
         const hexRegex = /^#([0-9A-F]{3}){1,2}$/i;
         for (const hex of parsedColors) {
@@ -735,22 +769,25 @@ export async function importColorsOnly(jsonString) {
         const allData = await getAllUserPreferences();
         const displayOrder = allData['__DISPLAY_ORDER__'];
         
-        // 🎯 取得目前使用者畫面上「可見」的卡片順序 (解決全新狀態找不到卡片的 Bug)
+        // 🛡️ 終極防護：確保陣列裡面「真的有東西」
         let visibleCardIds = [];
-        if (displayOrder && Array.isArray(displayOrder.order)) {
+        if (displayOrder && Array.isArray(displayOrder.order) && displayOrder.order.length > 0) {
             visibleCardIds = displayOrder.order;
         } else if (window.appRailwayData && window.appRailwayData.length > 0) {
-            // 🟢 神奇魔法：從 script.js 的全域變數取得實際在畫面上的卡片順序
             visibleCardIds = window.appRailwayData.map(card => card.id);
         } else {
-            visibleCardIds = Object.keys(allData).filter(k => k !== '__DISPLAY_ORDER__').slice(0, 5);
+            const domCards = document.querySelectorAll('#main-stack .card');
+            visibleCardIds = Array.from(domCards).map(c => c.id.replace('card-', ''));
+            // 如果連畫面都找不到卡片，才使用最後底線
+            if (visibleCardIds.length === 0) {
+                visibleCardIds = Object.keys(allData).filter(k => k !== '__DISPLAY_ORDER__').slice(0, 5);
+            }
         }
 
         let updatedCount = 0;
         const maxItems = Math.min(parsedColors.length, visibleCardIds.length);
 
-        if (maxItems === 0) {
-            throw new Error("適用するカードがありません。");
+        if (maxItems === 0) throw new Error("適用するカードがありません。");
         }
 
         // ==========================================
@@ -823,4 +860,48 @@ export async function importColorsOnly(jsonString) {
         console.error('[DB-Import-Color] 顏色匯入失敗:', error.message);
         throw error;
     }
+}
+
+// 🛡️ 剪貼簿寫入函式 (Safari 與 Line)
+async function fallbackSafeCopy(textData) {
+    if (navigator.clipboard && window.isSecureContext) {
+        try {
+            await navigator.clipboard.writeText(textData);
+            return true;
+        } catch (err) {
+            console.warn("Clipboard API 失敗", err);
+        }
+    }
+
+    return new Promise((resolve, reject) => {
+        try {
+            const textArea = document.createElement("textarea");
+            textArea.value = textData;
+            textArea.style.position = "fixed";
+            textArea.style.top = "-9999px";
+            textArea.style.left = "-9999px";
+            textArea.style.opacity = "0";
+            textArea.setAttribute('readonly', ''); // 防止 iOS 鍵盤彈出
+            document.body.appendChild(textArea);
+            
+            if (navigator.userAgent.match(/ipad|iphone/i)) {
+                const range = document.createRange();
+                range.selectNodeContents(textArea);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                textArea.setSelectionRange(0, 999999);
+            } else {
+                textArea.focus();
+                textArea.select();
+            }
+
+            const successful = document.execCommand('copy');
+            document.body.removeChild(textArea);
+            if (successful) resolve(true);
+            else reject(new Error("クリップボードへのアクセスが許可されていません。"));
+        } catch (err) {
+            reject(new Error("お使いのブラウザはコピー機能に対応していません。"));
+        }
+    });
 }
