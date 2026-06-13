@@ -860,7 +860,7 @@ export async function importColorsOnly(jsonString) {
         console.error('[DB-Import-Color] 顏色匯入失敗:', error.message);
         throw error;
     }
-}
+
 
 // 🛡️ 剪貼簿寫入函式 (Safari 與 Line)
 async function fallbackSafeCopy(textData) {
