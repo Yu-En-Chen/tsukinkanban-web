@@ -296,6 +296,19 @@
     <script src="js/display-settings.js"></script>
     <script type="module" src="js/main-menu.js"></script>
     <script src="js/add-panel.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+              .then(registration => {
+                console.log('ServiceWorker 註冊成功:', registration.scope);
+              })
+              .catch(err => {
+                console.log('ServiceWorker 註冊失敗:', err);
+              });
+          });
+        }
+      </script>
 </body>
 
 </html>
