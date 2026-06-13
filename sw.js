@@ -1,23 +1,53 @@
-const CACHE_NAME = 'tsukin-kanban-cache-v1'; // 如果更新了架構，把 v1 改 v2 強制刷新
+const CACHE_NAME = 'tsukin-kanban-cache-v2'; 
 
-// 1. 核心預先快取：只放最基礎、絕對不能失敗的檔案
+// 1. 核心預先快取：把所有「啟動畫面的必備零件」一次備齊
 const coreUrls = [
   './',
   './index.html',
   './manifest.json',
+  './img/logo.png',
+  
+  // --- CSS 樣式表 ---
+  './css/variables.css',
+  './css/animations.css',
   './css/style.css',
-  './js/script.js'
+  './css/clock.css',
+  './css/menu.css',
+  './css/main-menu.css',
+  './css/system-status.css',
+  './css/add-panel.css',
+
+  // --- JS (HTML 內標籤引用的) ---
+  './js/script.js',
+  './js/history-daemon.js',
+  './js/route-appender.js',
+  './js/dialog.js',
+  './js/menu.js',
+  './js/display-settings.js',
+  './js/main-menu.js',
+  './js/add-panel.js',
+
+  // --- JS (script.js 裡面 import 呼叫的) ---
+  './data/data.js',
+  './js/physics.js',
+  './js/header.js',
+  './data/db.js',
+  './js/personalization.js',
+  './js/clock.js',
+  './data/dictionary-db.js',
+  './js/flights.js',
+  './js/edit-routes.js'
 ];
 
 // 安裝階段：寫入核心骨架
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log('[Service Worker] 預先快取核心檔案');
+      console.log('[Service Worker] 預先快取所有核心檔案');
       return cache.addAll(coreUrls);
     })
   );
-  self.skipWaiting(); // 強制立刻接管控制權
+  self.skipWaiting(); 
 });
 
 // 啟動階段：清除舊版快取（如果你以後改了 CACHE_NAME）
