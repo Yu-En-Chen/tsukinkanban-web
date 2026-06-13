@@ -241,67 +241,97 @@ window.initDisplaySettingsEvents = function () {
         // 💾 資料備份按鈕互動 (暫時先做樣式與點擊測試)
         // ==========================================
         const rowExport = document.getElementById('row-export-all');
-        const rowImport = document.getElementById('row-import-all');
 
         if (rowExport) {
             rowExport.addEventListener('click', async () => {
-                // 1. 觸發微震動，給予使用者物理回饋
                 if (window.navigator.vibrate) window.navigator.vibrate(10);
 
-                // 2. 呼叫底部選單 (Action Sheet)
-                const exportChoice = await window.iosActionSheet(
-                    'エクスポート', // 標題
-                    'どのデータをエクスポートしますか？', // 說明文字
-                    [
-                        { text: 'すべての設定をエクスポート', value: 'all' },
-                        { text: 'カラーテーマのみエクスポート', value: 'colors' }
-                    ],
-                    'キャンセル' // 取消按鈕
-                );
-
-                // 如果使用者點擊取消或背景 (回傳 null)，就直接結束流程
-                if (!exportChoice) return;
-
                 try {
-                    // ==========================================
-                    // ✨ 正式架構：動態載入 db.js 並呼叫對應函式
-                    // ==========================================
+                    // 1. 🌟 預先載入資料庫模組
                     const db = await import('../data/db.js');
+                    
+                    // 2. 🌟 預先提取資料字串！(打破非同步限制的關鍵)
+                    // 請確保 db.js 裡面有能直接「回傳字串」的函式，而不是在裡面執行複製
+                    // (如果 db.js 沒有，請在 db.js 寫兩個新的導出函式如 getAllDataAsString() )
+                    const allDataStr = await db.getAllDataAsString(); 
+                    const colorsDataStr = await db.getColorsAsString();
 
-                    if (exportChoice === 'all') {
-                        // 執行：全部匯出
-                        await db.exportDataToClipboard();
+                    // 3. 呼叫底部選單 (Action Sheet)
+                    const exportChoice = await window.iosActionSheet(
+                        'エクスポート', 
+                        'どのデータをエクスポートしますか？', 
+                        [
+                            { 
+                                text: 'すべての設定をエクスポート', 
+                                value: 'all',
+                                // ⚡️ 利用我們剛才在 dialog.js 加的 action，同步執行複製
+                                action: () => executeExportToClipboard(allDataStr)
+                            },
+                            { 
+                                text: 'カラーテーマのみエクスポート', 
+                                value: 'colors',
+                                action: () => executeExportToClipboard(colorsDataStr)
+                            }
+                        ],
+                        'キャンセル'
+                    );
 
-                        await window.iosConfirm(
-                            'エクスポート完了',
-                            'すべての設定をクリップボードにコピーしました！',
-                            'OK',
-                            null
-                        );
+                    if (!exportChoice) return;
 
-                    } else if (exportChoice === 'colors') {
-                        // 執行：只匯出顏色
-                        await db.exportColorsToClipboard();
-
-                        await window.iosConfirm(
-                            'エクスポート完了',
-                            'カラーテーマをクリップボードにコピーしました！\n友達にシェアしてみましょう。',
-                            'OK',
-                            null
-                        );
-                    }
-
-                } catch (err) {
-                    // 錯誤捕捉：如果 db.js 裡面 throw new Error，會在這裡被接住並彈出視窗
-                    console.error('[Export Error]', err);
+                    // 4. 顯示成功對話框
                     await window.iosConfirm(
-                        'エラー',
-                        err.message || 'エクスポートに失敗しました。',
+                        'エクスポート完了',
+                        exportChoice === 'all' ? 'すべての設定を出力しました！' : 'カラーテーマを出力しました！\n友達にシェアしてみましょう。',
                         'OK',
                         null
                     );
+
+                } catch (err) {
+                    console.error('[Export Error]', err);
+                    await window.iosConfirm('エラー', err.message || 'エクスポートに失敗しました。', 'OK', null);
                 }
             });
+        }
+
+        // ==========================================
+        // 💎 教授級 UX 升級建議：加入原生分享 (Web Share API)
+        // ==========================================
+        function executeExportToClipboard(textData) {
+            // 如果是在 iOS / Android 設備上，直接觸發系統原生的「分享面板」體驗會好 100 倍！
+            if (navigator.share && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                navigator.share({
+                    title: '通勤看板 エクスポート',
+                    text: textData
+                }).catch(e => console.log('分享取消', e));
+                return;
+            }
+
+            // 傳統的剪貼簿寫入 (在同步 action 中執行，Safari 絕對不會擋)
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(textData).catch(err => {
+                    fallbackCopyTextToClipboard(textData);
+                });
+            } else {
+                fallbackCopyTextToClipboard(textData);
+            }
+        }
+
+        // 最傳統且最穩定的備用複製法
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";  // 避免畫面滾動
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                console.error('Fallback copy failed', err);
+            }
+            document.body.removeChild(textArea);
         }
 
         if (rowImport) {

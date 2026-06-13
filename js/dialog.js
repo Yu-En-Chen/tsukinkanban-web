@@ -132,10 +132,10 @@ window.iosActionSheet = function(title, message, buttons, cancelText = 'キャ�
             `;
         }
 
-        // 渲染所有垂直按鈕
+        // 渲染所有垂直按鈕 (🌟修改點：加上 data-index 屬性)
         buttons.forEach((btn, index) => {
             html += `
-                <button class="ios-action-btn" data-value="${btn.value}" style="
+                <button class="ios-action-btn" data-index="${index}" data-value="${btn.value}" style="
                     width: 100%; padding: 16px; border: none; background: transparent;
                     color: ${actionColor}; font-size: 1.25rem; font-weight: 400;
                     border-bottom: ${index < buttons.length - 1 ? `1px solid ${borderColor}` : 'none'};
@@ -192,11 +192,19 @@ window.iosActionSheet = function(title, message, buttons, cancelText = 'キャ�
         // 事件綁定：點擊獨立取消按鈕
         cancelBlock.querySelector('#ios-action-cancel').addEventListener('click', () => closeDialog(null));
 
-        // 事件綁定：點擊各別選項
+        // 事件綁定：點擊各別選項 ( 修改點：加入同步 action 執行邏輯)
         const actionBtns = mainBlock.querySelectorAll('.ios-action-btn');
         actionBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
-                closeDialog(e.target.getAttribute('data-value'));
+                const index = parseInt(e.target.getAttribute('data-index'), 10);
+                const selectedBtn = buttons[index];
+                
+                // ⚡️ 核心防禦：在使用者點擊的「同步當下」立刻執行，取得 Safari 剪貼簿最高權限
+                if (typeof selectedBtn.action === 'function') {
+                    selectedBtn.action(); 
+                }
+                
+                closeDialog(selectedBtn.value);
             });
         });
     });
