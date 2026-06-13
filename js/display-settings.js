@@ -245,37 +245,61 @@ window.initDisplaySettingsEvents = function () {
 
         if (rowExport) {
             rowExport.addEventListener('click', async () => {
+                // 1. 觸發微震動，給予使用者物理回饋
                 if (window.navigator.vibrate) window.navigator.vibrate(10);
 
-                // 💡 關鍵修復 1：在彈出選單前，先偷偷在背景載入 db.js
-                // 這樣等使用者點擊選項時，就不會產生網路延遲，保護了 Safari 的安全憑證！
-                const db = await import('../data/db.js');
-
-                // 呼叫底部選單 (Action Sheet)
+                // 2. 呼叫底部選單 (Action Sheet)
                 const exportChoice = await window.iosActionSheet(
-                    'エクスポート',
-                    'どのデータをエクスポートしますか？',
+                    'エクスポート', // 標題
+                    'どのデータをエクスポートしますか？', // 說明文字
                     [
                         { text: 'すべての設定をエクスポート', value: 'all' },
                         { text: 'カラーテーマのみエクスポート', value: 'colors' }
                     ],
-                    'キャンセル'
+                    'キャンセル' // 取消按鈕
                 );
 
+                // 如果使用者點擊取消或背景 (回傳 null)，就直接結束流程
                 if (!exportChoice) return;
 
                 try {
-                    // 這裡直接呼叫已經載入好的 db 函數，做到真正的 0 延遲
+                    // ==========================================
+                    // ✨ 正式架構：動態載入 db.js 並呼叫對應函式
+                    // ==========================================
+                    const db = await import('../data/db.js');
+
                     if (exportChoice === 'all') {
+                        // 執行：全部匯出
                         await db.exportDataToClipboard();
-                        await window.iosConfirm('エクスポート完了', 'すべての設定をクリップボードにコピーしました！', 'OK', null);
+
+                        await window.iosConfirm(
+                            'エクスポート完了',
+                            'すべての設定をクリップボードにコピーしました！',
+                            'OK',
+                            null
+                        );
+
                     } else if (exportChoice === 'colors') {
+                        // 執行：只匯出顏色
                         await db.exportColorsToClipboard();
-                        await window.iosConfirm('エクスポート完了', 'カラーテーマをクリップボードにコピーしました！\n友達にシェアしてみましょう。', 'OK', null);
+
+                        await window.iosConfirm(
+                            'エクスポート完了',
+                            'カラーテーマをクリップボードにコピーしました！\n友達にシェアしてみましょう。',
+                            'OK',
+                            null
+                        );
                     }
+
                 } catch (err) {
+                    // 錯誤捕捉：如果 db.js 裡面 throw new Error，會在這裡被接住並彈出視窗
                     console.error('[Export Error]', err);
-                    await window.iosConfirm('エラー', err.message || 'エクスポートに失敗しました。', 'OK', null);
+                    await window.iosConfirm(
+                        'エラー',
+                        err.message || 'エクスポートに失敗しました。',
+                        'OK',
+                        null
+                    );
                 }
             });
         }
