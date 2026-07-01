@@ -1,0 +1,9 @@
+{
+  "name": "tsukin-kanban",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "devDependencies": {
+    "terser": "^5.31.0"
+  }
+}
