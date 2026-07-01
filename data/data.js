@@ -26,7 +26,7 @@ export const railwayData = [
     { 
         id: 'saitama', name: '郊外・横浜方面の路線', kana: '', status: '正常運転', hex: '#BB3D00', desc: '', detail: [''],
         
-        targetLineIds: ['odpt.Railway:MIR.TsukubaExpress', 'odpt.Railway:TokyoMetro.Namboku', 'odpt.Railway:TWR.Rinkai', 'odpt.Railway:YokohamaMunicipal.Blue', 'odpt.Railway:YokohamaMunicipal.Green']
+        targetLineIds: ['odpt.Railway:MIR.TsukubaExpress', 'odpt.Railway:TokyoMetro.Namboku', 'odpt.Railway:TWR.Rinkai', 'odpt.Railway:YokohamaMunicipal.Blue', 'odpt.Railway:YokohamaMunicipal.Green', 'odpt.Railway:Tobu.Tojo']
     },
     { 
         id: 'chiba', name: 'モノレール・路面電車', kana: '', status: '正常運転', hex: '#FFD306', desc: '', detail: [''],
