@@ -224,6 +224,13 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                 if (currentData) {
                     targetName = currentData.name;
                     targetHex = currentData.hex;
+                    
+                    // 🟢 新增：如果是飛機卡片，淨化名稱（去掉 SVG HTML 標籤）
+                    if (currentData.isFlightCard && currentData.name.includes('<')) {
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = currentData.name;
+                        targetName = tempDiv.textContent.trim() || currentData.name;
+                    }
                 }
             }
         }
