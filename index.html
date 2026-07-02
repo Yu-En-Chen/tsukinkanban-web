@@ -3,9 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="通勤看板">
@@ -54,10 +52,10 @@
 </head>
 
 <body>
-    <div id="search-mask" class="search-mask" onclick="toggleSearch(false)"></div>
+    <div id="search-mask" class="search-mask" onclick="toggleSearch(false)" aria-hidden="true"></div>
 
-    <div id="landscape-prompt" style="opacity: 0; visibility: hidden; pointer-events: none;">
-        <svg style="opacity: 0;" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
+    <div id="landscape-prompt" role="status" style="opacity: 0; visibility: hidden; pointer-events: none;">
+        <svg aria-hidden="true" focusable="false" style="opacity: 0;" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
             class="rotate-phone-icon">
             <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
@@ -73,9 +71,9 @@
 
                 <div class="left-matrix-bg"></div>
 
-                <div class="left-capsule top-capsule interactive-btn" id="left-capsule-top" onclick="/* 預留你的點擊功能 */">
+                <div class="left-capsule top-capsule interactive-btn" id="left-capsule-top" onclick="/* 預留你的點擊功能 */" aria-hidden="true">
                     <div class="capsule-btn-item">
-                        <svg class="left-capsule-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                        <svg class="left-capsule-icon" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                             stroke-linejoin="round">
                             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
@@ -88,7 +86,8 @@
 
                 <div class="left-capsule bottom-capsule interactive-btn" id="left-capsule-bottom">
                     <div class="capsule-btn-item">
-                        <span id="entry-time-display" class="slashed-time-font clock-container">
+                        <span id="entry-time-display" class="slashed-time-font clock-container" role="img"
+                            aria-label="最終同期時刻">
                             <span class="ticker-digit" id="hour-tens">
                                 <span class="ticker-track"><span class="new-val">0</span><span
                                         class="old-val">0</span></span>
@@ -132,16 +131,18 @@
                     </div>
                 </div>
 
-                <button id="left-menu-btn" class="left-circle-btn">
+                <button id="left-menu-btn" class="left-circle-btn" aria-label="通知・履歴">
                     <div class="menu-icon-wrapper">
-                        <svg class="icon-hamburger" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                        <svg class="icon-hamburger" aria-hidden="true" focusable="false"
+                            xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M10.268 21a2 2 0 0 0 3.464 0" />
                             <path
                                 d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" />
                         </svg>
 
-                        <svg class="icon-close" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                        <svg class="icon-close" aria-hidden="true" focusable="false"
+                            xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M18 6 6 18" />
                             <path d="m6 6 12 12" />
@@ -149,9 +150,11 @@
                     </div>
                 </button>
 
-                <div id="search-trigger" class="search-trigger" onclick="toggleSearch(true)">
+                <div id="search-trigger" class="search-trigger" onclick="toggleSearch(true)" role="button"
+                    tabindex="0" aria-label="路線検索を開く">
                     <span class="search-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-linecap="round" stroke-linejoin="round">
                             <path d="m21 21-4.34-4.34" />
                             <circle cx="11" cy="11" r="8" />
@@ -161,24 +164,27 @@
 
                 <div id="search-input-box" class="search-input-box">
                     <span class="search-icon" style="margin-left: 4px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="11" cy="11" r="8" />
                             <path d="m21 21-4.3-4.3" />
                         </svg>
                     </span>
-                    <input type="text" id="search-input" placeholder="路線検索...">
+                    <input type="text" id="search-input" placeholder="路線検索..." aria-label="路線検索">
                 </div>
 
                 <div id="action-capsule" class="action-capsule">
                     <div id="capsule-grid-layout" class="capsule-grid-layout">
                         <button id="capsule-main-btn" class="capsule-btn-item main-btn"
-                            onclick="handleCapsuleMainClick()">
-                            <svg class="icon-default" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                            onclick="handleCapsuleMainClick()" aria-label="カードを追加">
+                            <svg class="icon-default" aria-hidden="true" focusable="false"
+                                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M5 12h14 M12 5v14" />
                             </svg>
-                            <svg class="icon-hidden lucide lucide-palette-icon lucide-palette"
+                            <svg class="icon-hidden lucide lucide-palette-icon lucide-palette" aria-hidden="true"
+                                focusable="false"
                                 xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                 stroke-linejoin="round">
@@ -190,7 +196,8 @@
                                 <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
                             </svg>
 
-                            <svg class="icon-menu-mode lucide lucide-cog-icon lucide-cog"
+                            <svg class="icon-menu-mode lucide lucide-cog-icon lucide-cog" aria-hidden="true"
+                                focusable="false"
                                 xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                 stroke-linejoin="round">
@@ -214,14 +221,16 @@
                         <div class="capsule-divider"></div>
 
                         <button id="capsule-secondary-btn" class="capsule-btn-item"
-                            onclick="handleCapsuleSecondaryClick()">
-                            <svg class="icon-default" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                            onclick="handleCapsuleSecondaryClick()" aria-label="メニュー">
+                            <svg class="icon-default" aria-hidden="true" focusable="false"
+                                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="1" />
                                 <circle cx="19" cy="12" r="1" />
                                 <circle cx="5" cy="12" r="1" />
                             </svg>
                             <svg class="icon-hidden lucide lucide-external-link-icon lucide-external-link"
+                                aria-hidden="true" focusable="false"
                                 xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                 stroke-linejoin="round">
@@ -231,6 +240,7 @@
                             </svg>
 
                             <svg class="icon-menu-mode lucide lucide-archive-x-icon lucide-archive-x"
+                                aria-hidden="true" focusable="false"
                                 xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                 stroke-linejoin="round">
@@ -241,8 +251,10 @@
                     </div>
                 </div>
 
-                <button id="cancel-btn" class="cancel-circle-btn" onclick="toggleSearch(false)">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                <button id="cancel-btn" class="cancel-circle-btn" onclick="toggleSearch(false)"
+                    aria-label="検索を閉じる">
+                    <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor"
                         stroke-linecap="round" stroke-linejoin="round">
                         <path d="M18 6 6 18" />
                         <path d="m6 6 12 12" />
@@ -261,7 +273,8 @@
     </div>
     </div>
 
-    <div id="detail-overlay" class="detail-overlay" onclick="handleOverlayClick(event)">
+    <div id="detail-overlay" class="detail-overlay" onclick="handleOverlayClick(event)" role="dialog"
+        aria-modal="true" aria-label="路線の詳細">
         <div id="detail-card-container"></div>
     </div>
 

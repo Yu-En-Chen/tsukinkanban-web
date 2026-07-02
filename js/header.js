@@ -58,6 +58,31 @@ const CAPSULE_SVGS = {
     `
 };
 
+// ♿ 無障礙：各模式下三顆按鈕的語音標籤 (螢幕閱讀器唸的名字)
+const CAPSULE_ARIA_LABELS = {
+    native: { left: 'カードを追加', right: 'メニュー', search: '路線検索を開く' },
+    blank: { left: '戻る', right: 'クラウド同期', search: '元に戻す' },
+    info: { left: '戻る', right: '詳細情報', search: '路線検索を開く' }
+};
+
+// ♿ 模式切換 (innerHTML 換掉 SVG) 之後呼叫：更新 aria-label，並把新注入的裝飾 SVG 從朗讀中排除
+function applyCapsuleAria(mode) {
+    const labels = CAPSULE_ARIA_LABELS[mode] || CAPSULE_ARIA_LABELS.native;
+    const targets = [
+        [document.getElementById('capsule-main-btn'), labels.left],
+        [document.getElementById('capsule-secondary-btn'), labels.right],
+        [document.getElementById('search-trigger'), labels.search]
+    ];
+    targets.forEach(([el, label]) => {
+        if (!el) return;
+        el.setAttribute('aria-label', label);
+        el.querySelectorAll('svg').forEach(svg => {
+            svg.setAttribute('aria-hidden', 'true');
+            svg.setAttribute('focusable', 'false');
+        });
+    });
+}
+
 export function initHeader(onSearchCallback, getActiveCardId) {
     const searchInput = document.getElementById('search-input');
     const searchContainer = document.getElementById('search-container');
@@ -85,6 +110,20 @@ export function initHeader(onSearchCallback, getActiveCardId) {
         }
     };
     expandClickArea();
+
+    // ♿ 初始狀態的語音標籤
+    applyCapsuleAria('native');
+
+    // ♿ search-trigger 是 div 假按鈕 (role="button")，補上 Enter / Space 鍵盤觸發
+    const searchTriggerEl = document.getElementById('search-trigger');
+    if (searchTriggerEl) {
+        searchTriggerEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                searchTriggerEl.click();
+            }
+        });
+    }
 
     window.slideCapsuleMode = function (toBlankMode) {
         const capsule = document.getElementById('action-capsule');
@@ -114,6 +153,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                 leftBtn.innerHTML = CAPSULE_SVGS.blankLeft;
                 rightBtn.innerHTML = CAPSULE_SVGS.blankRight;
                 capsule.dataset.mode = 'blank';
+                applyCapsuleAria('blank');
 
                 if (searchIcon) {
                     // 🟢 一次性注入三個 SVG：歷史、同步(無指針)、打勾
@@ -263,6 +303,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                         </svg>
                     `;
                 }
+                applyCapsuleAria('native');
 
                 capsule.classList.remove('slide-out-left');
                 capsule.classList.add('slide-in-right-start');
@@ -313,6 +354,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                 leftBtn.innerHTML = CAPSULE_SVGS.infoLeft;
                 rightBtn.innerHTML = CAPSULE_SVGS.infoRight;
                 capsule.dataset.mode = 'info';
+                applyCapsuleAria('info');
 
                 capsule.classList.remove('slide-out-right');
                 capsule.classList.add('slide-in-left-start');
@@ -333,6 +375,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                 leftBtn.innerHTML = CAPSULE_SVGS.nativeLeft;
                 rightBtn.innerHTML = CAPSULE_SVGS.nativeRight;
                 capsule.dataset.mode = 'native';
+                applyCapsuleAria('native');
 
                 capsule.classList.remove('slide-out-left');
                 capsule.classList.add('slide-in-right-start');

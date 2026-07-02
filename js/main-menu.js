@@ -155,14 +155,14 @@ window.openUniversalPage = function(title, contentHTML) {
             <div class="universal-nav-matrix"></div>
             
             <div class="universal-nav-circles">
-                <button class="universal-nav-btn" onclick="window.backToMainMenu()">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <button class="universal-nav-btn" onclick="window.backToMainMenu()" aria-label="メニューに戻る">
+                    <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                         <path d="m15 18-6-6 6-6"/>
                     </svg>
                 </button>
-                
-                <button class="universal-nav-btn" onclick="window.closeUniversalPage(true)">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+
+                <button class="universal-nav-btn" onclick="window.closeUniversalPage(true)" aria-label="閉じる">
+                    <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
                     </svg>
                 </button>

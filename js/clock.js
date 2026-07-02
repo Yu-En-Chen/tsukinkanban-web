@@ -123,6 +123,10 @@ export function initDynamicClock() {
         updateDigit('min-tens', m[0]);
         updateDigit('min-units', m[1]);
 
+        // ♿ 跑馬燈數字對螢幕閱讀器是亂碼，改由容器的 aria-label 唸出完整時間
+        const syncClockEl = document.getElementById('entry-time-display');
+        if (syncClockEl) syncClockEl.setAttribute('aria-label', `最終同期時刻 ${h}:${m}`);
+
         localStorage.setItem('tsukin_last_time', h + m);
 
         // ✨ [新增] 既然成功拿到資料，立刻清除時鐘的警告顏色
