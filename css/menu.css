@@ -6,7 +6,7 @@
     --menu-shadow-light: 0, 0, 0;
 }
 
-/* 2. 絕對重疊置中系統 (徹底封殺 Safari Grid 偏移 Bug) */
+/* 2. 重疊置中（迴避 Safari Grid 偏移 Bug） */
 .menu-icon-wrapper {
     position: relative !important;
     display: block !important;
@@ -80,10 +80,10 @@
 
    .left-circle-btn.is-expanded {
     z-index: 6010 !important;
-    /* 移除所有 position: fixed 與全螢幕的設定，讓它乖乖待在原本的位置 */
+    /* 移除 position: fixed 與全螢幕設定，維持原位 */
 }
 
-/* 確保圖標在 44px 的按鈕內完美置中 */
+/* 圖示在 44px 按鈕內置中 */
 .left-circle-btn.is-expanded .menu-icon-wrapper {
     position: relative !important;
     width: 100% !important;

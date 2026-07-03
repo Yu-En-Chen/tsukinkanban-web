@@ -17,10 +17,10 @@
 
     <script>
         (function () {
-            // 1. 偵測是否為 Apple 裝置 (包含 Mac, iPhone, iPad, 以及偽裝成 Mac 的新版 iPad)
+            // 1. 偵測 Apple 裝置（含 Mac、iPhone、iPad 與桌面模式的 iPad）
             var isApple = /(Mac|iPhone|iPod|iPad)/i.test(navigator.userAgent) || /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform);
 
-            // 2. 如果「不是」Apple 裝置，才去非同步索取 Google Fonts
+            // 2. 非 Apple 裝置才非同步載入 Google Fonts
             if (!isApple) {
                 var preconnect1 = document.createElement('link');
                 preconnect1.rel = 'preconnect';
@@ -112,7 +112,7 @@
                         <script>
                             (function () {
                                 var lastTime = localStorage.getItem('tsukin_last_time');
-                                // 如果有記憶，在畫面畫出來之前，偷偷把 0000 換成記憶的時間！
+                                // 有儲存紀錄時，在首次繪製前先將 0000 換成上次的時間
                                 if (lastTime && lastTime.length === 4) {
                                     var ids = ['hour-tens', 'hour-units', 'min-tens', 'min-units'];
                                     for (var i = 0; i < 4; i++) {

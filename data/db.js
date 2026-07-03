@@ -120,26 +120,26 @@ export async function getAllUserPreferences() {
     }
 }
 
-// 3. 儲存或更新單一路線的自訂設定 (自動備份上一筆 + 飛機名稱防呆校正)
+// 3. 儲存或更新單一路線的自訂設定（自動備份上一筆＋航班名稱校正）
 export async function saveRoutePreference(id, customName, customHex) {
     const db = await initDB();
 
     // ==========================================
-    // 航班名稱強制校正引擎 (Smart Name Enforcer)
+    // 航班名稱校正
     // ==========================================
     const enforceFlightName = (nameInput, currentData) => {
         const targetIds = currentData.targetLineIds || [];
-        // 利用特徵判斷是否為飛機 (ID 沒有 . 且沒有 :)
+        // 以 ID 特徵判斷是否為航班（無 . 且無 :）
         if (targetIds.length > 0 && !targetIds[0].includes('.') && !targetIds[0].includes(':')) {
             const flightNum = targetIds[0];
             
-            // 如果輸入的名字是空的，或者「沒有包含」航班號碼 (支援大小寫容錯)
+            // 名稱為空或未包含航班號碼時（大小寫不拘）
             if (!nameInput || !nameInput.toUpperCase().includes(flightNum.toUpperCase())) {
-                // 如果全空，直接還原航班號；如果有打字，就把航班號補在最前面加上空格
+                // 全空則還原為航班號；有輸入則將航班號補在最前面
                 return (!nameInput || nameInput.trim() === '') ? flightNum : `${flightNum} ${nameInput.trim()}`;
             }
         }
-        return nameInput; // 如果原本就乖乖包含了，就維持原樣！
+        return nameInput; // 已包含航班號則維持原樣
     };
 
     // 備用模式 (LocalStorage) 的讀取與備份邏輯
@@ -155,7 +155,7 @@ export async function saveRoutePreference(id, customName, customHex) {
             };
         }
 
-        // 存檔前，先經過校正引擎的洗禮
+        // 存檔前先經過名稱校正
         const finalName = enforceFlightName(customName, currentData);
 
         const data = { 
@@ -189,7 +189,7 @@ export async function saveRoutePreference(id, customName, customHex) {
                     };
                 }
 
-                // 存檔前，先經過校正引擎的洗禮
+                // 存檔前先經過名稱校正
                 const finalName = enforceFlightName(customName, currentData);
 
                 const data = { 
@@ -211,7 +211,7 @@ export async function saveRoutePreference(id, customName, customHex) {
             };
             
             getRequest.onerror = () => {
-                // 極端錯誤捕捉
+                // 錯誤捕捉
                 const data = { id, customName, customHex, updatedAt: Date.now(), previousState: null };
                 useFallback = true;
                 saveFallbackData(data);
@@ -263,7 +263,7 @@ export async function restorePreviousPreference(id) {
         const currentData = map[id];
         
         if (currentData && currentData.previousState) {
-            // 將當前狀態與備份狀態互換 (這樣再次呼叫就會變成 Redo)
+            // 當前狀態與備份互換（再次呼叫即為 Redo）
             const tempName = currentData.customName;
             const tempHex = currentData.customHex;
             
@@ -325,11 +325,11 @@ export async function restorePreviousPreference(id) {
     });
 }
 
-// 6. 新增：儲存卡片顯示順序 (Drag & Drop 專用)
+// 6. 儲存卡片顯示順序（Drag & Drop 用）
 export async function saveDisplayOrder(orderedIds) {
     const db = await initDB();
     const data = { 
-        id: '__DISPLAY_ORDER__', // 使用一個特殊的保留字作為 ID
+        id: '__DISPLAY_ORDER__', // 特殊保留字 ID
         order: orderedIds, 
         updatedAt: Date.now() 
     };
@@ -362,7 +362,7 @@ export async function saveDisplayOrder(orderedIds) {
     });
 }
 // ============================================================================
-// 物理刪除引擎：徹底銷毀卡片設定與排序殘留 (修復資料表與加入備援邏輯)
+// 實體刪除：移除卡片設定與排序殘留（含備援邏輯）
 // ============================================================================
 export async function deleteRoutePreference(id) {
     const db = await initDB();
@@ -384,14 +384,14 @@ export async function deleteRoutePreference(id) {
     // 處理 IndexedDB 模式的刪除邏輯
     return new Promise((resolve) => {
         try {
-            // 修正：使用正確的 STORE_NAME，而不是硬寫的 'preferences'
+            // 使用 STORE_NAME 常數，不寫死 'preferences'
             const transaction = db.transaction(STORE_NAME, 'readwrite');
             const store = transaction.objectStore(STORE_NAME);
             
             // 1. 刪除該卡片的資料
             store.delete(id);
             
-            // 2. 順便把排序裡面的紀錄也清掉，防止出現幽靈空缺
+            // 2. 一併清掉排序中的紀錄，避免出現空缺
             const orderReq = store.get('__DISPLAY_ORDER__');
             orderReq.onsuccess = () => {
                 const orderData = orderReq.result;
@@ -420,7 +420,7 @@ export async function deleteRoutePreference(id) {
 }
 
 // ============================================================================
-// 新增：更新卡片內的路線列表 (支援 Drag & Drop 排序與刪除)
+// 更新卡片內的路線列表（支援拖曳排序與刪除）
 // ============================================================================
 export async function updateCardRoutes(id, newTargetLineIds) {
     const db = await initDB();
@@ -431,7 +431,7 @@ export async function updateCardRoutes(id, newTargetLineIds) {
         let currentData = map[id] || { id: id }; // 若無舊資料則新建
         let previousState = null;
 
-        // 備份舊狀態 (提供給 Undo 引擎使用)
+        // 備份舊狀態（供 Undo 使用）
         if (currentData.targetLineIds || currentData.customName || currentData.customHex) {
             previousState = {
                 customName: currentData.customName,
@@ -498,7 +498,7 @@ export async function updateCardRoutes(id, newTargetLineIds) {
 }
 
 // ============================================================================
-// 匯出與匯入引擎 (Data Export / Import Engine)
+// 匯出與匯入 (Data Export / Import)
 // ============================================================================
 
 /**
@@ -568,8 +568,8 @@ export async function importDataAndOverwrite(jsonString) {
                 // 驗證：每張卡片最多 6 條追蹤路線
                 if (item.routes.length > 6) throw new Error(`${cardNum}枚目の追跡路線は最大6つまでです。(路線不可超過6條)`);
                 
-                // 驗證：飛機航班不可與鐵道混合
-                // 判斷邏輯：沒有包含 ':' 或 '.' 的通常是航班 (如 CI100)，有包含的是 ODPT 鐵道 ID
+                // 驗證：航班不可與鐵道混合
+                // 無 ':' 或 '.' 的通常是航班 (如 CI100)，有的是 ODPT 鐵道 ID
                 const hasFlight = item.routes.some(r => !r.includes(':') && !r.includes('.'));
                 const hasTrain = item.routes.some(r => r.includes(':') || r.includes('.'));
                 
@@ -594,7 +594,7 @@ export async function importDataAndOverwrite(jsonString) {
                 customName: source.name || '',
                 customHex: source.hex || '',
                 targetLineIds: source.routes || [],
-                // 核心修復：強制加上明確的顯示狀態，防禦 UI 層的隱藏判斷
+                // 明確標記顯示狀態，避免被 UI 層的隱藏判斷擋下
                 isHidden: false,  
                 isVisible: true,
                 updatedAt: Date.now()
@@ -607,19 +607,19 @@ export async function importDataAndOverwrite(jsonString) {
             updatedAt: Date.now()
         };
 
-        // 防禦性清除：如果你的系統有獨立記錄隱藏卡片的陣列，在這裡強制清空
+        // 防禦性清除：一併清空隱藏卡片清單
         newDbData['__HIDDEN_CARDS__'] = {
             list: [],
             updatedAt: Date.now()
         };
 
         // ==========================================
-        // 第三階段：核平資料庫並寫入 (Nuke and Pave)
+        // 第三階段：清空資料庫後重建 (Nuke and Pave)
         // ==========================================
         const db = await initDB();
 
-        // 破除隱藏封印：強制清除 UI 層偷偷記錄的隱藏黑名單！
-        // 這是確保卡片 100% 會出現在畫面上的絕對關鍵
+        // 清除 UI 層的隱藏黑名單，
+        // 確保匯入的卡片一定會顯示在畫面上
         localStorage.removeItem('TsukinKanban_HiddenCards');
 
         // 模式 A：LocalStorage
@@ -634,7 +634,7 @@ export async function importDataAndOverwrite(jsonString) {
             const transaction = db.transaction(STORE_NAME, 'readwrite');
             const store = transaction.objectStore(STORE_NAME);
             
-            // 1. 暴力清空目前資料庫內的所有卡片與排序檔
+            // 1. 清空資料庫內的所有卡片與排序檔
             const clearReq = store.clear();
             
             clearReq.onsuccess = () => {
@@ -643,7 +643,7 @@ export async function importDataAndOverwrite(jsonString) {
                 
                 if (keys.length === 0) resolve(0);
 
-                // 2. 寫入全新的、乾淨的資料
+                // 2. 寫入新資料
                 keys.forEach(key => {
                     store.put(newDbData[key]).onsuccess = () => {
                         processed++;
@@ -664,7 +664,7 @@ export async function importDataAndOverwrite(jsonString) {
     }
 }
 // ============================================================================
-// 純色票主題引擎 (Color Theme Export / Import Engine) - 完美對接畫面版
+// 色票主題的匯出與匯入 (Color Theme Export / Import)
 // ============================================================================
 
 /**
@@ -735,12 +735,12 @@ export async function importColorsOnly(jsonString) {
         const allData = await getAllUserPreferences();
         const displayOrder = allData['__DISPLAY_ORDER__'];
         
-        // 取得目前使用者畫面上「可見」的卡片順序 (解決全新狀態找不到卡片的 Bug)
+        // 取得畫面上可見的卡片順序（全新狀態下也能找到卡片）
         let visibleCardIds = [];
         if (displayOrder && Array.isArray(displayOrder.order)) {
             visibleCardIds = displayOrder.order;
         } else if (window.appRailwayData && window.appRailwayData.length > 0) {
-            // 神奇魔法：從 script.js 的全域變數取得實際在畫面上的卡片順序
+            // 從 script.js 的全域變數取得畫面上的卡片順序
             visibleCardIds = window.appRailwayData.map(card => card.id);
         } else {
             visibleCardIds = Object.keys(allData).filter(k => k !== '__DISPLAY_ORDER__').slice(0, 5);
@@ -762,7 +762,7 @@ export async function importColorsOnly(jsonString) {
             for (let i = 0; i < maxItems; i++) {
                 const cardId = visibleCardIds[i];
                 
-                // 核心修復：如果這張卡片從來沒被編輯過（不在 DB 內），就幫它動態建檔！
+                // 卡片從未被編輯過（不在 DB 內）時，動態建檔
                 if (!map[cardId]) {
                     map[cardId] = { id: cardId };
                 }
@@ -792,14 +792,14 @@ export async function importColorsOnly(jsonString) {
                 const getReq = store.get(cardId);
                 
                 getReq.onsuccess = () => {
-                    // 核心修復：如果 getReq.result 是 undefined (也就是全新卡片)
-                    // 我們就在這裡生成一個包含基礎 ID 的全新物件！
+                    // getReq.result 為 undefined（全新卡片）時，
+                    // 生成僅含基礎 ID 的新物件
                     const cardData = getReq.result || { id: cardId };
                     
-                    cardData.customHex = newHex; // 強制寫入新顏色
+                    cardData.customHex = newHex;
                     cardData.updatedAt = Date.now();
                     
-                    const putReq = store.put(cardData); // 存進資料庫
+                    const putReq = store.put(cardData);
                     
                     putReq.onsuccess = () => {
                         updatedCount++;

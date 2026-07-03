@@ -18,7 +18,7 @@
     display: inline-block; 
     width: 12px;  
     height: 22px; 
-    overflow: hidden; /* 完美裁切 */
+    overflow: hidden;
     text-align: center;
 }
 
@@ -68,13 +68,13 @@
 #hour-tens .ticker-track.rolling { animation-delay: 0.24s; }
 
 /* =========================================
-   左舷母艦：靈動膠囊與圖示圖層 (幾何圓心錨點版)
+   左側矩陣：膠囊與圖示圖層（幾何圓心錨點）
    ========================================= */
 
    .left-capsule-icon {
     position: absolute;
     
-    /* Apple 靈動島級別的幾何錨點：
+    /* 幾何錨點：
        因為膠囊高度是 44px，右側半圓的半徑就是 22px。
        把 right 設為 22px，就等於把 SVG 放在這個半圓的絕對圓心！
     */
@@ -91,7 +91,7 @@
     pointer-events: none;
 }
 
-/* 2. 靈動膠囊引擎：數學錨點鎖死大法 */
+/* 2. 膠囊寬度動畫：以數學錨點固定位置 */
 .left-capsule.top-capsule {
     /* 解除左側錨點，防止雙向運算造成的抖動 */
     left: auto !important;
@@ -102,7 +102,7 @@
     
     width: var(--capsule-width, 95px) !important;
     
-    /* 拔除 left 的動畫，現在只專心處理 width，徹底消滅小數點渲染抖動！ */
+    /* 不對 left 做動畫、只處理 width，消除小數點渲染抖動 */
     transition: width var(--capsule-dur, 1s) var(--capsule-ease, linear), 
                 opacity 0.2s ease, 
                 transform 0.5s var(--apple-spring), 
@@ -132,7 +132,7 @@
         --sync-yellow-glow: 0 0 8px rgba(255, 204, 0, 0.5);
         
         /* 深色底：使用 Apple 系統紅色。
-           視覺校正魔法：因為紅色較暗，我們疊加「兩層」陰影，外圈大擴散 + 內圈高濃度，讓它徹底亮起來！ */
+           視覺校正：紅色較暗，疊加兩層陰影（外圈大擴散＋內圈高濃度）提高亮度 */
         --sync-red-color: #FF3B30;
         --sync-red-glow: 0 0 16px rgba(255, 59, 48, 0.8), 0 0 4px rgba(255, 59, 48, 0.6); 
     }
@@ -143,7 +143,7 @@
 ========================================== */
 
 /* 1~5 分鐘：黃色警告狀態 */
-/* 核心魔法：使用 * (萬用字元)，不管裡面的數字、冒號叫什麼名字，全部強制上色！ */
+/* 以萬用選擇器覆蓋內部所有數字與冒號的顏色 */
 #entry-time-display.sync-warning-yellow,
 #entry-time-display.sync-warning-yellow * {
     color: var(--sync-yellow-color) !important;
@@ -152,7 +152,7 @@
 }
 
 /* 5 分鐘以上：紅色斷線狀態 */
-/* 核心魔法：同樣使用 * (萬用字元) 強制覆蓋所有子元素 */
+/* 同樣以萬用選擇器覆蓋所有子元素 */
 #entry-time-display.sync-warning-red,
 #entry-time-display.sync-warning-red * {
     color: var(--sync-red-color) !important;

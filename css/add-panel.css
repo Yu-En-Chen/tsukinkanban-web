@@ -1,5 +1,5 @@
 /* ==========================================================================
-   add-panel.css - 新增面板專屬 UI 樣式 (膠囊本人 Hero 展開版 - 防滾動絲滑微調版)
+   add-panel.css - 新增面板 UI 樣式（Hero 展開、防捲動）
    ========================================================================== */
 
    .add-panel-container {
@@ -16,17 +16,17 @@
 }
 
 /* =========================================
-   膠囊本人 (完美繼承原本的狀態)
+   膠囊本體（繼承原本的狀態）
    ========================================= */
 /* =========================================
-   主按鈕面板 (完美同步 menu.js 的設計)
+   主按鈕面板（與 menu.js 的設計一致）
    ========================================= */
    .add-menu-item {
     display: flex;
     flex-direction: column;
     width: 100%;
     
-    /* 徹底拔除膠囊感：統一改為 32px 圓角與相同的微透明灰色背景 */
+    /* 統一為 32px 圓角與微透明灰色背景 */
     background: rgba(128, 128, 128, 0.08);
     border-radius: 32px; 
     overflow: hidden;
@@ -35,7 +35,7 @@
     opacity: 1;
     transform: scale(1);
     
-    /* 拔除 border-radius 動畫，因為它現在永遠是 32px，不需變形了 */
+    /* 移除 border-radius 動畫（固定 32px，無需變形） */
     transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
                 background 0.3s ease,
                 opacity 0.3s ease, 
@@ -62,7 +62,7 @@
     background: rgba(128, 128, 128, 0.15);
 }
 
-/* 終極消滅魔法：當有人展開時，把「不是展開的膠囊」徹底隱藏並縮小！ */
+/* 有項目展開時，隱藏並縮小其他未展開的膠囊 */
 .add-panel-container.has-expanded .add-menu-item:not(.is-expanded) {
     max-height: 0;
     opacity: 0;
@@ -122,7 +122,7 @@
 }
 
 /* =========================================
-   展開內容區 (CSS Grid 動態高度魔法)
+   展開內容區（CSS Grid 動態高度）
    ========================================= */
 .add-menu-content-wrapper {
     display: grid;
@@ -148,7 +148,7 @@
     max-height: 600px; 
     min-height: 250px; 
     
-    /* 徹底鎖死：拔除 auto，改為 hidden！手機開啟這個視窗時禁止任何頁面滑動！ */
+    /* overflow 改為 hidden：此視窗開啟時禁止頁面捲動 */
     overflow: hidden; 
     
     background: transparent; 
@@ -169,9 +169,9 @@
    .manage-card-capsule {
     display: flex;
     align-items: center;
-    /* 改為 flex-start，讓所有內容乖乖從最左邊開始排列 */
+    /* flex-start：內容從最左側開始排列 */
     justify-content: flex-start; 
-    gap: 16px; /* 控制「左側圖示區」與「右側文字」之間的完美距離 */
+    gap: 16px; /* 圖示區與文字的間距 */
     padding: 16px 20px;
     border-radius: 999px; 
     font-size: 1.05rem;
@@ -246,7 +246,7 @@
 
 /* 幽靈浮空狀態 (Drag Ghost) */
 .manage-card-capsule.is-dragging {
-    pointer-events: none; /* 讓滑鼠雷射光能穿透它打到底下的卡片 */
+    pointer-events: none; /* 讓滑鼠事件穿透到底下的卡片 */
     z-index: 99999;
     box-shadow: 0 15px 35px rgba(0,0,0,0.25);
     transition: none; /* 拖拉時絕對跟手，不要延遲 */
@@ -261,12 +261,12 @@
 }
 
 /* =========================================
-   管理面板：隱藏區與分隔線 (完美對稱版)
+   管理面板：隱藏區與分隔線
    ========================================= */
    .manage-separator {
     height: 2px;
     background: rgba(120, 120, 128, 0.15);
-    /* 拔除上下的 margin，只保留左右縮進 10px */
+    /* 移除上下 margin，只保留左右縮排 10px */
     margin: 0 10px; 
     border-radius: 2px;
 }
@@ -275,7 +275,7 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 12px;
-    /* 拔除上下的 padding，只保留左右縮進 10px */
+    /* 移除上下 padding，只保留左右縮排 10px */
     padding: 0 10px; 
 }
 

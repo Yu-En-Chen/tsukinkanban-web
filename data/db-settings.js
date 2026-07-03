@@ -1,9 +1,9 @@
 // ============================================================================
-// data/db-settings.js - 顯示設定專用儲存引擎 (IndexedDB + LocalStorage 零延遲備援)
+// data/db-settings.js - 顯示設定的儲存（IndexedDB + LocalStorage 備援）
 // ============================================================================
 
 export async function saveDisplaySetting(key, value) {
-    // 1. LocalStorage 備援 (極速寫入，確保下次載入時畫面不閃爍)
+    // 1. LocalStorage 備援（快速寫入，下次載入不閃爍）
     try { localStorage.setItem(`tsukin_setting_${key}`, JSON.stringify(value)); } catch(e) {}
 
     // 2. IndexedDB 永久儲存 (獨立的 Settings Store，不干擾卡片資料)
@@ -25,7 +25,7 @@ export async function saveDisplaySetting(key, value) {
 
 export async function getDisplaySetting(key, defaultValue) {
     return new Promise((resolve) => {
-        // 優先嘗試從 LocalStorage 「瞬間」讀取 (對 UI 渲染最有利)
+        // 優先從 LocalStorage 讀取（利於 UI 首次渲染）
         try {
             const localVal = localStorage.getItem(`tsukin_setting_${key}`);
             if (localVal !== null) return resolve(JSON.parse(localVal));

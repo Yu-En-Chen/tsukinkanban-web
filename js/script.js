@@ -1834,7 +1834,7 @@ function filterCards(keyword) {
         for (const rw_id in dict) {
             const route = dict[rw_id];
 
-            // 把目標名稱裡的「-」也暴力拔除，兩邊都光溜溜的一定對得上！
+            // 目標名稱同樣移除「-」，兩邊格式一致才能比對
             const rName = (route.name || '').toLowerCase().replace(/[- ]/g, '');
             const rComp = (route.company || '').toLowerCase().replace(/[- ]/g, '');
             const rKana = (route.kana || '').toLowerCase().replace(/[- ]/g, '');
@@ -2344,7 +2344,7 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                 const msg = statusInfo.message || "";
                 const isNormalMsg = msg.includes("ありません") || msg.includes("平常") || msg.includes("正常") || msg.includes("取得しています");
 
-                // 只要不是罐頭正常訊息，或是官方明確標示為「お知らせ」，就觸發備註燈號！
+                // 非制式的正常訊息，或官方標示為「お知らせ」時，觸發備註燈號
                 if ((!isNormalMsg && msg.trim().length > 0) || (statusInfo.status_type && statusInfo.status_type.includes("お知らせ")) || msg.includes("お知らせ")) {
                     hasMessageNote = true;
                 }

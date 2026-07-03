@@ -133,7 +133,7 @@ async function saveLocalDict(version, routes) {
 }
 
 // ==========================================
-// 3. 外部呼叫主入口：智慧同步引擎
+// 3. 對外主入口：字典同步
 // ==========================================
 export async function syncAndLoadDictionary(apiUrl) {
     // 先抓出本地現有的字典與版本號
@@ -141,7 +141,7 @@ export async function syncAndLoadDictionary(apiUrl) {
     const localVersion = localData ? localData.version : null;
 
     try {
-        // 每次都去敲後端，檢查有沒有新版本
+        // 向後端確認是否有新版本
         const response = await fetch(apiUrl);
         if (!response.ok) throw new Error('伺服器連線失敗');
         
@@ -162,7 +162,7 @@ export async function syncAndLoadDictionary(apiUrl) {
     } catch (error) {
         console.warn("無法連線至伺服器獲取字典，嘗試使用本地舊快取...", error);
         
-        // 如果斷網了，至少拿出本地資料庫的舊資料擋著用
+        // 斷網時退回本地舊資料
         if (localData && localData.routes) {
             window.MasterRouteDictionary = localData.routes;
         } else {

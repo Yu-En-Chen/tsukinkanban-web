@@ -49,7 +49,7 @@ body {
 }
 
 /* =========================================
-   終極版：全螢幕搜尋遮罩 (優雅 20px 無噪點純淨版)
+   全螢幕搜尋遮罩（20px 模糊、無噪點）
    ========================================= */
 
 .search-mask {
@@ -89,7 +89,7 @@ body.searching .search-mask {
     transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s 0s !important;
 }
 
-/* 徹底封殺之前殘留的 ::before 和 ::after 噪點層 */
+/* 移除殘留的 ::before 與 ::after 噪點層 */
 .search-mask::before,
 .search-mask::after {
     display: none !important;
@@ -189,7 +189,7 @@ body.searching .search-mask {
     pointer-events: auto;
     transition: gap 0.4s var(--active-bounce);
 
-    /* 新增：使用 transform 來平移整組母艦 (矩陣) */
+    /* 以 transform 平移整組按鈕矩陣 */
     /* translate(X軸左右, Y軸上下) */
     /* 例如：往左移px，往下移px */
     top: 10px;
@@ -213,7 +213,7 @@ body.searching .search-mask {
 
     /* =====================================
        尺寸調整區：請直接在這裡改數字！
-       因為中心點已經鎖死，改大改小都會完美從中心向外延伸。
+       中心點已固定，調整大小時會從中心向外延伸。
        圓角公式：22px (內圓角) + 7.5px (單邊向外擴張距離)
        ===================================== */
     width: 110px;
@@ -375,7 +375,7 @@ body.searching .search-mask {
     transition: transform 0.4s var(--apple-spring), opacity 0.3s ease;
 }
 
-/* 物理對齊魔法：抵銷 95px 均分後導致的 1.5px 偏移，讓 SVG 完美鎖死在 22px 半徑圓心！ */
+/* 抵銷 95px 均分造成的 1.5px 偏移，讓 SVG 對齊 22px 半徑圓心 */
 .capsule-btn-item:first-of-type>svg,
 .capsule-btn-item:first-of-type>div {
     margin-right: 3px !important;
@@ -499,7 +499,7 @@ body.searching .search-mask {
 }
 
 /* =========================================
-   膠囊 2D 滑動切換系統 (完美同步卡片 3D 翻轉)
+   膠囊 2D 滑動切換（與卡片 3D 翻轉同步）
    ========================================= */
 /* 1. 向右滑出消失 (進入 Blank 模式)
    膠囊寬 95px，向右平移 95px 剛好讓左側徹底越過右側中線並消失 */
@@ -543,7 +543,7 @@ body.searching .search-mask {
 }
 
 /* =========================================
-   搜尋按鈕 SVG 同步膠囊滑動 (完美修復版)
+   搜尋按鈕 SVG 與膠囊滑動同步
    ========================================= */
 .search-trigger .search-icon {
     position: relative;
@@ -562,7 +562,7 @@ body.searching .search-mask {
     width: 20px !important;
     height: 20px !important;
 
-    /* 徹底解決抽搐與下移：強制鎖死正中心點 */
+    /* 固定正中心點，避免抖動與下移 */
     top: 50% !important;
     left: 50% !important;
     transform: translate3d(-50%, -50%, 0) !important;
@@ -620,7 +620,7 @@ body.searching .search-mask {
     pointer-events: none !important;
 }
 
-/* 當漢堡選單(通知)打開時，強制隱藏其他所有模式圖示，只浮出 Menu 專屬圖示 */
+/* 通知選單開啟時，隱藏其他模式圖示，只顯示選單圖示 */
 body.hamburger-active .action-capsule .capsule-btn-item svg.icon-default,
 body.hamburger-active .action-capsule .capsule-btn-item svg.icon-hidden,
 body.hamburger-active .action-capsule .capsule-btn-item svg.icon-blank-mode,
@@ -903,7 +903,7 @@ body.hamburger-active .action-capsule .capsule-btn-item svg.icon-menu-mode {
 }
 
 /* ==========================================================================
-   預覽魔法：永遠讓最底層（視覺最前面）的卡片顯示詳情內容 (受設定開關控制)
+   預覽：最底層（視覺最前面）的卡片顯示詳情內容（受設定開關控制）
    ========================================================================== */
 body.enable-bottom-preview .card-stack:not(.has-active) .card:last-child .card-content {
     opacity: 1;
@@ -948,7 +948,7 @@ body.enable-bottom-preview .card-stack:not(.has-active) .card:last-child .card-c
     -webkit-text-fill-color: var(--text-fill, var(--text-secondary));
 }
 
-/* 精準打擊：只隱藏「主畫面」和「詳情面板」的文字，絕對不碰個性化面板 */
+/* 只隱藏主畫面與詳情面板的文字，不影響個人化面板 */
 .card>.card-content>.description,
 #detail-card-container .description {
     display: none !important;
@@ -994,7 +994,7 @@ body.enable-bottom-preview .card-stack:not(.has-active) .card:last-child .card-c
     margin-bottom: 0;
     /* 移除多餘的底部空間 */
 
-    /* 比例控制台：以後只要調這幾個數字，全體自動完美縮放！ */
+    /* 比例變數：調整這幾個數字即可整體縮放 */
     --info-font-size: 1.1rem;
     /* 調整這個，膠囊與圓形會跟著自動放大縮小 */
     --info-pad-y: 0.26em;
@@ -1018,7 +1018,7 @@ body.enable-bottom-preview .card-stack:not(.has-active) .card:last-child .card-c
     background: var(--tag-bg);
     border: 1px solid var(--border-color);
 
-    /* 這裡使用 em 變數，它會自動拿文字大小來乘上比例！ */
+    /* em 變數會以文字大小乘上比例 */
     padding: var(--info-pad-y) var(--info-pad-x);
     border-radius: 999px;
 
@@ -1034,7 +1034,7 @@ body.enable-bottom-preview .card-stack:not(.has-active) .card:last-child .card-c
 }
 
 .info-circle {
-    /* 圓形直徑也綁定 em 比例，保證永遠是完美正圓，且跟文字等比例 */
+    /* 圓形直徑綁定 em 比例，維持正圓並與文字等比 */
     width: var(--info-circle-size);
     height: var(--info-circle-size);
     border-radius: 50%;
@@ -1146,7 +1146,7 @@ body.enable-bottom-preview .card-stack:not(.has-active) .card:last-child .card-c
 .detail-overlay.active .detail-extension-card {
     transform: translate3d(0, 0, 0);
     pointer-events: auto;
-    /* 關鍵修復：解除觸控封印，讓實心玻璃面板可以接收手指滑動！ */
+    /* 允許玻璃面板接收觸控滑動 */
 }
 
 /* ==========================================================================
@@ -1173,7 +1173,7 @@ body.enable-bottom-preview .card-stack:not(.has-active) .card:last-child .card-c
     opacity: 1 !important;
 
     /* 關鍵修改：將 1.5 降為 1.025 (只允許衝過頭 2.5%)
-       這樣它最多只會往上彈約 15~20px，會完美停留在 30px 的安全距離內，
+       這樣它最多往上彈約 15~20px，停留在 30px 的安全距離內，
        既保留了 Q 彈的物理慣性，又絕對不會撞到上面的卡片！ */
     transition: transform 0.65s cubic-bezier(0.2, 1.025, 0.4, 1) !important;
 }
@@ -1327,7 +1327,7 @@ body.enable-bottom-preview .card-stack:not(.has-active) .card:last-child .card-c
 }
 
 /* =========================================
-   終極 Z 軸景深魔法 (True Depth of Field)
+   Z 軸景深 (True Depth of Field)
    ========================================= */
 body.menu-active .card-stack,
 body:has(.left-circle-btn.is-expanded) .card-stack,
@@ -1383,7 +1383,7 @@ body.searching #dynamic-info-overlay>.perspective-container {
 /* =========================================
    頂部按鈕與圖示同步淡出 (徹底修復衝突版)
    ========================================= */
-/* 只讓通用視窗 (universal-window) 隱藏這些按鈕，放過漢堡選單！ */
+/* 僅在通用視窗 (universal-window) 隱藏這些按鈕，不影響通知選單 */
 body:has(.universal-window.is-active) .search-trigger,
 body:has(.universal-window.is-active) .action-capsule,
 body:has(.universal-window.is-active) .left-circle-btn {
@@ -1554,7 +1554,7 @@ body.searching .dismiss-icon {
 }
 
 /* ==========================================================================
-   全站 SVG 骨架圖示：終極控制中心 (!important 強制覆蓋版)
+   全站 SVG 圖示的統一控制（以 !important 覆蓋）
    ========================================================================== */
 
 .search-icon svg {
@@ -1778,7 +1778,7 @@ html.is-android-fallback .card-stack.bounce-back-wheel .card {
 }
 
 /* ==========================================================================
-   殭屍殘影封殺力場 (Zombie Flash Killer)
+   殘影清除 (Zombie Flash Killer)
    ========================================================================== */
 #detail-overlay:not(.active)~#dismiss-icon {
     opacity: 0 !important;
@@ -1883,7 +1883,7 @@ html.is-android-fallback .card-stack.bounce-back-wheel .card {
    ========================================================================== */
 @media (pointer: fine) {
 
-    /* 修正 1：標準元件獨立一組，確保絕對生效 */
+    /* 標準元件獨立一組選擇器，確保生效 */
     html,
     body,
     *,
@@ -2156,7 +2156,7 @@ html.is-android-fallback .card-stack.bounce-back-wheel .card {
     left: env(safe-area-inset-left, 0px) !important;
     right: env(safe-area-inset-right, 0px) !important;
 
-    /* 2. 核心魔法：利用 Margin 統一向內推 12px 的優雅空隙 */
+    /* 2. 以 margin 統一向內推 12px 的間隙 */
     margin: 12px !important;
 
     /* 3. 放棄所有寫死的高度與寬度，讓 top/bottom/margin 自己去拉扯 */
@@ -2165,14 +2165,14 @@ html.is-android-fallback .card-stack.bounce-back-wheel .card {
     max-width: none !important;
     border-radius: 36px !important;
 
-    /* 手機版專屬魔法：依靠 left 和 right 撐開寬度，完美貼齊邊緣 12px */
+    /* 手機版：以 left/right 撐開寬度，貼齊邊緣 12px */
     left: calc(env(safe-area-inset-left, 0px) + 12px) !important;
     right: calc(env(safe-area-inset-right, 0px) + 12px) !important;
     width: auto !important;
     max-width: none !important;
     margin: 0 !important;
 
-    /* 全新統一：高不透明度實心珍珠白玻璃 */
+    /* 高不透明度的實心珍珠白玻璃 */
     background: rgba(245, 245, 247, 0.85) !important;
     -webkit-backdrop-filter: blur(35px);
     backdrop-filter: blur(35px);
@@ -2234,7 +2234,7 @@ body.hamburger-active .search-container::after {
     }
 }
 
-/* 母艦邊框專用的彈出動畫 (必須保留 translate(50%, -50%) 矩陣中心點) */
+/* 矩陣邊框的彈出動畫（須保留 translate(50%, -50%) 中心點） */
 @keyframes directPopUpMatrix {
     0% {
         transform: translate(50%, -50%) scale(0.6) translateY(20px);
@@ -2252,7 +2252,7 @@ body.hamburger-active .search-container::after {
     }
 }
 
-/* 3. 將新動畫套用到母艦與膠囊 */
+/* 3. 動畫套用到矩陣容器與膠囊 */
 body.hamburger-active .search-container .left-circle-btn,
 body.hamburger-active .search-container .action-capsule {
     opacity: 1 !important;
@@ -2274,7 +2274,7 @@ body.hamburger-active .search-container .search-trigger {
     animation: none !important;
 }
 
-/* 完美的 0.1 秒依次彈出節奏 (波浪感) */
+/* 0.1 秒間隔依序彈出（波浪感） */
 body.hamburger-active .search-container .left-circle-btn {
     animation-delay: 0s !important;
 }
@@ -2289,7 +2289,7 @@ body.hamburger-active .search-container::before {
     animation-delay: 0.15s !important;
 }
 
-/* 母艦邊框緊跟著出現 */
+/* 矩陣邊框接著出現 */
 body.hamburger-active .search-container .action-capsule {
     animation-delay: 0.2s !important;
 }
@@ -2297,7 +2297,7 @@ body.hamburger-active .search-container .action-capsule {
 /* 第 3 個彈出 (上方膠囊) */
 
 
-/* 4. 關閉時的防護與母艦邊框歸位 */
+/* 4. 關閉時的防護與矩陣邊框歸位 */
 .search-container::before {
     transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease !important;
 }
@@ -2312,8 +2312,8 @@ body.hamburger-active .search-container .action-capsule {
    通知選單滿版與層級修復 (純淨空殼模式)
    ========================================= */
 
-/* 1. 救命關鍵 (Z-index 突破)：
-   讓母艦、膠囊、搜尋按鈕的層級高於灰色背景 (5990)，才能浮出水面 */
+/* 1. Z-index 調整：
+   讓矩陣、膠囊、搜尋按鈕的層級高於灰色背景 (5990) */
 body.hamburger-active .search-container::before {
     z-index: 5991 !important;
 }
@@ -2326,19 +2326,19 @@ body.hamburger-active .search-container .search-trigger {
     z-index: 5993 !important;
 }
 
-/* 3. 終極拔除 SVG、文字與點擊功能 (純淨空殼模式) */
+/* 3. 移除 SVG、文字與點擊功能（空殼模式） */
 body.hamburger-active #action-capsule,
 body.hamburger-active #search-trigger,
 body.hamburger-active #action-capsule *,
 body.hamburger-active #search-trigger *,
 body.hamburger-active #left-capsule-top *,
 body.hamburger-active #left-capsule-bottom * {
-    /* 封殺左右兩側母艦內所有按鈕、SVG、文字的點擊事件，防止穿透 */
+    /* 停用兩側矩陣內按鈕、SVG、文字的點擊，防止穿透 */
     pointer-events: none !important;
 }
 
 /* =========================================
-   內容物隨母艦彈出動畫 (文字與進度條 SVG) - 終極定位修復版
+   內容隨矩陣彈出的動畫（文字與進度條 SVG）
    ========================================= */
 
 /* 1. 預設狀態 (絕不覆蓋原本的定位) */
@@ -2350,11 +2350,11 @@ body.hamburger-active #left-capsule-bottom * {
 
 .left-capsule .left-capsule-icon {
     opacity: 1;
-    /* 拔除 transform 覆蓋，讓它乖乖吃原本 style.css 裡的 translateY(-50%) 完美置中 */
+    /* 移除 transform 覆蓋，沿用 style.css 的 translateY(-50%) 置中 */
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-/* 2. 專門為絕對定位 SVG 圖示打造的彈出動畫 (保留 X 軸 50% 與 Y 軸 -50% 置中錨點) */
+/* 2. 絕對定位 SVG 圖示的彈出動畫（保留 50%/-50% 置中錨點） */
 @keyframes directPopUpIcon {
     0% {
         transform: translate(50%, calc(-50% + 20px)) scale(0.6);
@@ -2379,7 +2379,7 @@ body.hamburger-active .left-capsule.bottom-capsule #entry-time-display {
 }
 
 body.hamburger-active .left-capsule.top-capsule .left-capsule-icon {
-    /* SVG 圖示改用專屬的 Icon 彈出動畫！ */
+    /* SVG 圖示使用專屬的彈出動畫 */
     animation: directPopUpIcon 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both !important;
     animation-delay: 0.35s !important;
 }
@@ -2394,16 +2394,16 @@ body.hamburger-active .left-capsule.top-capsule .left-capsule-icon {
     /* 將左側 padding 精準設為 12px */
 }
 
-/* 2. 強制抵銷 index.html 中寫死的 style="margin-left: 4px;" */
+/* 2. 抵銷 index.html 行內的 margin-left: 4px */
 .search-input-box .search-icon {
     margin-left: 0 !important;
 }
 
 /* =========================================
-   頂部導航列：極致穩定化 (消滅重新整理時的 FOUC 抽搐)
+   頂部導航列：穩定化（消除重新整理時的 FOUC 閃爍）
    ========================================= */
 
-/* 1. 鎖死母艦內部按鈕，防止 SVG 注入瞬間撐開排版 */
+/* 1. 固定矩陣內按鈕尺寸，防止 SVG 注入時撐開排版 */
 #capsule-main-btn,
 #capsule-secondary-btn {
     opacity: 1 !important;
@@ -2423,7 +2423,7 @@ body.hamburger-active .left-capsule.top-capsule .left-capsule-icon {
 }
 
 /* =========================================
-   左側水平母艦矩陣 (Left Horizontal Matrix)
+   左側水平矩陣 (Left Horizontal Matrix)
    ========================================= */
 
 /* 1. 左側外框底板 (中心錨點精準對齊左側) */
@@ -2456,9 +2456,9 @@ body.hamburger-active .left-capsule.top-capsule .left-capsule-icon {
     left: 20px;
     /* 左側邊界 */
     width: 95px;
-    /* 寬度對齊右側母艦 */
+    /* 寬度對齊右側矩陣 */
     height: 44px;
-    /* 高度對齊右側母艦 */
+    /* 高度對齊右側矩陣 */
     background: var(--search-bg);
     border: 1px solid var(--search-border);
     -webkit-backdrop-filter: blur(20px);
@@ -2481,7 +2481,7 @@ body.hamburger-active .left-capsule.top-capsule .left-capsule-icon {
     top: 0;
 }
 
-/* 下方膠囊定位 (與右側下排按鈕的 51px 完美切齊) */
+/* 下方膠囊定位（與右側下排按鈕的 51px 切齊） */
 .left-capsule.bottom-capsule {
     top: 51px;
 }
@@ -2498,7 +2498,7 @@ body.hamburger-active .left-capsule.top-capsule .left-capsule-icon {
     }
 }
 
-/* 4. 與右側母艦同步的「通知選單彈出動畫」 */
+/* 4. 與右側矩陣同步的通知選單彈出動畫 */
 @keyframes directPopUpMatrixLeft {
     0% {
         transform: translate(-50%, -50%) scale(0.6) translateY(20px);
@@ -2566,17 +2566,17 @@ body:has(.universal-window.is-active) .left-capsule {
 }
 
 /* =========================================
-   左舷母艦：進場時間戳記字體設計
+   左側矩陣：同步時刻的字體設計
    ========================================= */
 .slashed-time-font {
     /* 1. 呼叫系統最高級的程式碼/色號等寬字體 */
     font-family: 'SF Mono', ui-monospace, 'Cascadia Mono', 'Roboto Mono', Menlo, Consolas, monospace !important;
 
-    /* 2. 核心魔法：強制啟動字體的「斜線零」特徵 */
+    /* 2. 啟用字體的「斜線零」特徵 */
     font-variant-numeric: slashed-zero !important;
 
     font-size: 17px;
-    /* 完美填滿膠囊的大小 */
+    /* 填滿膠囊 */
     font-weight: 600;
     letter-spacing: 0.5px;
     /* 讓全形冒號與數字之間保持呼吸空間 */
@@ -2589,16 +2589,16 @@ body:has(.universal-window.is-active) .left-capsule {
 }
 
 /* =========================================
-   左舷母艦：內部右側圓心圖示
+   左側矩陣：內部右側圓心圖示
    ========================================= */
 .left-capsule-icon {
     position: absolute;
-    /* 膠囊高度是 44px (半徑22px)，right 設為 14px 能讓圖示完美座落在右側的幾何圓心 */
+    /* 膠囊高 44px（半徑 22px），right: 14px 讓圖示落在右側幾何圓心 */
     right: 14px;
     top: 50%;
     transform: translateY(-50%);
 
-    /* 參照右側母艦圖示的標準設定 */
+    /* 參照右側矩陣圖示的設定 */
     width: 18px;
     height: 18px;
     opacity: 0.8;
@@ -2606,7 +2606,7 @@ body:has(.universal-window.is-active) .left-capsule {
     color: currentColor;
     /* 自動繼承膠囊的文字/線條顏色 */
 
-    /* 防呆設定：讓圖示不會干擾到整個膠囊的點擊範圍 */
+    /* 圖示不干擾膠囊的點擊範圍 */
     pointer-events: none;
 
     /* 預留一點過渡動畫，方便未來你想做點擊旋轉效果 */
@@ -2614,11 +2614,11 @@ body:has(.universal-window.is-active) .left-capsule {
 }
 
 /* =========================================
-   終極母艦鎖死系統 (智慧狀態切換與壓制版)
+   矩陣顯示狀態的固定與切換
    ========================================= */
 
-/* 1. 智慧鎖死：只要「沒有在搜尋」且「沒有打開全螢幕選單」，霸王條款就會自動生效，絕對防止重整抽搐！ 
-   一旦搜尋啟動 (.active)，它就會自動讓位給你的退場動畫。*/
+/* 1. 非搜尋且未開全螢幕選單時強制顯示，避免重新整理時閃爍；
+   搜尋啟動 (.active) 後自動讓位給退場動畫 */
 body:not(.hamburger-active) .search-container:not(.active) .left-circle-btn,
 body:not(.hamburger-active) .search-container:not(.active) .search-trigger,
 body:not(.hamburger-active) .search-container:not(.active) .action-capsule,
@@ -2632,7 +2632,7 @@ body:not(.hamburger-active) .search-container:not(.active) .left-matrix-bg {
     animation: none !important;
 }
 
-/* 2. 搜尋框絕對壓制：賦予搜尋框與取消按鈕最高的 z-index，保證動畫期間絕對壓在所有人上面！ */
+/* 2. 搜尋框與取消按鈕使用最高 z-index，動畫期間保持在最上層 */
 .search-container.active .search-input-box,
 .search-container.active .cancel-circle-btn {
     z-index: 6000 !important;
@@ -2650,8 +2650,8 @@ body:not(.hamburger-active) .search-container:not(.active) .left-matrix-bg {
     /* 藏在右邊 60px 處 */
     transform: translate3d(60px, 0, 0) !important;
 
-    /* 核心修復：在退場的過程中，依然維持最高圖層！ */
-    /* 這樣它就會像一片玻璃一樣，平順地從母艦「上方」滑過去，不會產生破圖碰撞 */
+    /* 退場過程維持最高圖層， */
+    /* 使其從矩陣上方平順滑過，不產生破圖 */
     z-index: 6000 !important;
 
     /* 速度同步：把透明度跟位移的時間拉長，配合你系統原本的彈簧動畫節奏 */
@@ -2703,12 +2703,12 @@ body:not(.hamburger-active) .search-container:not(.active) .left-matrix-bg {
     /* 使用你全域設定好的文字顏色 */
     caret-color: var(--text-main, #000) !important;
 
-    /* 終極魔法：等待前方所有動畫 (等待淨空 + 滑出時長 0.6s) 都結束後，才讓游標閃爍！ */
+    /* 等待前段動畫（淨空＋滑出 0.6s）結束後才顯示游標閃爍 */
     transition: caret-color 0s calc(var(--delay-in) + 0.6s) !important;
 }
 
 /* =========================================================
-   左上角時間母艦：重新整理圖示專屬控制權限 (絕對鎖死版)
+   左上角時間膠囊：重新整理圖示的顯示控制
    ========================================================= */
 #left-capsule-top .left-capsule-icon {
     opacity: 0.7 !important;
@@ -2724,7 +2724,7 @@ body.use-system-cursor *::before,
 body.use-system-cursor *::after,
 body.use-system-cursor input,
 body.use-system-cursor textarea {
-    /* 強制所有元素恢復原生的滑鼠指標，並覆蓋原本的 cursor: none */
+    /* 所有元素恢復原生游標，覆蓋 cursor: none */
     cursor: auto !important;
 }
 
@@ -3173,10 +3173,10 @@ body.use-system-cursor .custom-cursor {
 }
 
 /* ==========================================================================
-   飛機航班：詳情頁功能按鈕 (與資訊卡片完美對齊版)
+   航班：詳情頁功能按鈕（與資訊卡片對齊）
    ========================================================================== */
 
-/* 按鈕容器：間距 16px，完美對齊外部卡片的垂直間距 */
+/* 按鈕容器：間距 16px，對齊外部卡片的垂直間距 */
 .flight-action-buttons-container {
     display: flex;
     gap: 16px;
@@ -3184,11 +3184,11 @@ body.use-system-cursor .custom-cursor {
     width: 100%;
 }
 
-/* 功能按鈕基礎樣式：升級為 24px 圓角玻璃卡片 */
+/* 功能按鈕基礎樣式：24px 圓角玻璃卡片 */
 .flight-action-btn {
     flex: 1;
     border-radius: 24px;
-    /* 完美對齊上方卡片的 24px 圓角 */
+    /* 對齊上方卡片的 24px 圓角 */
     padding: 16px 10px;
     display: flex;
     flex-direction: column;
@@ -3202,7 +3202,7 @@ body.use-system-cursor .custom-cursor {
     outline: none;
     -webkit-tap-highlight-color: transparent;
 
-    /* 淺色模式：完美繼承 extension-route-card 的材質 */
+    /* 淺色模式：繼承 extension-route-card 的材質 */
     background: rgba(255, 255, 255, 0.65);
     backdrop-filter: blur(25px);
     -webkit-backdrop-filter: blur(25px);
@@ -3236,45 +3236,45 @@ body.use-system-cursor .custom-cursor {
 }
 
 /* ==========================================================================
-   ⌨鍵盤導航專屬狀態 (100% 完美還原原生 Hover 物理質感)
+   鍵盤導航狀態（還原原生 hover 質感）
    ========================================================================== */
 .card.keyboard-focus,
 #fixed-info-card.keyboard-focus {
-    /* 1. 精準對齊原生 Hover 的 8px 懸浮高度，並強制啟用 3D 硬體加速 */
+    /* 1. 對齊 hover 的 8px 懸浮高度，啟用 3D 硬體加速 */
     transform: translate3d(0, -8px, 0) !important;
 
-    /* 2. 完美繼承你寫好的過渡曲線 */
+    /* 2. 繼承既有的過渡曲線 */
     transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
 
-    /* 不寫 box-shadow！讓它自然繼承原先卡片完美的 var(--ray-shadow-resting) */
+    /* 不寫 box-shadow，自然繼承 var(--ray-shadow-resting) */
 }
 
 /* ==========================================================================
-   ⌨鍵盤與滑鼠衝突處理：輸入權奪取機制 (終極防卡死版)
+   鍵盤與滑鼠的輸入權切換
    ========================================================================== */
 
-/* 1. 物理鎮壓：當鍵盤取得控制權時，強制抵銷所有「非鍵盤目標」的滑鼠 Hover 抬起效果！ */
+/* 1. 鍵盤操作期間，抵銷非鍵盤目標的滑鼠 hover 效果 */
 body.keyboard-active .card:not(.keyboard-focus):hover,
 body.keyboard-active #fixed-info-card:not(.keyboard-focus):hover {
     transform: translate3d(0, 0, 0) !important;
 }
 
-/* 2. 事件封印：依然保留，防止滑鼠在此時誤觸發點擊事件 */
+/* 2. 保留：防止滑鼠此時誤觸發點擊 */
 body.keyboard-active .card,
 body.keyboard-active #fixed-info-card {
     pointer-events: none !important;
 }
 /* ==========================================================================
-   Android 全局效能降級 (終極流暢版：移除所有毛玻璃與景深，改為實心背景)
+   Android 全域效能降級（移除毛玻璃與景深，改為實心背景）
    ========================================================================== */
 
-/* 1. 暴力拔除全站所有的毛玻璃濾鏡 (直接對所有元素下達禁令) */
+/* 1. 移除全站毛玻璃濾鏡（套用到所有元素） */
 html.is-android-fallback * {
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
 }
 
-/* 2. 暴力拔除 Z 軸景深的背景模糊 (這在 Android 上極度消耗 GPU) */
+/* 2. 移除背景模糊（Android 上極耗 GPU） */
 html.is-android-fallback .card-stack,
 html.is-android-fallback #detail-card-container,
 html.is-android-fallback .fixed-bottom-card {
@@ -3354,7 +3354,7 @@ html.is-android-fallback .info-circle {
 /* 1. 搜尋/選單遮罩 (.search-mask)
    2. 卡片展開時的底層 (.detail-overlay)
    原本是半透明或全透明，現在只要是 Android，一律強制填滿「系統底色」。
-   這樣當背景卡片往後縮小時，就會被這個實心顏色完美蓋住，不會有透明穿幫的問題！
+   背景卡片往後縮小時會被實心顏色蓋住，避免透明穿幫
 */
 html.is-android-fallback .search-mask,
 html.is-android-fallback .detail-overlay {
@@ -3402,11 +3402,11 @@ html.is-android-fallback .ios-action-block {
 */
 html.is-android-fallback .detail-card-inner .info-tag-item,
 html.is-android-fallback .detail-card-inner .interactive-btn {
-    /* 舊版 Android 瀏覽器的安全備案 (萬用半透明灰) */
+    /* 舊版 Android 的備援（半透明灰） */
     background: rgba(128, 128, 128, 0.2) !important;
     border: 1px solid rgba(128, 128, 128, 0.3) !important;
     
-    /* 現代 Android 瀏覽器的完美智能混色 */
+    /* 新版 Android 使用 color-mix 混色 */
     background: color-mix(in srgb, currentColor 12%, transparent) !important;
     border: 1px solid color-mix(in srgb, currentColor 20%, transparent) !important;
     

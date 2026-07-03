@@ -4,7 +4,7 @@ export async function loadNativeHistory(targetId) {
     const container = document.getElementById(targetId);
     if (!container) return;
 
-    // 1. 純淨的 Loading 狀態 (完全繼承父層 CSS)
+    // 1. Loading 狀態（繼承父層 CSS）
     container.innerHTML = `
         <div style="padding: 20px 0; text-align: center; color: var(--text-secondary, #8e8e93); font-size: 0.9em;">
             <div style="opacity: 0.6; margin-bottom: 8px;">
@@ -18,7 +18,7 @@ export async function loadNativeHistory(targetId) {
     `;
 
     try {
-        // 新增：使用者點擊時，瞬間抓取最新的整包歷史資料
+        // 點擊時取得最新的整包歷史資料
         let allHistoryData = { railway: {}, flight: {} };
         try {
             const allRes = await fetch('https://api.tsukinkanban.com/api/history/all');
@@ -45,11 +45,11 @@ export async function loadNativeHistory(targetId) {
                         let routeName = (window.MasterRouteDictionary && window.MasterRouteDictionary[id]) ? window.MasterRouteDictionary[id].name : id;
                         routeName = routeName.replace('Departure_', '出發 ').replace('Arrival_', '抵達 ');
 
-                        // 從大包包中挑出這條線的資料
+                        // 從整包資料中取出該路線
                         const routeHistory = (allHistoryData[type] && allHistoryData[type][finalId]) ? allHistoryData[type][finalId] : [];
 
                         // 關鍵：模擬原本舊版單筆 API 回傳的 JSON 結構格式 {"route_id": "...", "history": [...]}
-                        // 這樣能保證下方複雜的 parseData() 渲染邏輯一行都不用改！
+                        // 讓下方的 parseData() 渲染邏輯無需修改
                         const mockJsonResponse = {
                             route_id: finalId,
                             history: routeHistory
@@ -98,7 +98,7 @@ function renderCleanHistory(container, historyList) {
     htmlStr += '<div style="font-size: 0.75em; font-weight: 700; color: var(--text-secondary, #8e8e93); text-transform: uppercase; letter-spacing: 1px;">Timeline</div>';
 
     historyList.forEach(info => {
-        // 智慧清洗冗餘 ID
+        // 清理冗餘 ID
         const parseData = (data) => {
             let items = [];
             if (Array.isArray(data)) {
@@ -125,7 +125,7 @@ function renderCleanHistory(container, historyList) {
         const parsedItems = parseData(info.data).slice(0, 4);
 
         if (parsedItems.length > 0) {
-            // 這個區塊不設定強制背景，完全靠攏你母艦的 CSS
+            // 此區塊不設定背景，沿用全站 CSS
             htmlStr += `
                 <div style="padding-bottom: 8px;">
                     <div style="font-weight: 700; font-size: 1em; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">

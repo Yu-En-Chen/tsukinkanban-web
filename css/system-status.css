@@ -25,12 +25,12 @@
     transition: transform 0.4s var(--apple-spring), opacity 0.3s ease, visibility 0s 0.3s;
 }
 
-/* 新增：未來的喚醒開關！只要用 JS 加上這個 class 就會彈出來 */
+/* 顯示開關：JS 加上這個 class 即會彈出 */
 .center-status-island.is-active {
     transform: scale(1);
     opacity: 1;
     visibility: visible;
-    /* 顯示時立刻拔除 visibility 延遲 */
+    /* 顯示時移除 visibility 延遲 */
     transition: transform 0.4s var(--apple-spring), opacity 0.3s ease, visibility 0s 0s;
 }
 
@@ -111,7 +111,7 @@ body:has(.detail-overlay.active) .center-status-island {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 單獨微調：打叉圖示原地等比放大 (保留你的完美對齊設定) */
+/* 打叉圖示原地等比放大（保留對齊設定） */
 .status-tag svg.lucide-x {
     transform: scale(1.25);
 }
@@ -141,7 +141,7 @@ body:has(.detail-overlay.active) .center-status-island {
 /* 2. 雪花 (Snowflake) */
 .status-tag svg.lucide-snowflake.active {
     color: #0A84FF !important; 
-    /* 雙層光暈魔法：第一層(2px)作為高光核心，第二層(7px)作為向外發散的柔光 */
+    /* 雙層光暈：第一層 (2px) 為高光核心，第二層 (7px) 為外散柔光 */
     filter: drop-shadow(0 0 2px rgba(255, 255, 255, 1)) drop-shadow(0 0 7px rgba(255, 255, 255, 0.6));
 }
 

@@ -7,7 +7,7 @@ export const dataSourceContent = `
         <p><a href="https://www.odpt.org/overview/" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline; font-weight: 500;">https://www.odpt.org/overview/</a></p>
         <br>
         <style>
-            /* 1. 魔法機關：隱藏的 Checkbox */
+            /* 1. 隱藏的 Checkbox（手風琴開關） */
             #ios-accordion-toggle {
                 display: none;
             }
@@ -24,7 +24,7 @@ export const dataSourceContent = `
                 transform: rotate(180deg);
             }
 
-            /* 3. Grid 高度魔法 (現在收合時也不會被強制中斷了！) */
+            /* 3. Grid 高度動畫（收合時不會被中斷） */
             .ios-accordion-content-wrapper {
                 display: grid;
                 grid-template-rows: 0fr;

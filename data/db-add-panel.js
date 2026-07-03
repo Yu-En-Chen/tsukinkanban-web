@@ -124,7 +124,7 @@ async function clearSandboxDB() {
     });
 }
 
-// 3. 儲存單筆沙盒資料 (你在管理面板修改、拖曳排序時呼叫)
+// 3. 儲存單筆沙盒資料（管理面板修改、拖曳排序時呼叫）
 export async function saveSandboxPreference(data) {
     const db = await initSandboxDB();
     if (useFallback || !db) {
@@ -152,13 +152,13 @@ export async function saveSandboxPreference(data) {
 }
 
 // ============================================================================
-// 核心連動邏輯 (跨 DB 複製與覆寫引擎)
+// 跨 DB 複製與覆寫
 // ============================================================================
 
 // A. 載入並複製：打開管理面板時呼叫，將主 DB 資料完整拷貝進沙盒
 export async function cloneFromMainDB() {
     console.log('[Sandbox-DB] 開始從主資料庫拷貝最新狀態...');
-    await clearSandboxDB(); // 先把沙盒洗乾淨
+    await clearSandboxDB(); // 先清空沙盒
     
     const mainData = await getAllUserPreferences();
     const keys = Object.keys(mainData);
@@ -180,7 +180,7 @@ export async function commitToMainDB() {
         const item = sandboxData[key];
         
         // 呼叫主 DB (db.js) 的儲存功能寫入
-        // 提示：未來我們在 db.js 擴充了 isVisible 或 order 欄位後，只要在這裡一起傳過去即可！
+        // 備註：db.js 若擴充 isVisible 或 order 欄位，在此一併傳入即可
         await saveRoutePreference(item.id, item.customName, item.customHex);
     }
     
@@ -189,7 +189,7 @@ export async function commitToMainDB() {
 }
 
 // ============================================================================
-// 獨立隱藏狀態記憶引擎 (不干擾 db.js)
+// 隱藏狀態的獨立儲存（不干擾 db.js）
 // ============================================================================
 const HIDDEN_KEY = 'TsukinKanban_HiddenCards';
 
