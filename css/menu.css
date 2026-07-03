@@ -16,7 +16,7 @@
 }
 
 .menu-icon-wrapper svg {
-    /* 🟢 物理四角鎖死置中法，蘋果設備最吃這一套，絕對算不錯 */
+    /* 物理四角鎖死置中法，蘋果設備最吃這一套，絕對算不錯 */
     position: absolute !important;
     top: 0 !important;
     bottom: 0 !important;
@@ -29,7 +29,7 @@
     max-height: none !important;
     pointer-events: none !important;
     
-    /* 🟢 強制鎖死縮放中心點，防止 Safari 放大時飄移 */
+    /* 強制鎖死縮放中心點，防止 Safari 放大時飄移 */
     transform-origin: center center !important;
     transition: all 0.4s ease;
 }
@@ -75,7 +75,7 @@
 }
 
 /* =========================================
-   🟢 展開狀態 (按鈕本體解放：維持原位，僅切換圖示與層級)
+   展開狀態 (按鈕本體解放：維持原位，僅切換圖示與層級)
    ========================================= */
 
    .left-circle-btn.is-expanded {
@@ -83,7 +83,7 @@
     /* 移除所有 position: fixed 與全螢幕的設定，讓它乖乖待在原本的位置 */
 }
 
-/* 🟢 確保圖標在 44px 的按鈕內完美置中 */
+/* 確保圖標在 44px 的按鈕內完美置中 */
 .left-circle-btn.is-expanded .menu-icon-wrapper {
     position: relative !important;
     width: 100% !important;
@@ -96,7 +96,7 @@
 }
 
 /* =========================================
-   🟢 圖標互動 (Animation)
+   圖標互動 (Animation)
    ========================================= */
 
 .left-circle-btn.is-expanded .icon-hamburger {

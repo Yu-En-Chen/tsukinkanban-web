@@ -1,9 +1,9 @@
-// 🟢 1. 引入你寫好的資料庫引擎！
+// 引入資料庫模組
 import { updateCardRoutes } from '../data/db.js';
 
 // ==========================================
-// 獨立系統：路線追加引擎 (Route Appender)
-// 完美接合全域 dialog.js (iosConfirm 引擎) 與 IndexedDB
+// 路線追加（Route Appender）
+// 透過 dialog.js 的選單介面將搜尋結果寫入 IndexedDB
 // ==========================================
 
 window.RouteAppender = {
@@ -15,18 +15,18 @@ window.RouteAppender = {
             return;
         }
 
-        // 🌟 核心修復：即時讀取目前的「隱藏清單」，確保不會把被隱藏的卡片抓出來！
+        // 即時讀取隱藏清單，排除被隱藏的卡片
         let hiddenIds = [];
         try {
             hiddenIds = JSON.parse(localStorage.getItem('TsukinKanban_HiddenCards') || '[]');
         } catch (e) { }
 
-        // 🌟 精準抓取首頁前五張卡片 (排除幽靈卡、置底卡，以及被隱藏的卡片！)
+        // 取得首頁前五張卡片（排除暫存卡、置底卡與被隱藏的卡片）
         const homeCards = (window.appRailwayData || []).filter(c => 
             !c.isTemporarySearch && 
             c.id !== 'fixed-bottom' &&
             c.id !== 'search-temp' &&
-            !hiddenIds.includes(c.id) // 👈 加入這行防護網
+            !hiddenIds.includes(c.id)
         ).slice(0, 5);
 
         if (homeCards.length === 0) {
@@ -41,7 +41,7 @@ window.RouteAppender = {
         this.showIosDialog(newRoute, homeCards);
     },
 
-    // 2. 利用 dialog.js 的 iosConfirm 來渲染選項
+    // 2. 以 dialog.js 渲染卡片選項
     showIosDialog: function(newRoute, homeCards) {
         if (!window.iosConfirm) {
             console.error("[系統錯誤] 找不到 dialog.js，請確認 index.html 引入順序");
@@ -61,7 +61,7 @@ window.RouteAppender = {
             const targetLines = card.targetLineIds || [];
             const routeCount = targetLines.length;
 
-            // ✨ 核心升級：智慧防呆狀態判斷
+            // 卡片狀態判斷（決定選項是否可選）
             let isDisabled = false;
             let statusText = `${routeCount} 路線`;
 
@@ -112,7 +112,7 @@ window.RouteAppender = {
                 confirmBtn.style.pointerEvents = 'none';
             }
 
-            // ✨ 神奇選擇器：只幫「沒有被 disabled」的按鈕掛上點擊事件！
+            // 只替未被 disabled 的按鈕綁定點擊事件
             const options = document.querySelectorAll('.route-appender-option:not([disabled])');
             options.forEach(btn => {
                 btn.onclick = () => {
@@ -147,7 +147,7 @@ window.RouteAppender = {
         });
     },
 
-    // 3. 核心資料庫寫入與畫面刷新邏輯
+    // 3. 資料庫寫入與畫面刷新
     appendRouteToCard: async function(newRoute, targetCardId) {
         const targetCard = window.appRailwayData.find(c => c.id === targetCardId);
         if (!targetCard) return;
@@ -155,7 +155,7 @@ window.RouteAppender = {
         if (!targetCard.targetLineIds) targetCard.targetLineIds = [];
         if (!targetCard.detailedLines) targetCard.detailedLines = [];
 
-        // 雖然介面已經防呆，雙重保險還是留著
+        // 介面已擋掉不可選的情況，這裡保留第二層檢查
         if (targetCard.targetLineIds.includes(newRoute.id)) return;
 
         // 1. 將路線資料推入記憶體陣列
@@ -166,7 +166,7 @@ window.RouteAppender = {
             company: newRoute.company || "不明"
         });
 
-        // 2. 順便徹底關閉原本畫面上龐大的搜尋列與虛擬鍵盤
+        // 2. 關閉搜尋列與虛擬鍵盤
         const searchInput = document.getElementById('search-input');
         if (searchInput) searchInput.blur();
         const cancelBtn = document.querySelector('.cancel-circle-btn');
@@ -176,7 +176,7 @@ window.RouteAppender = {
             // 3. 寫入 IndexedDB
             await updateCardRoutes(targetCardId, targetCard.targetLineIds);
 
-            // 4. 無縫重繪畫面
+            // 4. 重繪畫面
             if (window.refreshAppAfterEdit) {
                 await window.refreshAppAfterEdit();
             } else if (window.triggerBackgroundUpdate) {
@@ -185,12 +185,12 @@ window.RouteAppender = {
             
             if (window.navigator.vibrate) window.navigator.vibrate(20);
 
-            // ✨ 5. 核心魔法：畫面重繪完成後，自動點開那張被更新的卡片！
-            // 我們稍微等個 100 毫秒，確保 DOM 已經被完全插入畫面中
+            // 5. 重繪完成後自動點開被更新的卡片
+            // 等待 100ms 確保 DOM 已插入
             setTimeout(() => {
                 const updatedCardElement = document.getElementById(`card-${targetCardId}`);
                 if (updatedCardElement) {
-                    // 模擬使用者點擊卡片，觸發你原本寫好的 3D 翻轉或展開動畫
+                    // 以程式觸發點擊，重用既有的卡片展開動畫
                     updatedCardElement.click(); 
                 } else {
                     console.warn(`[Route Appender] 找不到 ID 為 card-${targetCardId} 的卡片以執行自動展開`);

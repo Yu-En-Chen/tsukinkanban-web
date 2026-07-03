@@ -1,4 +1,4 @@
-// js/menu.js - 左側選單互動邏輯 (響應式自動更新版)
+// js/menu.js - 通知・履歷面板：開啟、即時更新與視圖生成
 
 document.addEventListener('DOMContentLoaded', () => {
     const menuBtn = document.getElementById('left-menu-btn');
@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     menuBtn.onclick = null;
 
-    // 1. 純粹的觸發按鈕
+    // 觸發按鈕：開啟歷史紀錄頁
     menuBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault();
@@ -20,23 +20,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ============================================================================
-    // 🚀 核心升級：監聽小精靈的「資料更新」廣播，達成無縫即時替換
+    // 監聽 history-daemon 的資料更新事件，面板開啟時無縫替換內容
     // ============================================================================
     window.addEventListener('historyDataUpdated', () => {
         const root = document.getElementById('history-ui-root');
         
-        // 只有當「歷史紀錄面板」正在開啟狀態時，我們才執行畫面更新
+        // 僅在歷史紀錄面板開啟時更新畫面
         if (root && document.body.classList.contains('universal-active')) {
-            console.log('🔄 背景資料已同步！正在無縫更新歷史紀錄畫面...');
+            console.log('背景資料已同步！正在無縫更新歷史紀錄畫面...');
 
-            // 1. 記憶術：掃描現在有哪些資料夾是「展開」的，把名字記下來
+            // 1. 記下目前展開中的分組，替換後恢復
             const openGroups = Array.from(root.querySelectorAll('.history-group.is-open'))
                                     .map(g => g.querySelector('.history-summary').innerText.trim());
 
-            // 2. 瞬間替換 HTML
+            // 2. 替換 HTML
             root.outerHTML = generateHistoryHTML();
 
-            // 3. 重新啟動動畫引擎，並恢復使用者的閱讀進度
+            // 3. 重新綁定手風琴事件，並恢復展開狀態
             setTimeout(() => {
                 initHistoryAccordions();
                 
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const newGroups = newRoot.querySelectorAll('.history-group');
                     newGroups.forEach(group => {
                         const title = group.querySelector('.history-summary').innerText.trim();
-                        // 如果這個資料夾剛剛是打開的，我們就偷偷用程式點擊它一次，讓它優雅地滑開
+                        // 原本展開的分組以程式觸發點擊，恢復展開
                         if (openGroups.includes(title)) {
                             group.querySelector('.history-summary').click();
                         }
@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Esc 鍵直接連動關閉通用底版
+    // Esc 鍵關閉通用子頁面
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             if (window.closeUniversalPage) window.closeUniversalPage(true);
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================================================
-// ✨ 物理級滑順動畫引擎
+// 手風琴展開／收合動畫
 // ============================================================================
 function initHistoryAccordions() {
     const groups = document.querySelectorAll('.history-group');
@@ -100,12 +100,12 @@ function initHistoryAccordions() {
 }
 
 // ============================================================================
-// 🟢 歷史紀錄：HTML 視圖生成器
+// 歷史紀錄：HTML 視圖生成器
 // ============================================================================
 function generateHistoryHTML() {
     const historyList = window.appHistoryCache;
 
-    // 🟢 替整個 UI 包上一層帶有 ID 的防護罩，這是為了讓上面的更新引擎可以整包替換
+    // 外層加上固定 ID，讓上方的更新邏輯可以整包替換
     let rootHtmlStr = '<div id="history-ui-root" style="width: 100%;">';
 
     // 狀態 1：完全沒有快取資料 (等待首度同步)
@@ -136,7 +136,7 @@ function generateHistoryHTML() {
             }
             .history-summary {
                 padding: 16px 24px;
-                font-weight: 700; /* ✨ 變更為標準粗體 */
+                font-weight: 700; /* 變更為標準粗體 */
                 font-size: 0.95em;
                 color: inherit;
                 cursor: pointer;
@@ -194,13 +194,13 @@ function generateHistoryHTML() {
             }
 
             const cardName = card.name || card.title || 'その他の路線';
-            // ✨ 判斷這張卡片是否有設定任何路線 (相容鐵道與飛機格式)
+            // 判斷這張卡片是否有設定任何路線 (相容鐵道與飛機格式)
             const targetIds = card.targetLineIds || card.targetAirports || card.airports || (card.airport ? [card.airport] : []);
             
             groupedData.set(card.id, {
                 cardName: cardName,
                 routes: [],
-                hasRoutes: targetIds.length > 0 // 👈 標記這張卡片是否為空
+                hasRoutes: targetIds.length > 0 // 標記這張卡片是否為空
             });
         });
     }
@@ -223,7 +223,7 @@ function generateHistoryHTML() {
         const validRoutes = group.routes.filter(info => Array.isArray(info.data) && info.data.length > 0);
 
         // ==========================================
-        // ✨ 核心升級：跨夜智慧排序引擎 (精準鎖定 00:00 ~ 02:30)
+        // 跨夜排序：00:00 ~ 02:30 視為前一天的延伸
         // ==========================================
         validRoutes.sort((a, b) => {
             const latestA = a.data[a.data.length - 1] || {};
@@ -232,7 +232,7 @@ function generateHistoryHTML() {
             const timeA = latestA.update_time || latestA.system_updated || "";
             const timeB = latestB.update_time || latestB.system_updated || "";
             
-            // 🟢 時間權重轉換器
+            // 時間轉換為排序權重
             const getSortWeight = (timeStr) => {
                 if (!timeStr) return -1;
                 
@@ -241,11 +241,11 @@ function generateHistoryHTML() {
                     const hour = parseInt(match[1], 10);
                     const minute = parseInt(match[2], 10);
                     
-                    // 先算出當天從 00:00 開始的「絕對總分鐘數」
+                    // 先算出當天累計分鐘數
                     let totalMinutes = (hour * 60) + minute;
                     
-                    // 🦉 精密跨夜魔法：如果時間落在 00:00 ~ 02:30 (總分鐘數 <= 150)
-                    // 我們才把它加上 24 小時 (1440 分鐘) 當作昨天的延伸
+                    // 00:00 ~ 02:30 (累計 <= 150 分鐘) 視為前一天延伸，
+                    // 加上 24 小時 (1440 分鐘) 使其排在最後
                     if (totalMinutes <= 150) {
                         totalMinutes += 1440;
                     }
@@ -270,14 +270,14 @@ function generateHistoryHTML() {
         `;
 
         if (!group.hasRoutes) {
-            // ✨ 狀態 A：這張卡片裡面根本沒有路線
+            // 狀態 A：卡片內沒有任何路線
             htmlStr += `
                 <div style="text-align: center; padding: 16px 0; color: inherit; opacity: 0.6; font-size: 0.9em; display: flex; flex-direction: column; align-items: center; gap: 8px;">
                     追跡している路線はありません
                 </div>
             `;
         } else if (validRoutes.length === 0) {
-            // ✨ 狀態 B：有路線，但資料還在跟伺服器同步中
+            // 狀態 B：有路線，資料尚在同步中
             htmlStr += `
                 <div style="text-align: center; padding: 16px 0; color: inherit; opacity: 0.6; font-size: 0.9em; display: flex; flex-direction: column; align-items: center; gap: 8px;">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
@@ -306,7 +306,7 @@ function generateHistoryHTML() {
                     const dividerStyle = isLast ? '' : 'border-bottom: 1px dashed rgba(128, 128, 128, 0.25); padding-bottom: 12px;';
 
                     // ==========================================
-                    // ✨ 核心修復：抓取「鐵路時間」或「飛機時間」並過濾秒數
+                    // 取得鐵路或航班的時間欄位，並去除秒數
                     // ==========================================
                     let displayTime = snapshot.update_time || snapshot.system_updated;
                     
@@ -315,15 +315,15 @@ function generateHistoryHTML() {
                     }
 
                     // ==========================================
-                    // 飛機資料的「預處理」
+                    // 航班資料預處理
                     // ==========================================
                     if (info.isFlight) {
                         if (snapshot.status && !snapshot.status_text) {
                             snapshot.status_text = snapshot.status;
                         }
 
-                        // 🟢 ✨ 核心升級：括號淨化器
-                        // 將 "【狀況】 內容..." 轉換為優雅的 "狀況: 內容..."；若無內容則只留 "狀況"
+                        // 備註格式整理：
+                        // 「【狀況】 內容」轉為「狀況: 內容」；若無內容則只留「狀況」
                         if (typeof snapshot.status_text === 'string') {
                             snapshot.status_text = snapshot.status_text.replace(/【/g, '').replace(/】\s*/g, '　：　').replace(/: $/, '');
                         }
@@ -341,7 +341,6 @@ function generateHistoryHTML() {
                     if (isNormalOperation) {
                         let snapHtml = `<div style="display: flex; flex-direction: column; gap: 6px; width: 100%; opacity: ${opacity}; ${colorStyle} ${dividerStyle}">`;
                         
-                        // ✨ 將時間變數改為 displayTime
                         snapHtml += `
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
                                 <span style="font-weight: 500; font-size: 0.95em; color: inherit;">${snapshot.status_text}</span>
@@ -362,13 +361,13 @@ function generateHistoryHTML() {
                         snapshot.status_text = '運行異常あり';
                     }
 
-                    // 🔴 異常狀態區塊
+                    // 異常狀態區塊
                     let snapHtml = `<div style="display: flex; flex-direction: column; gap: 8px; opacity: ${opacity}; ${colorStyle} ${dividerStyle}">`;
                     let isTimeRendered = false; 
 
                     // ==========================================
-                    // ✨ 核心升級：強制資訊層級排序器
-                    // 保證「狀態」永遠在最上面，「備註/公告」永遠在最下面
+                    // 資訊層級排序：
+                    // 「狀態」固定在最上、「備註/公告」固定在最下
                     // ==========================================
                     const sortedEntries = Object.entries(snapshot).sort((a, b) => {
                         if (a[0] === 'status_text') return -1; // 把 status_text 往上推
@@ -378,7 +377,6 @@ function generateHistoryHTML() {
                         return 0;
                     });
 
-                    // ✨ 迴圈改為讀取排好序的 sortedEntries
                     for (const [k, v] of sortedEntries) {
                         if (skipKeys.includes(k) || v === null || v === "") continue;
 
@@ -432,7 +430,7 @@ function generateHistoryHTML() {
     }
 
     // ==========================================
-    // ✨ 核心升級：加入底部系統規則說明
+    // 底部的系統規則說明
     // ==========================================
     htmlStr += `
         <div style="text-align: center; margin-top: 24px; padding-bottom: 8px; font-size: 0.75em; color: #8e8e93; opacity: 0.8; line-height: 1.6; letter-spacing: 0.02em;">

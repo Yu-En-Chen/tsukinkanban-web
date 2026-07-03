@@ -1,6 +1,6 @@
 /* main-menu.css - 主選單專屬 UI 與動畫引擎 (終極破防版) */
 
-/* 🔴 關鍵修復：解除 HTML 預設的裁切 (overflow: hidden) 限制 */
+/* 關鍵修復：解除 HTML 預設的裁切 (overflow: hidden) 限制 */
 /* 如果沒有這段，推到畫面邊緣外的膠囊會直接變隱形！ */
 body.main-menu-active #app-stage #search-container {
     overflow: visible !important;
@@ -48,7 +48,7 @@ body.main-menu-active .search-mask {
 }
 
 /* ==========================================
-   3. 🎯 右舷母艦：雙重 ID 壓制撤退 (包含通知按鈕與底板)
+   3. 右舷母艦：雙重 ID 壓制撤退 (包含通知按鈕與底板)
    ========================================== */
 body.main-menu-active #app-stage #search-container .action-capsule,
 body.main-menu-active #app-stage #search-container .search-trigger,
@@ -67,13 +67,13 @@ body.main-menu-active #app-stage #search-container::before {
 }
 
 /* ==========================================
-   5. 🎯 動態五連發膠囊 (RWD 牌組邊界鎖定版)
+   5. 動態五連發膠囊 (RWD 牌組邊界鎖定版)
    ========================================== */
 
    #dynamic-main-menu {
     --menu-width: 170px;      
     
-    /* 🎯 現在這個距離，是相對於「母艦卡片牌組的右邊緣」！ */
+    /* 現在這個距離，是相對於「母艦卡片牌組的右邊緣」！ */
     /* (0px = 完美貼齊右邊緣，15px = 往牌組內縮，-15px = 往牌組外凸) */
     --menu-right-offset: 0px;   
     
@@ -82,7 +82,7 @@ body.main-menu-active #app-stage #search-container::before {
     position: fixed;
     top: calc(env(safe-area-inset-top) + var(--menu-top-pos));
     
-    /* 🚀 終極 RWD 邊界計算魔法：永遠鎖死母艦右側！ */
+    /* 終極 RWD 邊界計算魔法：永遠鎖死母艦右側！ */
     /* 公式詳解：畫面正中央 (50%) - 卡片實際寬度的一半 (min(94vw, 420px) / 2) + 你想要的偏移量 */
     right: calc(50% - (min(94vw, 420px) / 2) + var(--menu-right-offset)); 
     
@@ -104,7 +104,7 @@ body.main-menu-active #app-stage #search-container::before {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     
-    /* 🟢 1. 完美還原母艦的輕盈陰影 (移除 !important 破壞) */
+    /* 1. 完美還原母艦的輕盈陰影 (移除 !important 破壞) */
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); 
     
     pointer-events: auto;
@@ -117,7 +117,7 @@ body.main-menu-active #app-stage #search-container::before {
     transform: translate3d(200px, 0, 0);
     opacity: 0;
     
-    /* 🟢 2. 完美繼承原生的 scale 與 box-shadow 過渡 (完全不加 !important) */
+    /* 2. 完美繼承原生的 scale 與 box-shadow 過渡 (完全不加 !important) */
     transition: 
         transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) var(--stagger-out, 0s),
         opacity 0.3s ease var(--stagger-out, 0s),
@@ -130,7 +130,7 @@ body.main-menu-active #dynamic-main-menu .main-menu-capsule {
     transform: translate3d(0, 0, 0);
     opacity: 1;
     
-    /* 🟢 3. 進場過渡同理，保持原生互動的平滑度 */
+    /* 3. 進場過渡同理，保持原生互動的平滑度 */
     transition: 
         transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) var(--stagger-in, 0s),
         opacity 0.4s ease var(--stagger-in, 0s),
@@ -170,7 +170,7 @@ body.main-menu-active #dynamic-main-menu .main-menu-capsule {
 }
 
 /* =========================================
-   🟢 動態主選單通用子頁面 (Universal Page)
+   動態主選單通用子頁面 (Universal Page)
    ========================================= */
 
 /* 1. 展開玻璃背景 (與通知/搜尋共用同一塊完美比例的玻璃) */
@@ -179,7 +179,7 @@ body.universal-active .search-container::after {
     pointer-events: auto !important;
     transform: translateZ(0) !important;
     
-    /* ✨ 修正：拔除 backdrop-filter，讓瀏覽器真正把它當成靜態圖片 */
+    /* 修正：拔除 backdrop-filter，讓瀏覽器真正把它當成靜態圖片 */
     will-change: opacity !important; 
 }
 
@@ -192,7 +192,7 @@ body.universal-active #left-menu-btn {
     pointer-events: none !important;
     transform: translateY(-20px) !important;
 }
-/* 🚀 突破盲點：讓左舷母艦 (含邊框與膠囊) 浮出玻璃水面！ */
+/* 突破盲點：讓左舷母艦 (含邊框與膠囊) 浮出玻璃水面！ */
 body.universal-active .left-matrix-bg,
 body.universal-active .left-capsule {
     z-index: 5002 !important; 
@@ -230,9 +230,9 @@ body.universal-active .universal-page-wrapper {
 /* 4. 頂部標題與專屬關閉按鈕 */
 
 /* =========================================
-   🚀 通用頁面導航雙按鈕 (完美對齊右上膠囊)
+   通用頁面導航雙按鈕 (完美對齊右上膠囊)
    ========================================= */
-/* 🟢 加入 !important 確保展開時絕對顯示，不會被其他狀態吃掉 */
+/* 加入 !important 確保展開時絕對顯示，不會被其他狀態吃掉 */
 
 .universal-page-header {
     display: flex;
@@ -293,14 +293,14 @@ body.universal-active .universal-page-wrapper {
     touch-action: pan-y !important; 
     overscroll-behavior: contain !important; 
 
-    /* 🚀 修正 1：拔除 transform，把滾動權限徹底還給顯示卡 (Compositor Thread)！ */
+    /* 修正 1：拔除 transform，把滾動權限徹底還給顯示卡 (Compositor Thread)！ */
     /* 只保留文字抗鋸齒隔離與容器邊界，切斷與底層毛玻璃的聯結 */
     contain: strict !important; 
     -webkit-font-smoothing: antialiased !important;
     -moz-osx-font-smoothing: grayscale !important;
 }
 
-/* 🚀 修正 2：把 3D 靜態快取魔法，套用在「滾動框裡面的所有文字段落」身上！ */
+/* 修正 2：把 3D 靜態快取魔法，套用在「滾動框裡面的所有文字段落」身上！ */
 .universal-page-content > * {
     transform: translateZ(0);
     backface-visibility: hidden;
@@ -314,7 +314,7 @@ body.universal-active .universal-page-wrapper {
 }
 
 /* =========================================
-   🔋 通用頁面省電與防誤觸鎖定 (Scroll Isolation)
+   通用頁面省電與防誤觸鎖定 (Scroll Isolation)
    ========================================= */
 
 /* A. 攔截邊緣滑動：讓玻璃背景吸收所有觸控，且禁止原生滑動 */
@@ -336,10 +336,10 @@ body.universal-active #main-stack {
 }
 
 /* =========================================
-   🚀 1. 通用頁面導航：右上角小母艦 (Capsule) 與膠囊外框
+   1. 通用頁面導航：右上角小母艦 (Capsule) 與膠囊外框
    ========================================= */
 
-/* 🟢 容器：負責定位與進場動畫 */
+/* 容器：負責定位與進場動畫 */
 .universal-nav-container {
     position: absolute;
     right: 0px;
@@ -361,7 +361,7 @@ body.universal-active .universal-nav-container {
     transition: opacity 0.4s ease 0.1s, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1) 0.1s !important;
 }
 
-/* 🟢 ✨全新加入：膠囊形狀的母艦外框 (完美同心圓角) */
+/* 全新加入：膠囊形狀的母艦外框 (完美同心圓角) */
 .universal-nav-matrix {
     position: absolute;
     top: 50%;
@@ -380,7 +380,7 @@ body.universal-active .universal-nav-container {
     pointer-events: none;
 }
 
-/* 🟢 內部的獨立雙圓按鈕排版 */
+/* 內部的獨立雙圓按鈕排版 */
 .universal-nav-circles {
     position: absolute;
     inset: 0; /* 撐滿 95x44 的容器 */
@@ -389,7 +389,7 @@ body.universal-active .universal-nav-container {
     align-items: center;
 }
 
-/* 🟢 獨立小圓按鈕 (將玻璃材質加回獨立按鈕身上) */
+/* 獨立小圓按鈕 (將玻璃材質加回獨立按鈕身上) */
 .universal-nav-btn {
     width: 44px;
     height: 44px;
@@ -418,7 +418,7 @@ body.universal-active .universal-nav-container {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* 🟢 左側返回按鈕尺寸精準校正 */
+/* 左側返回按鈕尺寸精準校正 */
 .universal-nav-btn:first-child svg {
     width: 26px !important;
     height: 26px !important;
@@ -426,7 +426,7 @@ body.universal-active .universal-nav-container {
     transform: translateX(-1px) !important; 
 }
 
-/* 🟢 右側關閉 X 按鈕尺寸精準校正 */
+/* 右側關閉 X 按鈕尺寸精準校正 */
 .universal-nav-btn:last-child svg {
     width: 22px !important;
     height: 22px !important;
@@ -458,11 +458,11 @@ body.universal-active .universal-nav-container {
 }
 
 /* =========================================
-   🚀 2. 文字排版修復：強制推離母艦區域
+   2. 文字排版修復：強制推離母艦區域
    ========================================= */
 .universal-page-wrapper {
     position: fixed !important;
-    /* 🟢 110px 完美避開頂部的雙排母艦區域 (44px + 51px) */
+    /* 110px 完美避開頂部的雙排母艦區域 (44px + 51px) */
     top: calc(env(safe-area-inset-top, 0px) + 110px) !important; 
     bottom: calc(env(safe-area-inset-bottom, 0px) + 24px) !important;
     left: calc(env(safe-area-inset-left, 0px) + 30px) !important;
@@ -480,9 +480,9 @@ body.universal-active .universal-nav-container {
 }
 
 /* =========================================
-   🪟 3. 實心玻璃模式 (專屬高不透明度遮罩)
+   3. 實心玻璃模式 (專屬高不透明度遮罩)
    ========================================= */
-/* ☀️ 淺色模式：變成高不透明度的珍珠白玻璃 */
+/* 淺色模式：變成高不透明度的珍珠白玻璃 */
 body.solid-glass-active .search-container::after {
     background: rgba(245, 245, 247, 0.85) !important; /* 濃度高達 85% */
     -webkit-backdrop-filter: blur(35px) !important; /* 加強模糊度 */
@@ -490,7 +490,7 @@ body.solid-glass-active .search-container::after {
     transition: background 0.4s ease, backdrop-filter 0.4s ease !important;
 }
 
-/* 🌙 深色模式：變成高不透明度的深鈦灰玻璃 */
+/* 深色模式：變成高不透明度的深鈦灰玻璃 */
 @media (prefers-color-scheme: dark) {
     body.solid-glass-active .search-container::after {
         background: rgba(28, 28, 30, 0.85) !important; /* 濃度高達 85% 的深灰 */
@@ -505,7 +505,7 @@ body.universal-active .universal-page-wrapper {
 }
 
 /* =========================================
-   🔋 3. 省電與防誤觸機制 (Scroll Isolation)
+   3. 省電與防誤觸機制 (Scroll Isolation)
    ========================================= */
 /* A. 攔截邊緣滑動：讓滿版玻璃吸收所有邊緣觸控，且禁止原生滑動，防止底層無意義的物理運算 */
 body.universal-active .search-container::after {
@@ -526,7 +526,7 @@ body.universal-active #main-stack {
 }
 
 /* =========================================
-   ☀️ 淺色模式專屬高階質感微調 (Light Mode)
+   淺色模式專屬高階質感微調 (Light Mode)
    ========================================= */
    @media (prefers-color-scheme: light) {
     
@@ -563,7 +563,7 @@ body.universal-active #main-stack {
 }
 
 /* ==========================================================================
-   🟢堆疊退回魔法 (Stack Pop) - 主選單背景待命 (徹底防誤觸版)
+   堆疊退回魔法 (Stack Pop) - 主選單背景待命 (徹底防誤觸版)
    ========================================================================== */
 
 /* 1. 降低主選單的 Z 軸層級，讓它絕對躲在通用頁面 (5000+) 之下 */
@@ -574,7 +574,7 @@ body.universal-active #dynamic-main-menu {
 
 /* 2. 精準打擊：強制剝奪膠囊本身的點擊能力，並產生下沉透明效果 */
 body.universal-active #dynamic-main-menu .main-menu-capsule {
-    /* ✨ 核心修復：拔除隱形膠囊的點擊權限，防止幽靈誤觸！ */
+    /* 核心修復：拔除隱形膠囊的點擊權限，防止幽靈誤觸！ */
     pointer-events: none !important;
     
     opacity: 0 !important;
@@ -586,7 +586,7 @@ body.universal-active #dynamic-main-menu .main-menu-capsule {
 }
 
 /* ==========================================================================
-   🟢 顯示設定面板 (Display Settings) 專屬 UI 樣式 (通勤看板專屬圓角風格)
+   顯示設定面板 (Display Settings) 專屬 UI 樣式 (通勤看板專屬圓角風格)
    ========================================================================== */
 
    .settings-container {
@@ -602,10 +602,10 @@ body.universal-active #dynamic-main-menu .main-menu-capsule {
     letter-spacing: 0.5px;
 }
 
-/* ✨ 專屬化 1：外框群組 (放大到 32px 超大圓角，完美呼應你的彈出視窗) */
+/* 專屬化 1：外框群組 (放大到 32px 超大圓角，完美呼應你的彈出視窗) */
 .settings-group {
     background: var(--search-bg);
-    border-radius: 32px; /* 👈 從 14px 改為 32px */
+    border-radius: 32px; /* 從 14px 改為 32px */
     margin-bottom: 24px;
     overflow: hidden;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
@@ -621,7 +621,7 @@ body.universal-active #dynamic-main-menu .main-menu-capsule {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    /* ✨ 縮減上下留白：從 18px 改為 14px，讓排版更緊湊有張力 */
+    /* 縮減上下留白：從 18px 改為 14px，讓排版更緊湊有張力 */
     padding: 14px 24px; 
     border-bottom: 1px solid var(--search-border);
 }
@@ -638,7 +638,7 @@ body.universal-active #dynamic-main-menu .main-menu-capsule {
 }
 
 /* =========================================
-   ✨ 專屬化 2：分段控制器 (點滑雙棲 + 滿版滑塊)
+   專屬化 2：分段控制器 (點滑雙棲 + 滿版滑塊)
    ========================================= */
    .segmented-control {
     display: flex;
@@ -646,18 +646,18 @@ body.universal-active #dynamic-main-menu .main-menu-capsule {
     background: rgba(120, 120, 128, 0.12);
     border-radius: 999px; 
     
-    /* ✨ 關鍵 1：縫隙極小化 (從 1.5px 縮到 1px)，讓滑塊更高、更飽滿 */
+    /* 關鍵 1：縫隙極小化 (從 1.5px 縮到 1px)，讓滑塊更高、更飽滿 */
     padding: 0.5px; 
     width: 130px; 
     
-    /* ✨ 關鍵 2：整體高度稍微加高到 34px，視覺比例更修長 */
+    /* 關鍵 2：整體高度稍微加高到 34px，視覺比例更修長 */
     height: 36px; 
 }
 
 .segmented-control .seg-bg {
     position: absolute;
     
-    /* ✨ 同步將上下左右的距離縮到 0.5px */
+    /* 同步將上下左右的距離縮到 0.5px */
     top: 0.5px; bottom: 0.5px; left: 0.5px;
     width: calc(50% - 1px); 
     
@@ -695,7 +695,7 @@ body.universal-active #dynamic-main-menu .main-menu-capsule {
 }
 
 /* =========================================
-   ✨ 專屬化 3：開關 (更寬胖可愛的比例，呼應粗線條 SVG)
+   專屬化 3：開關 (更寬胖可愛的比例，呼應粗線條 SVG)
    ========================================= */
 .ios-switch {
     position: relative;
@@ -740,7 +740,7 @@ body.universal-active #dynamic-main-menu .main-menu-capsule {
 .ios-switch input:checked:active + .slider:before { transform: translateX(14px); }
 
 /* =========================================
-   ✨ 顯示設定：瀏覽器推薦提示框 (Browser Recommendation)
+   顯示設定：瀏覽器推薦提示框 (Browser Recommendation)
    ========================================= */
    .settings-browser-recommendation {
     display: flex;

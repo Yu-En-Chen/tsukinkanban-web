@@ -58,14 +58,14 @@ const CAPSULE_SVGS = {
     `
 };
 
-// ♿ 無障礙：各模式下三顆按鈕的語音標籤 (螢幕閱讀器唸的名字)
+// 無障礙：各模式下三顆按鈕的語音標籤 (螢幕閱讀器唸的名字)
 const CAPSULE_ARIA_LABELS = {
     native: { left: 'カードを追加', right: 'メニュー', search: '路線検索を開く' },
     blank: { left: '戻る', right: 'クラウド同期', search: '元に戻す' },
     info: { left: '戻る', right: '詳細情報', search: '路線検索を開く' }
 };
 
-// ♿ 模式切換 (innerHTML 換掉 SVG) 之後呼叫：更新 aria-label，並把新注入的裝飾 SVG 從朗讀中排除
+// 模式切換 (innerHTML 換掉 SVG) 之後呼叫：更新 aria-label，並把新注入的裝飾 SVG 從朗讀中排除
 function applyCapsuleAria(mode) {
     const labels = CAPSULE_ARIA_LABELS[mode] || CAPSULE_ARIA_LABELS.native;
     const targets = [
@@ -88,7 +88,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
     const searchContainer = document.getElementById('search-container');
     let isComposing = false;
 
-    // 🟢 強制展開膠囊內按鈕的點擊熱區，讓右側按鈕和左側一樣好按
+    // 展開膠囊內按鈕的點擊範圍，讓左右兩顆一樣好按
     const expandClickArea = () => {
         const lBtn = document.getElementById('capsule-main-btn');
         const rBtn = document.getElementById('capsule-secondary-btn');
@@ -111,10 +111,10 @@ export function initHeader(onSearchCallback, getActiveCardId) {
     };
     expandClickArea();
 
-    // ♿ 初始狀態的語音標籤
+    // 初始狀態的語音標籤
     applyCapsuleAria('native');
 
-    // ♿ search-trigger 是 div 假按鈕 (role="button")，補上 Enter / Space 鍵盤觸發
+    // search-trigger 是 div 假按鈕 (role="button")，補上 Enter / Space 鍵盤觸發
     const searchTriggerEl = document.getElementById('search-trigger');
     if (searchTriggerEl) {
         searchTriggerEl.addEventListener('keydown', (e) => {
@@ -135,7 +135,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
         if (!capsule || !leftBtn || !rightBtn) return;
 
         if (toBlankMode) {
-            // 🛑 切換時：封殺按鈕原本的點擊功能
+            // 切換期間停用原本的點擊行為
             if (searchTrigger) {
                 searchTrigger.onclick = null;
                 searchTrigger.style.pointerEvents = 'none';
@@ -156,7 +156,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                 applyCapsuleAria('blank');
 
                 if (searchIcon) {
-                    // 🟢 一次性注入三個 SVG：歷史、同步(無指針)、打勾
+                    // 一次注入四個狀態 SVG：歷史、同步、打勾、打叉
                     searchIcon.innerHTML = `
                       <svg class="icon-blank-mode history-icon lucide lucide-history" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                           <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
@@ -194,34 +194,34 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                             searchTrigger.classList.add('slide-in-active');
                         }
 
-                        // 🟢 滑入動畫 (300ms) 結束後，綁定連鎖點擊事件與 DB 還原邏輯
+                        // 滑入動畫 (300ms) 結束後，綁定點擊事件與 DB 還原邏輯
                         setTimeout(() => {
                             if (searchTrigger) {
                                 searchTrigger.onclick = () => {
-                                    // 🟢 霸王色全域防護鎖：攔截動畫期間的所有重複點擊，並給予「微互動縮放」與震動回饋
+                                    // 全域鎖：動畫期間攔截重複點擊，僅給予縮放與震動回饋
                                     if (window.pSyncing) {
                                         if (typeof window.triggerBump === 'function') window.triggerBump(searchTrigger);
                                         return;
                                     }
     
-                                    // 1. 正式上鎖！這會瞬間癱瘓畫面上所有的滑動手勢、複製貼上與膠囊按鈕
+                                    // 1. 上鎖：暫停滑動手勢、複製貼上與膠囊按鈕
                                     window.pSyncing = true;
     
-                                    // 🟢 防呆：如果使用者正在編輯輸入框，強制收起並儲存目前的字，以免動畫打架
+                                    // 使用者正在編輯輸入框時，先收起並儲存，避免動畫衝突
                                     if (window.pActiveEditType && typeof window.closeGhostEditMode === 'function') {
                                         window.closeGhostEditMode(true, null, true);
                                     }
     
-                                    // 2. 啟動視覺回饋：右上角歷史按鈕開始旋轉
+                                    // 2. 視覺回饋：按鈕開始旋轉
                                     searchTrigger.classList.add('action-spinning');
                                     if (navigator.vibrate) navigator.vibrate(20);
                                     
-                                    // ✨ 同步指令 1：觸發底下兩個文字輸入框的下降與旋轉動畫！
+                                    // 連動 1：觸發輸入框的下降與旋轉動畫
                                     if (window.startInputUndoAnimation) window.startInputUndoAnimation();
     
                                     let isRestoreSuccess = false;
     
-                                    // 3. 轉到一半 (500ms) 時：正式觸發資料庫還原
+                                    // 3. 旋轉至一半 (500ms) 時觸發資料庫還原
                                     setTimeout(async () => {
                                         try {
                                             if (window.undoCardPreference) {
@@ -233,29 +233,29 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                                         }
                                     }, 500);
     
-                                    // 4. 1秒後 (轉完一圈)，根據結果給予不同動畫
+                                    // 4. 一秒後 (轉完一圈) 依結果顯示成功或失敗動畫
                                     setTimeout(() => {
                                         searchTrigger.classList.remove('action-spinning');
                                         
                                         if (isRestoreSuccess) {
                                             searchTrigger.classList.add('action-success');
-                                            if (navigator.vibrate) navigator.vibrate([30, 50, 30]); // 成功雙次震動
+                                            if (navigator.vibrate) navigator.vibrate([30, 50, 30]); // 成功：雙次震動
                                         } else {
                                             searchTrigger.classList.add('action-error');
-                                            if (navigator.vibrate) navigator.vibrate([20, 30, 20, 30]); // 錯誤短促連續震動
+                                            if (navigator.vibrate) navigator.vibrate([20, 30, 20, 30]); // 失敗：短促連續震動
                                         }
                                         
-                                        // ✨ 同步指令 2：觸發底下輸入框的連動結果動畫 (落下打勾或打叉)
+                                        // 連動 2：輸入框顯示結果動畫 (打勾或打叉)
                                         if (window.finishInputUndoAnimation) window.finishInputUndoAnimation(isRestoreSuccess);
     
-                                        // 5. 停留，讓大腦接收視覺資訊後開始 Reset
+                                        // 5. 停留片刻讓使用者看清結果，再開始重置
                                         const holdTime = isRestoreSuccess ? 500 : 600;
     
                                         setTimeout(() => {
                                             searchTrigger.classList.remove('action-success', 'action-error');
                                             searchTrigger.classList.add('action-resetting');
                                             
-                                            // ✨ 同步指令 3：觸發底下輸入框的連動重置動畫 (文字浮上來歸位)
+                                            // 連動 3：輸入框重置動畫 (文字歸位)
                                             if (window.resetInputUndoAnimation) window.resetInputUndoAnimation();
     
                                             requestAnimationFrame(() => {
@@ -266,7 +266,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                                                     setTimeout(() => {
                                                         searchTrigger.classList.remove('action-resetting', 'action-resetting-active');
                                                         
-                                                        // 🟢 任務完成，徹底解鎖，將所有的控制權還給使用者！
+                                                        // 完成，解除全域鎖
                                                         window.pSyncing = false; 
                                                     }, 400); 
                                                 });
@@ -327,9 +327,9 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                             capsule.classList.remove('slide-in-active');
                             if (searchTrigger) {
                                 searchTrigger.classList.remove('slide-in-active');
-                                // 強制清除所有可能殘留的狀態
+                                // 清除可能殘留的動畫狀態
                                 searchTrigger.classList.remove('action-spinning', 'action-success', 'action-error', 'action-resetting', 'action-resetting-active');
-                                // 🟢 恢復原生搜尋功能
+                                // 恢復搜尋功能
                                 searchTrigger.onclick = () => window.toggleSearch(true);
                                 searchTrigger.style.pointerEvents = 'auto';
                             }
@@ -391,7 +391,6 @@ export function initHeader(onSearchCallback, getActiveCardId) {
         }
     };
 
-    // 🟢 全新的主選單控制引擎 (防彈版)
 
     window.toggleSearch = function (show) {
         const dismissIcon = document.getElementById('dismiss-icon');
@@ -406,7 +405,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
             document.body.classList.add('searching');
             if (dismissIcon) dismissIcon.style.opacity = '0';
 
-            // 🟢 救命關鍵：拔掉 setTimeout！必須在點擊瞬間同步聚焦，手機才會放行小鍵盤。
+            // 注意：必須在點擊事件內同步 focus，行動瀏覽器才會允許彈出鍵盤（不可包在 setTimeout 裡）
             // 加入 preventScroll: true 防止瀏覽器因為聚焦隱藏物件而亂捲動畫面
             if (searchInput) {
                 searchInput.focus({ preventScroll: true });
@@ -485,7 +484,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
         if (mode === 'native') {
             if (capsule.classList.contains('detail-active')) {
                 // ====================================================
-                // 🟢 官網外部連結跳轉邏輯 (External Link Action) - 已修復 Dialog 問題
+                // 官方網站外部連結
                 // ====================================================
                 const activeId = typeof getActiveCardId === 'function' ? getActiveCardId() : null;
                 
@@ -496,12 +495,12 @@ export function initHeader(onSearchCallback, getActiveCardId) {
 
                 let linksToCheck = [];
                 
-                // ✨ 新增：判斷是否為飛機卡片 (Flight Card)
+                // 判斷是否為航班卡片
                 if (currentData.isFlightCard && currentData.flightData) {
                     const fData = currentData.flightData;
                     const airlineStr = (fData.airline || '').toUpperCase();
                     
-                    // 1. 無論如何，推入航空公司的專屬官網
+                    // 1. 加入航空公司官網
                     if (airlineStr.includes('ANA') || airlineStr.includes('全日本空輸')) {
                         linksToCheck.push({ name: 'ANA 公式サイト', url: 'https://www.ana.co.jp/' });
                     } else if (airlineStr.includes('JAL') || airlineStr.includes('日本航空')) {
@@ -520,18 +519,18 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                         linksToCheck.push({ name: 'スターフライヤー 公式サイト', url: 'https://www.starflyer.jp/' });
                     }
 
-                    // 🌟 核心邏輯：判斷這張卡片是否「已經加入常駐牌組」
+                    // 判斷卡片是否已加入常駐牌組
                     let isSavedInDeck = false;
                     
-                    // 檢查 1：是否存在於全域的儲存路線資料庫中
+                    // 檢查 1：是否存在於已儲存的路線資料庫
                     if (window.db_savedRoutes && Array.isArray(window.db_savedRoutes)) {
                         isSavedInDeck = window.db_savedRoutes.some(route => route.id === activeId);
                     } else {
-                        // 檢查 2 (Fallback)：如果找不到 db 變數，用 ID 命名規則判斷 (搜尋卡片通常帶有 search 字眼)
+                        // 檢查 2 (Fallback)：以 ID 命名規則判斷 (搜尋卡片帶有 search 字樣)
                         isSavedInDeck = !activeId.includes('search') && !activeId.includes('temp');
                     }
 
-                    // 2. 只有在「尚未加入常駐」的情況下，才顯示機場官網
+                    // 2. 尚未加入常駐時才顯示機場官網
                     if (!isSavedInDeck) {
                         const airportStr = fData.airport || '';
                         if (airportStr === 'HND' || airportStr === '羽田') {
@@ -542,7 +541,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                     }
 
                 } else if (currentData.targetLineIds && currentData.targetLineIds.length > 0) {
-                    // 🚄 原本的鐵道邏輯：去 MasterRouteDictionary 查字典
+                    // 鐵道卡片：從 MasterRouteDictionary 查對應官網
                     currentData.targetLineIds.forEach(id => {
                         const dictRoute = window.MasterRouteDictionary ? window.MasterRouteDictionary[id] : null;
                         if (dictRoute) {
@@ -558,7 +557,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                     });
                 }
 
-                // 過濾重複的網址 (確保選單乾淨)
+                // 過濾重複網址
                 const uniqueLinks = [];
                 const seenUrls = new Set();
                 linksToCheck.forEach(link => {
@@ -568,15 +567,15 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                     }
                 });
 
-                // 【修復 2】沒有網址時：直接在這裡實作微互動，不依賴外部函數
+                // 沒有可用網址時，僅給予按鈕縮放回饋
                 if (uniqueLinks.length === 0) {
                     const btn = document.getElementById('capsule-secondary-btn');
                     if (btn) {
-                        // 按鈕縮小的微互動
+                        // 按鈕縮放回饋
                         btn.style.transition = 'transform 0.15s cubic-bezier(0.34, 1.6, 0.64, 1), opacity 0.15s ease';
                         btn.style.transform = 'scale(0.85)';
                         btn.style.opacity = '0.7';
-                        if (navigator.vibrate) navigator.vibrate(20); // 呼叫實體馬達輕微震動
+                        if (navigator.vibrate) navigator.vibrate(20); // 輕微震動
                         
                         setTimeout(() => {
                             btn.style.transform = 'scale(1)';
@@ -588,18 +587,18 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                 }
 
                 if (uniqueLinks.length === 1) {
-                    // 只有一個官網，直接開啟
+                    // 只有一個官網時直接開啟
                     window.open(uniqueLinks[0].url, '_blank');
                 } else {
-                    // ✨ 核心修復：動態判斷文案，對齊使用者心理模型
+                    // 依卡片類型調整提示文案
                     const sheetMessage = currentData.isFlightCard 
                         ? '航空会社と空港のサイトが含まれています。\nどちらのサイトを開きますか？'
                         : '複数の路線が含まれています。\nどちらのサイトを開きますか？';
 
-                    // 【全面升級】有多個不同官網：呼叫 iOS Action Sheet (底部垂直表單)
+                    // 多個官網：以 Action Sheet 讓使用者選擇
                     if (typeof window.iosActionSheet === 'function') {
                         
-                        // 將 uniqueLinks 陣列轉換成 iosActionSheet 需要的格式 { text, value }
+                        // 轉換為 iosActionSheet 需要的 { text, value } 格式
                         const actionButtons = uniqueLinks.map(link => ({
                             text: link.name,
                             value: link.url
@@ -607,20 +606,20 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                         
                         window.iosActionSheet(
                             '公式サイト',
-                            sheetMessage, // ✨ 帶入動態文案
+                            sheetMessage,
                             actionButtons
                         ).then(selectedUrl => {
-                            // 當 Promise resolve 時，檢查是否有選擇網址 (若是點擊取消則 selectedUrl 會是 null)
+                            // 取消時 selectedUrl 為 null
                             if (selectedUrl) {
                                 window.open(selectedUrl, '_blank');
                             }
                         });
 
                     } else if (typeof window.iosConfirm === 'function') {
-                        // 防呆降級方案：萬一新函數還沒載入，至少保底用舊的
+                        // 降級方案：iosActionSheet 尚未載入時改用 iosConfirm
                         window.iosConfirm(
                             '公式サイト',
-                            sheetMessage, // ✨ 帶入動態文案
+                            sheetMessage,
                             uniqueLinks[0].name, 
                             uniqueLinks[1].name  
                         ).then(isConfirm => {
@@ -628,7 +627,7 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                             else window.open(uniqueLinks[1].url, '_blank');
                         });
                     } else {
-                        // 最終保底
+                        // 最終降級：直接開啟第一個網址
                         window.open(uniqueLinks[0].url, '_blank');
                     }
                 }
@@ -664,10 +663,10 @@ export function initHeader(onSearchCallback, getActiveCardId) {
     }
 }
 
-// 🟢 鍵盤防護機制：偵測到切換 App、回桌面、或點開其他分頁時，強制關閉鍵盤
+// 切換 App、回桌面或切換分頁時，強制收起鍵盤
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
-        // 每次觸發時，重新去畫面上抓取元素，而不是使用未定義的全域變數
+        // 每次觸發時重新取得元素
         const input = document.getElementById('search-input');
         if (input) input.blur();
     }

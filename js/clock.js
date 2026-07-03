@@ -1,4 +1,4 @@
-// clock.js - 靈動膠囊 (CSS引擎接管絲滑版 + API防抽搐版)
+// clock.js - 左側膠囊時鐘：最終同步時刻顯示與分鐘動畫
 
 export function initDynamicClock() {
     const clockContainer = document.getElementById('entry-time-display');
@@ -9,25 +9,25 @@ export function initDynamicClock() {
 
     // 膠囊的尺寸極限
     const MAX_W = 95;
-    const MIN_W = 50; // 🟢 將原本的 44 改成 50，讓它在 SVG 完美置中的瞬間提早回彈！
+    const MIN_W = 50; // 50 可讓膠囊在圖示置中時提早回彈
     const RANGE = MAX_W - MIN_W;
 
-    // --- 🟢 1. 獨立出「追趕同步」引擎 ---
+    // 追趕同步：讓膠囊寬度對齊當前秒數
     function resyncCapsule() {
         const currentS = new Date().getSeconds();
         
-        // 防呆：如果剛好是 0 秒或 1 秒，交給底下的 tickClock 核心引擎處理即可，避免動畫打架
+        // 0-1 秒交由 tickClock 處理，避免動畫互相干擾
         if (currentS === 0 || currentS === 1) return;
 
         const currentRatio = currentS / 60; 
         const currentW = MAX_W - (RANGE * currentRatio);
 
-        // 1. 瞬間喚醒：使用 0.8 秒彈簧曲線，讓膠囊快速滑順「追趕」到當下該有的寬度
+        // 先以 0.8 秒彈簧曲線追上當前應有的寬度
         leftCapsule.style.setProperty('--capsule-dur', '0.8s');
         leftCapsule.style.setProperty('--capsule-ease', 'var(--apple-spring)');
         leftCapsule.style.setProperty('--capsule-width', `${currentW}px`);
 
-        // 2. 追趕到位後，無縫接軌進入「剩下的線性倒數」
+        // 到位後接續剩餘秒數的線性收縮
         setTimeout(() => {
             const newS = new Date().getSeconds();
             if (newS !== 0 && newS !== 1) { 
@@ -39,14 +39,14 @@ export function initDynamicClock() {
         }, 800);
     }
 
-    // 🟢 2. 開場立即執行一次同步
+    // 初始化時先同步一次
     resyncCapsule();
 
-    // 🟢 3. 監聽網頁可視狀態：從背景切回前景時，重新校準！
+    // 從背景切回前景時重新校準
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
             resyncCapsule();
-            // ✨ 核心防護：切回畫面時，不囉唆立刻強制更新一次 API，確保資料最新！
+            // 並立即觸發一次 API 更新，確保資料最新
             if (window.triggerBackgroundUpdate) {
                 window.triggerBackgroundUpdate();
             }
@@ -99,14 +99,14 @@ export function initDynamicClock() {
         }
     }
 
-    // 🟢 全域接口：強制使用「日本標準時間 (JST)」顯示最後同步時間
+    // 全域接口：以日本標準時間 (JST) 顯示最後同步時刻
     window.updateSystemSyncTime = function(dateObj) {
         if (!dateObj) return;
 
-        // ✨ [新增] 按下隱形碼錶：紀錄「這一次成功拿到資料時」的手機內部時間戳
+        // 記錄本次成功同步時的裝置時間戳
         localStorage.setItem('tsukin_last_sync_device_time', Date.now().toString());
 
-        // 核心魔法：轉換為日本東京時間
+        // 轉換為東京時間
         const jstString = new Intl.DateTimeFormat('en-GB', {
             timeZone: 'Asia/Tokyo',
             hour: '2-digit',
@@ -123,25 +123,25 @@ export function initDynamicClock() {
         updateDigit('min-tens', m[0]);
         updateDigit('min-units', m[1]);
 
-        // ♿ 跑馬燈數字對螢幕閱讀器是亂碼，改由容器的 aria-label 唸出完整時間
+        // 跑馬燈數字對螢幕閱讀器是亂碼，改由容器的 aria-label 唸出完整時間
         const syncClockEl = document.getElementById('entry-time-display');
         if (syncClockEl) syncClockEl.setAttribute('aria-label', `最終同期時刻 ${h}:${m}`);
 
         localStorage.setItem('tsukin_last_time', h + m);
 
-        // ✨ [新增] 既然成功拿到資料，立刻清除時鐘的警告顏色
+        // 同步成功後清除警告顏色
         const clockContainer = document.getElementById('entry-time-display');
         const capsule = document.querySelector('.left-capsule.top-capsule');
         if (clockContainer) clockContainer.classList.remove('sync-warning-yellow', 'sync-warning-red');
         if (capsule) capsule.classList.remove('sync-warning-yellow', 'sync-warning-red');
     };
 
-    // 核心計時引擎 (現在只負責膠囊動畫、背景 API 觸發、與斷線偵測)
+    // 計時引擎：膠囊動畫、背景 API 觸發與斷線偵測
     function tickClock() {
         const timeNow = new Date();
         const m = String(timeNow.getMinutes()).padStart(2, '0');
 
-        // ✨ [新增] 斷線偵測器：每秒檢查一次距離上次成功經過了多久
+        // 斷線偵測：檢查距離上次成功同步經過多久
         const lastSyncTimeStr = localStorage.getItem('tsukin_last_sync_device_time');
         if (lastSyncTimeStr) {
             const elapsedMs = Date.now() - parseInt(lastSyncTimeStr, 10);
@@ -164,17 +164,17 @@ export function initDynamicClock() {
                     capsule.classList.remove('sync-warning-red');
                     capsule.classList.add('sync-warning-yellow');
                 } else {
-                    // 1 分鐘以內：健康狀態，清除顏色
+                    // 1 分鐘以內：正常狀態，清除顏色
                     clockContainer.classList.remove('sync-warning-yellow', 'sync-warning-red');
                     capsule.classList.remove('sync-warning-yellow', 'sync-warning-red');
                 }
             }
         }
 
-        // --- 🟢 終極防漏秒引擎：依賴「分鐘的改變」，而不依賴脆弱的「第 0 秒」 ---
+        // 以「分鐘變化」而非「第 0 秒」判斷換分，避免瀏覽器節流造成漏秒
         if (lastMinute !== -1 && m !== lastMinute) {
             
-            // 分鐘正式跳動的那一刻 (相當於原本的第 0 秒)
+            // 分鐘跳動的瞬間
             leftCapsule.style.setProperty('--capsule-dur', '0.8s');
             leftCapsule.style.setProperty('--capsule-ease', 'var(--apple-spring)');
             leftCapsule.style.setProperty('--capsule-width', `${MAX_W}px`);
@@ -189,12 +189,12 @@ export function initDynamicClock() {
                 });
             }
 
-            // ⏱️ ✨ 不管瀏覽器怎麼 lag，只要分鐘變了，就絕對能觸發背景 API 更新！
+            // 分鐘變化時觸發背景 API 更新
             if (window.triggerBackgroundUpdate) {
                 window.triggerBackgroundUpdate();
             }
 
-            // 預約 1 秒後才接續長期的收縮指令 (取代原本的 s === 1)
+            // 1 秒後接續整分鐘的線性收縮
             setTimeout(() => {
                 leftCapsule.style.setProperty('--capsule-dur', '59s');
                 leftCapsule.style.setProperty('--capsule-ease', 'linear');
@@ -205,7 +205,7 @@ export function initDynamicClock() {
         lastMinute = m; 
     }
 
-    // 開場立即啟動
+    // 啟動
     setTimeout(tickClock, 300);
     setInterval(tickClock, 1000);
 }

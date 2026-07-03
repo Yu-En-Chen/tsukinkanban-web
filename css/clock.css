@@ -8,7 +8,7 @@
     vertical-align: middle;
 }
 
-/* 🟢 當 JS 把數字排好後，就會加上這個 class 讓時鐘優雅浮現 */
+/* 當 JS 把數字排好後，就會加上這個 class 讓時鐘優雅浮現 */
 .clock-container.ready {
     opacity: 1;
 }
@@ -74,7 +74,7 @@
    .left-capsule-icon {
     position: absolute;
     
-    /* 💥 Apple 靈動島級別的幾何錨點：
+    /* Apple 靈動島級別的幾何錨點：
        因為膠囊高度是 44px，右側半圓的半徑就是 22px。
        把 right 設為 22px，就等於把 SVG 放在這個半圓的絕對圓心！
     */
@@ -91,7 +91,7 @@
     pointer-events: none;
 }
 
-/* 🟢 2. 靈動膠囊引擎：數學錨點鎖死大法 */
+/* 2. 靈動膠囊引擎：數學錨點鎖死大法 */
 .left-capsule.top-capsule {
     /* 解除左側錨點，防止雙向運算造成的抖動 */
     left: auto !important;
@@ -102,7 +102,7 @@
     
     width: var(--capsule-width, 95px) !important;
     
-    /* 🟢 拔除 left 的動畫，現在只專心處理 width，徹底消滅小數點渲染抖動！ */
+    /* 拔除 left 的動畫，現在只專心處理 width，徹底消滅小數點渲染抖動！ */
     transition: width var(--capsule-dur, 1s) var(--capsule-ease, linear), 
                 opacity 0.2s ease, 
                 transform 0.5s var(--apple-spring), 
@@ -110,7 +110,7 @@
 }
 
 /* ==========================================
-   🟢 智慧警示燈號色彩系統 (Light/Dark Mode 自動切換)
+   智慧警示燈號色彩系統 (Light/Dark Mode 自動切換)
 ========================================== */
 
 /* 1. 預設：淺色模式 (Light Mode) 的參數 */
@@ -132,18 +132,18 @@
         --sync-yellow-glow: 0 0 8px rgba(255, 204, 0, 0.5);
         
         /* 深色底：使用 Apple 系統紅色。
-           ✨ 視覺校正魔法：因為紅色較暗，我們疊加「兩層」陰影，外圈大擴散 + 內圈高濃度，讓它徹底亮起來！ */
+           視覺校正魔法：因為紅色較暗，我們疊加「兩層」陰影，外圈大擴散 + 內圈高濃度，讓它徹底亮起來！ */
         --sync-red-color: #FF3B30;
         --sync-red-glow: 0 0 16px rgba(255, 59, 48, 0.8), 0 0 4px rgba(255, 59, 48, 0.6); 
     }
 }
 
 /* ==========================================
-   🟢 實際套用樣式 (地毯式轟炸選擇器，保證抓到冒號！)
+   實際套用樣式 (地毯式轟炸選擇器，保證抓到冒號！)
 ========================================== */
 
-/* 🟡 1~5 分鐘：黃色警告狀態 */
-/* ✨ 核心魔法：使用 * (萬用字元)，不管裡面的數字、冒號叫什麼名字，全部強制上色！ */
+/* 1~5 分鐘：黃色警告狀態 */
+/* 核心魔法：使用 * (萬用字元)，不管裡面的數字、冒號叫什麼名字，全部強制上色！ */
 #entry-time-display.sync-warning-yellow,
 #entry-time-display.sync-warning-yellow * {
     color: var(--sync-yellow-color) !important;
@@ -151,8 +151,8 @@
     transition: color 0.5s ease, text-shadow 0.5s ease;
 }
 
-/* 🔴 5 分鐘以上：紅色斷線狀態 */
-/* ✨ 核心魔法：同樣使用 * (萬用字元) 強制覆蓋所有子元素 */
+/* 5 分鐘以上：紅色斷線狀態 */
+/* 核心魔法：同樣使用 * (萬用字元) 強制覆蓋所有子元素 */
 #entry-time-display.sync-warning-red,
 #entry-time-display.sync-warning-red * {
     color: var(--sync-red-color) !important;

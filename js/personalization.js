@@ -4,7 +4,7 @@ import { saveRoutePreference, resetRoutePreference } from '../data/db.js';
 import { railwayData } from '../data/data.js';
 
 // =========================================================
-// 🟢 網頁級別最優先寫死的系統導航防護 (全域封鎖)
+// 網頁級別最優先寫死的系統導航防護 (全域封鎖)
 // =========================================================
 (function injectGlobalNavigationBlocker() {
     if (window._pGlobalNavBlockerActive) return;
@@ -18,7 +18,7 @@ import { railwayData } from '../data/data.js';
     };
     window.addEventListener('touchstart', blockEdgeSwipe, { passive: false, capture: true });
     window.addEventListener('touchmove', blockEdgeSwipe, { passive: false, capture: true });
-    // 👇 全域動畫鎖與微互動攔截器 👇
+    // 全域動畫鎖與微互動攔截器 
     document.addEventListener('click', (e) => {
         // 檢查是否正在播放下載同步動畫
         if (window.pSyncing) {
@@ -26,15 +26,15 @@ import { railwayData } from '../data/data.js';
             const protectedBtn = e.target.closest('.left-circle-btn, .search-trigger, #capsule-main-btn');
             if (protectedBtn) {
                 e.preventDefault();
-                e.stopPropagation(); // ⛔ 霸王色霸氣：在點擊事件抵達原本的 onclick 前，強制斬斷！
+                e.stopPropagation(); // 霸王色霸氣：在點擊事件抵達原本的 onclick 前，強制斬斷！
                 
-                // 🥊 呼叫系統內建的微互動引擎，讓按鈕「扣」的震動一下，暗示使用者目前鎖定中
+                // 呼叫系統內建的微互動引擎，讓按鈕「扣」的震動一下，暗示使用者目前鎖定中
                 if (typeof window.triggerBump === 'function') {
                     window.triggerBump(protectedBtn);
                 }
             }
         }
-    }, { capture: true }); // 開啟 capture 捕獲階段，保證我們是全站第一個拿到點擊事件的！ // 👆
+    }, { capture: true }); // 開啟 capture 捕獲階段，保證我們是全站第一個拿到點擊事件的！ // 
 
     try {
         history.pushState(null, null, location.href);
@@ -71,7 +71,7 @@ import { railwayData } from '../data/data.js';
         }
     });
     // =========================================================
-    // 🟢 桌面版鍵盤快捷鍵：方向鍵關閉卡片
+    // 桌面版鍵盤快捷鍵：方向鍵關閉卡片
     // =========================================================
     window.addEventListener('keydown', (e) => {
         // 防呆 1：如果使用者正在輸入框裡面打字（例如搜尋框、編輯名稱），不要攔截方向鍵
@@ -117,7 +117,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         const routeData = window.appRailwayData.find(r => r.id === activeId);
         if (!routeData) return;
 
-        // 🟢 終極防護網：攔截「未改變」的幽靈存檔！
+        // 終極防護網：攔截「未改變」的幽靈存檔！
         if (editType === 'name' && routeData.name === finalVal) {
             console.log("[攔截] 名稱未變更，拒絕污染歷史紀錄");
             return;
@@ -127,7 +127,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             return;
         }
 
-        // ✨ 在確認數值真的有變後，才將修改前的狀態打包成救生圈
+        // 在確認數值真的有變後，才將修改前的狀態打包成救生圈
         const oldState = {
             customName: routeData.name,
             customHex: routeData.hex
@@ -136,7 +136,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         if (editType === 'name') routeData.name = finalVal;
         if (editType === 'color') routeData.hex = finalVal;
 
-        // 🟢 [新增] 無損重繪魔法：強制清除瀏覽器對 CSS 變數的快取殘影
+        // [新增] 無損重繪魔法：強制清除瀏覽器對 CSS 變數的快取殘影
         const forceRepaint = (el) => {
             if (!el) return;
             void el.offsetHeight; 
@@ -153,14 +153,14 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         const customizeCard = document.querySelector('#dynamic-blank-overlay .detail-card-inner');
         if (customizeCard) {
             applyThemeToCard(customizeCard, routeData.hex);
-            forceRepaint(customizeCard); // ✨ 執行重繪
+            forceRepaint(customizeCard); // 執行重繪
         }
 
         // 同步更新：中層的詳情卡片 (Detail Card)
         const detailCard = document.querySelector('#detail-card-container .detail-card-inner');
         if (detailCard) {
             applyThemeToCard(detailCard, routeData.hex);
-            forceRepaint(detailCard); // ✨ 執行重繪
+            forceRepaint(detailCard); // 執行重繪
             const detailNameNode = detailCard.querySelector('.line-name');
             if (detailNameNode) detailNameNode.textContent = routeData.name;
         }
@@ -169,7 +169,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         const mainCard = document.getElementById(`card-${activeId}`);
         if (mainCard) {
             applyThemeToCard(mainCard, routeData.hex);
-            forceRepaint(mainCard); // ✨ 執行重繪
+            forceRepaint(mainCard); // 執行重繪
             const mainNameNode = mainCard.querySelector('.line-name');
             if (mainNameNode) mainNameNode.textContent = routeData.name;
         }
@@ -276,12 +276,12 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
     </style>
 
     <div id="p-edit-row" style="--btn-height: 44px; display: flex; gap: 8px; position: relative;
-        /* 👇 左右安全區擴展至 25px */
+        /* 左右安全區擴展至 25px */
         width: calc(100% + 50px); margin-left: -25px; 
-        /* 👇 上下安全區擴展至 35px，保證吃下 33px 的陰影 */
+        /* 上下安全區擴展至 35px，保證吃下 33px 的陰影 */
         padding: 35px 25px; 
         margin-top: -35px; margin-bottom: -23px; 
-        /* 👇 遮罩漸層也必須同步向內推 25px */
+        /* 遮罩漸層也必須同步向內推 25px */
         -webkit-mask-image: linear-gradient(to right, transparent 0%, black 25px, black calc(100% - 25px), transparent 100%);
         mask-image: linear-gradient(to right, transparent 0%, black 25px, black calc(100% - 25px), transparent 100%);">
 
@@ -334,12 +334,12 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
     </p>
 
     <div id="p-color-edit-row" style="--btn-height: 44px; display: flex; gap: 8px; position: relative;
-        /* 👇 左右安全區擴展至 25px */
+        /* 左右安全區擴展至 25px */
         width: calc(100% + 50px); margin-left: -25px; 
-        /* 👇 上下安全區擴展至 35px，保證吃下 33px 的陰影 */
+        /* 上下安全區擴展至 35px，保證吃下 33px 的陰影 */
         padding: 35px 25px; 
         margin-top: -35px; margin-bottom: -23px; 
-        /* 👇 遮罩漸層也必須同步向內推 25px */
+        /* 遮罩漸層也必須同步向內推 25px */
         -webkit-mask-image: linear-gradient(to right, transparent 0%, black 25px, black calc(100% - 25px), transparent 100%);
         mask-image: linear-gradient(to right, transparent 0%, black 25px, black calc(100% - 25px), transparent 100%);">
 
@@ -394,12 +394,12 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         onblur="window.handleGhostBlur(event)" 
         style="
         position: absolute;
-        box-sizing: border-box; /* 👈 新增：完美貼合容器尺寸 */
+        box-sizing: border-box; /* 新增：完美貼合容器尺寸 */
         height: 44px;
         margin: 0; padding: 0 16px;
         background: transparent; border: none; outline: none;
         color: inherit; font-size: 0.95rem; font-weight: inherit; 
-        text-align: center; /* 👈 修改：原生輸入法即時置中引擎 */
+        text-align: center; /* 修改：原生輸入法即時置中引擎 */
         opacity: 0; pointer-events: none; z-index: 100;
         transition: opacity 0.25s ease;
     ">
@@ -589,12 +589,12 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         });
 
         // =========================================================
-        // 🟢 桌面版觸控板 (Trackpad) 橫向滑動關閉引擎 (已修復慣性卡頓)
+        // 桌面版觸控板 (Trackpad) 橫向滑動關閉引擎 (已修復慣性卡頓)
         // =========================================================
         let wheelDeltaX = 0;
         let wheelTimer = null;
         let isWheelSwiping = false;
-        let wheelGestureLocked = false; // 🛑 鎖定閥門：用來阻斷觸控板的「滑動慣性」
+        let wheelGestureLocked = false; // 鎖定閥門：用來阻斷觸控板的「滑動慣性」
 
         overlay.addEventListener('wheel', (e) => {
             // 如果已經在翻轉、或已經觸發關閉、或「閥門已上鎖」，直接忽略所有的殘留慣性事件
@@ -602,7 +602,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
 
             // 1. 偵測是否為「橫向滑動」
             if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-                e.preventDefault(); // 🛑 攔截瀏覽器預設的上一頁/下一頁
+                e.preventDefault(); // 攔截瀏覽器預設的上一頁/下一頁
 
                 if (!isWheelSwiping) {
                     isWheelSwiping = true;
@@ -624,7 +624,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                 const maxDist = window.innerWidth * 0.6;
                 let progress = Math.max(0, Math.min(dragDistance / maxDist, 1));
 
-                // 🎯 核心修復：不等待觸控板慣性停止！只要滑超過一定距離 (progress > 0.2)，直接「瞬間觸發」關閉
+                // 核心修復：不等待觸控板慣性停止！只要滑超過一定距離 (progress > 0.2)，直接「瞬間觸發」關閉
                 if (progress > 0.2 || wheelDeltaX < -100) {
                     wheelGestureLocked = true; // 鎖上閥門，這張卡片壽命結束前不再接受任何 wheel
                     isWheelSwiping = false;
@@ -857,7 +857,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         }, 300);
     };
 
-    // 🟢 實作雲端同步的三段式 SVG 下落切換動畫，徹底解決抽搐與文字起落方向
+    // 實作雲端同步的三段式 SVG 下落切換動畫，徹底解決抽搐與文字起落方向
     window.triggerCloudSync = function() {
         if (window.pSyncing) {
             const btn = document.getElementById('capsule-secondary-btn');
@@ -882,7 +882,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
         const svgSync = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cloud-sync-icon lucide-cloud-sync"><path d="m17 18-1.535 1.605a5 5 0 0 1-8-1.5"/><path d="M17 22v-4h-4"/><path d="M20.996 15.251A4.5 4.5 0 0 0 17.495 8h-1.79a7 7 0 1 0-12.709 5.607"/><path d="M7 10v4h4"/><path d="m7 14 1.535-1.605a5 5 0 0 1 8 1.5"/></svg>`;
         const svgCheck = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cloud-check-icon lucide-cloud-check"><path d="m17 15-5.5 5.5L9 18"/><path d="M5.516 16.07A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 3.501 7.327"/></svg>`;
 
-        // 🟢 精準抓取原有的唯一的 SVG，避免抓到新增的 wrappers
+        // 精準抓取原有的唯一的 SVG，避免抓到新增的 wrappers
         let originalSvg = Array.from(rightBtn.children).find(el => el.tagName.toLowerCase() === 'svg');
 
         const createWrapper = (svgStr) => {
@@ -897,7 +897,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             wrapper.style.opacity = '0';
             wrapper.innerHTML = svgStr;
             
-            // 🟢 修復：強制覆蓋膠囊的 CSS 霸王條款，使其與下方輸入框的 SVG 完美一致
+            // 修復：強制覆蓋膠囊的 CSS 霸王條款，使其與下方輸入框的 SVG 完美一致
             const innerSvg = wrapper.querySelector('svg');
             if (innerSvg) {
                 innerSvg.style.setProperty('width', '20px', 'important');
@@ -1012,9 +1012,9 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                     svgs.s2Svg.style.opacity = '1';
                 }
             });
-            // 🟢 【新增】：在這裡加入資料重置與 DOM 更新邏輯！
+            // 【新增】：在這裡加入資料重置與 DOM 更新邏輯！
             // 趁文字飛到空中隱藏時 (900ms) 偷偷換掉，等 1800ms 降落時就會是全新預設狀態
-            // 🟢 【升級版】：非破壞性重置！將恢復預設視為一次「編輯」，並把當前狀態存入歷史紀錄
+            // 【升級版】：非破壞性重置！將恢復預設視為一次「編輯」，並把當前狀態存入歷史紀錄
             const activeId = getActiveCardId();
             if (activeId && activeId !== 'fixed-bottom') {
                 const currentData = window.appRailwayData.find(r => r.id === activeId);
@@ -1023,16 +1023,16 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                 // 1. 先嘗試從系統內建的 railwayData 找預設值 (針對原生卡片)
                 let defaultData = railwayData.find(r => r.id === activeId);
 
-                // ✨ 2. 核心修復：如果找不到，代表這是「手動新增的自訂卡片」！我們動態為它生成預設值
+                // 2. 核心修復：如果找不到，代表這是「手動新增的自訂卡片」！我們動態為它生成預設值
                 if (!defaultData && currentData.isCustom) {
                     
-                    // ✈️ 狀況 A：如果是飛機航班 (優先判定，避免被火車邏輯誤攔截)
+                    // 狀況 A：如果是飛機航班 (優先判定，避免被火車邏輯誤攔截)
                     if (currentData.isFlightCard) {
                         const flightId = (currentData.flightData && currentData.flightData.id) || 
                                          (currentData.targetLineIds && currentData.targetLineIds[0]) || 
                                          'フライト';
                         
-                        // ✨ 核心修復：讓「還原預設值」也具備動態 CI 顏色辨識能力
+                        // 核心修復：讓「還原預設值」也具備動態 CI 顏色辨識能力
                         let defaultHex = '#0a84ff'; // 預設藍色
                         if (currentData.flightData && currentData.flightData.airline) {
                             const airlineStr = currentData.flightData.airline.toUpperCase();
@@ -1048,7 +1048,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                         
                         defaultData = { name: flightId, hex: defaultHex };
                     }
-                    // 🚄 狀況 B：如果是綁定雲端字典的火車路線
+                    // 狀況 B：如果是綁定雲端字典的火車路線
                     else if (currentData.targetLineIds && currentData.targetLineIds.length > 0 && window.MasterRouteDictionary) {
                         const firstRouteId = currentData.targetLineIds[0];
                         const dictRoute = window.MasterRouteDictionary[firstRouteId];
@@ -1057,7 +1057,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                         }
                     } 
                     
-                    // ⬜ 狀況 C：如果都沒有（例如火車字典查不到），代表這是一張純白的自訂卡片
+                    // 狀況 C：如果都沒有（例如火車字典查不到），代表這是一張純白的自訂卡片
                     if (!defaultData) {
                         defaultData = { name: '新規カード', hex: '#2C2C2E' };
                     }
@@ -1069,7 +1069,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                     if (currentData.name === defaultData.name && currentData.hex.toLowerCase() === defaultData.hex.toLowerCase()) {
                         console.log("[雲端同步] 已經是預設狀態，無需覆蓋歷史紀錄");
                     } else {
-                        // ✨ 核心魔法：將被洗掉前的「目前客製化狀態」打包成救生圈
+                        // 核心魔法：將被洗掉前的「目前客製化狀態」打包成救生圈
                         const oldState = {
                             customName: currentData.name,
                             customHex: currentData.hex
@@ -1084,14 +1084,14 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                             .then(() => console.log(`[DB] 已恢復預設值，並成功將客製化狀態保留於歷史紀錄中！`))
                             .catch(err => console.error('[DB] 寫入 IndexedDB 失敗:', err));
 
-                        // 🟢 [進化版] 終極無損重繪魔法：對付 setTimeout 的批次優化陷阱
+                        // [進化版] 終極無損重繪魔法：對付 setTimeout 的批次優化陷阱
                         const forceRepaint = (el) => {
                             if (!el) return;
                             const tags = el.querySelectorAll('.info-tag-item, .info-capsule, .info-circle, .flight-action-btn');
                             tags.forEach(tag => {
                                 const originalDisplay = tag.style.display; 
                                 tag.style.display = 'none';
-                                // ⚠️ 關鍵：使用 getComputedStyle 強制瀏覽器立刻結算這一步的樣式
+                                // 關鍵：使用 getComputedStyle 強制瀏覽器立刻結算這一步的樣式
                                 window.getComputedStyle(tag).display; 
                                 tag.style.display = originalDisplay; 
                             });
@@ -1118,7 +1118,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                         if (nameEls.display) nameEls.display.textContent = defaultData.name;
                         if (colorEls.display) colorEls.display.textContent = defaultData.hex.toUpperCase();
 
-                        // ✨ 3. 關鍵修復：把重繪動作推遲到「下一幀」，保證 CSS 變數已經徹底寫入 DOM
+                        // 3. 關鍵修復：把重繪動作推遲到「下一幀」，保證 CSS 變數已經徹底寫入 DOM
                         requestAnimationFrame(() => {
                             forceRepaint(customizeCard);
                             forceRepaint(detailCard);
@@ -1141,7 +1141,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             });
 
             if (originalSvg) {
-                // 🟢 修復：確保 -40px 的狀態被瀏覽器確實繪製，恢復由上往下的掉落感
+                // 修復：確保 -40px 的狀態被瀏覽器確實繪製，恢復由上往下的掉落感
                 originalSvg.style.setProperty('transition', 'none', 'important');
                 originalSvg.style.setProperty('transform', 'translate3d(0, -40px, 0)', 'important');
                 
@@ -1157,7 +1157,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             [nameEls, colorEls].forEach(els => {
                 if (els.display) {
                     els.display.style.transition = 'none';
-                    // 🟢 文字從上方落下復原 (-40px -> 0px)
+                    // 文字從上方落下復原 (-40px -> 0px)
                     els.display.style.transform = 'translate3d(0, -40px, 0)';
                     void els.display.offsetWidth;
                     els.display.style.transition = 'opacity 0.4s ease, transform 0.55s var(--spring-release)';
@@ -1185,13 +1185,13 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                 const svgs = index === 0 ? nameSvgs : colorSvgs;
                 if (svgs && svgs.container) svgs.container.remove();
                 if (els.sharedStatus) {
-                    // ✨ 修復：明確設為 0 與原點，不可使用空字串，否則會喚醒幽靈文字
+                    // 修復：明確設為 0 與原點，不可使用空字串，否則會喚醒幽靈文字
                     els.sharedStatus.style.transform = 'translate3d(0, 0, 0)';
                     els.sharedStatus.style.opacity = '0';
                 }
                 if (els.display) {
                     els.display.style.transition = '';
-                    // ✨ 修復：確保文字絕對歸位
+                    // 修復：確保文字絕對歸位
                     els.display.style.transform = 'translate3d(0, 0, 0)';
                 }
             });
@@ -1204,7 +1204,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
 // (這裡應該是你原本 window.triggerCloudSync 函數的結尾大括號 } )
 
     // =========================================================
-    // 🟢 個性化面板：連動「歷史紀錄 (Undo)」按鈕的輸入框動畫引擎
+    // 個性化面板：連動「歷史紀錄 (Undo)」按鈕的輸入框動畫引擎
     // =========================================================
     window.startInputUndoAnimation = function() {
         const nameEls = getElements('name');
@@ -1264,7 +1264,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
             color: setup(colorEls)
         };
 
-        // 🟢 階段一：開始動畫 (文字往下掉消失，Sync 圖示從上方掉入並同步旋轉)
+        // 階段一：開始動畫 (文字往下掉消失，Sync 圖示從上方掉入並同步旋轉)
         setTimeout(() => {
             [window.activeUndoSvgs.name, window.activeUndoSvgs.color].forEach(item => {
                 if (!item) return;
@@ -1291,7 +1291,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
     window.finishInputUndoAnimation = function(isSuccess) {
         if (!window.activeUndoSvgs) return;
 
-        // 🟢 階段二：根據成敗，將 Sync 圖示丟掉，換成打勾或打叉
+        // 階段二：根據成敗，將 Sync 圖示丟掉，換成打勾或打叉
         [window.activeUndoSvgs.name, window.activeUndoSvgs.color].forEach(item => {
             if (!item) return;
             const { syncIcon, checkIcon, errorIcon } = item;
@@ -1319,7 +1319,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
     window.resetInputUndoAnimation = function(immediate = false) {
         if (!window.activeUndoSvgs) return;
 
-        // 🟢 階段三：清理戰場，讓最新的文字重新浮上來
+        // 階段三：清理戰場，讓最新的文字重新浮上來
         [window.activeUndoSvgs.name, window.activeUndoSvgs.color].forEach(item => {
             if (!item) return;
             const { container, checkIcon, errorIcon, els } = item;
@@ -1350,7 +1350,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                     container.remove();
                     if (els.sharedText) els.sharedText.style.display = '';
                     
-                    // ✨ 修復：明確設為 0 與原點，徹底封殺幽靈文字
+                    // 修復：明確設為 0 與原點，徹底封殺幽靈文字
                     els.sharedStatus.style.transform = 'translate3d(0, 0, 0)';
                     els.sharedStatus.style.opacity = '0';
                     
@@ -1362,7 +1362,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                 container.remove();
                 if (els.sharedText) els.sharedText.style.display = '';
                 
-                // ✨ 修復：防呆狀態下也必須確保設為 0
+                // 修復：防呆狀態下也必須確保設為 0
                 els.sharedStatus.style.transform = 'translate3d(0, 0, 0)';
                 els.sharedStatus.style.opacity = '0';
                 
@@ -1375,7 +1375,7 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
     };
 
 // =========================================================
-// 🟢 幽靈輸入框核心邏輯與絕對高度霸權守護
+// 幽靈輸入框核心邏輯與絕對高度霸權守護
 // =========================================================
 
 const pState = {
@@ -1726,7 +1726,7 @@ window.toggleGhostEditMode = function(type, e, element) {
         if (countElement) countElement.style.opacity = '0';
     }
 
-    // 🟢 核心修復：放棄 appendChild 遷移，改用 RAF 視覺追蹤引擎 (拯救 Android 鍵盤與絲滑度)
+    // 核心修復：放棄 appendChild 遷移，改用 RAF 視覺追蹤引擎 (拯救 Android 鍵盤與絲滑度)
     // 1. 將輸入框永遠鎖定在 wrapper 根部，絕對不跨容器移動 DOM，確保 Android 系統不收起鍵盤！
     if (ghost.parentNode !== wrapper) {
         wrapper.appendChild(ghost);

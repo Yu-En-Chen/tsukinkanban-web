@@ -1,19 +1,19 @@
 import * as db from '../data/db.js';
 
-// 🛡️ 絕對防禦：全域狀態鎖與計時器 (必須在所有 function 外面！)
+// 絕對防禦：全域狀態鎖與計時器 (必須在所有 function 外面！)
 let isEditRouteAnimating = false;
 let editLockTimer = null;
-let editGestureAbortController = null; // ✨ 新增：手勢生命週期控制器
+let editGestureAbortController = null; // 新增：手勢生命週期控制器
 
 export function startRouteEditMode(cardId, currentLineIds) {
 
-    // 🚨 1. 第一層防呆：如果動畫還在跑，立刻擋掉第二次點擊！
+    // 1. 第一層防呆：如果動畫還在跑，立刻擋掉第二次點擊！
     if (isEditRouteAnimating) {
         console.log('動畫進行中，阻擋重複開啟');
         return;
     }
 
-    // ✨ 核心修復 1：每次啟動前，確保舊的幽靈監聽器被徹底殺死
+    // 核心修復 1：每次啟動前，確保舊的幽靈監聽器被徹底殺死
     if (editGestureAbortController) {
         editGestureAbortController.abort();
     }
@@ -26,39 +26,39 @@ export function startRouteEditMode(cardId, currentLineIds) {
 
     if (!innerCard || !extensionCard || !scrollWrapper) return;
 
-    // 🔒 2. 上鎖：標記進場動畫開始
+    // 2. 上鎖：標記進場動畫開始
     isEditRouteAnimating = true;
 
-    // 🛡️ 3. 物理盾：瞬間剝奪整個區域的點擊能力，防止連點按鈕
+    // 3. 物理盾：瞬間剝奪整個區域的點擊能力，防止連點按鈕
     scrollWrapper.style.pointerEvents = 'none';
 
-    // 🔓 4. 解鎖計時器：900ms 後準時解開防護罩
+    // 4. 解鎖計時器：900ms 後準時解開防護罩
     if (editLockTimer) clearTimeout(editLockTimer);
     editLockTimer = setTimeout(() => {
         isEditRouteAnimating = false;
-        // ✨ 改用 removeProperty，避免覆蓋你原本的 CSS 設定！
+        // 改用 removeProperty，避免覆蓋你原本的 CSS 設定！
         if (scrollWrapper) scrollWrapper.style.removeProperty('pointer-events');
     }, 900);
 
     // ==========================================
-    // 🎬 第一階段：沈浸式過渡動畫 (純 GPU 零卡頓極致版)
+    // 第一階段：沈浸式過渡動畫 (純 GPU 零卡頓極致版)
     // ==========================================
     const innerRect = innerCard.getBoundingClientRect();
     const moveUpDist = innerRect.height + 16;
     const exactNewHeight = window.innerHeight - innerRect.top;
 
     const originalScrollHeight = scrollWrapper.style.height;
-    // ✨ 紀錄進入編輯模式前的精準狀態 (高度與捲動軸位置)
+    // 紀錄進入編輯模式前的精準狀態 (高度與捲動軸位置)
     const originalScrollTop = scrollWrapper.scrollTop;
     const origClientHeight = scrollWrapper.clientHeight;
 
-    // 🚀 效能解鎖 1：只給予純 GPU 屬性的加速，【拔除對 Height 的依賴】！
+    // 效能解鎖 1：只給予純 GPU 屬性的加速，【拔除對 Height 的依賴】！
     innerCard.style.willChange = 'transform, opacity, -webkit-mask-position';
     innerCard.style.WebkitBackfaceVisibility = 'hidden';
     extensionCard.style.willChange = 'transform'; // 只要位移就好，不准算高度
 
     const feather = 45;
-    // ✨ 核心調校：不增加 45px 總範圍，利用多節點透明度 (0.15 -> 0.5 -> 0.85) 
+    // 核心調校：不增加 45px 總範圍，利用多節點透明度 (0.15 -> 0.5 -> 0.85) 
     // 徹底消除線性漸層的邊緣斷層 (Mach Bands)，創造如同實體毛玻璃邊緣般的柔和消散感！
     innerCard.style.WebkitMaskImage = `linear-gradient(to bottom, 
         transparent 0px, 
@@ -76,7 +76,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
     innerCard.style.WebkitMaskPosition = `0px -${feather}px`;
     innerCard.style.WebkitMaskRepeat = 'no-repeat';
 
-    // 🛑 瞬間完成，拒絕逐格運算：直接將內部容器高度設到位，因為它是透明的視覺不影響
+    // 瞬間完成，拒絕逐格運算：直接將內部容器高度設到位，因為它是透明的視覺不影響
     scrollWrapper.style.height = `${exactNewHeight}px`;
     void innerCard.offsetHeight; // 強制重繪
 
@@ -84,7 +84,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
     const duration = '0.85s';
 
     // ==========================================
-    // ⚙️ 核心實體引擎：加入時空錯位與內容掉落
+    // 核心實體引擎：加入時空錯位與內容掉落
     // ==========================================
     let shredderRafId = null;
 
@@ -111,7 +111,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
             innerCard.style.setProperty('-webkit-mask-position', currentMaskPos, 'important');
             innerCard.style.setProperty('mask-position', currentMaskPos, 'important');
 
-            // ✨ 修復 2：將透明倍率拉高到 4.5 倍！
+            // 修復 2：將透明倍率拉高到 4.5 倍！
             // 讓舊內容在掉落的前 22% (不到 0.2 秒) 就徹底煙消雲散，絕對不留殘影！
             let opacityProgress = isClosing ? (progress * 4.5) : progress;
             if (opacityProgress > 1) opacityProgress = 1;
@@ -120,18 +120,18 @@ export function startRouteEditMode(cardId, currentLineIds) {
             editContainer.style.opacity = currentOpacity.toString();
             btnContainer.style.opacity = currentOpacity.toString();
 
-            // ✨ 2. 空間錯位魔法修復：
+            // 2. 空間錯位魔法修復：
             // 只有在「關閉(isClosing)」時，才讓舊內容貼死背景往下掉
             if (isClosing) {
                 const dropOffset = moveUpDist - currentY;
                 editContainer.style.transform = `translateY(${dropOffset}px)`;
                 btnContainer.style.transform = `translateY(${dropOffset}px)`;
             } else {
-                // 🚨 點擊開啟時：清除所有多餘位移！讓新內容乖乖待在卡片裡，跟著卡片 1:1 原速往上爬升
+                // 點擊開啟時：清除所有多餘位移！讓新內容乖乖待在卡片裡，跟著卡片 1:1 原速往上爬升
                 editContainer.style.transform = '';
                 btnContainer.style.transform = '';
 
-                // ✨ [新增] 尾巴消除魔法 (只針對開啟動畫)：綁定 Y 軸物理座標
+                // [新增] 尾巴消除魔法 (只針對開啟動畫)：綁定 Y 軸物理座標
                 // 設定在抵達終點前 (行程的 60% 處) 開始連動淡化
                 const fadeStartDistance = targetY * 0.6;
                 if (currentY > fadeStartDistance) {
@@ -155,7 +155,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
     };
 
     // ==========================================
-    // 🛸 終極母艦控制：包含膠囊與下方雙圓扣
+    // 終極母艦控制：包含膠囊與下方雙圓扣
     // ==========================================
     const targetIds = ['action-capsule', 'left-menu-btn', 'search-trigger'];
 
@@ -174,14 +174,14 @@ export function startRouteEditMode(cardId, currentLineIds) {
         }
     });
 
-    // 🚀 效能解鎖 2：使用雙重 requestAnimationFrame！
+    // 效能解鎖 2：使用雙重 requestAnimationFrame！
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             targetIds.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
                     el.querySelectorAll('svg').forEach(svg => {
-                        // ✨ 完美同步魔法：將時間(0.85s)與曲線(cubic-bezier)完全對齊 JS 實體引擎！
+                        // 完美同步魔法：將時間(0.85s)與曲線(cubic-bezier)完全對齊 JS 實體引擎！
                         // 讓位移與透明度都與卡片上升的時間一模一樣 (0.85s)
                         svg.style.setProperty('transition', `translate 0.85s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1)`, 'important');
                         svg.style.setProperty('translate', '0px -48px', 'important');
@@ -193,7 +193,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
     });
 
     // ==========================================
-    // 🛠️ 第二階段：替換為編輯內容
+    // 第二階段：替換為編輯內容
     // ==========================================
     const originalChildren = Array.from(scrollWrapper.children);
 
@@ -204,7 +204,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
     const dict = window.MasterRouteDictionary || {};
     const cardName = window.appRailwayData?.find(c => c.id === cardId)?.name || 'カスタムカード';
 
-    // ✨ 核心升級：建立包含「隱形地基」的雙欄排版
+    // 核心升級：建立包含「隱形地基」的雙欄排版
     editContainer.innerHTML = `
         <div style="padding: 12px 4px 20px 4px; display: flex; flex-direction: column; gap: 6px;">
             <div style="font-size: 1.6em; font-weight: 800; color: var(--text-main); opacity: 0.8; letter-spacing: 0.5px;">路線を編集</div>
@@ -233,8 +233,8 @@ export function startRouteEditMode(cardId, currentLineIds) {
 
         capsule.style.cssText = `
             display: flex; align-items: center; 
-            background: var(--search-bg); /* ⬅️ 關鍵：使用與按鈕相同的背景變數 */
-            border: 1px solid var(--border-color); /* ⬅️ 自動切換深淺的邊框 */
+            background: var(--search-bg); /* 關鍵：使用與按鈕相同的背景變數 */
+            border: 1px solid var(--border-color); /* 自動切換深淺的邊框 */
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             padding: 0 16px; border-radius: 999px; height: 48px; 
             transition: transform 0.2s, opacity 0.2s, background 0.2s; 
@@ -242,7 +242,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
             box-sizing: border-box;
         `;
 
-        // ✨ 初始判定：如果只有一條，直接把手把隱藏 (opacity: 0) 並且鎖死點擊 (pointer-events: none)
+        // 初始判定：如果只有一條，直接把手把隱藏 (opacity: 0) 並且鎖死點擊 (pointer-events: none)
         const isSingle = currentLineIds.length <= 1;
         const handleStyle = isSingle ? 'opacity: 0; pointer-events: none;' : 'opacity: 1; pointer-events: auto;';
 
@@ -278,7 +278,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
             const index = Array.from(deleteBtnsCol.children).indexOf(delBtn);
             const targetCapsule = capsulesCol.children[index];
 
-            // ✨ 標記這個膠囊「正在被刪除」，這樣後面的計算才會準確
+            // 標記這個膠囊「正在被刪除」，這樣後面的計算才會準確
             targetCapsule.classList.add('deleting');
 
             targetCapsule.style.transform = 'scale(0.95)';
@@ -286,7 +286,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
             delBtn.style.transform = 'scale(0.95)';
             delBtn.style.opacity = '0';
 
-            // ✨ 動態淡出：檢查還剩下幾個沒被刪除的膠囊？如果只剩 1 個，就把它的手把淡出！
+            // 動態淡出：檢查還剩下幾個沒被刪除的膠囊？如果只剩 1 個，就把它的手把淡出！
             const remainingCapsules = Array.from(capsulesCol.children).filter(c => !c.classList.contains('deleting'));
             if (remainingCapsules.length <= 1 && remainingCapsules[0]) {
                 const lastHandle = remainingCapsules[0].querySelector('.drag-handle');
@@ -367,7 +367,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
         btnContainer.style.pointerEvents = 'none';
         btnContainer.style.transform = currentBtnTransform;
 
-        // ✨ 動態獲取當下的真實 DOM，不管背景有沒有被偷換過，都能精準命中！
+        // 動態獲取當下的真實 DOM，不管背景有沒有被偷換過，都能精準命中！
         const contentToReveal = Array.from(scrollWrapper.children).filter(child =>
             child.id !== 'edit-mode-container' &&
             child.id !== 'ghost-container' &&
@@ -433,7 +433,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
             extensionCard.style.transform = '';
             extensionCard.style.transition = '';
 
-            // 4. ✨ 核心修復：不能清空！必須還原最初在 script.js 精準計算的 100dvh 捲動高度
+            // 4. 核心修復：不能清空！必須還原最初在 script.js 精準計算的 100dvh 捲動高度
             scrollWrapper.style.height = originalScrollHeight;
             scrollWrapper.style.minHeight = '';
             scrollWrapper.style.paddingBottom = '';
@@ -473,11 +473,11 @@ export function startRouteEditMode(cardId, currentLineIds) {
             isEditRouteAnimating = false;
             if (scrollWrapper) scrollWrapper.style.removeProperty('pointer-events');
 
-            // 🔓 4. 徹底清理完畢後解鎖
+            // 4. 徹底清理完畢後解鎖
             isEditRouteAnimating = false;
             if (scrollWrapper) scrollWrapper.style.removeProperty('pointer-events');
 
-            // ✨ 核心修復 2：終結幽靈手勢！退場完畢後，一鍵註銷所有綁定在滑動區的手勢
+            // 核心修復 2：終結幽靈手勢！退場完畢後，一鍵註銷所有綁定在滑動區的手勢
             if (editGestureAbortController) {
                 editGestureAbortController.abort();
                 editGestureAbortController = null;
@@ -495,11 +495,11 @@ export function startRouteEditMode(cardId, currentLineIds) {
 
         await db.updateCardRoutes(cardId, newOrder);
 
-        // ✨ 核心修復：在退場前，等待背景將真實 DOM 抽換為最新排序
+        // 核心修復：在退場前，等待背景將真實 DOM 抽換為最新排序
         if (window.refreshAppAfterEdit) {
             await window.refreshAppAfterEdit();
 
-            // 🚨 防止剛長出來的新路線卡片瞬間閃現！先把他們藏起來，交由 restoreUI 優雅淡入
+            // 防止剛長出來的新路線卡片瞬間閃現！先把他們藏起來，交由 restoreUI 優雅淡入
             Array.from(scrollWrapper.children).forEach(child => {
                 if (child.id !== 'edit-mode-container' && child !== btnContainer && child.id !== 'ghost-container') {
                     child.style.display = 'none';
@@ -512,13 +512,13 @@ export function startRouteEditMode(cardId, currentLineIds) {
     }));
 
     // =========================================================
-    // 🚀 入場十字交疊淡出引擎 (Entrance Cross-fade Engine - 完美克隆凍結版)
+    // 入場十字交疊淡出引擎 (Entrance Cross-fade Engine - 完美克隆凍結版)
     // =========================================================
 
-    // ✨ 1. 記錄當前的捲動位置
+    // 1. 記錄當前的捲動位置
     const currentScrollTop = scrollWrapper.scrollTop;
 
-    // ✨ 2. 建立 Ghost 容器 (幽靈圖層)
+    // 2. 建立 Ghost 容器 (幽靈圖層)
     // 為了防止內容被放大或走位，我們必須「精準繼承」原容器的排版屬性 (包含 Padding 與 Gap)
     const wrapperStyle = getComputedStyle(scrollWrapper);
     const ghostContainer = document.createElement('div');
@@ -538,7 +538,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
         transform: translateY(-${currentScrollTop}px);
     `;
 
-    // ✨ 3. 將真正的內容「拍照 (Clone)」並放入 Ghost 中
+    // 3. 將真正的內容「拍照 (Clone)」並放入 Ghost 中
     originalChildren.forEach(child => {
         // 使用 cloneNode(true) 進行深拷貝，製作視覺替身
         const clone = child.cloneNode(true);
@@ -546,13 +546,13 @@ export function startRouteEditMode(cardId, currentLineIds) {
         clone.style.margin = child.style.margin || getComputedStyle(child).margin;
         ghostContainer.appendChild(clone);
 
-        // 🚨 解決空白問題的關鍵：
+        // 解決空白問題的關鍵：
         // 真正的子節點我們「絕對不拔除」，只是把它們藏起來 (display: none)
         // 這樣關閉 (restoreUI) 的時候，才能找得到它們並喚醒！
         child.style.display = 'none';
     });
 
-    // ✨ 4. 準備新內容 (編輯介面)
+    // 4. 準備新內容 (編輯介面)
     editContainer.style.opacity = '0';
     btnContainer.style.opacity = '0';
 
@@ -561,17 +561,17 @@ export function startRouteEditMode(cardId, currentLineIds) {
     scrollWrapper.appendChild(editContainer);
     scrollWrapper.appendChild(btnContainer);
 
-    // ✨ 5. 安心歸零捲動軸 (因為替身已經透過 translateY 完美抵銷了高度)
+    // 5. 安心歸零捲動軸 (因為替身已經透過 translateY 完美抵銷了高度)
     scrollWrapper.scrollTop = 0;
 
     // 強制瀏覽器重繪
     void scrollWrapper.offsetWidth;
 
-    // ✨ 6. 發動替身淡出
+    // 6. 發動替身淡出
     ghostContainer.style.opacity = '0';
 
     // =========================================================
-    // 🚀 新內容預先歸位與發射
+    // 新內容預先歸位與發射
     // =========================================================
     innerCard.style.transition = 'none';
     extensionCard.style.transition = 'none';
@@ -587,13 +587,13 @@ export function startRouteEditMode(cardId, currentLineIds) {
     // 發射！啟動新內容上升引擎！
     runShredderAnimation(0, moveUpDist, 850);
 
-    // ✨ 7. 300ms 後，徹底清除替身節點 (保持 DOM 乾淨，真正的內容依然安全地沉睡在 DOM 裡)
+    // 7. 300ms 後，徹底清除替身節點 (保持 DOM 乾淨，真正的內容依然安全地沉睡在 DOM 裡)
     setTimeout(() => {
         if (ghostContainer) ghostContainer.remove();
     }, 300);
 
     // ============================================================================
-    // ✋ 頂級互動：全域「1:1 跟手下拉關閉」手勢引擎 (GPU 幀同步完美版)
+    // 頂級互動：全域「1:1 跟手下拉關閉」手勢引擎 (GPU 幀同步完美版)
     // ============================================================================
     let touchStartY = 0;
     let pullDelta = 0;
@@ -601,19 +601,19 @@ export function startRouteEditMode(cardId, currentLineIds) {
     let rafTicking = false;
 
     scrollWrapper.addEventListener('touchstart', (e) => {
-        // 🚨 手勢防護：動畫中禁止發動下拉！
+        // 手勢防護：動畫中禁止發動下拉！
         if (isEditRouteAnimating) return;
 
-        // 🚨 多點觸控防護 1：如果一開始就有兩根以上手指碰到螢幕，直接拒絕啟動手勢！
+        // 多點觸控防護 1：如果一開始就有兩根以上手指碰到螢幕，直接拒絕啟動手勢！
         if (e.touches.length > 1) return;
 
-        // ✨ 核心修復：把底部的操作按鈕區 (.flight-action-buttons-container) 加入免死金牌名單！
+        // 核心修復：把底部的操作按鈕區 (.flight-action-buttons-container) 加入免死金牌名單！
         if (e.target.closest('.drag-handle') || e.target.closest('.delete-route-btn') || e.target.closest('.flight-action-buttons-container')) return;
         if (scrollWrapper.scrollTop > 0) return;
 
         if (shredderRafId) cancelAnimationFrame(shredderRafId);
 
-        // 🛡️ 【新增防護】：下拉手勢一啟動，立刻沒收底部按鈕的點擊權限
+        // 【新增防護】：下拉手勢一啟動，立刻沒收底部按鈕的點擊權限
         if (btnContainer) btnContainer.style.pointerEvents = 'none';
 
         touchStartY = e.touches[0].clientY;
@@ -629,7 +629,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
     scrollWrapper.addEventListener('touchmove', (e) => {
         if (!isDraggingModal) return;
 
-        // 🚨 多點觸控防護 2：滑動到一半時，如果偵測到第二根手指（例如試圖去按保存）
+        // 多點觸控防護 2：滑動到一半時，如果偵測到第二根手指（例如試圖去按保存）
         if (e.touches.length > 1) {
             // 1. 強制沒收手勢控制權
             isDraggingModal = false;
@@ -637,7 +637,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
             // 2. 提前把按鈕的點擊能力還給系統
             if (btnContainer) btnContainer.style.removeProperty('pointer-events');
 
-            // 3. 🚀 發射回彈引擎：從當下卡在半空中的位置，順滑彈回頂部！
+            // 3. 發射回彈引擎：從當下卡在半空中的位置，順滑彈回頂部！
             innerCard.style.transition = `opacity 0.3s ease`;
             extensionCard.style.transition = 'none';
             const currentY = moveUpDist - pullDelta;
@@ -689,7 +689,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
         if (!isDraggingModal) return;
         isDraggingModal = false;
 
-        // 🛡️ 【新增防護】：手指放開後，延遲 100ms 再把按鈕點擊權限還給使用者
+        // 【新增防護】：手指放開後，延遲 100ms 再把按鈕點擊權限還給使用者
         // 這能完美避開觸控螢幕在 touchend 瞬間所觸發的幽靈點擊 (Ghost Click) 事件
         setTimeout(() => {
             if (btnContainer) btnContainer.style.removeProperty('pointer-events');
@@ -710,25 +710,25 @@ export function startRouteEditMode(cardId, currentLineIds) {
     }, { signal });
 
     // ============================================================================
-    // 🖱️ 頂級互動：電腦版「滑鼠滾輪 / 觸控板」下拉關閉引擎 (極致調校：防抖、鎖定與靈敏度)
+    // 頂級互動：電腦版「滑鼠滾輪 / 觸控板」下拉關閉引擎 (極致調校：防抖、鎖定與靈敏度)
     // ============================================================================
     let wheelPullDelta = 0;
     let wheelRafTicking = false;
     let wheelBounceTimer = null;
     let isWheelDragging = false; 
-    let isRebounding = false; // ✨ 核心調校 1：新增「回彈鎖定狀態」，保護動畫完整性
+    let isRebounding = false; // 核心調校 1：新增「回彈鎖定狀態」，保護動畫完整性
 
     scrollWrapper.addEventListener('wheel', (e) => {
-        // 🚨 防護 1：動畫中，或「正在回彈中」，絕對禁止發動任何干擾！(解決一頓一頓的問題)
+        // 防護 1：動畫中，或「正在回彈中」，絕對禁止發動任何干擾！(解決一頓一頓的問題)
         if (isEditRouteAnimating || isRebounding) return;
 
-        // 🚨 防護 2：只有在列表最頂部，且意圖下拉 (deltaY < 0) 時才啟動引擎
+        // 防護 2：只有在列表最頂部，且意圖下拉 (deltaY < 0) 時才啟動引擎
         if ((scrollWrapper.scrollTop <= 0 && e.deltaY < 0) || isWheelDragging) {
             
             if (e.cancelable) e.preventDefault(); 
             isWheelDragging = true;
             
-            // ✨ 核心調校 2：「死區濾波 (Deadzone)」。
+            // 核心調校 2：「死區濾波 (Deadzone)」。
             // 觸控板的連續小訊號很容易造成抖動，我們直接忽略小於 2 的微弱雜訊，讓手感無比沉穩
             if (Math.abs(e.deltaY) < 2) return; 
 
@@ -736,12 +736,12 @@ export function startRouteEditMode(cardId, currentLineIds) {
             wheelPullDelta += -(e.deltaY) * 0.25; 
             if (wheelPullDelta < 0) wheelPullDelta = 0;
 
-            // ✨ 核心調校 3：觸發門檻 (Threshold) 縮短！
+            // 核心調校 3：觸發門檻 (Threshold) 縮短！
             // 將原本的 1/3 縮短為 1/4.5 (或者最大絕對不超過 100px)，讓你只要明確地滑動一下就能乾脆關閉
             const threshold = Math.min(moveUpDist / 4.5, 100);
 
             if (wheelPullDelta > threshold) {
-                // 🛑 達到門檻，發射關閉引擎！
+                // 達到門檻，發射關閉引擎！
                 isWheelDragging = false;
                 wheelPullDelta = 0;
                 if (wheelBounceTimer) clearTimeout(wheelBounceTimer);
@@ -751,7 +751,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
                 return;
             }
 
-            // 🎬 視覺回饋：跟隨觸控板拉扯
+            // 視覺回饋：跟隨觸控板拉扯
             if (!wheelRafTicking) {
                 requestAnimationFrame(() => {
                     if (!isWheelDragging) { wheelRafTicking = false; return; }
@@ -781,13 +781,13 @@ export function startRouteEditMode(cardId, currentLineIds) {
                 wheelRafTicking = true;
             }
 
-            // 🔄 智慧回彈機制
+            // 智慧回彈機制
             if (wheelBounceTimer) clearTimeout(wheelBounceTimer);
             wheelBounceTimer = setTimeout(() => {
                 if (wheelPullDelta > 0 && isWheelDragging && !isEditRouteAnimating) {
                     isWheelDragging = false;
                     
-                    // ✨ 核心調校 4：啟動「回彈鎖定 (Rebound Lock)」！
+                    // 核心調校 4：啟動「回彈鎖定 (Rebound Lock)」！
                     isRebounding = true; // 鎖上物理引擎的門，不准任何新訊號中斷動畫！
                     
                     const currentY = moveUpDist - wheelPullDelta;
@@ -798,7 +798,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
                     
                     wheelPullDelta = 0;
 
-                    // ✨ 400ms 動畫跑完後，準時把鎖解開，把控制權還給使用者
+                    // 400ms 動畫跑完後，準時把鎖解開，把控制權還給使用者
                     setTimeout(() => {
                         isRebounding = false;
                     }, 400);
@@ -815,7 +815,7 @@ export function startRouteEditMode(cardId, currentLineIds) {
 }
 
 // ============================================================================
-// 👻 幽靈拖曳引擎：純粹膠囊拖曳版 (不會碰到右側垃圾桶)
+// 幽靈拖曳引擎：純粹膠囊拖曳版 (不會碰到右側垃圾桶)
 // ============================================================================
 function initDragAndDrop(container) {
     // 拖曳只在左欄內部發生！
@@ -839,7 +839,7 @@ function initDragAndDrop(container) {
             const rect = item.getBoundingClientRect();
             ghost = item.cloneNode(true);
 
-            // ✨ 核心修復：幽靈物件全面導入系統變數，質感完美對齊！
+            // 核心修復：幽靈物件全面導入系統變數，質感完美對齊！
             Object.assign(ghost.style, {
                 position: 'fixed',
                 top: `${rect.top}px`,
@@ -852,13 +852,13 @@ function initDragAndDrop(container) {
                 transform: 'scale(1.04)',
                 transition: 'transform 0.1s ease, box-shadow 0.1s ease',
 
-                // ✨ 改動 3：拖曳時的顏色與邊框，完全跟隨系統變數
+                // 改動 3：拖曳時的顏色與邊框，完全跟隨系統變數
                 background: 'var(--search-bg)',
                 backdropFilter: 'blur(12px)',
                 WebkitBackdropFilter: 'blur(12px)',
                 border: '1px solid var(--border-color)',
 
-                // ✨ 改動 4：直接召喚你寫好的神級光追陰影！
+                // 改動 4：直接召喚你寫好的神級光追陰影！
                 boxShadow: 'var(--ray-shadow-active)',
 
                 boxSizing: 'border-box',
@@ -869,7 +869,7 @@ function initDragAndDrop(container) {
             });
             document.body.appendChild(ghost);
 
-            // ✨ 將原本的膠囊設為 opacity: 0，它變成一塊完美的透明磚塊幫我們撐住排版！
+            // 將原本的膠囊設為 opacity: 0，它變成一塊完美的透明磚塊幫我們撐住排版！
             item.style.opacity = '0';
             initialTop = rect.top;
 

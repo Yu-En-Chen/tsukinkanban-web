@@ -1,6 +1,6 @@
 /* animations.css - 純動畫關鍵影格定義 (物理質感修正版) */
 
-/* 🟢 核心修正：讓卡片從底部透明處彈入，並帶有微小的縮放感 */
+/* 核心修正：讓卡片從底部透明處彈入，並帶有微小的縮放感 */
 @keyframes openingPull {
     0% { 
         transform: translate3d(0, 60px, 0) scale(0.92); 

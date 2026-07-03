@@ -9,7 +9,7 @@ window.initDynamicMainMenu = function () {
     container = document.createElement('div');
     container.id = 'dynamic-main-menu';
 
-    // 掛載到最外層，逃脫裁切限制
+    // 掛載到 body 最外層，避免被父層 overflow 裁切
     document.body.appendChild(container);
 
     const menuItems = [
@@ -34,11 +34,10 @@ window.initDynamicMainMenu = function () {
              text: 'サポーター' }
     ];
 
-    // 🟢 只改這一段迴圈裡的 className，其他維持不變
     menuItems.forEach((item, index) => {
         const capsule = document.createElement('div');
 
-        // ✨ 將你原生強大的 interactive-btn 裝備回來！
+        // 套用共用的 interactive-btn 樣式
         capsule.className = 'main-menu-capsule interactive-btn';
 
         capsule.style.setProperty('--stagger-in', `${index * 0.06}s`);
@@ -58,11 +57,11 @@ window.initDynamicMainMenu = function () {
     capsule.onclick = () => {
         let content = '';
 
-        // 🟢 判斷：如果是點擊「表示設定」，就去跟獨立腳本要畫面！
+        // 「表示設定」的內容由 display-settings.js 動態產生
         if (item.text === '表示設定' && window.getDisplaySettingsHTML) {
             content = window.getDisplaySettingsHTML();
         } else {
-            // 其他選項照舊
+            // 其他選項使用靜態內容
             content = menuContents[item.text] || `
                 <div style="opacity: 0.8;">
                     <p>這裡是「<b>${item.text}</b>」的專屬內容區塊。</p>
@@ -73,7 +72,7 @@ window.initDynamicMainMenu = function () {
         
         window.openUniversalPage(item.text, content);
 
-        // 🟢 彈出後的事件綁定分發
+        // 彈出後的事件綁定分發
         if (item.text === 'サポーター') {
             setTimeout(() => { initSponsorCarousel(); }, 50);
         } else if (item.text === '表示設定') {
@@ -88,7 +87,7 @@ window.initDynamicMainMenu = function () {
     });
 };
 
-// 🎯 這是全域唯一的 toggleMainMenu 函數！
+// 全域唯一的主選單開關
 window.toggleMainMenu = function () {
     const isCurrentlyOpen = document.body.classList.contains('main-menu-active');
     const mask = document.getElementById('search-mask');
@@ -97,10 +96,10 @@ window.toggleMainMenu = function () {
         // 1. 生成 DOM
         window.initDynamicMainMenu();
 
-        // 2. 魔法重繪：讓瀏覽器承認新 DOM 的隱藏狀態
+        // 2. 強制 reflow，讓新 DOM 先以隱藏狀態完成佈局
         void document.body.offsetHeight;
 
-        // 3. 加上標籤，觸發 CSS 彈簧波浪進場
+        // 3. 加上狀態類別，觸發 CSS 進場動畫
         document.body.classList.add('main-menu-active');
 
         if (mask) {
@@ -121,10 +120,10 @@ window.toggleMainMenu = function () {
 };
 
 // ============================================================================
-// 🟢 動態通用子頁面引擎 (Universal Page Engine)
+// 動態通用子頁面引擎 (Universal Page Engine)
 // ============================================================================
 
-// 🚀 返回主選單 (只關閉通用頁面，保留主選單)
+// 返回主選單 (只關閉通用頁面，保留主選單)
 window.backToMainMenu = function() {
     window.closeUniversalPage(false); // 傳入 false，代表「不關閉」背景的主選單
 };
@@ -147,7 +146,7 @@ window.openUniversalPage = function(title, contentHTML) {
         `;
         searchContainer.appendChild(wrapper);
 
-        // 🚀 全新導航雙圓按鈕
+        // 導航按鈕（返回／關閉）
         navBtns = document.createElement('div');
         navBtns.id = 'universal-nav-buttons';
         navBtns.className = 'universal-nav-container'; 
@@ -175,8 +174,7 @@ window.openUniversalPage = function(title, contentHTML) {
     document.getElementById('universal-page-title').textContent = title;
     document.getElementById('universal-page-content').innerHTML = contentHTML;
 
-    // 🚫 這裡原本有「強制關閉主選單」的邏輯，已經被我拔除了！
-    // 讓主選單乖乖留在背景被 CSS 隱藏並下沉待命就好。
+    // 注意：開啟子頁面時刻意保留主選單於背景（由 CSS 隱藏），返回時可直接復原
 
     // 3. 強制瀏覽器重繪
     void wrapper.offsetWidth;
@@ -187,12 +185,11 @@ window.openUniversalPage = function(title, contentHTML) {
     if (window.navigator.vibrate) window.navigator.vibrate(10);
 };
 
-// ✨ 接收 closeAll 參數 (預設為 false)
 window.closeUniversalPage = function(closeAll = false) {
     // 1. 移除通用底版的顯示狀態
     document.body.classList.remove('universal-active');
 
-    // 2. 如果右側的主選單還開著，且使用者按了 X (closeAll)，就一起關掉
+    // 2. closeAll 為 true 且主選單仍開啟時，一併關閉主選單
     if (closeAll && document.body.classList.contains('main-menu-active')) {
         window.toggleMainMenu();
     }

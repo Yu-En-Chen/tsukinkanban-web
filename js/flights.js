@@ -1,9 +1,9 @@
 // js/flights.js
 // ==========================================
-// ✈️ 航班專屬資料與搜尋引擎模組
+// 航班資料處理與搜尋模組
 // ==========================================
 
-// ✨ 1. 新增文字翻轉小工具：把 "台北/桃園（TPE）" 變成 "TPE（台北/桃園）"
+// 機場名稱格式轉換：「台北/桃園（TPE）」轉為「TPE（台北/桃園）」
 function swapCodeAndName(str) {
     if (!str) return '';
     const match = str.match(/^(.*)（([A-Z]{3})）$/);
@@ -13,7 +13,7 @@ function swapCodeAndName(str) {
     return str;
 }
 
-// ✨ 2. 新增備註翻譯與擷取小工具 (共用)
+// 備註翻譯與擷取（共用）
 function translateFlightNote(rawNote) {
     if (!rawNote) return '';
     let processedNote = rawNote.trim();
@@ -49,7 +49,7 @@ function translateFlightNote(rawNote) {
     return processedNote;
 }
 
-// ✨ 手動更新預設機場字典為代號在前
+// 預設機場字典（代號在前）
 const airportNamesJa = {
     'NRT': 'NRT（成田）',
     'HND': 'HND（羽田）'
@@ -59,7 +59,7 @@ const takeoffIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" heigh
 
 const landingIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plane-landing-icon lucide-plane-landing" style="vertical-align: text-bottom; margin-right: 2px;"><path d="M2 22h20"/><path d="M3.77 10.77 2 9l2-4.5 1.1.55c.55.28.9.84.9 1.45s.35 1.17.9 1.45L8 8.5l3-6 1.05.53a2 2 0 0 1 1.09 1.52l.72 5.4a2 2 0 0 0 1.09 1.52l4.4 2.2c.42.22.78.55 1.01.96l.6 1.03c.49.88-.06 1.98-1.06 2.1l-1.18.15c-.47.06-.95-.02-1.37-.24L4.29 11.15a2 2 0 0 1-.52-.38Z"/></svg>`;
 
-// 🟢 智慧雷達：日本國內線機場代碼
+// 日本國內線機場代碼
 const domesticCodes = ['CTS', 'KIX', 'FUK', 'OKA', 'ITM', 'NGO', 'KOJ', 'MYJ', 'TAK', 'KMJ', 'AKJ', 'ASJ', 'ISG', 'KCZ', 'KMI', 'KTI', 'NGS', 'OIT', 'HIJ', 'AOJ', 'AXT', 'HKD', 'KUH', 'MMB', 'SHB', 'SYO', 'TKS', 'WKJ', 'YGJ', 'MBE', 'UKB', 'NKM', 'SDJ', 'GAJ', 'ONJ', 'FKS', 'NTQ', 'FSZ', 'KIJ', 'TOY', 'OIR', 'UBJ', 'TTJ', 'OKI', 'IWJ', 'IZO', 'TNE', 'KUM', 'RNJ', 'UEO', 'KKX', 'KJP', 'MMJ', 'SHI'];
 
 export function initFlights() {
@@ -69,7 +69,7 @@ export function initFlights() {
     } catch (e) {}
 
     setTimeout(() => {
-        console.log("✈️ 背景延遲載入航班資訊中...");
+        console.log("背景延遲載入航班資訊中...");
         const timestamp = new Date().getTime();
         const FLIGHTS_API_URL = `https://api.tsukinkanban.com/api/flights`;
 
@@ -79,10 +79,10 @@ export function initFlights() {
                 if (Array.isArray(data)) {
                     window.GlobalFlights = data;
                     localStorage.setItem('Tsukin_Cached_Flights', JSON.stringify(data));
-                    console.log(`✅ 成功載入 ${data.length} 筆航班資訊！`);
+                    console.log(`成功載入 ${data.length} 筆航班資訊！`);
                 }
             })
-            .catch(e => console.warn("⚠️ 航班資訊獲取失敗"));
+            .catch(e => console.warn("航班資訊獲取失敗"));
     }, 1500);
 }
 
@@ -120,16 +120,16 @@ export function searchFlights(lowKeyword) {
                     const [lh, lm] = f.latest.split(':').map(Number);
                     delayMins = (lh * 60 + lm) - (sh * 60 + sm);
                     
-                    // ✨ 修復極端跨日大延誤：如果算出提早超過 6 小時 (-360分)，那肯定是嚴重延遲跨到隔天了！
+                    // 跨日修正：提早超過 6 小時 (-360 分) 視為跨日的嚴重延誤
                     if (delayMins < -360) {
                         delayMins += 24 * 60; 
                     } else if (delayMins > 1080) {
-                        // 防呆：如果算出延遲超過 18 小時，極有可能是提早跨過午夜 (例如 00:10 提早到 23:50)
+                        // 延遲超過 18 小時，視為提早跨過午夜 (例如 00:10 提早到 23:50)
                         delayMins -= 24 * 60;
                     }
                 }
 
-                // 🌟 【修改 1】先定義狀態字典，這樣我們才能提早用 statusText 來判斷燈號
+                // 先定義狀態字典，後續以 statusText 判斷燈號
                 const statusMap = {
                     'Normal': '通常', 'Delayed': '遅延', 'Cancelled': '欠航',
                     'Takeoff': '出発済', 'Landed': '着陸済', 'Arrived': '到着済',
@@ -141,18 +141,18 @@ export function searchFlights(lowKeyword) {
                 };
                 let statusText = statusMap[f.status] || f.status;
 
-                // ✨ UX 狀態升級引擎：解決「明明延誤，卻顯示灰字『出発予定』」的視覺脫節
-                // 如果延遲超過 25 分鐘，且 API 給的是平靜狀態，我們強制升級為「遅延」
+                // 狀態升級：避免「實際已延誤，卻顯示灰字『出発予定』」的落差
+                // 延遲超過 25 分鐘且 API 仍回報正常時，強制顯示為「遅延」
                 if (delayMins > 25 && ['通常', '出発予定', '到着予定'].includes(statusText)) {
                     statusText = '遅延';
                 } else if (delayMins < -25 && ['通常', '出発予定', '到着予定'].includes(statusText)) {
-                    statusText = '変更予定'; // 提早很多時，改為變更預定
+                    statusText = '変更予定'; // 大幅提早時顯示「変更予定」
                 }
 
-                // ✨ 導入「進度優先」與「強制寬恕機制」
+                // 燈號判定：進度狀態優先，微小延誤不亮黃燈
                 const forceGreenStatuses = ['出発済', '着陸済', '到着済', '飛行中'];
                 
-                // 計算這是否為「可以容忍的微小時間變動」
+                // 判斷是否為可容忍的微小時間變動
                 let isMinorTimeChange = false;
                 if (isTimeChanged && delayMins >= -20 && delayMins <= 15) {
                     isMinorTimeChange = true;
@@ -163,13 +163,13 @@ export function searchFlights(lowKeyword) {
                 if (sClass === 'status-error' || statusText === '欠航') {
                     flags[3] = true; // 紅燈 (取消)
                 } else if (forceGreenStatuses.includes(statusText)) {
-                    flags[5] = true; // 綠燈 (已出發等確定狀態)
+                    flags[5] = true; // 綠燈 (已出發等確定進度狀態)
                 } else if (delayMins > 15 || delayMins < -20) {
-                    flags[4] = true; // 🌟 黃燈 (我們算出來，明確超過容忍值的延遲或提早)
+                    flags[4] = true; // 黃燈 (明確超過容忍值的延遲或提早)
                 } else if ((sClass === 'status-delayed' || statusText === '遅延') && !isMinorTimeChange) {
-                    flags[4] = true; // 🌟 黃燈保底 (API 說延遲，且我們算不出它是微小延誤，例如 API 沒給具體更改時間)
+                    flags[4] = true; // 黃燈 (API 回報延遲但無具體時間可驗證)
                 } else {
-                    flags[5] = true; // 🌟 綠燈 (正常，或是被我們「強制寬恕」的 15 分鐘內小延遲！)
+                    flags[5] = true; // 綠燈 (正常，或容忍範圍內的小延遲)
                 }
 
                 let statusColor = 'inherit';
@@ -226,7 +226,6 @@ export function searchFlights(lowKeyword) {
                         </div>`;
                 }
 
-                // ✨ 已將 searchFlights 中額外添加 Note 文字區塊的邏輯移除！
                 
                 const locMatch = f.location.match(/[A-Z]{3}/);
                 const locCode = locMatch ? locMatch[0] : '';
@@ -274,7 +273,7 @@ export function searchFlights(lowKeyword) {
 }
 
 // ==========================================
-// 🟢 航班專屬：共用資料格式化引擎 (給搜尋與重繪共同使用)
+// 航班資料格式化（搜尋與重繪共用）
 // ==========================================
 window.generateFlightDataFormat = function(flight, fid) {
     const isTimeChanged = flight.scheduled !== flight.latest;
@@ -297,7 +296,7 @@ window.generateFlightDataFormat = function(flight, fid) {
         const [lh, lm] = flight.latest.split(':').map(Number);
         delayMins = (lh * 60 + lm) - (sh * 60 + sm);
         
-        // ✨ 修復極端跨日大延誤
+        // 跨日延誤修正
         if (delayMins < -360) {
             delayMins += 24 * 60; 
         } else if (delayMins > 1080) {
@@ -305,24 +304,24 @@ window.generateFlightDataFormat = function(flight, fid) {
         }
     }
 
-    // ✨ UX 狀態升級引擎 (主卡片用)
+    // 狀態升級（主卡片用）
     if (delayMins > 25 && ['通常', '出発予定', '到着予定'].includes(statusText)) {
         statusText = '遅延';
     } else if (delayMins < -25 && ['通常', '出発予定', '到着予定'].includes(statusText)) {
         statusText = '変更予定';
     }
 
-    // ✨ 點亮第七顆燈 (如果有備註)
+    // 有備註時點亮第七顆燈
     let flags = [false, false, false, false, false, false, !!processedNote];
     
-    // 🟢 新增：飛機預覽卡片的天候與天災燈號判定
+    // 預覽卡片的天候與天災燈號判定
     if (processedNote.includes('地震')) { flags[0] = true; flags[6] = true; }
     if (processedNote.includes('雨') || processedNote.includes('台風') || processedNote.includes('颱風')) { flags[1] = true; flags[6] = true; }
     if (processedNote.includes('雪')) { flags[2] = true; flags[6] = true; }
 
     const forceGreenStatuses = ['出発済', '着陸済', '到着済', '飛行中'];
     
-    // 計算這是否為「可以容忍的微小時間變動」
+    // 判斷是否為可容忍的微小時間變動
     let isMinorTimeChange = false;
     if (isTimeChanged && delayMins >= -20 && delayMins <= 15) {
         isMinorTimeChange = true;
@@ -333,11 +332,11 @@ window.generateFlightDataFormat = function(flight, fid) {
     } else if (forceGreenStatuses.includes(statusText)) {
         flags[5] = true; 
     } else if (delayMins > 15 || delayMins < -20) {
-        flags[4] = true; // 🌟 超過容忍範圍，亮黃燈
+        flags[4] = true; // 超過容忍範圍，亮黃燈
     } else if (['遅延'].includes(statusText) && !isMinorTimeChange) {
-        flags[4] = true; // 🌟 API 說延遲但我們無法證實它是小延遲，保底亮黃燈
+        flags[4] = true; // API 回報延遲但無法驗證幅度，亮黃燈
     } else {
-        flags[5] = true; // 🌟 綠燈 (完美過濾掉太過敏感的警告)
+        flags[5] = true; // 綠燈 (過濾過於敏感的警告)
     }
 
     const subtleGlow = '0 0 5px rgba(255,255,255,0.4), 0 0 1px rgba(255,255,255,0.6)';
@@ -416,7 +415,7 @@ window.generateFlightDataFormat = function(flight, fid) {
     return {
         flags: flags,
         desc: `${flight.airline} ${statusText} ${delayText}${tAndG_string}`, 
-        // ✨ 這裡的 message 會在生成主畫面卡片時，於底部實心玻璃面板上渲染出內容
+        // message 會渲染在主畫面卡片底部的面板上
         message: processedNote ? processedNote : '',
         detailArray: [
             `場所: ${flight.terminal || '-'} / Gate: ${flight.gate || '-'}`,
@@ -483,11 +482,10 @@ window.previewFlightFromSearch = function(routeId) {
 
     const formatted = window.generateFlightDataFormat(flight, fid);
 
-    // ✨ 新增：企業識別色 (CI) 動態指派引擎
-    let defaultHex = '#0a84ff'; // 預設為航空系統藍
+    // 依航空公司指派企業識別色 (CI)
+    let defaultHex = '#0a84ff'; // 預設藍色
     const airlineStr = (flight.airline || '').toUpperCase();
     
-    // 智慧判斷各大航空公司並賦予專屬色彩
     if (airlineStr.includes('ANA') || airlineStr.includes('全日本空輸')) {
         defaultHex = '#112233'; // ANA 深藍色
     } else if (airlineStr.includes('JAL') || airlineStr.includes('日本航空')) {
@@ -511,7 +509,7 @@ window.previewFlightFromSearch = function(routeId) {
         name: fid,
         hex: defaultHex, 
         desc: formatted.desc, 
-        message: formatted.message, // ✨ 會將 message 傳給 UI 去生成玻璃面板
+        message: formatted.message, // 由 UI 渲染為底部面板
         statusFlags: formatted.flags,
         isTemporarySearch: false,
         targetLineIds: [fid], 

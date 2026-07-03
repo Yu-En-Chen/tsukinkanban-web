@@ -1,4 +1,4 @@
-// physics.js - 獨立的光影與滑動物理引擎模組
+// physics.js - 卡片堆疊的光影與滑動物理效果
 
 export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
     let startTouchY = 0;
@@ -7,7 +7,7 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
     let rafId = null;
     let wheelDeltaSum = 0;
     let wheelTimer;
-    let bounceTimer = null; // 🟢 新增：用於防止連續滑動時的計時器衝突
+    let bounceTimer = null; // 防止連續滑動時的計時器衝突
 
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     const touchSettings = { pullFactor: 2.2, tension: 0.7, spreadRatio: 0.18 };
@@ -45,7 +45,7 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
     };
 
     const animateGlareLoop = () => {
-        // 🟢 效能優化鎖：如果目前處於「鎖定光影」狀態（如開場或關閉漣漪時），直接停機不計算
+        // 光影鎖定期間（開場或關閉動畫中）不做計算
         if (mainStack.dataset.freezeGlare === 'true') {
             isGlareAnimating = false;
             return;
@@ -77,21 +77,21 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
         // 判斷手勢方向：大於 0 是往下拉，小於 0 是往上推
         if (currentPullY > 0) {
             
-            // 1. 🟢 整體下墜位移 (Display Y)
-            // 原本是 0.2 會掉太快。改為 0.05，讓牌組底部像有重量一樣穩住，偏向「向上展開」
+            // 1. 整體下墜位移 (Display Y)
+            // 係數 0.05：讓牌組底部保持穩定，偏向「向上展開」的視覺
             displayY = currentPullY * 0.05; 
             
-            // 2. 🟢 核心魔法：漸進式阻尼公式 (Asymptotic Damping)
+            // 2. 漸進式阻尼公式 (Asymptotic Damping)
             // 公式原理：(拉力 * 極限) / (拉力 + 極限)
-            let rawSpread = currentPullY * 0.4; // 靈敏度：數字越大越容易拉開 (原本是 0.6)
-            let maxLimit = 42; // 極限值：卡片間距最多只能撐開到大約 42px，永遠不會撞到頂部搜尋列
+            let rawSpread = currentPullY * 0.4; // 靈敏度：數字越大越容易拉開
+            let maxLimit = 42; // 卡片間距上限約 42px，避免頂到搜尋列
 
-            // 套用公式：這樣一拉就會平滑散開，且越拉越緊，徹底消滅 -25 帶來的瞬間斷層！
+            // 拉動時平滑散開、越拉越緊，避免間距瞬間跳變
             spreadValue = (rawSpread * maxLimit) / (rawSpread + maxLimit); 
             
         } else if (currentPullY < 0) {
             
-            // 🔼 上滑時的壓縮行為 (維持原本的設計即可)
+            // 上滑時的壓縮行為
             spreadValue = currentPullY * 0.45; 
             const limitY = -(mainStack.offsetTop + 30);
             if (currentPullY < limitY) displayY = limitY;
@@ -106,7 +106,7 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
         rafId = null;
     };
 
-// 🟢 加上 isWheel 參數，預設為 false (觸控)
+// isWheel 區分滾輪與觸控，預設 false (觸控)
     const resetBounce = (isWheel = false) => {
         if (!isDragging) return;
         const CLOSE_GESTURE_THRESHOLD = 60; 
@@ -122,7 +122,7 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
 
         mainStack.classList.remove('dragging');
         
-        // 🟢 核心邏輯：根據來源決定套用哪種回彈 CSS Class
+        // 依輸入來源套用不同的回彈 CSS class
         const bounceClass = isWheel ? 'bounce-back-wheel' : 'bounce-back';
         mainStack.classList.add(bounceClass);
         
@@ -133,28 +133,28 @@ export function initPhysics(mainStack, getActiveCardId, closeAllCards) {
         
         if (bounceTimer) clearTimeout(bounceTimer);
         
-        // 🟢 滾輪給予 850ms 的優雅降落時間，觸控維持原本俐落的 500ms
+        // 滾輪回彈 850ms，觸控 500ms
         const bounceDuration = isWheel ? 850 : 500; 
         
 bounceTimer = setTimeout(() => { 
             mainStack.classList.remove(bounceClass); 
             
-            // 🟢 終極優雅：意圖邊界解鎖 (跨越邊界才喚醒)
+            // hover 恢復條件：滑鼠須離開回彈時所在的卡片
             if (window.hoverUnlocker) window.removeEventListener('mousemove', window.hoverUnlocker);
             
             let lockedElement = 'init'; // 初始狀態
             
             window.hoverUnlocker = function(e) {
-                // 抓取當前滑鼠底下的卡片 (如果在背景就是 null)
+                // 取得滑鼠目前所在的卡片 (背景為 null)
                 const currentElement = e.target.closest('.card'); 
                 
-                // 第一下微小抖動：記錄動畫結束時，滑鼠不小心停在哪張卡片上
+                // 記錄回彈結束時滑鼠停留的卡片
                 if (lockedElement === 'init') {
                     lockedElement = currentElement;
                     return;
                 }
 
-                // 核心魔法：滑鼠必須「離開當初那張卡片」，才代表使用者有新的巡覽意圖！
+                // 滑鼠離開該卡片才視為新的瀏覽意圖，恢復 hover
                 if (currentElement !== lockedElement) {
                     if (!mainStack.classList.contains('allow-hover')) {
                         mainStack.classList.add('allow-hover');
@@ -168,7 +168,7 @@ bounceTimer = setTimeout(() => {
         }, bounceDuration);
     };
 mainStack.addEventListener('touchmove', (e) => {
-        // 🟢 核心修復：檢查如果現在是長按掃描模式 (isScrubbing === 'true')
+        // 長按掃描模式 (isScrubbing) 期間不處理拖曳
         if (mainStack.dataset.isScrubbing === 'true') {
             if (currentPullY !== 0) {
                 currentPullY = 0;
@@ -186,7 +186,7 @@ mainStack.addEventListener('touchmove', (e) => {
             mainStack.classList.remove('bounce-back');
             mainStack.classList.add('dragging');
             
-            // 🟢 沒收 Hover 權限，防止滑鼠游標干擾動畫
+            // 暫停 hover，避免游標干擾動畫
             mainStack.classList.remove('allow-hover');
             
             if (window.hoverUnlocker) {
@@ -194,11 +194,10 @@ mainStack.addEventListener('touchmove', (e) => {
                 window.hoverUnlocker = null;
             }
             
-            // 🚨 救命關鍵補回：記錄手指最初碰到的座標！(你剛剛不小心把它刪掉了)
+            // 記錄觸碰起始座標（拖曳計算的基準，不可移除）
             startTouchY = touchY; 
         }
 
-        // 🚨 (已經幫你把你剛剛誤貼進來的 wheelDeltaSum 刪除了)
         const deltaY = touchY - startTouchY; 
         updateGlareTarget();
 
@@ -214,22 +213,22 @@ mainStack.addEventListener('touchmove', (e) => {
 
     mainStack.addEventListener('touchend', () => resetBounce(false));
     
-    // 🟢 終極防護：攔截 iOS 系統手勢中斷 (例如觸碰到 Home 橫條)
+    // 攔截 iOS 系統手勢造成的觸控中斷 (如 Home 橫條)
     mainStack.addEventListener('touchcancel', () => resetBounce(false));
 
     mainStack.addEventListener('wheel', (e) => {
 
-        // 🟢 3. 滾輪攔截守衛：如果目前被鎖定，就不斷延長鎖定時間，並直接退出！
+        // 3. 滾動鎖定期間：持續延長鎖定並直接返回
         if (mainStack.dataset.blockScroll === 'true') {
             if (e.cancelable) e.preventDefault();
             
-            // 只要滑鼠還在滾，就持續重置 250ms 的計時器
+            // 滾輪持續轉動時，重置 250ms 解鎖計時器
             clearTimeout(window.scrollCooldownTimer);
             window.scrollCooldownTimer = setTimeout(() => {
-                mainStack.dataset.blockScroll = 'false'; // 必須徹底停下手 0.25 秒才會解鎖
+                mainStack.dataset.blockScroll = 'false'; // 停止滾動 0.25 秒後解鎖
             }, 300);
             
-            return; // ⛔ 救命關鍵：直接退出！絕對不執行下方的縮放動畫
+            return; // 鎖定期間不執行下方的縮放動畫
         }
         updateGlareTarget();
 
@@ -239,29 +238,28 @@ mainStack.addEventListener('touchmove', (e) => {
             mainStack.classList.remove('bounce-back');
             mainStack.classList.add('dragging');
             
-            // 🟢 救命關鍵：滾輪一動，立刻沒收 Hover 權限！讓原本抬起的卡片趴下！
+            // 滾輪開始時暫停 hover，收回已抬起的卡片
             mainStack.classList.remove('allow-hover');
             
-            // 同時斬斷可能殘留的舊解鎖器，防止幽靈累積
+            // 清除殘留的舊解鎖計時器
             if (window.hoverUnlocker) {
                 window.removeEventListener('mousemove', window.hoverUnlocker);
                 window.hoverUnlocker = null;
             }
         }
         
-        // 🟢 設定單次滾輪的「極限值 (上限)」
+        // 單次滾輪增量的上限
         let step = e.deltaY;
-        const maxStep = 35; // 限制最大暴衝值 (建議設定在 30 ~ 40 之間)
+        const maxStep = 35; // 建議 30 ~ 40
         
-        // 超過上限就強制封頂
+        // 超過上限則截斷
         if (step > maxStep) step = maxStep;
         else if (step < -maxStep) step = -maxStep;
 
-        // 將削平後的安全數值加入總和
+        // 截斷後的增量加入總和
         wheelDeltaSum -= step;
         
-        // 🟢 因為暴衝已經被防呆機制擋下了，這裡可以直接線性 1:1 輸出！
-        // 徹底廢除 Math.pow()，把原生手感還給使用者
+        // 增量已被上限保護，可直接線性 1:1 輸出
         currentPullY = wheelDeltaSum;
         
         if (!rafId) rafId = requestAnimationFrame(updateUI);

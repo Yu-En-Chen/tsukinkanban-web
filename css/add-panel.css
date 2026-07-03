@@ -16,17 +16,17 @@
 }
 
 /* =========================================
-   🟢 膠囊本人 (完美繼承原本的狀態)
+   膠囊本人 (完美繼承原本的狀態)
    ========================================= */
 /* =========================================
-   🟢 主按鈕面板 (完美同步 menu.js 的設計)
+   主按鈕面板 (完美同步 menu.js 的設計)
    ========================================= */
    .add-menu-item {
     display: flex;
     flex-direction: column;
     width: 100%;
     
-    /* ✨ 徹底拔除膠囊感：統一改為 32px 圓角與相同的微透明灰色背景 */
+    /* 徹底拔除膠囊感：統一改為 32px 圓角與相同的微透明灰色背景 */
     background: rgba(128, 128, 128, 0.08);
     border-radius: 32px; 
     overflow: hidden;
@@ -57,12 +57,12 @@
     background: rgba(128, 128, 128, 0.16);
 }
 
-/* ✨ 展開後：加上更深的背景色 (與歷史紀錄展開時完全相同) */
+/* 展開後：加上更深的背景色 (與歷史紀錄展開時完全相同) */
 .add-menu-item.is-expanded {
     background: rgba(128, 128, 128, 0.15);
 }
 
-/* 🛑 終極消滅魔法：當有人展開時，把「不是展開的膠囊」徹底隱藏並縮小！ */
+/* 終極消滅魔法：當有人展開時，把「不是展開的膠囊」徹底隱藏並縮小！ */
 .add-panel-container.has-expanded .add-menu-item:not(.is-expanded) {
     max-height: 0;
     opacity: 0;
@@ -72,7 +72,7 @@
 }
 
 /* =========================================
-   🟢 可點擊的頭部區域 (原本的按鈕)
+   可點擊的頭部區域 (原本的按鈕)
    ========================================= */
 .add-menu-btn {
     display: flex;
@@ -98,10 +98,10 @@
 }
 
 /* =========================================
-   🟢 右側箭頭圖示 (Chevron)
+   右側箭頭圖示 (Chevron)
    ========================================= */
    .add-menu-chevron {
-    /* ✨ 淺色模式：很深的灰色 (確保在白底上非常清晰) */
+    /* 淺色模式：很深的灰色 (確保在白底上非常清晰) */
     color: rgba(60, 60, 67, 0.6); 
     display: flex;
     align-items: center;
@@ -116,18 +116,18 @@
 
 @media (prefers-color-scheme: dark) {
     .add-menu-chevron {
-        /* ✨ 深色模式：很白的灰色 (確保在黑底上非常清晰) */
+        /* 深色模式：很白的灰色 (確保在黑底上非常清晰) */
         color: rgba(235, 235, 245, 0.6); 
     }
 }
 
 /* =========================================
-   🟢 展開內容區 (CSS Grid 動態高度魔法)
+   展開內容區 (CSS Grid 動態高度魔法)
    ========================================= */
 .add-menu-content-wrapper {
     display: grid;
     grid-template-rows: 0fr; 
-    /* ✨ 修正 1：展開動畫也改為平滑減速 */
+    /* 修正 1：展開動畫也改為平滑減速 */
     transition: grid-template-rows 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -148,7 +148,7 @@
     max-height: 600px; 
     min-height: 250px; 
     
-    /* ✨ 徹底鎖死：拔除 auto，改為 hidden！手機開啟這個視窗時禁止任何頁面滑動！ */
+    /* 徹底鎖死：拔除 auto，改為 hidden！手機開啟這個視窗時禁止任何頁面滑動！ */
     overflow: hidden; 
     
     background: transparent; 
@@ -164,14 +164,14 @@
 }
 
 /* =========================================
-   🟢 管理面板專屬卡片膠囊 (Management Capsules)
+   管理面板專屬卡片膠囊 (Management Capsules)
    ========================================= */
    .manage-card-capsule {
     display: flex;
     align-items: center;
-    /* ✨ 改為 flex-start，讓所有內容乖乖從最左邊開始排列 */
+    /* 改為 flex-start，讓所有內容乖乖從最左邊開始排列 */
     justify-content: flex-start; 
-    gap: 16px; /* ✨ 控制「左側圖示區」與「右側文字」之間的完美距離 */
+    gap: 16px; /* 控制「左側圖示區」與「右側文字」之間的完美距離 */
     padding: 16px 20px;
     border-radius: 999px; 
     font-size: 1.05rem;
@@ -190,12 +190,12 @@
 }
 
 /* =========================================
-   🟢 管理面板專屬卡片膠囊 (Management Capsules)
+   管理面板專屬卡片膠囊 (Management Capsules)
    ========================================= */
    .manage-card-capsule {
     display: flex;
     align-items: center;
-    /* ✨ 讓內容平均分佈，配合 flex:1 會自動變成左中右排版 */
+    /* 讓內容平均分佈，配合 flex:1 會自動變成左中右排版 */
     justify-content: space-between; 
     gap: 16px; /* 控制三個元素之間的間距 */
     padding: 16px 20px;
@@ -216,7 +216,7 @@
     text-align: left;
 }
 
-/* ✨ 隱藏/顯示按鈕 (眼睛 - 左側) */
+/* 隱藏/顯示按鈕 (眼睛 - 左側) */
 .manage-card-visibility {
     display: flex;
     align-items: center;
@@ -230,7 +230,7 @@
     opacity: 0.7;
 }
 
-/* ✨ 拖拉抓手 (三條線 - 右側) */
+/* 拖拉抓手 (三條線 - 右側) */
 .manage-card-drag {
     display: flex;
     align-items: center;
@@ -244,7 +244,7 @@
     cursor: grabbing;
 }
 
-/* ✨ 幽靈浮空狀態 (Drag Ghost) */
+/* 幽靈浮空狀態 (Drag Ghost) */
 .manage-card-capsule.is-dragging {
     pointer-events: none; /* 讓滑鼠雷射光能穿透它打到底下的卡片 */
     z-index: 99999;
@@ -252,7 +252,7 @@
     transition: none; /* 拖拉時絕對跟手，不要延遲 */
 }
 
-/* ✨ 佔位虛線格 (Placeholder) */
+/* 佔位虛線格 (Placeholder) */
 .manage-card-placeholder {
     border-radius: 999px;
     background: rgba(120, 120, 128, 0.1);
@@ -261,12 +261,12 @@
 }
 
 /* =========================================
-   🟢 管理面板：隱藏區與分隔線 (完美對稱版)
+   管理面板：隱藏區與分隔線 (完美對稱版)
    ========================================= */
    .manage-separator {
     height: 2px;
     background: rgba(120, 120, 128, 0.15);
-    /* ✨ 拔除上下的 margin，只保留左右縮進 10px */
+    /* 拔除上下的 margin，只保留左右縮進 10px */
     margin: 0 10px; 
     border-radius: 2px;
 }
@@ -275,7 +275,7 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 12px;
-    /* ✨ 拔除上下的 padding，只保留左右縮進 10px */
+    /* 拔除上下的 padding，只保留左右縮進 10px */
     padding: 0 10px; 
 }
 
@@ -299,7 +299,7 @@
     opacity: 0.8;
 }
 
-/* ✨ 一鍵刪除隱藏卡片的空心按鈕 */
+/* 一鍵刪除隱藏卡片的空心按鈕 */
 .delete-all-hidden-btn {
     background: transparent !important;
     border: 2px solid rgba(120, 120, 128, 0.25) !important;

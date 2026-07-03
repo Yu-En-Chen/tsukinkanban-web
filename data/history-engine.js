@@ -18,7 +18,7 @@ export async function loadNativeHistory(targetId) {
     `;
 
     try {
-        // 🚀 新增：使用者點擊時，瞬間抓取最新的整包歷史資料
+        // 新增：使用者點擊時，瞬間抓取最新的整包歷史資料
         let allHistoryData = { railway: {}, flight: {} };
         try {
             const allRes = await fetch('https://api.tsukinkanban.com/api/history/all');
@@ -45,10 +45,10 @@ export async function loadNativeHistory(targetId) {
                         let routeName = (window.MasterRouteDictionary && window.MasterRouteDictionary[id]) ? window.MasterRouteDictionary[id].name : id;
                         routeName = routeName.replace('Departure_', '出發 ').replace('Arrival_', '抵達 ');
 
-                        // 🚀 從大包包中挑出這條線的資料
+                        // 從大包包中挑出這條線的資料
                         const routeHistory = (allHistoryData[type] && allHistoryData[type][finalId]) ? allHistoryData[type][finalId] : [];
 
-                        // 🚀 關鍵：模擬原本舊版單筆 API 回傳的 JSON 結構格式 {"route_id": "...", "history": [...]}
+                        // 關鍵：模擬原本舊版單筆 API 回傳的 JSON 結構格式 {"route_id": "...", "history": [...]}
                         // 這樣能保證下方複雜的 parseData() 渲染邏輯一行都不用改！
                         const mockJsonResponse = {
                             route_id: finalId,

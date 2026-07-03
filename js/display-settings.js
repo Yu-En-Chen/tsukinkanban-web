@@ -2,19 +2,19 @@
 // js/display-settings.js - 「表示設定」面板 UI 與互動控制器
 // ============================================================================
 
-// 🟢 1. 負責生成設定面板的 HTML 結構
+// 1. 負責生成設定面板的 HTML 結構
 window.getDisplaySettingsHTML = function () {
     const isDesktop = window.matchMedia('(pointer: fine)').matches;
 
     const ua = navigator.userAgent;
     const platform = navigator.platform || '';
 
-    // ✨ 終極精準偵測引擎
+    // 瀏覽器與平台偵測
     // 1. 判斷是否為 Apple 裝置 (iOS 或 Mac)
     const isApple = /(Mac|iPhone|iPod|iPad)/i.test(platform) || /(Mac|iPhone|iPod|iPad)/i.test(ua);
 
-    // 2. 判斷是否為「純正」的 Safari
-    // 關鍵：Safari 的 UA 必須包含 Safari 但「絕對不能」包含 Chrome, CriOS, Edg... 等字眼
+    // 2. 判斷是否為 Safari 本體
+    // Safari 的 UA 須包含 Safari 且不含 Chrome, CriOS, Edg 等字樣
     const isSafari = isApple && /Safari/i.test(ua) && !/Chrome|CriOS|Edg|OPR|FxiOS|Firefox|Line|FBAV|FBAN|Instagram|MicroMessenger|WeChat|Threads|Twitter/i.test(ua);
 
     // 3. 判斷是否為 Blink 核心 (Chrome, Edge, Opera)
@@ -28,7 +28,7 @@ window.getDisplaySettingsHTML = function () {
 
     let browserRecommendationHTML = '';
 
-    // 🎯 偵測邏輯分發
+    // 依偵測結果分流
     // A. Apple 裝置卻不是用 Safari (包含 Mac Chrome, iPhone Chrome 等)
     if (isApple && !isSafari) {
         browserRecommendationHTML = `
@@ -44,7 +44,7 @@ window.getDisplaySettingsHTML = function () {
     }
     // B. Windows/Android
     else if (isWindowsOrAndroid) {
-        // 💡 UserAgentをチェックして、AndroidかWindowsかを動的に判定する
+        // UserAgentをチェックして、AndroidかWindowsかを動的に判定する
         const isAndroidDevice = /Android/i.test(navigator.userAgent);
         const deviceName = isAndroidDevice ? 'Android' : 'Windows';
 
@@ -62,10 +62,10 @@ window.getDisplaySettingsHTML = function () {
     `;
     }
 
-    // 🟢 讀取目前的效能模式狀態
+    // 讀取目前的效能模式狀態
     const isLiteMode = localStorage.getItem('tsukin_lite_mode') === 'true';
 
-    // 🟢 判斷是否需要強制鎖定 (非蘋果設備)
+    // 判斷是否需要強制鎖定 (非蘋果設備)
     const isLocked = !isApple;
 
     return `
@@ -118,19 +118,19 @@ window.getDisplaySettingsHTML = function () {
     `;
 };
 
-// 🟢 2. 負責綁定面板內的微互動、拖曳與點擊事件
+// 2. 負責綁定面板內的微互動、拖曳與點擊事件
 window.initDisplaySettingsEvents = function () {
     const segControl = document.getElementById('render-mode-control');
     const segBtns = document.querySelectorAll('#render-mode-control .seg-btn');
     const segBg = document.querySelector('#render-mode-control .seg-bg');
 
     // ==========================================
-    // ✨ 升級細節 1：精準初始化
-    // 在綁定事件前，先讀取記憶體，確保 JS 內部的 index 與畫面一模一樣
+    // 初始化：
+    // 綁定事件前先讀取儲存值，讓內部 index 與畫面一致
     // ==========================================
     const isAppleDevice = /Macintosh|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-    // 如果 localStorage 裡面記住的是 true (輕量模式)，就把 activeIndex 設為 1 (右邊)，否則設為 0 (左邊)
+    // localStorage 為 true (輕量模式) 時 activeIndex 設為 1，否則為 0
     let activeIndex = localStorage.getItem('tsukin_lite_mode') === 'true' ? 1 : 0;
 
     let startX = 0;
@@ -139,47 +139,47 @@ window.initDisplaySettingsEvents = function () {
     let hasMoved = false;
 
     // ==========================================
-    // 🎯 核心切換功能 (連接資料庫與畫面渲染)
+    // 模式切換（寫入儲存並更新畫面）
     // ==========================================
     function setSegment(index) {
-        // ✨ 升級細節 2：雙重防呆鎖定
-        // 雖然我們在 HTML 把 Android 按鈕變半透明了，但為了防止有使用者亂點或系統 Bug，
-        // 這裡再加一道鎖：只要不是蘋果設備，嚴格禁止 index 變成 0 (品質模式)
+        // 第二層防護：
+        // HTML 已將非蘋果裝置的品質按鈕淡化，
+        // 這裡再擋一次：非蘋果裝置禁止切換到品質模式 (index 0)
         if (!isAppleDevice && index === 0) return;
 
-        // 1. 更新按鈕的視覺 UI (文字變色)
+        // 1. 更新按鈕文字顏色
         activeIndex = index;
         segBtns.forEach(b => b.classList.remove('active'));
         segBtns[index].classList.add('active');
 
-        // 準備滑塊的彈簧動畫
+        // 滑塊動畫
         segBg.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15)';
 
-        // ✨ 升級細節 3：執行真正的資料儲存與畫面渲染
+        // 寫入儲存並套用畫面效果
         if (index === 0) {
-            // 🍎 選擇「品質」模式
-            segBg.style.transform = 'translateX(0)'; // 滑塊推到左邊
-            localStorage.setItem('tsukin_lite_mode', 'false'); // 存入記憶體
+            // 選擇「品質」模式
+            segBg.style.transform = 'translateX(0)';
+            localStorage.setItem('tsukin_lite_mode', 'false');
 
-            // 【關鍵魔法】瞬間拔除降級標籤，網頁會立刻恢復毛玻璃特效！
+            // 移除降級 class，恢復毛玻璃特效
             document.documentElement.classList.remove('is-android-fallback');
             console.log('描画モード：品質 (高階視覺開啟)');
 
         } else {
-            // 🚀 選擇「軽量」模式
-            segBg.style.transform = 'translateX(100%)'; // 滑塊推到右邊
-            localStorage.setItem('tsukin_lite_mode', 'true'); // 存入記憶體
+            // 選擇「軽量」模式
+            segBg.style.transform = 'translateX(100%)';
+            localStorage.setItem('tsukin_lite_mode', 'true');
 
-            // 【關鍵魔法】瞬間打上降級標籤，網頁會立刻變成流暢的實心背景！
+            // 加上降級 class，改用實心背景以提升效能
             document.documentElement.classList.add('is-android-fallback');
             console.log('描画モード：軽量 (效能模式開啟)');
         }
 
-        // 觸發手機微震動回饋，增加 Native App 手感
+        // 震動回饋
         if (window.navigator.vibrate) window.navigator.vibrate(10);
     }
 
-    // A. 點擊事件 (永遠有效，除非使用者進行了大幅度拖曳)
+    // A. 點擊事件（拖曳時不觸發）
     segBtns.forEach((btn, index) => {
         btn.addEventListener('click', () => {
             if (hasMoved) return; // 只有在確認是拖曳時才擋下點擊
@@ -187,27 +187,27 @@ window.initDisplaySettingsEvents = function () {
         });
     });
 
-    // B. 手指拖曳 (Swipe) 物理引擎
+    // B. 拖曳 (Swipe) 切換
     if (segControl && segBg) {
         segControl.addEventListener('touchstart', (e) => {
             startX = e.touches[0].clientX;
             bgWidth = segBg.offsetWidth;
             currentTranslate = activeIndex === 0 ? 0 : bgWidth;
-            hasMoved = false; // 每次觸碰螢幕時重置
+            hasMoved = false; // 每次觸碰時重置
 
-            // 準備跟隨手指，拔除延遲動畫
+            // 拖曳期間移除過渡動畫，讓滑塊跟隨手指
             segBg.style.transition = 'none';
         }, { passive: true });
 
         segControl.addEventListener('touchmove', (e) => {
             const deltaX = e.touches[0].clientX - startX;
 
-            // ✨ 容錯機制：手指移動超過 3px 才算是「刻意拖曳」，過濾掉點擊時的微手震！
+            // 移動超過 3px 才視為拖曳，過濾點擊時的手震
             if (Math.abs(deltaX) > 3) {
                 hasMoved = true;
             }
 
-            // 如果還沒超過 3px (還在手震範圍內)，就不移動背景
+            // 未超過 3px 時不移動滑塊
             if (!hasMoved) return;
 
             let newTranslate = currentTranslate + deltaX;
@@ -219,12 +219,12 @@ window.initDisplaySettingsEvents = function () {
 
         segControl.addEventListener('touchend', () => {
             if (!hasMoved) {
-                // 如果判定只是「點擊」，把動畫加回來，剩下的切換邏輯交給 Click 事件處理！
+                // 判定為點擊：恢復動畫，切換交給 click 事件
                 segBg.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15)';
                 return;
             }
 
-            // 如果是「拖曳放開」，執行物理吸附
+            // 拖曳放開：吸附到最近的選項
             const match = segBg.style.transform.match(/translateX\(([-\d.]+)px\)/);
             if (match) {
                 const finalTranslate = parseFloat(match[1]);
@@ -234,11 +234,11 @@ window.initDisplaySettingsEvents = function () {
                 setSegment(activeIndex);
             }
 
-            // 給予 50ms 延遲解除狀態，防止原生點擊事件趁虛而入
+            // 延遲 50ms 解除狀態，避免緊接的 click 事件誤觸發
             setTimeout(() => { hasMoved = false; }, 50);
         });
         // ==========================================
-        // 💾 資料備份按鈕互動 (暫時先做樣式與點擊測試)
+        // 資料備份（匯出／匯入）按鈕
         // ==========================================
         const rowExport = document.getElementById('row-export-all');
         const rowImport = document.getElementById('row-import-all');
@@ -248,20 +248,20 @@ window.initDisplaySettingsEvents = function () {
                 if (window.navigator.vibrate) window.navigator.vibrate(10);
 
                 try {
-                    // 🌟 1. 預先載入資料：在打開 Action Sheet 前，就把要複製的字串準備好
+                    // 1. 開啟 Action Sheet 前先準備好要複製的字串
                     const db = await import('../data/db.js');
                     const allDataStr = await db.getExportDataString();
                     const colorsStr = await db.getExportColorsString();
 
-                    // 🌟 2. 準備一個同步複製的 Callback 函式
+                    // 2. 同步執行的複製 callback
                     const copyToClipboardSync = (text) => {
                         if (navigator.clipboard) {
-                            // 這裡執行時擁有 Safari 的最高點擊授權，絕對不會被擋
+                            // 在點擊事件內同步執行，Safari 才允許寫入剪貼簿
                             navigator.clipboard.writeText(text).catch(err => console.error("Clipboard Error:", err));
                         }
                     };
 
-                    // 3. 呼叫底部選單 (傳入 action)
+                    // 3. 開啟底部選單
                     const exportChoice = await window.iosActionSheet(
                         'エクスポート',
                         'どのデータをエクスポートしますか？',
@@ -269,12 +269,12 @@ window.initDisplaySettingsEvents = function () {
                             {
                                 text: 'すべての設定をエクスポート',
                                 value: 'all',
-                                action: () => copyToClipboardSync(allDataStr) // 同步綁定
+                                action: () => copyToClipboardSync(allDataStr)
                             },
                             {
                                 text: 'カラーテーマのみエクスポート',
                                 value: 'colors',
-                                action: () => copyToClipboardSync(colorsStr)  // 同步綁定
+                                action: () => copyToClipboardSync(colorsStr)
                             }
                         ],
                         'キャンセル'
@@ -298,7 +298,7 @@ window.initDisplaySettingsEvents = function () {
 
         if (rowImport) {
             rowImport.addEventListener('click', async () => {
-                // 1. 觸發物理震動回饋
+                // 1. 震動回饋
                 if (window.navigator.vibrate) window.navigator.vibrate(10);
 
                 try {
@@ -309,7 +309,7 @@ window.initDisplaySettingsEvents = function () {
                         throw new Error("クリップボードにデータが見つかりません。");
                     }
 
-                    // 3. 智慧型預檢 (Smart Pre-check)
+                    // 3. 資料格式預檢
                     let parsedData;
                     try {
                         parsedData = JSON.parse(jsonString);
@@ -321,7 +321,7 @@ window.initDisplaySettingsEvents = function () {
                         throw new Error("フォーマットエラー：有効な配列データではありません。");
                     }
 
-                    // 判斷資料類型：純色票 (Array of Strings) 還是完整設定 (Array of Objects)
+                    // 判斷資料類型：純色票 (字串陣列) 或完整設定 (物件陣列)
                     const isColorOnly = typeof parsedData[0] === 'string';
                     const isFullData = typeof parsedData[0] === 'object' && parsedData[0] !== null;
 
@@ -334,7 +334,7 @@ window.initDisplaySettingsEvents = function () {
                     let importMode = null;
 
                     // ==========================================
-                    // 🚦 流程 A：偵測到「純色票」
+                    // 流程 A：純色票
                     // ==========================================
                     if (isColorOnly) {
                         const confirmApply = await window.iosConfirm(
@@ -342,13 +342,13 @@ window.initDisplaySettingsEvents = function () {
                             'クリップボードからカラーテーマを検知しました。\n現在のカードに適用しますか？',
                             '適用する',
                             'キャンセル',
-                            false // 一般操作，不用紅色按鈕
+                            false // 一般操作
                         );
                         if (!confirmApply) return;
-                        importMode = 'colors_only_data'; // 標記為使用純色票資料匯入
+                        importMode = 'colors_only_data';
                     }
                     // ==========================================
-                    // 🚦 流程 B：偵測到「完整設定」
+                    // 流程 B：完整設定
                     // ==========================================
                     else if (isFullData) {
                         const importChoice = await window.iosActionSheet(
@@ -363,14 +363,14 @@ window.initDisplaySettingsEvents = function () {
 
                         if (!importChoice) return;
 
-                        // 針對危險的完全覆寫，給予二次警告
+                        // 完全覆寫屬破壞性操作，需二次確認
                         if (importChoice === 'all') {
                             const isConfirmed = await window.iosConfirm(
                                 '最終確認',
                                 'この操作は現在の設定を完全に上書きします。元の状態に戻すことはできません。\n\n本当に続行しますか？',
                                 '実行する',
                                 'キャンセル',
-                                true // 破壞性操作，顯示紅色按鈕
+                                true // 破壞性操作：紅色按鈕
                             );
                             if (!isConfirmed) return;
                             importMode = 'full_overwrite';
@@ -381,21 +381,21 @@ window.initDisplaySettingsEvents = function () {
 
                     // 5. 執行對應的匯入邏輯
                     if (importMode === 'colors_only_data') {
-                        // 直接傳入原本的字串 (Array of Strings)
+                        // 傳入字串陣列
                         await db.importColorsOnly(jsonString);
                     }
                     else if (importMode === 'full_overwrite') {
-                        // 傳入完整字串 (Array of Objects) 進行核平重建
+                        // 傳入物件陣列，整組覆寫重建
                         await db.importDataAndOverwrite(jsonString);
                     }
                     else if (importMode === 'extract_colors') {
-                        // 🟢 神奇魔法：從完整資料物件中，手動抽出色碼，組裝成純色票陣列再餵給 importColorsOnly
+                        // 從完整資料中抽出色碼，組成純色票陣列後交給 importColorsOnly
                         const extractedColors = parsedData.map(item => item.hex || '');
                         const colorJsonString = JSON.stringify(extractedColors);
                         await db.importColorsOnly(colorJsonString);
                     }
 
-                    // 6. 成功反饋與頁面重載
+                    // 6. 成功提示與頁面重載
                     await window.iosConfirm(
                         'インポート成功',
                         'データが正常に反映されました。設定を有効にするため、アプリを再起動します。',
@@ -417,7 +417,7 @@ window.initDisplaySettingsEvents = function () {
             });
         }
 
-        // ✨ 注入按鈕樣式 (確保形狀、大小、顏色與切換器一致)
+        // 注入按鈕樣式（與切換器一致）
         if (!document.getElementById('clickable-row-style')) {
             const style = document.createElement('style');
             style.id = 'clickable-row-style';
@@ -450,11 +450,10 @@ window.initDisplaySettingsEvents = function () {
         }
     }
 
-    // C. 動態設定開關邏輯 (連接資料庫)
-    // ✨ 這裡改成引入 db-settings.js
+    // C. 設定開關（連接資料庫）
     import('../data/db-settings.js').then(dbSettings => {
 
-        // 🎯 1. 系統鼠標設定 (預設為 false：代表啟用自訂鼠標)
+        // 1. 系統游標設定（預設 false：使用自訂游標）
         const cursorSwitch = document.getElementById('setting-default-cursor');
         if (cursorSwitch && dbSettings.getDisplaySetting) {
 
@@ -463,10 +462,10 @@ window.initDisplaySettingsEvents = function () {
                 cursorSwitch.checked = useSystem;
             });
 
-            // 監聽變更：寫入資料庫並「即時」切換畫面鼠標
+            // 變更時寫入資料庫並即時切換游標
             cursorSwitch.addEventListener('change', (e) => {
                 const isChecked = e.target.checked;
-                dbSettings.saveDisplaySetting('useSystemCursor', isChecked); // 寫入雙引擎資料庫
+                dbSettings.saveDisplaySetting('useSystemCursor', isChecked);
 
                 // 立即套用視覺效果
                 if (isChecked) {
@@ -480,7 +479,7 @@ window.initDisplaySettingsEvents = function () {
             });
         }
 
-        // 🎯 2. 新增：提高狀態符號對比度設定
+        // 2. 提高狀態符號對比度
         const highContrastSwitch = document.getElementById('setting-high-contrast-icons');
         if (highContrastSwitch && dbSettings.getDisplaySetting) {
             dbSettings.getDisplaySetting('highContrastIcons', false).then(isHighContrast => {
@@ -492,7 +491,7 @@ window.initDisplaySettingsEvents = function () {
                 const isChecked = e.target.checked;
                 dbSettings.saveDisplaySetting('highContrastIcons', isChecked);
 
-                // 立即套用 Class 讓 CSS 能夠抓取
+                // 立即套用 class
                 document.body.classList.toggle('high-contrast-icons', isChecked);
 
                 console.log(`設定 [提高狀態符號對比度] 切換為：`, isChecked);
@@ -500,7 +499,7 @@ window.initDisplaySettingsEvents = function () {
             });
         }
 
-        // 🎯 3. 其他開關 (預留未來擴充)
+        // 3. 其他開關（預留擴充）
         const otherSwitches = ['reduce-motion', 'reduce-blur', 'disable-gradient'];
         otherSwitches.forEach(id => {
             const el = document.getElementById(`setting-${id}`);

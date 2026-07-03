@@ -133,7 +133,7 @@ async function saveLocalDict(version, routes) {
 }
 
 // ==========================================
-// 3. 🟢 外部呼叫主入口：智慧同步引擎
+// 3. 外部呼叫主入口：智慧同步引擎
 // ==========================================
 export async function syncAndLoadDictionary(apiUrl) {
     // 先抓出本地現有的字典與版本號
@@ -147,20 +147,20 @@ export async function syncAndLoadDictionary(apiUrl) {
         
         const apiData = await response.json();
         
-        // ✨ 比對版本號
+        // 比對版本號
         if (!localData || apiData.version !== localVersion) {
-            console.log("🔄 發現新版路線字典，下載並非同步更新本地資料庫中...");
+            console.log("發現新版路線字典，下載並非同步更新本地資料庫中...");
             
             // 寫入資料庫
             await saveLocalDict(apiData.version, apiData.routes);
             window.MasterRouteDictionary = apiData.routes;
             
         } else {
-            console.log("✅ 路線字典已是最新版，直接使用本地 DB 快取");
+            console.log("路線字典已是最新版，直接使用本地 DB 快取");
             window.MasterRouteDictionary = localData.routes;
         }
     } catch (error) {
-        console.warn("⚠️ 無法連線至伺服器獲取字典，嘗試使用本地舊快取...", error);
+        console.warn("無法連線至伺服器獲取字典，嘗試使用本地舊快取...", error);
         
         // 如果斷網了，至少拿出本地資料庫的舊資料擋著用
         if (localData && localData.routes) {

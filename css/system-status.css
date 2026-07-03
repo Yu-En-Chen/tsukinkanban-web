@@ -18,14 +18,14 @@
     z-index: 5500;
     pointer-events: none; 
     
-    /* 🛑 修改這裡：預設為「隱藏並縮小」狀態，等待 JS 呼叫 */
+    /* 修改這裡：預設為「隱藏並縮小」狀態，等待 JS 呼叫 */
     transform: scale(0.85);
     opacity: 0;
     visibility: hidden;
     transition: transform 0.4s var(--apple-spring), opacity 0.3s ease, visibility 0s 0.3s;
 }
 
-/* 🚀 新增：未來的喚醒開關！只要用 JS 加上這個 class 就會彈出來 */
+/* 新增：未來的喚醒開關！只要用 JS 加上這個 class 就會彈出來 */
 .center-status-island.is-active {
     transform: scale(1);
     opacity: 1;
@@ -42,7 +42,7 @@
 }
 
 /* =========================================
-   🟢 全域隱藏與退場邏輯 (輕量化淡出 + 涵蓋所有選單)
+   全域隱藏與退場邏輯 (輕量化淡出 + 涵蓋所有選單)
    ========================================= */
 
 /* 涵蓋情境：
@@ -63,20 +63,20 @@ body:has(.detail-overlay.active) .center-status-island {
     opacity: 0 !important;
     visibility: hidden !important;
     
-    /* ✨ 效能優化：不使用耗能的上下滑動，只做單純的原地微縮小 (0.85) */
+    /* 效能優化：不使用耗能的上下滑動，只做單純的原地微縮小 (0.85) */
     transform: scale(0.85) !important;
     
     pointer-events: none !important;
     
-    /* ✨ 讓退場時間縮短到 0.15s，像氣泡一樣瞬間消散，不跟底下的重量級動畫搶資源 */
+    /* 讓退場時間縮短到 0.15s，像氣泡一樣瞬間消散，不跟底下的重量級動畫搶資源 */
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease, visibility 0s 0.15s !important;
 }
 
 /* ==========================================================================
-   🟢 狀態指示燈：全域比例控制與獨立發光系統 (移轉自 style.css)
+   狀態指示燈：全域比例控制與獨立發光系統 (移轉自 style.css)
    ========================================================================== */
    .status-tag {
-    /* 🚀 控制台：主控膠囊與圖示大小 */
+    /* 控制台：主控膠囊與圖示大小 */
     --status-font-size: 0.85rem;    
     --status-pad-y: 0.6em;         
     --status-pad-x: 0.85em;         
@@ -99,7 +99,7 @@ body:has(.detail-overlay.active) .center-status-island {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* ✨ SVG 統一預設狀態：不顯眼的低調科技灰 */
+/* SVG 統一預設狀態：不顯眼的低調科技灰 */
 .status-tag svg {
     width: var(--status-icon-size) !important;
     height: var(--status-icon-size) !important;
@@ -111,16 +111,16 @@ body:has(.detail-overlay.active) .center-status-island {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 🚀 單獨微調：打叉圖示原地等比放大 (保留你的完美對齊設定) */
+/* 單獨微調：打叉圖示原地等比放大 (保留你的完美對齊設定) */
 .status-tag svg.lucide-x {
     transform: scale(1.25);
 }
 
 /* ==========================================================================
-   ✨ 亮起狀態 (Active)：光學膨脹效應與雙層霓虹光暈
+   亮起狀態 (Active)：光學膨脹效應與雙層霓虹光暈
    ========================================================================== */
 
-/* 🟢 通用亮起物理特效：模擬通電後的光學膨脹 (線條變粗) */
+/* 通用亮起物理特效：模擬通電後的光學膨脹 (線條變粗) */
 .status-tag svg.active {
     stroke-width: 2.8px !important; 
 }
@@ -141,7 +141,7 @@ body:has(.detail-overlay.active) .center-status-island {
 /* 2. 雪花 (Snowflake) */
 .status-tag svg.lucide-snowflake.active {
     color: #0A84FF !important; 
-    /* ✨ 雙層光暈魔法：第一層(2px)作為高光核心，第二層(7px)作為向外發散的柔光 */
+    /* 雙層光暈魔法：第一層(2px)作為高光核心，第二層(7px)作為向外發散的柔光 */
     filter: drop-shadow(0 0 2px rgba(255, 255, 255, 1)) drop-shadow(0 0 7px rgba(255, 255, 255, 0.6));
 }
 
@@ -172,7 +172,7 @@ body:has(.detail-overlay.active) .center-status-island {
 }
 
 /* ==========================================================================
-   🚀 動態隱藏系統：未亮起的「心跳」、「雪花」與「注意」自動消失、膠囊自動縮排
+   動態隱藏系統：未亮起的「心跳」、「雪花」與「注意」自動消失、膠囊自動縮排
    ========================================================================== */
    .status-tag svg.lucide-activity:not(.active),
    .status-tag svg.lucide-cloud-rain-wind:not(.active),

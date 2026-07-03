@@ -11,7 +11,7 @@ const FALLBACK_KEY = 'TsukinKanban_Sandbox_Fallback'; // 獨立的沙盒備援�
 let useFallback = false;
 
 // ==========================================
-// 🟢 備用方案 (LocalStorage) 的讀寫邏輯
+// 備用方案 (LocalStorage) 的讀寫邏輯
 // ==========================================
 function getFallbackData() {
     try {
@@ -40,7 +40,7 @@ function clearFallbackData() {
 }
 
 // ==========================================
-// 🟢 核心 IndexedDB 邏輯 (含自動降級機制)
+// 核心 IndexedDB 邏輯 (含自動降級機制)
 // ==========================================
 function initSandboxDB() {
     return new Promise((resolve) => {
@@ -152,10 +152,10 @@ export async function saveSandboxPreference(data) {
 }
 
 // ============================================================================
-// 🚀 核心連動邏輯 (跨 DB 複製與覆寫引擎)
+// 核心連動邏輯 (跨 DB 複製與覆寫引擎)
 // ============================================================================
 
-// 🌟 A. 載入並複製：打開管理面板時呼叫，將主 DB 資料完整拷貝進沙盒
+// A. 載入並複製：打開管理面板時呼叫，將主 DB 資料完整拷貝進沙盒
 export async function cloneFromMainDB() {
     console.log('[Sandbox-DB] 開始從主資料庫拷貝最新狀態...');
     await clearSandboxDB(); // 先把沙盒洗乾淨
@@ -170,7 +170,7 @@ export async function cloneFromMainDB() {
     return await getAllSandboxPreferences();
 }
 
-// 🌟 B. 確定並覆寫：使用者按下「儲存設定」時呼叫，將沙盒資料倒回主 DB
+// B. 確定並覆寫：使用者按下「儲存設定」時呼叫，將沙盒資料倒回主 DB
 export async function commitToMainDB() {
     console.log('[Sandbox-DB] 準備將沙盒設定覆寫回主系統...');
     const sandboxData = await getAllSandboxPreferences();
@@ -180,7 +180,7 @@ export async function commitToMainDB() {
         const item = sandboxData[key];
         
         // 呼叫主 DB (db.js) 的儲存功能寫入
-        // 💡 提示：未來我們在 db.js 擴充了 isVisible 或 order 欄位後，只要在這裡一起傳過去即可！
+        // 提示：未來我們在 db.js 擴充了 isVisible 或 order 欄位後，只要在這裡一起傳過去即可！
         await saveRoutePreference(item.id, item.customName, item.customHex);
     }
     
@@ -189,7 +189,7 @@ export async function commitToMainDB() {
 }
 
 // ============================================================================
-// 🟢 獨立隱藏狀態記憶引擎 (不干擾 db.js)
+// 獨立隱藏狀態記憶引擎 (不干擾 db.js)
 // ============================================================================
 const HIDDEN_KEY = 'TsukinKanban_HiddenCards';
 

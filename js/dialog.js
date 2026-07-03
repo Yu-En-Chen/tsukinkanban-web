@@ -1,5 +1,5 @@
 // ============================================================================
-// js/dialog.js - 全域通用的 iOS 原生風格自訂對話框引擎
+// js/dialog.js - 全域通用的 iOS 風格對話框與 Action Sheet
 // ============================================================================
 window.iosConfirm = function (title, message, confirmText = 'OK', cancelText = 'キャンセル', isDestructive = false) {
     return new Promise((resolve) => {
@@ -8,8 +8,8 @@ window.iosConfirm = function (title, message, confirmText = 'OK', cancelText = '
         overlay.style.cssText = `
             position: fixed; inset: 0; z-index: 999998;
             display: flex; align-items: center; justify-content: center;
-            background: rgba(0, 0, 0, 0.25); /* 👈 稍微調淡透明度，讓霧化效果更透澈 */
-            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); /* 👈 核心：加入背景全域霧化 */
+            background: rgba(0, 0, 0, 0.25); /* 稍微調淡透明度，讓霧化效果更透澈 */
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); /* 核心：加入背景全域霧化 */
             opacity: 0;
             transition: opacity 0.2s ease;
         `;
@@ -79,7 +79,7 @@ window.iosConfirm = function (title, message, confirmText = 'OK', cancelText = '
 };
 
 // ============================================================================
-// 新增：iOS 原生風格 Action Sheet (底部動作選單) - 支援無限數量的垂直按鈕
+// iOS 風格 Action Sheet（底部動作選單），按鈕數量不限
 // ============================================================================
 window.iosActionSheet = function (title, message, buttons, cancelText = 'キャンセル') {
     return new Promise((resolve) => {
@@ -89,8 +89,8 @@ window.iosActionSheet = function (title, message, buttons, cancelText = 'キャ�
         overlay.style.cssText = `
             position: fixed; inset: 0; z-index: 999998;
             display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
-            background: rgba(0, 0, 0, 0.25); /* 👈 稍微調淡透明度 */
-            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); /* 👈 核心：加入背景全域霧化 */
+            background: rgba(0, 0, 0, 0.25); /* 稍微調淡透明度 */
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); /* 核心：加入背景全域霧化 */
             opacity: 0;
             transition: opacity 0.25s ease;
             padding: 10px;
@@ -198,7 +198,7 @@ window.iosActionSheet = function (title, message, buttons, cancelText = 'キャ�
             btn.addEventListener('click', (e) => {
                 const val = e.target.getAttribute('data-value');
 
-                //  修復：找出對應的按鈕設定，在點擊當下「同步 (Synchronous)」執行動作
+                // 在點擊事件內同步執行按鈕動作（避免瀏覽器攔截 window.open）
                 const clickedBtn = buttons.find(b => b.value === val);
                 if (clickedBtn && typeof clickedBtn.action === 'function') {
                     clickedBtn.action(); 

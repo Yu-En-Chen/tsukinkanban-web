@@ -1,4 +1,4 @@
-// add-panel.js - 新增卡片與路線的管理面板引擎 (沙盒連動版)
+// add-panel.js - 新增卡片與路線的管理面板
 
 let isSandboxInitialized = false;
 
@@ -6,10 +6,10 @@ window.openAddPanel = function () {
     const contentHTML = `
         <style>
             /* ============================================================================ */
-            /* ✨ 完美對齊 menu.js 的極簡卡片美學 (像素級同步) */
+            /* 與 menu.js 的卡片樣式保持一致 */
             /* ============================================================================ */
             .add-panel-container {
-                padding-top: 18px; /* ✨ 對齊歷史紀錄的頂部起始高度 */
+                padding-top: 18px; /* 對齊歷史紀錄的頂部高度 */
                 padding-bottom: 40px;
             }
             .add-menu-item {
@@ -17,7 +17,7 @@ window.openAddPanel = function () {
                 border-radius: 32px; 
                 overflow: hidden;
                 transition: background 0.35s ease; 
-                border: none; /* ✨ 確保無邊框設計 */
+                border: none;
             }
             .add-menu-item.is-expanded {
                 background: rgba(128, 128, 128, 0.15); /* 展開時稍微變深 */
@@ -28,9 +28,9 @@ window.openAddPanel = function () {
                 border: none;
                 outline: none;
                 text-align: left;
-                padding: 16px 24px; /* ✨ 對齊歷史面板的完美呼吸空間 */
-                font-weight: 700;   /* ✨ 同步標準粗體 */
-                font-size: 0.95em;  /* ✨ 同步字體大小 */
+                padding: 16px 24px; /* 對齊歷史面板的內距 */
+                font-weight: 700;
+                font-size: 0.95em;
                 color: inherit;
                 cursor: pointer;
                 display: flex;
@@ -60,20 +60,20 @@ window.openAddPanel = function () {
                 transform: rotate(-180deg);
             }
             /* ============================================================================ */
-            /* ✨ 破除舊版生硬的 Grid 展開動畫，注入 menu.js 的物理級絲滑引擎 */
+            /* 展開動畫：與 menu.js 的手風琴動畫一致 */
             /* ============================================================================ */
             .add-menu-content-wrapper {
-                display: block !important; /* 🛑 破除生硬的 Grid 封印 */
+                display: block !important; /* 覆蓋舊版的 Grid 展開方式 */
                 max-height: 0px; 
                 opacity: 0;
                 overflow: hidden;
-                /* ✨ 注入與歷史紀錄完全相同的貝茲曲線動畫 */
+                /* 與歷史紀錄相同的貝茲曲線 */
                 transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
             }
             .add-menu-inner {
-                opacity: 1 !important; /* 🛑 移除舊版 translateY 造成的延遲感 */
+                opacity: 1 !important;
                 transform: none !important;
-                height: auto !important; /* 讓內容自然撐開 */
+                height: auto !important; /* 內容自然撐開 */
                 max-height: none !important;
                 min-height: 0 !important;
                 padding: 0 24px 24px 24px !important; 
@@ -147,7 +147,7 @@ window.openAddPanel = function () {
 };
 
 // ============================================================================
-// ✨ 雲端字典專屬：極速搜尋過濾引擎 (Dictionary Search)
+// 路線字典搜尋過濾
 // ============================================================================
 window.handleDictSearch = function() {
     const keyword = document.getElementById('dict-search-input').value.toLowerCase().trim();
@@ -159,7 +159,7 @@ window.handleDictSearch = function() {
         return;
     }
 
-    // 2. 防呆：檢查字典有沒有從雲端抓成功
+    // 2. 檢查字典是否已從雲端載入
     if (!window.MasterRouteDictionary) {
         resultsContainer.innerHTML = '<p style="text-align: center; color: #ff453a; padding: 20px 0;">サーバーから辞書データを取得できません</p>';
         return;
@@ -168,24 +168,24 @@ window.handleDictSearch = function() {
     const dict = window.MasterRouteDictionary;
     const results = [];
 
-    // 3. 遍歷整個雲端字典進行關鍵字比對 (支援搜路線名、公司名、甚至是羅馬拼音如果有的話)
+    // 3. 遍歷字典比對關鍵字（路線名、公司名）
     for (const rw_id in dict) {
         const route = dict[rw_id];
         
-        // 基礎全形轉半形/假名轉換可以在這裡做，目前先用最基礎的小寫比對
+        // 目前僅做小寫比對；全形/假名正規化可在此擴充
         if (route.name.toLowerCase().includes(keyword) || 
             route.company.toLowerCase().includes(keyword)) {
             results.push(route);
         }
     }
 
-    // 4. 如果沒搜到東西
+    // 4. 查無結果
     if (results.length === 0) {
         resultsContainer.innerHTML = '<p style="text-align: center; opacity: 0.5; padding: 20px 0; font-size: 0.9em;">該当する路線が見つかりません</p>';
         return;
     }
 
-    // 5. 為了效能，最多只顯示前 30 筆結果，防止畫面卡頓
+    // 5. 最多顯示前 30 筆，避免畫面卡頓
     const displayResults = results.slice(0, 30);
 
     resultsContainer.innerHTML = displayResults.map(route => `
@@ -201,13 +201,13 @@ window.handleDictSearch = function() {
 };
 
 // ============================================================================
-// ✨ 選擇路線後的行為 (未來將會把這個 ID 綁定到使用者的卡片上)
+// 選擇路線後的行為（將路線 ID 綁定到卡片）
 // ============================================================================
 window.selectDictionaryRoute = async function(routeId) {
     const route = window.MasterRouteDictionary[routeId];
     if (!route) return;
 
-    // 先跳出確認視窗，讓使用者知道他選中了什麼
+    // 顯示確認視窗
     const confirm = await window.iosConfirm(
         "路線の追加", 
         `「${route.company} ${route.name}」を選択しました。\nこの路線をカードに追加しますか？\n(カードへの紐付け機能は次回実装予定です)`,
@@ -216,12 +216,12 @@ window.selectDictionaryRoute = async function(routeId) {
     
     if (confirm) {
          console.log(`[準備綁定路線] ID: ${routeId}, Name: ${route.name}`);
-         // 未來這裡會呼叫 db.js 把 routeId 塞進目前卡片的 targetLineIds 裡面
+         // TODO: 呼叫 db.js 將 routeId 寫入卡片的 targetLineIds
     }
 };
 
 // ============================================================================
-// 🟢 卡片管理選單展開切換 (升級物理級絲滑引擎版)
+// 卡片管理選單的展開／收合
 // ============================================================================
 window.toggleAddMenuItem = function (id) {
     const item = document.getElementById(id);
@@ -230,7 +230,7 @@ window.toggleAddMenuItem = function (id) {
     const isOpen = item.classList.contains('is-expanded');
 
     if (isOpen) {
-        // 🟢 關閉動畫：與 menu.js 完全一致的回彈壓縮
+        // 關閉動畫：與 menu.js 一致
         if (wrapper) {
             wrapper.style.maxHeight = wrapper.scrollHeight + 'px'; 
             requestAnimationFrame(() => {
@@ -243,22 +243,22 @@ window.toggleAddMenuItem = function (id) {
         item.classList.remove('is-expanded');
         container.classList.remove('has-expanded');
     } else {
-        // 🟢 展開動畫
+        // 展開動畫
         item.classList.add('is-expanded');
         container.classList.add('has-expanded');
         
-        // 觸發加載資料的邏輯 (維持不變)
+        // 觸發資料載入
         if (id === 'add-item-3' && window.loadManageCards) {
             window.loadManageCards();
         }
 
         if (wrapper) {
-            // 給 JS 10ms 的時間渲染 Loading 字樣，然後瞬間啟動物理平滑展開
+            // 先給 10ms 渲染 Loading 字樣，再啟動展開動畫
             setTimeout(() => {
                 wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
                 wrapper.style.opacity = '1';
                 
-                // 動畫結束後解除高度封印，這樣當資料真的讀取完成時，它才能無縫繼續往下延伸！
+                // 動畫結束後解除高度限制，資料載入完成時可繼續向下延伸
                 setTimeout(() => {
                     if (item.classList.contains('is-expanded')) {
                         wrapper.style.maxHeight = 'none';
@@ -313,7 +313,7 @@ window.renderManagementCards = async function() {
         });
     }
     
-    // 🛡️ 防護罩：管理面板永遠只畫出「真實存在」的卡片，徹底過濾幽靈
+    // 管理面板只列出實際存在的卡片，過濾殘留的暫存資料
     const currentCards = window.appRailwayData ? window.appRailwayData.filter(r => !r.isTemporarySearch && r.id !== 'temp-search-route') : [];
     let visibleCount = 0;
 
@@ -411,11 +411,11 @@ window.toggleVisibility = async function(id) {
     const dbSandbox = await import('../data/db-add-panel.js');
     let hiddenIds = dbSandbox.getHiddenCards();
 
-    // ✨ 【核心修復】：加入幽靈資料自動清洗引擎！
-    // 確保 hiddenIds 裡面只計算「真實存在於目前系統中的卡片」，排除殘留的壞死資料
+    // 清理殘留資料：
+    // hiddenIds 只保留實際存在的卡片，排除殘留的無效 ID
     hiddenIds = hiddenIds.filter(hid => window.appRailwayData.some(c => c.id === hid));
     
-    // 順手把清理乾淨的陣列存回資料庫，修復 LocalStorage 的殘留問題
+    // 將清理後的陣列寫回資料庫，修正 LocalStorage 殘留
     if (dbSandbox.saveHiddenCards) {
         dbSandbox.saveHiddenCards(hiddenIds);
     }
@@ -641,12 +641,12 @@ function initDragAndDrop(list) {
     }
 }
 
-// ✨ 讓函數可以接收 prefillData (預填資料)
+// 可接收 prefillData（預填資料）
 window.createNewCardAndEdit = async function(prefillData = null) {
     if (!window.appRailwayData) window.appRailwayData = [];
 
-    // 🧹 ✨ 終極修復：不管是火車還是飛機，只要是「temp-search」開頭的預覽卡片，一律強力超渡！
-    // 這樣它就不會殘留，避免免死金牌漏洞！
+    // 無論鐵道或航班，以 temp-search 開頭的預覽卡片一律先移除，
+    // 避免殘留造成後續判斷錯誤
     window.appRailwayData = window.appRailwayData.filter(r => !r.id.startsWith('temp-search'));
 
     if (!isSandboxInitialized) {
@@ -662,7 +662,7 @@ window.createNewCardAndEdit = async function(prefillData = null) {
     const dbSandbox = await import('../data/db-add-panel.js');
     const hiddenIds = dbSandbox.getHiddenCards ? dbSandbox.getHiddenCards() : [];
 
-    // 這裡的計算已經很安全了，因為前面已經把幽靈卡片清掉了
+    // 前面已清除預覽卡片，此處計算可信
     const visibleCount = window.appRailwayData.filter(r => !hiddenIds.includes(r.id)).length;
 
     if (visibleCount >= 5) {
@@ -673,9 +673,9 @@ window.createNewCardAndEdit = async function(prefillData = null) {
             "キャンセル" 
         );
 
-        // 🚨 終極防護盾：就算達到上限被擋下，也要強制呼叫 render 重新畫主畫面！
-        // 把剛剛被我們 filter 刪掉的幽靈卡片從畫面上「物理性消滅」，
-        // 這樣使用者就絕對無法點擊它的面板來偷偷存檔了！
+        // 即使因上限被擋下，也要重新 render 主畫面，
+        // 將剛被過濾掉的預覽卡片從畫面移除，
+        // 避免使用者仍能透過殘留面板寫入資料
         const visibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
         if (typeof window.renderMainCards === 'function') {
             window.renderMainCards(visibleData);
@@ -706,7 +706,7 @@ window.createNewCardAndEdit = async function(prefillData = null) {
                 }
             }
         }
-        return; // 🛑 完美停止：幽靈已被清除，資料庫也不會被寫入！
+        return; // 預覽卡片已清除，不寫入資料庫
     }
 
     if (typeof window.closeUniversalPage === 'function') window.closeUniversalPage(true);
@@ -744,17 +744,17 @@ window.createNewCardAndEdit = async function(prefillData = null) {
             detailedLines: prefillData && prefillData.detailedLines ? prefillData.detailedLines : [],
             statusFlags: prefillData && prefillData.statusFlags ? prefillData.statusFlags : [false, false, false, false, false, false, false],
             
-            // ✈️ 關鍵修復：新卡片生成時，必須確認並繼承飛機的血統！
+            // 新卡片需繼承航班卡片的屬性
             isFlightCard: prefillData && prefillData.isFlightCard ? prefillData.isFlightCard : false,
             flightData: prefillData && prefillData.flightData ? prefillData.flightData : null
         };
 
-        // 🧹 清除幽靈標記，避免這張實體卡片被系統當作預覽卡片刪掉
+        // 清除暫存標記，避免這張卡片被當作預覽卡片刪除
         delete newCard.isTemporarySearch;
-        // 🧹 如果系統有綁定舊的 DOM 元素緩存，一併清掉強制系統重繪
+        // 清除舊的 DOM 快取，強制重繪
         delete newCard.cardElement;
 
-        // 直接將新卡片加入最後面（圖層最上方）
+        // 新卡片加到陣列最後（圖層最上方）
         window.appRailwayData.push(newCard);
 
         const updatedVisibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
@@ -832,32 +832,32 @@ window.deleteAllHiddenCards = async function() {
 };
 
 // ============================================================================
-// ✨ 點擊「既存のカードに路線を追加」：關閉面板並自動觸發首頁搜尋
+// 「既存のカードに路線を追加」：關閉面板並開啟首頁搜尋
 // ============================================================================
 window.openSearchFromAddPanel = function() {
-    // 1. 防呆：如果有正在進行的動畫就阻擋
+    // 1. 動畫進行中則阻擋
     if (window.isAnimating || window.isFlipAnimating) return;
 
     // 2. 關閉當前的「新增面板」(Universal Page)
     if (typeof window.closeUniversalPage === 'function') {
-        window.closeUniversalPage(true); // true 代表觸發流暢的退場動畫
+        window.closeUniversalPage(true);
     }
 
-    // 3. 轉場排程：等待 450ms 讓面板關閉動畫完全落地
+    // 3. 等待 450ms 讓面板關閉動畫結束
     setTimeout(() => {
-        // 尋找首頁頂部的搜尋觸發按鈕並模擬點擊
+        // 以程式觸發首頁的搜尋按鈕
         const searchBtn = document.querySelector('.search-trigger') || document.getElementById('search-trigger');
 
         if (searchBtn) {
-            searchBtn.click(); // 觸發 Header 搜尋列展開
+            searchBtn.click();
 
-            // 4. 微互動優化：等待搜尋框展開動畫後，自動 Focus 並喚起手機虛擬鍵盤
+            // 4. 搜尋框展開後自動 focus，喚起虛擬鍵盤
             setTimeout(() => {
                 const searchInput = document.getElementById('search-input');
                 if (searchInput) {
                     searchInput.focus({ preventScroll: true });
                 }
-            }, 300); // 配合 Header 搜尋列展開的動畫時間
+            }, 300); // 配合搜尋列展開動畫時間
             
         } else {
             console.warn('[UX Engine] 找不到搜尋按鈕，無法展開搜尋列');
