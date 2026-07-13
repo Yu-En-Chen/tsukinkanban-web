@@ -1,8 +1,8 @@
 /* ============================================================================
-   bus.css - 公車卡片詳細面板（方向切換塊、停留所列表、收折／預覽）
+   bus.css - 公車詳細面板（方向切換塊、停留所列表、收折／預覽）
    ============================================================================ */
 
-/* --- 1. 方向切換塊（橫向滑動的分段選擇器） --- */
+/* --- 1. 方向切換塊（橫向滑動的分段選擇器，只標示終點方向） --- */
 .bus-dir-slider {
     display: flex;
     gap: 8px;
@@ -45,42 +45,18 @@
     border-color: transparent;
 }
 
-/* --- 2. 停留所列表 --- */
-.bus-stops-card {
-    padding: 14px 18px;
-    gap: 0;
-}
-
-.bus-stops-header {
+/* --- 2. 停留所列表（不包外框，時間獨立成膠囊） --- */
+.bus-stops-list {
     display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding: 4px 2px 12px 2px;
-    border-bottom: 1px solid rgba(120, 120, 128, 0.18);
-    margin-bottom: 6px;
-}
-
-.bus-stops-operator {
-    font-weight: 800;
-    font-size: 0.95em;
-}
-
-.bus-stops-source {
-    font-size: 0.75em;
-    font-weight: 600;
-    opacity: 0.55;
+    flex-direction: column;
+    padding: 0 4px;
 }
 
 .bus-stop-row {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 11px 2px;
-    border-bottom: 1px solid rgba(120, 120, 128, 0.12);
-}
-
-.bus-stop-row:last-child {
-    border-bottom: none;
+    padding: 9px 4px;
 }
 
 /* 站點圓點：模擬路線圖的停靠點 */
@@ -109,35 +85,45 @@
     white-space: nowrap;
 }
 
-/* 到站資訊（取代列車的「平常／延誤分鐘」位置） */
-.bus-eta-live {
+/* 站牌面板中的行き先（接在路線名後方，字級較小） */
+.bus-route-dest {
+    font-size: 0.8em;
+    font-weight: 600;
+    opacity: 0.55;
+    margin-left: 8px;
+}
+
+/* 到站時間膠囊：每個停留所的時間獨立包起來 */
+.bus-eta-pill {
     flex-shrink: 0;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 0.82em;
     font-weight: 800;
-    font-size: 0.9em;
-    color: #1db954;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    white-space: nowrap;
 }
 
-.bus-eta-sched {
-    flex-shrink: 0;
-    font-weight: 700;
-    font-size: 0.85em;
+.bus-eta-pill.live {
+    color: #0e8a3e;
+}
+
+.bus-eta-pill.sched {
     font-family: monospace;
-    opacity: 0.65;
+    opacity: 0.75;
 }
 
-.bus-eta-none {
-    flex-shrink: 0;
-    font-weight: 700;
-    font-size: 0.85em;
-    opacity: 0.35;
+.bus-eta-pill.none {
+    opacity: 0.4;
 }
 
 /* 選擇模式：整列可點 */
 .bus-stop-row.selectable {
     cursor: pointer;
     border-radius: 12px;
-    padding-left: 8px;
-    padding-right: 8px;
     transition: background 0.15s ease;
 }
 
@@ -145,19 +131,20 @@
     background: rgba(120, 120, 128, 0.15);
 }
 
-/* 行駛中的巴士標記（位於前一站與本站之間） */
+/* 行駛中的巴士標記（位於前一站與本站之間，純文字） */
 .bus-marker-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 2px 4px 24px;
-    font-size: 0.8em;
+    padding: 2px 4px 2px 26px;
+    font-size: 0.78em;
     font-weight: 700;
     color: #0a84ff;
 }
 
-.bus-marker-row svg {
-    flex-shrink: 0;
+/* 乘車處編號（站牌面板） */
+.bus-pole-heading {
+    font-size: 0.8em;
+    font-weight: 800;
+    opacity: 0.6;
+    padding: 4px 4px 6px 4px;
 }
 
 /* 選擇模式的提示文字 */
@@ -189,7 +176,7 @@
     text-decoration: underline;
 }
 
-/* 搜尋結果右側的公車標籤 */
+/* 搜尋結果右側的公車資訊 */
 .bus-search-right {
     font-size: 0.8em;
     font-weight: 700;
@@ -210,7 +197,12 @@
         color: #000;
     }
 
-    .bus-eta-live {
+    .bus-eta-pill {
+        background: rgba(30, 30, 32, 0.65);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .bus-eta-pill.live {
         color: #30d158;
     }
 

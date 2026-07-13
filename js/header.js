@@ -494,9 +494,19 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                 if (!currentData) return;
 
                 let linksToCheck = [];
-                
-                // 判斷是否為航班卡片
-                if (currentData.isFlightCard && currentData.flightData) {
+
+                // 公車卡片／公車站牌預覽：業者官方網站
+                if (currentData.isBusCard && currentData.busData && currentData.busData.url) {
+                    linksToCheck.push({
+                        name: `${currentData.busData.label || 'バス'} 公式サイト`,
+                        url: currentData.busData.url
+                    });
+                } else if (currentData.isBusStopCard && currentData.busStopData && currentData.busStopData.url) {
+                    linksToCheck.push({
+                        name: `${currentData.busStopData.label || 'バス'} 公式サイト`,
+                        url: currentData.busStopData.url
+                    });
+                } else if (currentData.isFlightCard && currentData.flightData) {
                     const fData = currentData.flightData;
                     const airlineStr = (fData.airline || '').toUpperCase();
                     
@@ -543,6 +553,15 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                 } else if (currentData.targetLineIds && currentData.targetLineIds.length > 0) {
                     // 鐵道卡片：從 MasterRouteDictionary 查對應官網
                     currentData.targetLineIds.forEach(id => {
+                        // 混合卡片內的公車路線：從公車快取取得業者官網
+                        if (typeof id === 'string' && id.startsWith('bus:')) {
+                            const busInfo = window.GlobalBusData ? window.GlobalBusData[id] : null;
+                            if (busInfo && busInfo.url) {
+                                linksToCheck.push({ name: `${busInfo.label || 'バス'} 公式サイト`, url: busInfo.url });
+                            }
+                            return;
+                        }
+
                         const dictRoute = window.MasterRouteDictionary ? window.MasterRouteDictionary[id] : null;
                         if (dictRoute) {
                             const url = dictRoute.url || dictRoute.companyUrl || dictRoute.website;

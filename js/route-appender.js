@@ -68,6 +68,9 @@ window.RouteAppender = {
             if (card.isFlightCard) {
                 isDisabled = true;
                 statusText = "航空用"; // 飛機專用卡片
+            } else if (card.isBusCard) {
+                isDisabled = true;
+                statusText = "バス用"; // 公車專用卡片（單一路線的完整面板）
             } else if (targetLines.includes(newRoute.id)) {
                 isDisabled = true;
                 statusText = "追加済"; // 已經存在該路線

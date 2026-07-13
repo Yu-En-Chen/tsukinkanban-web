@@ -1,5 +1,5 @@
 // buses.js - 公車資料模組（搜尋、快取、卡面格式與詳細面板）
-// 原則：預設不主動請求公車 API，只有「使用者搜尋當下」與「牌組內已有儲存的公車卡片」才發送請求。
+// 原則：預設不主動請求公車 API，只有「使用者搜尋當下」與「牌組內已有儲存的公車路線」才發送請求。
 
 const BUS_API_BASE = 'https://api.tsukinkanban.com/api/bus';
 const BUS_CACHE_KEY = 'Tsukin_Cached_BusData';
@@ -29,9 +29,12 @@ function parseBusTargetId(targetId) {
 }
 
 // ============================================================================
-// 全域快取：targetId -> 業者結果物件（含 patterns），另存 fetchedAt 時間戳
+// 全域快取
+// GlobalBusData：targetId -> 業者結果（含 patterns）
+// GlobalBusStopData：stopKey -> 站牌查詢結果（不持久化，僅搜尋當下使用）
 // ============================================================================
 window.GlobalBusData = window.GlobalBusData || {};
+window.GlobalBusStopData = window.GlobalBusStopData || {};
 
 export function initBuses() {
     // 只還原本地快取，不發送任何請求
@@ -48,8 +51,7 @@ function persistBusCache() {
 }
 
 // ============================================================================
-// 每張公車卡的顯示偏好（方向、預覽停留所、收折狀態），以 targetId 為 key
-// 存在 localStorage，預覽卡與正式卡共用同一份設定
+// 每條公車路線的顯示偏好（方向、預覽停留所、收折狀態），以 targetId 為 key
 // ============================================================================
 export function getBusPrefs(targetId) {
     try {
@@ -71,12 +73,11 @@ export function saveBusPrefs(targetId, prefs) {
 // ============================================================================
 // API 請求
 // ============================================================================
-async function fetchBusRoute(routeName) {
+async function fetchBusApi(path) {
     try {
-        const res = await fetch(`${BUS_API_BASE}/route/${encodeURIComponent(routeName)}`, { cache: 'no-store' });
+        const res = await fetch(`${BUS_API_BASE}${path}`, { cache: 'no-store' });
         if (!res.ok) return null;
-        const json = await res.json();
-        return json;
+        return await res.json();
     } catch (e) {
         return null;
     }
@@ -87,7 +88,6 @@ function storeRouteResults(json) {
     const stored = [];
     if (!json || !Array.isArray(json.results)) return stored;
     json.results.forEach(result => {
-        // 以第一個 pattern 的標題推回路線名；查詢字串可能是別名，官方表記以 routes 資料為準
         const routeName = extractRouteName(result, json.query);
         const targetId = makeBusTargetId(result.operator, routeName);
         window.GlobalBusData[targetId] = Object.assign({}, result, {
@@ -111,55 +111,101 @@ function extractRouteName(result, fallback) {
     return fallback || '';
 }
 
+// 方向標籤：只顯示終點方向，不重複路線名
+function directionLabel(pattern, routeName) {
+    const title = pattern.title || '';
+    if (routeName && title.startsWith(routeName)) {
+        const rest = title.slice(routeName.length).trim();
+        if (rest) return rest;
+    }
+    const firstSpace = title.indexOf(' ');
+    if (firstSpace > 0) return title.slice(firstSpace + 1).trim();
+    return title || '方向';
+}
+
 // ============================================================================
-// 搜尋整合：由 filterCards 呼叫，600ms debounce，結果非同步補進下拉選單
+// 搜尋整合：由 filterCards 呼叫
+// 250ms debounce，路線與站牌並行查詢，查詢期間先顯示載入中的佔位項目
 // ============================================================================
 let busSearchTimer = null;
-const busSearchCache = {}; // keyword -> { ts, targetIds, error }
+const busSearchCache = {}; // keyword -> { ts, routeIds, stopKeys, error }
 
 export function searchBusesDebounced(rawKeyword) {
     if (busSearchTimer) clearTimeout(busSearchTimer);
     const keyword = (rawKeyword || '').trim();
     if (keyword.length < 2) return; // 太短的字串不打 API
 
-    // 已有 60 秒內的快取 → 直接渲染，不再請求
+    // 60 秒內的快取直接渲染，不再請求
     const cached = busSearchCache[keyword];
     if (cached && Date.now() - cached.ts < 60000) {
-        appendBusResultsToDropdown(keyword, cached.targetIds, cached.error);
+        renderBusSearchResults(keyword, cached);
         return;
     }
 
-    busSearchTimer = setTimeout(async () => {
-        const json = await fetchBusRoute(keyword);
+    // 立即顯示載入中佔位，縮短體感等待
+    showBusSearchLoading();
 
-        // 使用者已經改變搜尋內容 → 丟棄本次結果
+    busSearchTimer = setTimeout(async () => {
+        // 路線與站牌並行查詢
+        const [routeJson, stopJson] = await Promise.all([
+            fetchBusApi(`/route/${encodeURIComponent(keyword)}`),
+            fetchBusApi(`/stop/${encodeURIComponent(keyword)}`)
+        ]);
+
+        // 使用者已改變搜尋內容 → 丟棄本次結果
         const input = document.getElementById('search-input');
         if (!input || input.value.trim() !== keyword) return;
 
-        if (!json) return;
-        if (json.error) {
-            busSearchCache[keyword] = { ts: Date.now(), targetIds: [], error: true };
-            appendBusResultsToDropdown(keyword, [], true);
-            return;
+        const entry = { ts: Date.now(), routeIds: [], stopKeys: [], error: false };
+
+        if ((routeJson && routeJson.error) || (stopJson && stopJson.error)) {
+            entry.error = true;
+        }
+        if (routeJson && !routeJson.error) {
+            entry.routeIds = storeRouteResults(routeJson);
+        }
+        if (stopJson && !stopJson.error && Array.isArray(stopJson.results)) {
+            stopJson.results.forEach(result => {
+                (result.stops || []).forEach(stop => {
+                    const key = `busstop:${result.operator}:${stop.name}`;
+                    window.GlobalBusStopData[key] = {
+                        operator: result.operator,
+                        label: result.label,
+                        url: result.url,
+                        source: result.source,
+                        stopName: stop.name,
+                        stop: stop
+                    };
+                    entry.stopKeys.push(key);
+                });
+            });
         }
 
-        const targetIds = storeRouteResults(json);
-        busSearchCache[keyword] = { ts: Date.now(), targetIds: targetIds, error: false };
-        appendBusResultsToDropdown(keyword, targetIds, false);
-    }, 600);
+        busSearchCache[keyword] = entry;
+        renderBusSearchResults(keyword, entry);
+    }, 250);
 }
 
-const busIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6v6"/><path d="M16 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.5.2-1.2s-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/></svg>`;
+function showBusSearchLoading() {
+    const dropdown = document.getElementById('home-search-dropdown');
+    if (!dropdown || dropdown.style.display === 'none') return;
+    dropdown.querySelectorAll('.bus-search-item').forEach(el => el.remove());
+
+    const loading = document.createElement('div');
+    loading.className = 'search-result-item bus-search-item bus-search-loading';
+    loading.innerHTML = `<div class="search-result-title" style="opacity: 0.55;">バスを検索中...</div>`;
+    dropdown.appendChild(loading);
+}
 
 // 將公車結果補進既有的搜尋下拉選單（不動鐵道與航班的結果）
-function appendBusResultsToDropdown(keyword, targetIds, isError) {
+function renderBusSearchResults(keyword, entry) {
     const dropdown = document.getElementById('home-search-dropdown');
     if (!dropdown || dropdown.style.display === 'none') return;
 
-    // 清掉上一輪的公車結果
+    // 清掉上一輪的公車結果與載入中佔位
     dropdown.querySelectorAll('.bus-search-item').forEach(el => el.remove());
 
-    if (isError) {
+    if (entry.error && entry.routeIds.length === 0 && entry.stopKeys.length === 0) {
         const notice = document.createElement('div');
         notice.className = 'search-result-item bus-search-item';
         notice.innerHTML = `<div class="search-result-title" style="opacity: 0.7;">バス情報を初期化中です。しばらくしてから再検索してください。</div>`;
@@ -167,13 +213,14 @@ function appendBusResultsToDropdown(keyword, targetIds, isError) {
         return;
     }
 
-    if (targetIds.length === 0) return;
+    if (entry.routeIds.length === 0 && entry.stopKeys.length === 0) return;
 
     // 有公車結果時，移除「該当する路線が見つかりません」的空狀態
     const empty = dropdown.querySelector('.search-empty-state');
     if (empty) empty.remove();
 
-    targetIds.forEach(targetId => {
+    // 路線結果
+    entry.routeIds.forEach(targetId => {
         const data = window.GlobalBusData[targetId];
         if (!data) return;
 
@@ -187,7 +234,7 @@ function appendBusResultsToDropdown(keyword, targetIds, isError) {
         item.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <div class="search-result-title" style="display: flex; align-items: center; gap: 6px;">${busIconSvg}${data.routeName}</div>
+                    <div class="search-result-title">${data.routeName}</div>
                     <div class="search-result-subtitle">${data.label}</div>
                 </div>
                 <div class="bus-search-right">${rightText}</div>
@@ -196,10 +243,34 @@ function appendBusResultsToDropdown(keyword, targetIds, isError) {
         item.onclick = () => window.previewBusFromSearch(targetId);
         dropdown.appendChild(item);
     });
+
+    // 站牌結果：直接看該站所有停靠路線
+    entry.stopKeys.forEach(stopKey => {
+        const data = window.GlobalBusStopData[stopKey];
+        if (!data) return;
+
+        const routeCount = (data.stop.poles || []).reduce((sum, p) => sum + (p.routes || []).length, 0);
+
+        const item = document.createElement('div');
+        item.className = 'search-result-item bus-search-item';
+        item.style.cursor = 'pointer';
+        item.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div class="search-result-title">${data.stopName}</div>
+                    <div class="search-result-subtitle">バス停・${data.label}</div>
+                </div>
+                <div class="bus-search-right">${routeCount}路線</div>
+            </div>
+        `;
+        item.onclick = () => window.previewBusStopFromSearch(stopKey);
+        dropdown.appendChild(item);
+    });
 }
 
 // ============================================================================
-// 已儲存公車卡的背景更新（只在牌組內有公車卡時才發送請求）
+// 已儲存公車路線的背景更新
+// 掃描所有卡片的 targetLineIds（含混合卡片內的公車路線），無公車路線時不發送請求
 // ============================================================================
 let isRefreshingBus = false;
 
@@ -213,7 +284,7 @@ export async function refreshSavedBusRoutes() {
             if (isBusTargetId(id)) savedTargets.add(id);
         });
     });
-    if (savedTargets.size === 0) return; // 沒有已儲存的公車卡 → 完全不請求
+    if (savedTargets.size === 0) return;
 
     isRefreshingBus = true;
     let changed = false;
@@ -224,7 +295,7 @@ export async function refreshSavedBusRoutes() {
             if (cached && cached.fetchedAt && Date.now() - cached.fetchedAt < BUS_REFRESH_MIN_MS) continue;
 
             const { operator, route } = parseBusTargetId(targetId);
-            const json = await fetchBusRoute(route);
+            const json = await fetchBusApi(`/route/${encodeURIComponent(route)}`);
             if (!json || json.error || !Array.isArray(json.results)) continue;
 
             const match = json.results.find(r => r.operator === operator);
@@ -252,7 +323,6 @@ export async function refreshSavedBusRoutes() {
 export function generateBusDataFormat(targetId) {
     const { operator, route } = parseBusTargetId(targetId);
     const cached = window.GlobalBusData[targetId];
-    const hex = OPERATOR_COLORS[operator] || '#2E7D32';
 
     let flags = [false, false, false, false, false, false, true]; // 預設灰色注意燈
     let desc = 'バス情報を取得しています...';
@@ -263,17 +333,8 @@ export function generateBusDataFormat(targetId) {
         flags = [false, false, false, false, false, isRealtime, !isRealtime];
 
         // 預覽停留所已設定時，卡面描述直接顯示該站的到站資訊
-        const prefs = getBusPrefs(targetId);
-        const pattern = cached.patterns[Math.min(prefs.dir, cached.patterns.length - 1)];
-        let previewLine = '';
-        if (prefs.previewStops.length > 0 && pattern) {
-            const stop = pattern.stops.find(s => prefs.previewStops.includes(s.name));
-            if (stop) {
-                const eta = stop.eta_text ? stop.eta_text : (stop.next_text ? `次発 ${stop.next_text}` : '');
-                if (eta) previewLine = `${stop.name}：${eta}`;
-            }
-        }
-        desc = previewLine || `${cached.label}（${cached.source || 'データなし'}）`;
+        const preview = getPreviewStopInfo(targetId, cached);
+        desc = preview || `${cached.label}（${cached.source || 'データなし'}）`;
 
         if (cached.fetchedAt) {
             const d = new Date(cached.fetchedAt);
@@ -286,7 +347,51 @@ export function generateBusDataFormat(targetId) {
         desc: desc,
         updateTime: updateTime,
         busData: cached || { operator: operator, routeName: route, label: 'バス', source: '', url: '', patterns: [] },
-        hex: hex
+        hex: OPERATOR_COLORS[operator] || '#2E7D32'
+    };
+}
+
+// 取得預覽停留所（或起點站）的到站摘要文字
+function getPreviewStopInfo(targetId, busData) {
+    const prefs = getBusPrefs(targetId);
+    const patterns = busData.patterns || [];
+    if (patterns.length === 0) return '';
+    const pattern = patterns[Math.min(prefs.dir, patterns.length - 1)];
+    if (!pattern || !pattern.stops) return '';
+
+    let stop = null;
+    if (prefs.previewStops.length > 0) {
+        stop = pattern.stops.find(s => prefs.previewStops.includes(s.name));
+    }
+    if (!stop) stop = pattern.stops[0];
+    if (!stop) return '';
+
+    const eta = stop.eta_text ? stop.eta_text : (stop.next_text ? `次発 ${stop.next_text}` : '');
+    return eta ? `${stop.name}：${eta}` : '';
+}
+
+// 混合卡片（鐵道卡內的公車路線）用：生成一筆 detailedLine 摘要
+export function generateBusLineSummary(targetId) {
+    const fmt = generateBusDataFormat(targetId);
+    const bd = fmt.busData;
+    const hasData = bd.patterns && bd.patterns.length > 0;
+    const summary = hasData ? (getPreviewStopInfo(targetId, bd) || '運行情報あり') : 'バス情報を取得しています...';
+
+    return {
+        id: targetId,
+        name: bd.routeName || targetId,
+        company: bd.label || 'バス',
+        status: hasData ? (bd.source || 'バス') : '更新中...',
+        message: summary,
+        delay: 0,
+        updateTime: fmt.updateTime,
+        url: bd.url || '',
+        isDelayed: false,
+        isError: false,
+        isAttention: !hasData,
+        advancedDetails: [],
+        isBusLine: true,
+        hasData: hasData
     };
 }
 
@@ -296,46 +401,44 @@ export function getBusOperatorColor(operator) {
 }
 
 // ============================================================================
-// 詳細面板渲染：方向切換塊、停留所列表、收折／預覽停留所
-// 由 script.js 的 handleCardClick 呼叫；re-render 都在此閉包內完成
+// 共用：到站時間膠囊（每個停留所的時間獨立包起來）
+// ============================================================================
+function etaPillHtml(etaText, nextText) {
+    if (etaText) return `<span class="bus-eta-pill live">${etaText}</span>`;
+    if (nextText) return `<span class="bus-eta-pill sched">次発 ${nextText}</span>`;
+    return `<span class="bus-eta-pill none">--</span>`;
+}
+
+// ============================================================================
+// 路線詳細面板：方向切換塊、停留所列表、收折／預覽停留所
 // ============================================================================
 export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
     const targetId = (data.targetLineIds && data.targetLineIds[0]) || '';
-    const busData = data.busData || {};
-    const patterns = busData.patterns || [];
     const prefs = getBusPrefs(targetId);
     let selectionMode = false;
     let pendingStops = [];
 
-    // 面板容器（re-render 時整包替換）
     const container = document.createElement('div');
     container.className = 'bus-panel-container';
-    container.style.cssText = 'display: flex; flex-direction: column; gap: 16px;';
+    container.style.cssText = 'display: flex; flex-direction: column; gap: 14px;';
     scrollWrapper.appendChild(container);
 
     // 讓背景更新可以刷新開啟中的面板
     window.__busPanelRefresh = () => {
         const latest = window.GlobalBusData[targetId];
-        if (latest) {
-            data.busData = latest;
-        }
+        if (latest) data.busData = latest;
         render();
     };
 
     const chevronDown = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="m6 9 6 6 6-6"/></svg>`;
     const chevronUp = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="m18 15-6-6-6 6"/></svg>`;
-    const iconShare = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`;
-
-    function currentPattern() {
-        if (patterns.length === 0) return null;
-        return patterns[Math.min(prefs.dir, patterns.length - 1)];
-    }
 
     function render() {
         container.innerHTML = '';
-        const freshPatterns = (data.busData && data.busData.patterns) || [];
-        const pattern = freshPatterns.length > 0
-            ? freshPatterns[Math.min(prefs.dir, freshPatterns.length - 1)]
+        const busData = data.busData || {};
+        const patterns = busData.patterns || [];
+        const pattern = patterns.length > 0
+            ? patterns[Math.min(prefs.dir, patterns.length - 1)]
             : null;
 
         // --- 無資料的空狀態 ---
@@ -352,51 +455,37 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             return;
         }
 
-        // --- 1. 方向切換塊（滑動選擇不同班次方向） ---
-        if (freshPatterns.length > 0) {
-            const slider = document.createElement('div');
-            slider.className = 'bus-dir-slider';
-            freshPatterns.forEach((p, i) => {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'bus-dir-btn' + (i === Math.min(prefs.dir, freshPatterns.length - 1) ? ' active' : '');
-                btn.textContent = p.title || `方向 ${i + 1}`;
-                btn.onclick = (e) => {
-                    e.stopPropagation();
-                    if (navigator.vibrate) navigator.vibrate(10);
-                    prefs.dir = i;
-                    saveBusPrefs(targetId, prefs);
-                    selectionMode = false;
-                    render();
-                };
-                slider.appendChild(btn);
-            });
-            container.appendChild(slider);
-        }
+        // --- 1. 方向切換塊（只標示終點方向） ---
+        const slider = document.createElement('div');
+        slider.className = 'bus-dir-slider';
+        patterns.forEach((p, i) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'bus-dir-btn' + (i === Math.min(prefs.dir, patterns.length - 1) ? ' active' : '');
+            btn.textContent = directionLabel(p, busData.routeName);
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                if (navigator.vibrate) navigator.vibrate(10);
+                prefs.dir = i;
+                saveBusPrefs(targetId, prefs);
+                selectionMode = false;
+                render();
+            };
+            slider.appendChild(btn);
+        });
+        container.appendChild(slider);
 
-        // --- 2. 停留所列表 ---
-        const stopsCard = document.createElement('div');
-        stopsCard.className = 'extension-route-card bus-stops-card';
+        // --- 2. 停留所列表（不包大卡片，每站的時間獨立成膠囊） ---
+        const stopsList = document.createElement('div');
+        stopsList.className = 'bus-stops-list';
 
-        // 標頭：業者、資料來源與運行台數
-        const header = document.createElement('div');
-        header.className = 'bus-stops-header';
-        const busCount = pattern.bus_count || 0;
-        header.innerHTML = `
-            <span class="bus-stops-operator">${busData.label || 'バス'}</span>
-            <span class="bus-stops-source">${busData.source || ''}${busCount > 0 ? `・運行中 ${busCount}台` : ''}</span>
-        `;
-        stopsCard.appendChild(header);
-
-        // 選擇模式的提示
         if (selectionMode) {
             const hint = document.createElement('div');
             hint.className = 'bus-select-hint';
             hint.textContent = 'プレビューに表示する停留所を選択（最大2つ）';
-            stopsCard.appendChild(hint);
+            stopsList.appendChild(hint);
         }
 
-        // 收折狀態：只顯示被選為預覽的停留所
         const isCollapsedView = prefs.collapsed && prefs.previewStops.length > 0 && !selectionMode;
         const stopsToShow = isCollapsedView
             ? pattern.stops.filter(s => prefs.previewStops.includes(s.name))
@@ -406,33 +495,23 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             const none = document.createElement('div');
             none.className = 'bus-select-hint';
             none.textContent = '選択した停留所はこの方向にありません';
-            stopsCard.appendChild(none);
+            stopsList.appendChild(none);
         }
 
         stopsToShow.forEach(stop => {
-            // 有巴士接近本站時，在該站上方標出行駛中的車輛（位於前一站與本站之間）
+            // 有巴士行駛在前一站與本站之間時，於該站上方以文字標示
             if (stop.buses_approaching && stop.buses_approaching.length > 0) {
                 stop.buses_approaching.forEach(bus => {
                     const marker = document.createElement('div');
                     marker.className = 'bus-marker-row';
-                    const occText = bus.occupancy ? `・${bus.occupancy}` : '';
-                    marker.innerHTML = `${busIconSvg}<span>${bus.number || ''}${occText}</span>`;
-                    stopsCard.appendChild(marker);
+                    const occText = bus.occupancy ? `（${bus.occupancy}）` : '';
+                    marker.textContent = `走行中 ${bus.number || ''}${occText}`;
+                    stopsList.appendChild(marker);
                 });
             }
 
             const row = document.createElement('div');
             row.className = 'bus-stop-row';
-
-            // 原本列車顯示「平常／延誤分鐘」的位置 → 顯示到站預測或表定時刻
-            let etaHtml;
-            if (stop.eta_text) {
-                etaHtml = `<span class="bus-eta-live">${stop.eta_text}</span>`;
-            } else if (stop.next_text) {
-                etaHtml = `<span class="bus-eta-sched">次発 ${stop.next_text}</span>`;
-            } else {
-                etaHtml = `<span class="bus-eta-none">--</span>`;
-            }
 
             const isSelected = selectionMode
                 ? pendingStops.includes(stop.name)
@@ -441,7 +520,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             row.innerHTML = `
                 <span class="bus-stop-dot${isSelected ? ' selected' : ''}"></span>
                 <span class="bus-stop-name">${stop.name}</span>
-                ${etaHtml}
+                ${etaPillHtml(stop.eta_text, stop.next_text)}
             `;
 
             if (selectionMode) {
@@ -460,10 +539,10 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
                 };
             }
 
-            stopsCard.appendChild(row);
+            stopsList.appendChild(row);
         });
 
-        container.appendChild(stopsCard);
+        container.appendChild(stopsList);
 
         // --- 3. 收折按鈕 ---
         const toggleBtn = document.createElement('button');
@@ -475,8 +554,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             toggleBtn.onclick = (e) => {
                 e.stopPropagation();
                 if (pendingStops.length === 0) {
-                    // 未選擇任何站 → 視為取消
-                    selectionMode = false;
+                    selectionMode = false; // 未選擇任何站 → 視為取消
                     render();
                     return;
                 }
@@ -514,7 +592,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         }
         container.appendChild(toggleBtn);
 
-        // 已有預覽站且為展開狀態時，額外提供「重新選擇」入口
+        // 已有預覽站且為展開狀態時，提供重新選擇入口
         if (!selectionMode && !isCollapsedView && prefs.previewStops.length > 0) {
             const changeBtn = document.createElement('button');
             changeBtn.type = 'button';
@@ -532,37 +610,101 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         appendActionButtons();
     }
 
-    // 底部動作按鈕（官網／新規カード作成）
+    // 底部動作按鈕：與列車預覽一致（既存カード追加／新規カード作成）
+    // 官方網站連結改由膠囊按鈕（與列車卡片相同）提供，不在面板內顯示
     function appendActionButtons() {
+        if (!opts.isPreview) return;
+
         const btnContainer = document.createElement('div');
         btnContainer.className = 'flight-action-buttons-container';
 
-        if (busData.url) {
-            const siteBtn = document.createElement('button');
-            siteBtn.type = 'button';
-            siteBtn.className = 'flight-action-btn';
-            siteBtn.innerHTML = `${busIconSvg}<span>公式サイト</span>`;
-            siteBtn.onclick = (e) => {
-                e.stopPropagation();
-                window.open(busData.url, '_blank', 'noopener,noreferrer');
-            };
-            btnContainer.appendChild(siteBtn);
-        }
+        const iconListPlus = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M11 12H3"/><path d="M16 6H3"/><path d="M16 18H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></svg>`;
+        const iconSquarePlus = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`;
 
-        if (opts.isPreview && typeof opts.onCreateCard === 'function') {
-            const createBtn = document.createElement('button');
-            createBtn.type = 'button';
-            createBtn.className = 'flight-action-btn';
-            createBtn.innerHTML = `${iconShare}<span>新規カード作成</span>`;
-            createBtn.onclick = (e) => {
+        const makeBtn = (iconHtml, text, onClick) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'flight-action-btn';
+            btn.innerHTML = `${iconHtml}<span style="font-size: 0.9em; letter-spacing: -0.5px;">${text}</span>`;
+            btn.onclick = (e) => {
                 e.stopPropagation();
-                opts.onCreateCard();
+                onClick();
             };
-            btnContainer.appendChild(createBtn);
+            return btn;
+        };
+
+        if (typeof opts.onAddToExisting === 'function') {
+            btnContainer.appendChild(makeBtn(iconListPlus, '既存カード追加', opts.onAddToExisting));
+        }
+        if (typeof opts.onCreateCard === 'function') {
+            btnContainer.appendChild(makeBtn(iconSquarePlus, '新規カード作成', opts.onCreateCard));
         }
 
         if (btnContainer.children.length > 0) container.appendChild(btnContainer);
     }
 
     render();
+}
+
+// ============================================================================
+// 站牌詳細面板：列出該站牌每條路線的到站資訊（僅供查看）
+// ============================================================================
+export function renderBusStopPanel(data, scrollWrapper) {
+    const stopData = data.busStopData || {};
+    const poles = (stopData.stop && stopData.stop.poles) || [];
+
+    const container = document.createElement('div');
+    container.className = 'bus-panel-container';
+    container.style.cssText = 'display: flex; flex-direction: column; gap: 14px;';
+    scrollWrapper.appendChild(container);
+
+    if (poles.length === 0) {
+        const emptyCard = document.createElement('div');
+        emptyCard.className = 'extension-route-card';
+        emptyCard.style.cssText = 'padding: 32px 20px; text-align: center;';
+        emptyCard.innerHTML = `<div style="font-weight: 700; opacity: 0.8;">この停留所の情報を取得できません</div>`;
+        container.appendChild(emptyCard);
+        return;
+    }
+
+    poles.forEach(pole => {
+        const list = document.createElement('div');
+        list.className = 'bus-stops-list';
+
+        // 乘車處編號（有資料時才顯示）
+        if (pole.pole_no) {
+            const heading = document.createElement('div');
+            heading.className = 'bus-pole-heading';
+            heading.textContent = `${pole.pole_no}番のりば`;
+            list.appendChild(heading);
+        }
+
+        (pole.routes || []).forEach(route => {
+            const row = document.createElement('div');
+            row.className = 'bus-stop-row';
+
+            // 到站資訊優先序：即時 ETA → 走行中位置 → 表定次発 → 運行終了
+            let pill;
+            const firstBus = (route.buses || [])[0];
+            const firstDep = (route.departures_text || [])[0];
+            if (firstBus && firstBus.eta_text) {
+                pill = `<span class="bus-eta-pill live">${firstBus.eta_text}</span>`;
+            } else if (firstBus && typeof firstBus.stops_away === 'number') {
+                pill = `<span class="bus-eta-pill live">${firstBus.stops_away === 0 ? 'まもなく' : `${firstBus.stops_away}停留所前`}</span>`;
+            } else if (firstDep) {
+                pill = `<span class="bus-eta-pill sched">次発 ${firstDep}</span>`;
+            } else {
+                pill = `<span class="bus-eta-pill none">運行終了</span>`;
+            }
+
+            row.innerHTML = `
+                <span class="bus-stop-dot"></span>
+                <span class="bus-stop-name">${route.route}<span class="bus-route-dest">${route.destination || ''}</span></span>
+                ${pill}
+            `;
+            list.appendChild(row);
+        });
+
+        container.appendChild(list);
+    });
 }

@@ -19,7 +19,7 @@ import { initPersonalization } from './personalization.js';
 import { initDynamicClock } from './clock.js';
 import { syncAndLoadDictionary } from '../data/dictionary-db.js';
 import { initFlights, searchFlights } from './flights.js';
-import { initBuses, searchBusesDebounced, refreshSavedBusRoutes, generateBusDataFormat, renderBusDetailPanel, isBusTargetId, getBusOperatorColor } from './buses.js';
+import { initBuses, searchBusesDebounced, refreshSavedBusRoutes, generateBusDataFormat, generateBusLineSummary, renderBusDetailPanel, renderBusStopPanel, isBusTargetId, getBusOperatorColor } from './buses.js';
 import { startRouteEditMode } from './edit-routes.js';
 
 // 全域變數：整個 App 渲染、搜尋、點擊的唯一資料來源
@@ -662,7 +662,20 @@ function handleCardClick(id) {
 
     const cardContent = clone.querySelector('.card-content');
 
-    if (data.isBusCard) {
+    if (data.isBusStopCard) {
+        // 公車站牌預覽：列出該站所有停靠路線（僅供查看）
+        const stopDescEl = clone.querySelector('.description');
+        if (stopDescEl) stopDescEl.textContent = data.desc;
+
+        const stopTagsContainer = clone.querySelector('.info-tags-container');
+        if (stopTagsContainer) {
+            stopTagsContainer.innerHTML = '';
+            stopTagsContainer.style.display = 'none';
+        }
+
+        renderBusStopPanel(data, scrollWrapper);
+
+    } else if (data.isBusCard) {
         // 公車卡片排版：主卡片顯示描述，面板內容交給 buses.js 渲染
         const busDescEl = clone.querySelector('.description');
         if (busDescEl) busDescEl.textContent = data.desc;
@@ -674,8 +687,27 @@ function handleCardClick(id) {
         }
 
         const isBusPreview = data.id.startsWith('temp-search');
+        const busTargetId = (data.targetLineIds && data.targetLineIds[0]) || '';
 
-        // 公車卡片的資料繼承（新規カード作成）
+        // 與列車預覽相同：加入既有卡片
+        const handleBusAddToExisting = () => {
+            if (isAnimating) return;
+
+            const routeData = {
+                id: busTargetId,
+                name: data.name,
+                company: (data.busData && data.busData.label) || 'バス'
+            };
+
+            closeAllCards(false);
+            setTimeout(() => {
+                if (window.RouteAppender) {
+                    window.RouteAppender.openPicker(routeData);
+                }
+            }, 300);
+        };
+
+        // 與列車預覽相同：新增卡片（繼承公車屬性）
         const handleBusCreateCard = () => {
             if (isAnimating) return;
 
@@ -707,6 +739,7 @@ function handleCardClick(id) {
 
         renderBusDetailPanel(data, scrollWrapper, {
             isPreview: isBusPreview,
+            onAddToExisting: handleBusAddToExisting,
             onCreateCard: handleBusCreateCard
         });
 
@@ -2204,6 +2237,49 @@ window.previewBusFromSearch = function (targetId) {
     }, 250);
 };
 
+// ============================================================================
+// 點擊公車站牌搜尋結果的預覽：直接看該站所有停靠路線
+// ============================================================================
+window.previewBusStopFromSearch = function (stopKey) {
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.blur();
+    }
+    filterCards('');
+
+    const cancelBtn = document.querySelector('.cancel-circle-btn');
+    if (cancelBtn) cancelBtn.click();
+
+    const stopData = window.GlobalBusStopData[stopKey];
+    if (!stopData) return;
+
+    const routeCount = (stopData.stop.poles || []).reduce((sum, p) => sum + (p.routes || []).length, 0);
+    const isRealtime = (stopData.source || '').includes('リアルタイム');
+
+    const tempCard = {
+        id: 'temp-search-busstop',
+        name: stopData.stopName,
+        hex: getBusOperatorColor(stopData.operator),
+        desc: `バス停・${routeCount}路線が停車します`,
+        statusFlags: [false, false, false, false, false, isRealtime, !isRealtime],
+        isTemporarySearch: true,
+        detail: ['検索結果', '-', '-', '-'],
+        targetLineIds: [],
+        detailedLines: [],
+        isBusStopCard: true,
+        busStopData: stopData
+    };
+
+    const tempIndex = window.appRailwayData.findIndex(c => c.id === 'temp-search-busstop');
+    if (tempIndex !== -1) window.appRailwayData[tempIndex] = tempCard;
+    else window.appRailwayData.push(tempCard);
+
+    setTimeout(() => {
+        handleCardClick('temp-search-busstop');
+    }, 250);
+};
+
 function initDismissIcon() {
     if (document.getElementById('dismiss-icon')) return;
 
@@ -2445,6 +2521,15 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
             let hasSnow = false;
 
             finalTargetIds.forEach(lineId => {
+                // 混合卡片內的公車路線：以摘要列呈現，不走鐵道字典查詢
+                if (isBusTargetId(lineId)) {
+                    const busLine = generateBusLineSummary(lineId);
+                    if (busLine.hasData) hasNormal = true;
+                    else hasAttention = true;
+                    detailedLines.push(busLine);
+                    return;
+                }
+
                 const dictInfo = routeDict[lineId] || { name: "未知の路線", company: "不明" };
 
                 let statusInfo = liveStatus[lineId] || {
