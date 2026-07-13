@@ -124,6 +124,18 @@ function directionLabel(pattern, routeName) {
 }
 
 // ============================================================================
+// 運行狀態判定：running（有車）／waiting（無車、有次発）／ended（本日運行終了）
+// ============================================================================
+function patternServiceState(pattern) {
+    if (!pattern) return { state: 'unknown', nextText: '' };
+    if ((pattern.bus_count || 0) > 0) return { state: 'running', nextText: '' };
+
+    const stopWithNext = (pattern.stops || []).find(s => s.next_text);
+    if (stopWithNext) return { state: 'waiting', nextText: stopWithNext.next_text };
+    return { state: 'ended', nextText: '' };
+}
+
+// ============================================================================
 // 搜尋整合：由 filterCards 呼叫
 // 250ms debounce，路線與站牌並行查詢，查詢期間先顯示載入中的佔位項目
 // ============================================================================
@@ -319,6 +331,7 @@ export async function refreshSavedBusRoutes() {
 
 // ============================================================================
 // 卡面資料格式：給 buildAndRender 使用（對應航班的 generateFlightDataFormat）
+// 無車時亮起注意燈並顯示狀態（次発待ち／本日運行終了）
 // ============================================================================
 export function generateBusDataFormat(targetId) {
     const { operator, route } = parseBusTargetId(targetId);
@@ -329,12 +342,26 @@ export function generateBusDataFormat(targetId) {
     let updateTime = '--:--';
 
     if (cached && cached.patterns && cached.patterns.length > 0) {
+        const prefs = getBusPrefs(targetId);
+        const pattern = cached.patterns[Math.min(prefs.dir, cached.patterns.length - 1)];
+        const service = patternServiceState(pattern);
         const isRealtime = (cached.source || '').includes('リアルタイム');
-        flags = [false, false, false, false, false, isRealtime, !isRealtime];
 
-        // 預覽停留所已設定時，卡面描述直接顯示該站的到站資訊
-        const preview = getPreviewStopInfo(targetId, cached);
-        desc = preview || `${cached.label}（${cached.source || 'データなし'}）`;
+        if (service.state === 'running') {
+            flags = [false, false, false, false, false, isRealtime, !isRealtime];
+            desc = getPreviewStopInfo(targetId, cached) || `${cached.label}（${cached.source || 'データなし'}）`;
+        } else if (service.state === 'waiting') {
+            // 無車輛（首班未發車或班距空窗）：亮注意燈
+            flags = [false, false, false, false, false, false, true];
+            const preview = getPreviewStopInfo(targetId, cached);
+            desc = preview
+                ? `運行中の車両なし・${preview}`
+                : `運行中の車両なし・次発 ${service.nextText}`;
+        } else {
+            // 末班已駛離：本日運行終了
+            flags = [false, false, false, false, false, false, true];
+            desc = '本日の運行は終了しました';
+        }
 
         if (cached.fetchedAt) {
             const d = new Date(cached.fetchedAt);
@@ -375,14 +402,23 @@ export function generateBusLineSummary(targetId) {
     const fmt = generateBusDataFormat(targetId);
     const bd = fmt.busData;
     const hasData = bd.patterns && bd.patterns.length > 0;
-    const summary = hasData ? (getPreviewStopInfo(targetId, bd) || '運行情報あり') : 'バス情報を取得しています...';
+
+    let status = '更新中...';
+    if (hasData) {
+        const prefs = getBusPrefs(targetId);
+        const pattern = bd.patterns[Math.min(prefs.dir, bd.patterns.length - 1)];
+        const service = patternServiceState(pattern);
+        if (service.state === 'running') status = bd.source || 'バス';
+        else if (service.state === 'waiting') status = '車両なし';
+        else status = '運行終了';
+    }
 
     return {
         id: targetId,
         name: bd.routeName || targetId,
         company: bd.label || 'バス',
-        status: hasData ? (bd.source || 'バス') : '更新中...',
-        message: summary,
+        status: status,
+        message: hasData ? fmt.desc : 'バス情報を取得しています...',
         delay: 0,
         updateTime: fmt.updateTime,
         url: bd.url || '',
@@ -402,11 +438,99 @@ export function getBusOperatorColor(operator) {
 
 // ============================================================================
 // 共用：到站時間膠囊（每個停留所的時間獨立包起來）
+// 顏色三段：倒數中（あと○分／まもなく）→ soon、已發車尚遠（HH:MM頃）→ run、
+// 未發車（表定次発）→ sched（灰色）
 // ============================================================================
 function etaPillHtml(etaText, nextText) {
-    if (etaText) return `<span class="bus-eta-pill live">${etaText}</span>`;
+    if (etaText) {
+        const isCountdown = etaText.includes('あと') || etaText.includes('まもなく');
+        return `<span class="bus-eta-pill ${isCountdown ? 'soon' : 'run'}">${etaText}</span>`;
+    }
     if (nextText) return `<span class="bus-eta-pill sched">次発 ${nextText}</span>`;
     return `<span class="bus-eta-pill none">--</span>`;
+}
+
+// ============================================================================
+// 共用：站名顯示
+// 過長時：有括弧 → 括弧部分跑馬燈；無括弧 → 整個站名跑馬燈
+// ============================================================================
+function stopNameHtml(name) {
+    const m = (name || '').match(/^([^（(]+)([（(].*)$/);
+    const main = m ? m[1] : '';
+    const scrollPart = m ? m[2] : (name || '');
+    return `<span class="bus-stop-name">${main ? `<span class="bus-name-main">${main}</span>` : ''}<span class="bus-name-scroll"><span class="bus-name-inner">${scrollPart}</span></span></span>`;
+}
+
+// 渲染完成後量測：只有實際溢出的部分才啟動跑馬燈
+function applyMarquees(root) {
+    requestAnimationFrame(() => {
+        root.querySelectorAll('.bus-name-scroll').forEach(sc => {
+            const inner = sc.querySelector('.bus-name-inner');
+            if (!inner) return;
+            const overflow = inner.scrollWidth - sc.clientWidth;
+            if (overflow > 4) {
+                sc.classList.add('marquee');
+                inner.style.setProperty('--marquee-shift', `-${overflow}px`);
+                inner.style.setProperty('--marquee-dur', `${Math.max(4, Math.round(overflow / 12))}s`);
+            }
+        });
+    });
+}
+
+// ============================================================================
+// 預覽停留所選擇：與「既存カード追加」相同的 iOS 對話框樣式
+// ============================================================================
+function openStopPickerDialog(pattern, currentStops, onDone) {
+    if (!window.iosConfirm) return;
+
+    const picked = currentStops.slice(0, 2);
+
+    let html = `<div style="margin-bottom: 12px; font-size: 0.85rem; opacity: 0.8;">プレビューに表示する停留所を<br>選択してください（最大2つ）</div>`;
+    html += `<div id="bus-stop-picker-list" style="max-height: 40vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; text-align: left;">`;
+    (pattern.stops || []).forEach((s, i) => {
+        html += `
+            <button type="button" class="bus-picker-item" data-stop-index="${i}">
+                <span class="bus-picker-name">${s.name}</span>
+                <span class="bus-picker-dot"></span>
+            </button>
+        `;
+    });
+    html += `</div>`;
+
+    // 對話框渲染後綁定點擊（與 RouteAppender 相同做法）
+    setTimeout(() => {
+        const list = document.getElementById('bus-stop-picker-list');
+        if (!list) return;
+        const items = [...list.querySelectorAll('.bus-picker-item')];
+
+        const sync = () => {
+            items.forEach(btn => {
+                const nm = (pattern.stops[parseInt(btn.dataset.stopIndex, 10)] || {}).name;
+                btn.classList.toggle('selected', picked.includes(nm));
+            });
+        };
+        sync();
+
+        items.forEach(btn => {
+            btn.onclick = () => {
+                const nm = (pattern.stops[parseInt(btn.dataset.stopIndex, 10)] || {}).name;
+                if (!nm) return;
+                const idx = picked.indexOf(nm);
+                if (idx !== -1) {
+                    picked.splice(idx, 1);
+                } else {
+                    if (picked.length >= 2) picked.shift(); // 超過 2 個時淘汰最早選的
+                    picked.push(nm);
+                }
+                if (navigator.vibrate) navigator.vibrate(10);
+                sync();
+            };
+        });
+    }, 60);
+
+    window.iosConfirm('プレビュー停留所', html, '決定', 'キャンセル').then(ok => {
+        if (ok) onDone(picked.slice(0, 2));
+    });
 }
 
 // ============================================================================
@@ -415,8 +539,7 @@ function etaPillHtml(etaText, nextText) {
 export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
     const targetId = (data.targetLineIds && data.targetLineIds[0]) || '';
     const prefs = getBusPrefs(targetId);
-    let selectionMode = false;
-    let pendingStops = [];
+    let slideDir = ''; // 方向切換的進場動畫方向（'left' | 'right'）
 
     const container = document.createElement('div');
     container.className = 'bus-panel-container';
@@ -433,13 +556,54 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
     const chevronDown = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="m6 9 6 6 6-6"/></svg>`;
     const chevronUp = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="m18 15-6-6-6 6"/></svg>`;
 
+    function getPatterns() {
+        return (data.busData && data.busData.patterns) || [];
+    }
+
+    function currentDirIndex() {
+        const patterns = getPatterns();
+        return patterns.length > 0 ? Math.min(prefs.dir, patterns.length - 1) : 0;
+    }
+
+    // 方向切換（滑動塊點擊與列表左右滑共用）
+    function switchDir(newIndex) {
+        const patterns = getPatterns();
+        if (patterns.length < 2) return;
+        const cur = currentDirIndex();
+        const next = (newIndex + patterns.length) % patterns.length;
+        if (next === cur) return;
+
+        slideDir = next > cur ? 'left' : 'right';
+        prefs.dir = next;
+        saveBusPrefs(targetId, prefs);
+        if (navigator.vibrate) navigator.vibrate(10);
+        render();
+    }
+
+    // 在停留所列表上左右滑切換方向
+    let touchStartX = 0, touchStartY = 0, touchTracking = false;
+    container.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) { touchTracking = false; return; }
+        touchTracking = true;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    container.addEventListener('touchend', (e) => {
+        if (!touchTracking) return;
+        touchTracking = false;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+        if (Math.abs(dx) > 60 && Math.abs(dy) < 50) {
+            switchDir(currentDirIndex() + (dx < 0 ? 1 : -1));
+        }
+    }, { passive: true });
+
     function render() {
         container.innerHTML = '';
         const busData = data.busData || {};
-        const patterns = busData.patterns || [];
-        const pattern = patterns.length > 0
-            ? patterns[Math.min(prefs.dir, patterns.length - 1)]
-            : null;
+        const patterns = getPatterns();
+        const dirIndex = currentDirIndex();
+        const pattern = patterns.length > 0 ? patterns[dirIndex] : null;
 
         // --- 無資料的空狀態 ---
         if (!pattern) {
@@ -458,35 +622,42 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         // --- 1. 方向切換塊（只標示終點方向） ---
         const slider = document.createElement('div');
         slider.className = 'bus-dir-slider';
+        let activeBtn = null;
         patterns.forEach((p, i) => {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'bus-dir-btn' + (i === Math.min(prefs.dir, patterns.length - 1) ? ' active' : '');
+            btn.className = 'bus-dir-btn' + (i === dirIndex ? ' active' : '');
             btn.textContent = directionLabel(p, busData.routeName);
             btn.onclick = (e) => {
                 e.stopPropagation();
-                if (navigator.vibrate) navigator.vibrate(10);
-                prefs.dir = i;
-                saveBusPrefs(targetId, prefs);
-                selectionMode = false;
-                render();
+                switchDir(i);
             };
+            if (i === dirIndex) activeBtn = btn;
             slider.appendChild(btn);
         });
         container.appendChild(slider);
 
-        // --- 2. 停留所列表（不包大卡片，每站的時間獨立成膠囊） ---
+        // 讓目前方向的按鈕自動捲到可視範圍中央
+        if (activeBtn) {
+            requestAnimationFrame(() => {
+                slider.scrollTo({
+                    left: activeBtn.offsetLeft - slider.clientWidth / 2 + activeBtn.clientWidth / 2,
+                    behavior: 'smooth'
+                });
+            });
+        }
+
+        // --- 2. 停留所列表（不包外框，時間獨立成膠囊） ---
         const stopsList = document.createElement('div');
         stopsList.className = 'bus-stops-list';
 
-        if (selectionMode) {
-            const hint = document.createElement('div');
-            hint.className = 'bus-select-hint';
-            hint.textContent = 'プレビューに表示する停留所を選択（最大2つ）';
-            stopsList.appendChild(hint);
+        // 方向切換的進場動畫
+        if (slideDir) {
+            stopsList.classList.add(slideDir === 'left' ? 'bus-slide-in-left' : 'bus-slide-in-right');
+            slideDir = '';
         }
 
-        const isCollapsedView = prefs.collapsed && prefs.previewStops.length > 0 && !selectionMode;
+        const isCollapsedView = prefs.collapsed && prefs.previewStops.length > 0;
         const stopsToShow = isCollapsedView
             ? pattern.stops.filter(s => prefs.previewStops.includes(s.name))
             : pattern.stops;
@@ -513,59 +684,34 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             const row = document.createElement('div');
             row.className = 'bus-stop-row';
 
-            const isSelected = selectionMode
-                ? pendingStops.includes(stop.name)
-                : prefs.previewStops.includes(stop.name);
-
+            const isPreviewStop = prefs.previewStops.includes(stop.name);
             row.innerHTML = `
-                <span class="bus-stop-dot${isSelected ? ' selected' : ''}"></span>
-                <span class="bus-stop-name">${stop.name}</span>
+                <span class="bus-stop-dot${isPreviewStop ? ' selected' : ''}"></span>
+                ${stopNameHtml(stop.name)}
                 ${etaPillHtml(stop.eta_text, stop.next_text)}
             `;
-
-            if (selectionMode) {
-                row.classList.add('selectable');
-                row.onclick = (e) => {
-                    e.stopPropagation();
-                    const idx = pendingStops.indexOf(stop.name);
-                    if (idx !== -1) {
-                        pendingStops.splice(idx, 1);
-                    } else {
-                        if (pendingStops.length >= 2) pendingStops.shift(); // 超過 2 個時淘汰最早選的
-                        pendingStops.push(stop.name);
-                    }
-                    if (navigator.vibrate) navigator.vibrate(10);
-                    render();
-                };
-            }
-
             stopsList.appendChild(row);
         });
 
         container.appendChild(stopsList);
+        applyMarquees(stopsList);
 
         // --- 3. 收折按鈕 ---
         const toggleBtn = document.createElement('button');
         toggleBtn.type = 'button';
         toggleBtn.className = 'flight-action-btn bus-toggle-btn';
 
-        if (selectionMode) {
-            toggleBtn.innerHTML = `<span>決定（${pendingStops.length}/2）</span>`;
-            toggleBtn.onclick = (e) => {
-                e.stopPropagation();
-                if (pendingStops.length === 0) {
-                    selectionMode = false; // 未選擇任何站 → 視為取消
-                    render();
-                    return;
-                }
-                prefs.previewStops = pendingStops.slice(0, 2);
-                prefs.collapsed = true;
+        const openPicker = () => {
+            openStopPickerDialog(pattern, prefs.previewStops, (picked) => {
+                prefs.previewStops = picked;
+                prefs.collapsed = picked.length > 0;
                 saveBusPrefs(targetId, prefs);
-                selectionMode = false;
                 if (navigator.vibrate) navigator.vibrate(20);
                 render();
-            };
-        } else if (isCollapsedView) {
+            });
+        };
+
+        if (isCollapsedView) {
             toggleBtn.innerHTML = `${chevronDown}<span>すべての停留所を表示</span>`;
             toggleBtn.onclick = (e) => {
                 e.stopPropagation();
@@ -585,24 +731,20 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             toggleBtn.innerHTML = `${chevronUp}<span>プレビュー停留所を選ぶ</span>`;
             toggleBtn.onclick = (e) => {
                 e.stopPropagation();
-                selectionMode = true;
-                pendingStops = prefs.previewStops.slice();
-                render();
+                openPicker();
             };
         }
         container.appendChild(toggleBtn);
 
         // 已有預覽站且為展開狀態時，提供重新選擇入口
-        if (!selectionMode && !isCollapsedView && prefs.previewStops.length > 0) {
+        if (!isCollapsedView && prefs.previewStops.length > 0) {
             const changeBtn = document.createElement('button');
             changeBtn.type = 'button';
             changeBtn.className = 'bus-change-preview-btn';
             changeBtn.textContent = `プレビュー停留所を変更（現在：${prefs.previewStops.join('、')}）`;
             changeBtn.onclick = (e) => {
                 e.stopPropagation();
-                selectionMode = true;
-                pendingStops = prefs.previewStops.slice();
-                render();
+                openPicker();
             };
             container.appendChild(changeBtn);
         }
@@ -611,7 +753,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
     }
 
     // 底部動作按鈕：與列車預覽一致（既存カード追加／新規カード作成）
-    // 官方網站連結改由膠囊按鈕（與列車卡片相同）提供，不在面板內顯示
+    // 官方網站連結由膠囊按鈕（與列車卡片相同）提供，不在面板內顯示
     function appendActionButtons() {
         if (!opts.isPreview) return;
 
@@ -688,23 +830,26 @@ export function renderBusStopPanel(data, scrollWrapper) {
             const firstBus = (route.buses || [])[0];
             const firstDep = (route.departures_text || [])[0];
             if (firstBus && firstBus.eta_text) {
-                pill = `<span class="bus-eta-pill live">${firstBus.eta_text}</span>`;
+                const isCountdown = firstBus.eta_text.includes('あと') || firstBus.eta_text.includes('まもなく');
+                pill = `<span class="bus-eta-pill ${isCountdown ? 'soon' : 'run'}">${firstBus.eta_text}</span>`;
             } else if (firstBus && typeof firstBus.stops_away === 'number') {
-                pill = `<span class="bus-eta-pill live">${firstBus.stops_away === 0 ? 'まもなく' : `${firstBus.stops_away}停留所前`}</span>`;
+                pill = `<span class="bus-eta-pill run">${firstBus.stops_away === 0 ? 'まもなく' : `${firstBus.stops_away}停留所前`}</span>`;
             } else if (firstDep) {
                 pill = `<span class="bus-eta-pill sched">次発 ${firstDep}</span>`;
             } else {
                 pill = `<span class="bus-eta-pill none">運行終了</span>`;
             }
 
+            const displayName = route.destination ? `${route.route}（${route.destination}）` : route.route;
             row.innerHTML = `
                 <span class="bus-stop-dot"></span>
-                <span class="bus-stop-name">${route.route}<span class="bus-route-dest">${route.destination || ''}</span></span>
+                ${stopNameHtml(displayName)}
                 ${pill}
             `;
             list.appendChild(row);
         });
 
         container.appendChild(list);
+        applyMarquees(list);
     });
 }
