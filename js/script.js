@@ -19,6 +19,7 @@ import { initPersonalization } from './personalization.js';
 import { initDynamicClock } from './clock.js';
 import { syncAndLoadDictionary } from '../data/dictionary-db.js';
 import { initFlights, searchFlights } from './flights.js';
+import { initBuses, searchBusesDebounced, refreshSavedBusRoutes, generateBusDataFormat, renderBusDetailPanel, isBusTargetId, getBusOperatorColor } from './buses.js';
 import { startRouteEditMode } from './edit-routes.js';
 
 // 全域變數：整個 App 渲染、搜尋、點擊的唯一資料來源
@@ -661,7 +662,55 @@ function handleCardClick(id) {
 
     const cardContent = clone.querySelector('.card-content');
 
-    if (data.isFlightCard && data.flightData) {
+    if (data.isBusCard) {
+        // 公車卡片排版：主卡片顯示描述，面板內容交給 buses.js 渲染
+        const busDescEl = clone.querySelector('.description');
+        if (busDescEl) busDescEl.textContent = data.desc;
+
+        const busTagsContainer = clone.querySelector('.info-tags-container');
+        if (busTagsContainer) {
+            busTagsContainer.innerHTML = '';
+            busTagsContainer.style.display = 'none';
+        }
+
+        const isBusPreview = data.id.startsWith('temp-search');
+
+        // 公車卡片的資料繼承（新規カード作成）
+        const handleBusCreateCard = () => {
+            if (isAnimating) return;
+
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = data.name;
+            const cleanName = tempDiv.textContent.trim() || data.name;
+
+            const prefillData = {
+                name: cleanName,
+                hex: data.hex,
+                desc: data.desc,
+                detail: ['バス路線', '-', '-', '-'],
+                statusFlags: data.statusFlags || [false, false, false, false, false, false, false],
+                targetLineIds: data.targetLineIds || [],
+                detailedLines: [],
+                isFlightCard: false,
+                flightData: null,
+                isBusCard: true,
+                busData: data.busData || null
+            };
+
+            closeAllCards(false);
+            setTimeout(() => {
+                if (typeof window.createNewCardAndEdit === 'function') {
+                    window.createNewCardAndEdit(prefillData);
+                }
+            }, 450);
+        };
+
+        renderBusDetailPanel(data, scrollWrapper, {
+            isPreview: isBusPreview,
+            onCreateCard: handleBusCreateCard
+        });
+
+    } else if (data.isFlightCard && data.flightData) {
         // 航班卡片排版
         const isCancelled = data.flightData.isCancelled;
         const isTimeChangedLocal = data.flightData.scheduled !== data.flightData.latest;
@@ -1372,6 +1421,9 @@ function closeAllCards(isPopState = false) {
 
     isAnimating = true;
 
+    // 面板關閉後不再需要刷新公車面板
+    window.__busPanelRefresh = null;
+
     // 關閉時暫時解除裁切，維持回彈動畫的完整性
     const sw = document.getElementById('card-extension-container');
     if (sw) sw.style.overflowY = 'visible';
@@ -1966,6 +2018,9 @@ function filterCards(keyword) {
         }).join('');
     }
 
+    // D. 公車搜尋：只在使用者搜尋當下才發送請求（debounce 後非同步補進下拉選單）
+    searchBusesDebounced(keyword);
+
     // 每次輸入時重新取得鍵盤剩餘高度
     const currentVpHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
     dropdown.style.maxHeight = `${currentVpHeight - 120}px`;
@@ -2091,6 +2146,61 @@ window.previewRouteFromSearch = function (routeId) {
     // 4. 等 250ms 讓鍵盤收起、螢幕高度歸位後再彈出卡片
     setTimeout(() => {
         handleCardClick('temp-search-route');
+    }, 250);
+};
+
+// ============================================================================
+// 點擊公車搜尋結果的預覽：以臨時卡片沿用詳情面板
+// ============================================================================
+window.previewBusFromSearch = function (targetId) {
+    // 1. 關閉搜尋列與下拉選單
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.blur();
+    }
+    filterCards('');
+
+    const cancelBtn = document.querySelector('.cancel-circle-btn');
+    if (cancelBtn) cancelBtn.click();
+
+    // 2. 若同一條公車路線已是看板上的卡片，直接展開它
+    const existingCard = window.appRailwayData.find(c =>
+        !c.isTemporarySearch && c.targetLineIds && c.targetLineIds[0] === targetId
+    );
+    if (existingCard) {
+        const cardEl = document.getElementById(`card-${existingCard.id}`);
+        if (cardEl) {
+            setTimeout(() => cardEl.click(), 300);
+            return;
+        }
+    }
+
+    // 3. 建立臨時卡片資料
+    const fmt = generateBusDataFormat(targetId);
+    const operator = targetId.split(':')[1] || '';
+
+    const tempCard = {
+        id: 'temp-search-bus',
+        name: fmt.busData.routeName || targetId.split(':').slice(2).join(':'),
+        hex: getBusOperatorColor(operator),
+        desc: fmt.desc,
+        statusFlags: fmt.flags,
+        isTemporarySearch: true,
+        detail: ['検索結果', '-', '-', '-'],
+        targetLineIds: [targetId],
+        detailedLines: [],
+        isBusCard: true,
+        busData: fmt.busData
+    };
+
+    const tempIndex = window.appRailwayData.findIndex(c => c.id === 'temp-search-bus');
+    if (tempIndex !== -1) window.appRailwayData[tempIndex] = tempCard;
+    else window.appRailwayData.push(tempCard);
+
+    // 4. 等鍵盤收起後再彈出卡片
+    setTimeout(() => {
+        handleCardClick('temp-search-bus');
     }, 250);
 };
 
@@ -2258,13 +2368,24 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
         let isFlightCard = false;
         let flightDataPayload = null;
 
-        // 判斷卡片是否為航班
+        // 公車旗標與資料容器
+        let isBusCard = false;
+        let busDataPayload = null;
+
+        // 判斷卡片是否為航班或公車
         if (finalTargetIds.length > 0) {
             const testId = finalTargetIds[0];
-            // 2. 以 ID 特徵判斷（鐵道 ID 必含 . 或 :，航班沒有）
+            // 以 ID 特徵判斷（公車以 bus: 開頭；鐵道 ID 必含 . 或 :，航班沒有）
             const isLikelyFlight = !testId.includes('.') && !testId.includes(':');
 
-            if (isLikelyFlight) {
+            if (isBusTargetId(testId)) {
+                isBusCard = true;
+                const fmt = generateBusDataFormat(testId);
+                busDataPayload = fmt.busData;
+                groupFlags = fmt.flags;
+                groupDesc = fmt.desc;
+                groupUpdateTime = fmt.updateTime;
+            } else if (isLikelyFlight) {
                 isFlightCard = true;
                 const flightInfo = window.GlobalFlights ? window.GlobalFlights.find(f => f.fid.includes(testId)) : null;
 
@@ -2306,9 +2427,9 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
             }
         }
 
-        // 分流：航班不走鐵道邏輯
-        if (isFlightCard) {
-            // 航班資料已在前段處理完畢
+        // 分流：航班與公車不走鐵道邏輯
+        if (isFlightCard || isBusCard) {
+            // 航班與公車資料已在前段處理完畢
         } else if (finalTargetIds.length > 0) {
             // --- 鐵道的迴圈邏輯 ---
             let hasError = false;
@@ -2452,7 +2573,10 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
             updateTime: groupUpdateTime,
             // 必須保留這兩行，卡片才能維持航班身分
             isFlightCard: isFlightCard,
-            flightData: flightDataPayload
+            flightData: flightDataPayload,
+            // 公車卡片的身分與資料
+            isBusCard: isBusCard,
+            busData: busDataPayload
         });
     });
 
@@ -2474,6 +2598,12 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
     renderCards(visibleData);
     initBottomCard();
     initDismissIcon();
+
+    // 記住本次參數，供公車資料更新後重建看板使用
+    window.__lastBuildArgs = [userPrefs, routeDict, liveStatus, isOffline];
+
+    // 牌組內有已儲存的公車卡時才會發送請求（內含 60 秒節流）
+    refreshSavedBusRoutes();
 }
 
 // ============================================================================
@@ -2554,10 +2684,23 @@ async function initApp() {
         buildAndRender(userPrefs, cachedDict, {}, true);
     }
     initFlights();
+    initBuses(); // 只還原本地快取，不發送請求
 }
 
 // script type="module" 延遲執行，可直接呼叫啟動
 initApp();
+
+// 公車資料更新後：閒置時重建看板；公車面板開啟中則直接刷新面板
+window.addEventListener('busDataUpdated', () => {
+    const activeIsBus = activeCardId && (window.appRailwayData.find(c => c.id === activeCardId) || {}).isBusCard;
+    if (activeIsBus && typeof window.__busPanelRefresh === 'function') {
+        window.__busPanelRefresh();
+        return;
+    }
+    if (!activeCardId && !document.body.classList.contains('universal-active') && window.__lastBuildArgs) {
+        buildAndRender(...window.__lastBuildArgs);
+    }
+});
 
 document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
 
@@ -3268,8 +3411,9 @@ function silentUpdateExtensionPanel(cardId) {
     const data = window.appRailwayData.find(r => r.id === cardId);
     if (!data) return;
 
-    // 3. 航班卡片不可用鐵道的更新邏輯清空
-    if (data.isFlightCard) return;
+    // 3. 航班與公車卡片不可用鐵道的更新邏輯清空
+    // （公車面板由 busDataUpdated 事件自行刷新）
+    if (data.isFlightCard || data.isBusCard) return;
 
     const currentScroll = extension.scrollTop;
 

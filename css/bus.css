@@ -1,0 +1,225 @@
+/* ============================================================================
+   bus.css - 公車卡片詳細面板（方向切換塊、停留所列表、收折／預覽）
+   ============================================================================ */
+
+/* --- 1. 方向切換塊（橫向滑動的分段選擇器） --- */
+.bus-dir-slider {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 4px 2px;
+    /* 左右淡出遮罩，暗示可以橫向滑動 */
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8px, black calc(100% - 8px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, black 8px, black calc(100% - 8px), transparent 100%);
+}
+
+.bus-dir-slider::-webkit-scrollbar {
+    display: none;
+}
+
+.bus-dir-btn {
+    flex-shrink: 0;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 999px;
+    padding: 10px 18px;
+    font-size: 0.9em;
+    font-weight: 700;
+    color: rgba(0, 0, 0, 0.75);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.bus-dir-btn:active {
+    transform: scale(0.96);
+}
+
+.bus-dir-btn.active {
+    background: rgba(0, 0, 0, 0.82);
+    color: #fff;
+    border-color: transparent;
+}
+
+/* --- 2. 停留所列表 --- */
+.bus-stops-card {
+    padding: 14px 18px;
+    gap: 0;
+}
+
+.bus-stops-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 4px 2px 12px 2px;
+    border-bottom: 1px solid rgba(120, 120, 128, 0.18);
+    margin-bottom: 6px;
+}
+
+.bus-stops-operator {
+    font-weight: 800;
+    font-size: 0.95em;
+}
+
+.bus-stops-source {
+    font-size: 0.75em;
+    font-weight: 600;
+    opacity: 0.55;
+}
+
+.bus-stop-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 2px;
+    border-bottom: 1px solid rgba(120, 120, 128, 0.12);
+}
+
+.bus-stop-row:last-child {
+    border-bottom: none;
+}
+
+/* 站點圓點：模擬路線圖的停靠點 */
+.bus-stop-dot {
+    flex-shrink: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid rgba(120, 120, 128, 0.55);
+    background: transparent;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.bus-stop-dot.selected {
+    background: #0a84ff;
+    border-color: #0a84ff;
+    transform: scale(1.15);
+}
+
+.bus-stop-name {
+    flex-grow: 1;
+    font-weight: 700;
+    font-size: 0.95em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 到站資訊（取代列車的「平常／延誤分鐘」位置） */
+.bus-eta-live {
+    flex-shrink: 0;
+    font-weight: 800;
+    font-size: 0.9em;
+    color: #1db954;
+}
+
+.bus-eta-sched {
+    flex-shrink: 0;
+    font-weight: 700;
+    font-size: 0.85em;
+    font-family: monospace;
+    opacity: 0.65;
+}
+
+.bus-eta-none {
+    flex-shrink: 0;
+    font-weight: 700;
+    font-size: 0.85em;
+    opacity: 0.35;
+}
+
+/* 選擇模式：整列可點 */
+.bus-stop-row.selectable {
+    cursor: pointer;
+    border-radius: 12px;
+    padding-left: 8px;
+    padding-right: 8px;
+    transition: background 0.15s ease;
+}
+
+.bus-stop-row.selectable:active {
+    background: rgba(120, 120, 128, 0.15);
+}
+
+/* 行駛中的巴士標記（位於前一站與本站之間） */
+.bus-marker-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 2px 4px 24px;
+    font-size: 0.8em;
+    font-weight: 700;
+    color: #0a84ff;
+}
+
+.bus-marker-row svg {
+    flex-shrink: 0;
+}
+
+/* 選擇模式的提示文字 */
+.bus-select-hint {
+    font-size: 0.8em;
+    font-weight: 600;
+    opacity: 0.6;
+    padding: 8px 2px;
+    text-align: center;
+}
+
+/* --- 3. 收折按鈕 --- */
+.bus-toggle-btn {
+    flex-direction: row !important;
+    gap: 8px;
+    width: 100%;
+    padding: 14px 10px !important;
+}
+
+.bus-change-preview-btn {
+    border: none;
+    background: transparent;
+    font-size: 0.8em;
+    font-weight: 600;
+    opacity: 0.55;
+    cursor: pointer;
+    padding: 2px 8px;
+    color: inherit;
+    text-decoration: underline;
+}
+
+/* 搜尋結果右側的公車標籤 */
+.bus-search-right {
+    font-size: 0.8em;
+    font-weight: 700;
+    opacity: 0.6;
+    white-space: nowrap;
+}
+
+/* --- 深色模式 --- */
+@media (prefers-color-scheme: dark) {
+    .bus-dir-btn {
+        background: rgba(30, 30, 32, 0.65);
+        border-color: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .bus-dir-btn.active {
+        background: rgba(255, 255, 255, 0.92);
+        color: #000;
+    }
+
+    .bus-eta-live {
+        color: #30d158;
+    }
+
+    .bus-stop-dot {
+        border-color: rgba(255, 255, 255, 0.45);
+    }
+
+    .bus-stop-dot.selected {
+        background: #0a84ff;
+        border-color: #0a84ff;
+    }
+}

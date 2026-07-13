@@ -83,6 +83,9 @@ async function fetchHistoryDaemon() {
             const isFlight = card.isFlightCard === true || card.isFlight === true || card.type === 'flight';
             const targetIds = card.targetLineIds || card.targetAirports || card.airports || (card.airport ? [card.airport] : []);
 
+            // 公車卡片沒有歷史紀錄資料，直接跳過
+            if (card.isBusCard === true || (targetIds[0] && String(targetIds[0]).startsWith('bus:'))) return;
+
             if (targetIds && targetIds.length > 0) {
                 targetIds.forEach(id => {
                     const type = isFlight ? 'flight' : 'railway';

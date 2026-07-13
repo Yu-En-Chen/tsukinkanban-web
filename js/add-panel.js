@@ -746,7 +746,11 @@ window.createNewCardAndEdit = async function(prefillData = null) {
             
             // 新卡片需繼承航班卡片的屬性
             isFlightCard: prefillData && prefillData.isFlightCard ? prefillData.isFlightCard : false,
-            flightData: prefillData && prefillData.flightData ? prefillData.flightData : null
+            flightData: prefillData && prefillData.flightData ? prefillData.flightData : null,
+
+            // 新卡片需繼承公車卡片的屬性
+            isBusCard: prefillData && prefillData.isBusCard ? prefillData.isBusCard : false,
+            busData: prefillData && prefillData.busData ? prefillData.busData : null
         };
 
         // 清除暫存標記，避免這張卡片被當作預覽卡片刪除
