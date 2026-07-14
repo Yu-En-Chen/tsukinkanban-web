@@ -239,6 +239,32 @@
     }
 }
 
+/* 背景更新時：時間膠囊變化的脈衝提示（自然過渡而非生硬替換） */
+.bus-eta-pill.bus-pill-updated {
+    animation: busPillPulse 0.6s var(--ios-snap, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+@keyframes busPillPulse {
+    0% {
+        transform: scale(0.9);
+        opacity: 0.3;
+    }
+
+    45% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* 巴士位置標記移動時的淡入 */
+.bus-marker-in {
+    animation: busFadeIn 0.4s ease;
+}
+
 /* 乘車處編號（站牌面板） */
 .bus-pole-heading {
     font-size: 0.8em;

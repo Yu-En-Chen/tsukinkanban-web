@@ -28,6 +28,11 @@ function parseBusTargetId(targetId) {
     return { operator: parts[1] || '', route: parts.slice(2).join(':') || '' };
 }
 
+// 全形英數 → 半形（路線名顯示用；API 查詢不分全半形）
+export function toHalfWidth(str) {
+    return (str || '').replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+}
+
 // ============================================================================
 // 全域快取
 // GlobalBusData：targetId -> 業者結果（含 patterns）
@@ -101,19 +106,20 @@ function storeRouteResults(json) {
 }
 
 // 從業者結果推出路線顯示名（pattern 標題格式為「路線名 行き先行」）
+// 官方表記常用全形英數（都０１），顯示一律轉半形
 function extractRouteName(result, fallback) {
     if (result.patterns && result.patterns.length > 0) {
-        const title = result.patterns[0].title || '';
+        const title = toHalfWidth(result.patterns[0].title || '');
         const firstSpace = title.indexOf(' ');
         if (firstSpace > 0) return title.slice(0, firstSpace);
         if (title) return title;
     }
-    return fallback || '';
+    return toHalfWidth(fallback || '');
 }
 
 // 方向標籤：只顯示終點方向，不重複路線名
 function directionLabel(pattern, routeName) {
-    const title = pattern.title || '';
+    const title = toHalfWidth(pattern.title || '');
     if (routeName && title.startsWith(routeName)) {
         const rest = title.slice(routeName.length).trim();
         if (rest) return rest;
@@ -143,6 +149,23 @@ function directionLabels(patterns, routeName) {
         }
         return l || `方向 ${i + 1}`;
     });
+}
+
+// ============================================================================
+// 到站時間的即時換算
+// 以 ISO 時間戳與當下時刻重新計算，而不是直接顯示後端算好的文字，
+// 這樣離線或資料過期時，倒數仍會隨時間自然遞減，不會卡在舊的分鐘數
+// ============================================================================
+function liveEtaTexts(stop) {
+    if (stop.eta) {
+        const diffMin = Math.round((new Date(stop.eta).getTime() - Date.now()) / 60000);
+        if (diffMin <= 1) return { eta: 'まもなく', next: null };
+        if (diffMin <= 20) return { eta: `あと${diffMin}分`, next: null };
+        const d = new Date(stop.eta);
+        return { eta: `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}頃`, next: null };
+    }
+    if (stop.eta_text) return { eta: stop.eta_text, next: null }; // 後端只給文字時直接沿用
+    return { eta: null, next: stop.next_text || null };
 }
 
 // ============================================================================
@@ -318,6 +341,12 @@ export async function refreshSavedBusRoutes() {
             if (isBusTargetId(id)) savedTargets.add(id);
         });
     });
+
+    // 面板開啟中的公車路線（含預覽卡）也一併更新
+    if (window.__busPanelTargetId && isBusTargetId(window.__busPanelTargetId)) {
+        savedTargets.add(window.__busPanelTargetId);
+    }
+
     if (savedTargets.size === 0) return;
 
     isRefreshingBus = true;
@@ -415,7 +444,8 @@ function getPreviewStopInfo(targetId, busData) {
     if (!stop) stop = pattern.stops[0];
     if (!stop) return '';
 
-    const eta = stop.eta_text ? stop.eta_text : (stop.next_text ? `次発 ${stop.next_text}` : '');
+    const t = liveEtaTexts(stop);
+    const eta = t.eta ? t.eta : (t.next ? `次発 ${t.next}` : '');
     return eta ? `${stop.name}：${eta}` : '';
 }
 
@@ -590,12 +620,28 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
     container.style.cssText = 'display: flex; flex-direction: column; gap: 14px;';
     scrollWrapper.appendChild(container);
 
-    // 讓背景更新可以刷新開啟中的面板
+    // 標記面板開啟中的路線：背景更新會將它納入抓取對象（含預覽卡）
+    window.__busPanelTargetId = targetId;
+
+    // 背景更新後：不整體重繪，改以就地更新讓資料自然過渡
     window.__busPanelRefresh = () => {
         const latest = window.GlobalBusData[targetId];
         if (latest) data.busData = latest;
-        render();
+        updateInPlace();
     };
+
+    // 本地倒數：面板持續開啟時，每 30 秒依 ISO 時間重新換算到站分鐘數
+    // （離線或資料過期時倒數仍會遞減，不會卡在舊的「あと5分」）
+    if (window.__busPanelTicker) clearInterval(window.__busPanelTicker);
+    window.__busPanelTicker = setInterval(() => {
+        if (!container.isConnected) {
+            clearInterval(window.__busPanelTicker);
+            window.__busPanelTicker = null;
+            if (window.__busPanelTargetId === targetId) window.__busPanelTargetId = null;
+            return;
+        }
+        updateInPlace();
+    }, 30000);
 
     const chevronDown = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="m6 9 6 6 6-6"/></svg>`;
     const chevronUp = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="m18 15-6-6-6 6"/></svg>`;
@@ -627,6 +673,96 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
     // 收折／展開前記下目前列表高度，供高度過渡動畫使用
     function markHeightAnim() {
         if (listShell) heightAnimFrom = listShell.offsetHeight;
+    }
+
+    let lastMarkerSig = '';
+
+    function markerSignature(view) {
+        return view.stopsToShow.map(s =>
+            (s.buses_approaching || []).map(b => b.number + (b.occupancy || '')).join('|')
+        ).join('/');
+    }
+
+    // 目前視圖：顯示中的停留所與接近站的上色對應
+    // 接近中的站名上色：巴士正接近的站（下一站）橘色、其後一站（下下站）黃色
+    function computeView(pattern) {
+        const isCollapsedView = prefs.collapsed && prefs.previewStops.length > 0;
+        const stopsToShow = isCollapsedView
+            ? pattern.stops.filter(s => prefs.previewStops.includes(s.name))
+            : pattern.stops;
+
+        const nameClassByName = {};
+        pattern.stops.forEach(s => {
+            if (s.buses_approaching && s.buses_approaching.length > 0) {
+                nameClassByName[s.name] = 'approach-next';
+            }
+        });
+        pattern.stops.forEach((s, i) => {
+            if (s.buses_approaching && s.buses_approaching.length > 0) {
+                const after = pattern.stops[i + 1];
+                if (after && !nameClassByName[after.name]) {
+                    nameClassByName[after.name] = 'approach-after';
+                }
+            }
+        });
+
+        return { isCollapsedView, stopsToShow, nameClassByName };
+    }
+
+    // ------------------------------------------------------------------
+    // 就地更新：背景取得新資料或本地倒數 tick 時呼叫
+    // 不重建列表（保留跑馬燈與捲動位置），只替換有變化的時間膠囊
+    // （帶脈衝效果）、站名顏色與巴士位置標記
+    // ------------------------------------------------------------------
+    function updateInPlace() {
+        const stopsList = container.querySelector('.bus-stops-list');
+        const patterns = getPatterns();
+        const pattern = patterns.length > 0 ? patterns[currentDirIndex()] : null;
+
+        // 結構對不上（資料尚未就緒、站點集合改變）→ 退回完整重繪
+        if (!stopsList || !pattern) { render(); return; }
+        const view = computeView(pattern);
+        const rows = [...stopsList.querySelectorAll('.bus-stop-row')];
+        if (rows.length !== view.stopsToShow.length) { render(); return; }
+
+        // 1. 巴士位置標記：只有配置變化時才重建（避免每次 tick 閃爍）
+        const markerSig = markerSignature(view);
+        if (markerSig !== lastMarkerSig) {
+            lastMarkerSig = markerSig;
+            stopsList.querySelectorAll('.bus-marker-row').forEach(m => m.remove());
+            view.stopsToShow.forEach((stop, idx) => {
+                const row = rows[idx];
+                (stop.buses_approaching || []).forEach(bus => {
+                    const marker = document.createElement('div');
+                    marker.className = 'bus-marker-row bus-marker-in';
+                    marker.innerHTML = busMarkerHtml(bus);
+                    stopsList.insertBefore(marker, row);
+                });
+            });
+        }
+
+        // 2. 時間膠囊與站名顏色
+        view.stopsToShow.forEach((stop, idx) => {
+            const row = rows[idx];
+            const t = liveEtaTexts(stop);
+
+            const oldPill = row.querySelector('.bus-eta-pill');
+            const tmp = document.createElement('div');
+            tmp.innerHTML = etaPillHtml(t.eta, t.next);
+            const newPill = tmp.firstElementChild;
+
+            if (oldPill && newPill && oldPill.outerHTML !== newPill.outerHTML) {
+                newPill.classList.add('bus-pill-updated');
+                oldPill.replaceWith(newPill);
+                setTimeout(() => newPill.classList.remove('bus-pill-updated'), 700);
+            }
+
+            const nameEl = row.querySelector('.bus-stop-name');
+            if (nameEl) {
+                nameEl.classList.toggle('approach-next', view.nameClassByName[stop.name] === 'approach-next');
+                nameEl.classList.toggle('approach-after', view.nameClassByName[stop.name] === 'approach-after');
+            }
+        });
     }
 
     // 在停留所列表上左右滑切換方向
@@ -687,20 +823,59 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         });
         container.appendChild(slider);
 
-        // 目前方向的按鈕置中；使用者滑動後未點選時，閒置 0.8 秒自動回正
+        // 目前方向的按鈕置中；使用者滑動後未點選時，閒置後自動回正
+        // 回正動畫使用與全站 bounce-back 相同的曲線（--ios-snap ≒ easeOutExpo）
+        const targetScrollLeft = () => {
+            const max = slider.scrollWidth - slider.clientWidth;
+            const raw = activeBtn.offsetLeft - slider.clientWidth / 2 + activeBtn.clientWidth / 2;
+            return Math.max(0, Math.min(raw, max));
+        };
+
+        let recenterRaf = null;
         const centerActive = (smooth = true) => {
             if (!activeBtn) return;
-            slider.scrollTo({
-                left: activeBtn.offsetLeft - slider.clientWidth / 2 + activeBtn.clientWidth / 2,
-                behavior: smooth ? 'smooth' : 'auto'
-            });
+            if (recenterRaf) cancelAnimationFrame(recenterRaf);
+            const target = targetScrollLeft();
+            if (!smooth) { slider.scrollLeft = target; return; }
+
+            const start = slider.scrollLeft;
+            const change = target - start;
+            if (Math.abs(change) < 2) return;
+            const t0 = performance.now();
+            const duration = 600;
+            const easeOutExpo = (t) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t));
+
+            const step = (now) => {
+                const p = Math.min(1, (now - t0) / duration);
+                slider.scrollLeft = start + change * easeOutExpo(p);
+                if (p < 1) recenterRaf = requestAnimationFrame(step);
+                else recenterRaf = null;
+            };
+            recenterRaf = requestAnimationFrame(step);
         };
         requestAnimationFrame(() => centerActive(false));
 
+        // 手指還按著時不回正；放開並閒置 0.6 秒後才啟動
         let sliderIdleTimer = null;
-        slider.addEventListener('scroll', () => {
+        let sliderTouching = false;
+        const armRecenter = () => {
             if (sliderIdleTimer) clearTimeout(sliderIdleTimer);
-            sliderIdleTimer = setTimeout(() => centerActive(true), 800);
+            sliderIdleTimer = setTimeout(() => {
+                if (!sliderTouching) centerActive(true);
+            }, 600);
+        };
+        slider.addEventListener('touchstart', () => {
+            sliderTouching = true;
+            if (recenterRaf) { cancelAnimationFrame(recenterRaf); recenterRaf = null; }
+            if (sliderIdleTimer) clearTimeout(sliderIdleTimer);
+        }, { passive: true });
+        slider.addEventListener('touchend', () => {
+            sliderTouching = false;
+            armRecenter();
+        }, { passive: true });
+        slider.addEventListener('scroll', () => {
+            if (recenterRaf) return; // 回正動畫自身觸發的捲動不重置計時
+            armRecenter();
         }, { passive: true });
 
         // --- 2. 停留所列表（外殼負責收折／展開的高度過渡） ---
@@ -716,53 +891,38 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             slideDir = '';
         }
 
-        const isCollapsedView = prefs.collapsed && prefs.previewStops.length > 0;
-        const stopsToShow = isCollapsedView
-            ? pattern.stops.filter(s => prefs.previewStops.includes(s.name))
-            : pattern.stops;
+        const view = computeView(pattern);
+        const isCollapsedView = view.isCollapsedView;
 
-        if (isCollapsedView && stopsToShow.length === 0) {
+        if (view.isCollapsedView && view.stopsToShow.length === 0) {
             const none = document.createElement('div');
             none.className = 'bus-select-hint';
             none.textContent = '選択した停留所はこの方向にありません';
             stopsList.appendChild(none);
         }
 
-        // 接近中的站名上色：巴士正接近的站（下一站）橘色、其後一站（下下站）黃色
-        const nameClassByName = {};
-        pattern.stops.forEach((s, i) => {
-            if (s.buses_approaching && s.buses_approaching.length > 0) {
-                nameClassByName[s.name] = 'approach-next';
-            }
-        });
-        pattern.stops.forEach((s, i) => {
-            if (s.buses_approaching && s.buses_approaching.length > 0) {
-                const after = pattern.stops[i + 1];
-                if (after && !nameClassByName[after.name]) {
-                    nameClassByName[after.name] = 'approach-after';
-                }
-            }
-        });
-
-        stopsToShow.forEach(stop => {
+        view.stopsToShow.forEach((stop, idx) => {
             // 有巴士行駛在前一站與本站之間時，於該站上方標示車牌與擁擠度
-            if (stop.buses_approaching && stop.buses_approaching.length > 0) {
-                stop.buses_approaching.forEach(bus => {
-                    const marker = document.createElement('div');
-                    marker.className = 'bus-marker-row';
-                    marker.innerHTML = busMarkerHtml(bus);
-                    stopsList.appendChild(marker);
-                });
-            }
+            (stop.buses_approaching || []).forEach(bus => {
+                const marker = document.createElement('div');
+                marker.className = 'bus-marker-row';
+                marker.innerHTML = busMarkerHtml(bus);
+                stopsList.appendChild(marker);
+            });
 
             const row = document.createElement('div');
             row.className = 'bus-stop-row';
+            row.dataset.stopIndex = String(idx);
+            const t = liveEtaTexts(stop);
             row.innerHTML = `
-                ${stopNameHtml(stop.name, nameClassByName[stop.name] || '')}
-                ${etaPillHtml(stop.eta_text, stop.next_text)}
+                ${stopNameHtml(stop.name, view.nameClassByName[stop.name] || '')}
+                ${etaPillHtml(t.eta, t.next)}
             `;
             stopsList.appendChild(row);
         });
+
+        // 記下目前的巴士位置配置，供就地更新比對
+        lastMarkerSig = markerSignature(view);
 
         listShell.appendChild(stopsList);
         container.appendChild(listShell);
@@ -939,7 +1099,9 @@ export function renderBusStopPanel(data, scrollWrapper) {
                 pill = `<span class="bus-eta-pill none">運行終了</span>`;
             }
 
-            const displayName = route.destination ? `${route.route}（${route.destination}）` : route.route;
+            const displayName = route.destination
+                ? `${toHalfWidth(route.route)}（${route.destination}）`
+                : toHalfWidth(route.route);
             row.innerHTML = `
                 ${stopNameHtml(displayName)}
                 ${pill}

@@ -1454,8 +1454,13 @@ function closeAllCards(isPopState = false) {
 
     isAnimating = true;
 
-    // 面板關閉後不再需要刷新公車面板
+    // 面板關閉後不再需要刷新公車面板，也停止本地倒數
     window.__busPanelRefresh = null;
+    window.__busPanelTargetId = null;
+    if (window.__busPanelTicker) {
+        clearInterval(window.__busPanelTicker);
+        window.__busPanelTicker = null;
+    }
 
     // 關閉時暫時解除裁切，維持回彈動畫的完整性
     const sw = document.getElementById('card-extension-container');
@@ -2775,10 +2780,10 @@ async function initApp() {
 // script type="module" 延遲執行，可直接呼叫啟動
 initApp();
 
-// 公車資料更新後：閒置時重建看板；公車面板開啟中則直接刷新面板
+// 公車資料更新後：公車面板開啟中（含預覽卡）就地刷新；否則閒置時重建看板
+// 注意：不能以 appRailwayData 查詢判斷，背景重建會清掉 temp-search 的預覽卡片
 window.addEventListener('busDataUpdated', () => {
-    const activeIsBus = activeCardId && (window.appRailwayData.find(c => c.id === activeCardId) || {}).isBusCard;
-    if (activeIsBus && typeof window.__busPanelRefresh === 'function') {
+    if (typeof window.__busPanelRefresh === 'function') {
         window.__busPanelRefresh();
         return;
     }
