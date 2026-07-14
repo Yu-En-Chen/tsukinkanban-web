@@ -120,7 +120,29 @@ function directionLabel(pattern, routeName) {
     }
     const firstSpace = title.indexOf(' ');
     if (firstSpace > 0) return title.slice(firstSpace + 1).trim();
-    return title || '方向';
+    return '';
+}
+
+// 一次算出所有方向的標籤：
+// 部分業者（西武・横浜市営）的 title 只有路線名，各方向會長得一樣，
+// 這種情況改抓該方向的終點站名自行標示
+function directionLabels(patterns, routeName) {
+    const raw = patterns.map(p => {
+        const l = directionLabel(p, routeName);
+        return (l && l !== routeName) ? l : '';
+    });
+
+    const counts = {};
+    raw.forEach(l => { if (l) counts[l] = (counts[l] || 0) + 1; });
+
+    return raw.map((l, i) => {
+        if (!l || counts[l] > 1) {
+            const stops = patterns[i].stops || [];
+            const last = stops[stops.length - 1];
+            if (last && last.name) return `${last.name}行`;
+        }
+        return l || `方向 ${i + 1}`;
+    });
 }
 
 // ============================================================================
@@ -438,27 +460,47 @@ export function getBusOperatorColor(operator) {
 
 // ============================================================================
 // 共用：到站時間膠囊（每個停留所的時間獨立包起來）
-// 顏色三段：倒數中（あと○分／まもなく）→ soon、已發車尚遠（HH:MM頃）→ run、
-// 未發車（表定次発）→ sched（灰色）
+// 顏色分級：進站中（まもなく）→ arriving 橘、5 分內 → soon 黃、
+// 倒數中（あと6分〜）→ near 綠、已發車尚遠（HH:MM頃）→ run 藍、
+// 未發車（表定次発）→ sched 灰
 // ============================================================================
+function etaPillClass(etaText) {
+    if (etaText.includes('まもなく')) return 'arriving';
+    const m = etaText.match(/あと(\d+)分/);
+    if (m) return parseInt(m[1], 10) <= 5 ? 'soon' : 'near';
+    return 'run'; // HH:MM頃
+}
+
 function etaPillHtml(etaText, nextText) {
     if (etaText) {
-        const isCountdown = etaText.includes('あと') || etaText.includes('まもなく');
-        return `<span class="bus-eta-pill ${isCountdown ? 'soon' : 'run'}">${etaText}</span>`;
+        return `<span class="bus-eta-pill ${etaPillClass(etaText)}">${etaText}</span>`;
     }
     if (nextText) return `<span class="bus-eta-pill sched">次発 ${nextText}</span>`;
     return `<span class="bus-eta-pill none">--</span>`;
 }
 
+// 行駛中巴士標記：車牌＋擁擠度（満員／混雑等以顏色區分）
+function busMarkerHtml(bus) {
+    let occHtml = '';
+    if (bus.occupancy) {
+        let occClass = '';
+        if (bus.occupancy.includes('満員')) occClass = ' full';
+        else if (bus.occupancy.includes('混雑')) occClass = ' crowded';
+        else if (bus.occupancy.includes('立席')) occClass = ' standing';
+        occHtml = `<span class="bus-occ${occClass}">${bus.occupancy}</span>`;
+    }
+    return `<span class="bus-plate">${bus.number || ''}</span>${occHtml}`;
+}
 // ============================================================================
 // 共用：站名顯示
 // 過長時：有括弧 → 括弧部分跑馬燈；無括弧 → 整個站名跑馬燈
+// extraClass：接近中的站名上色（下一站橘色、下下站黃色）
 // ============================================================================
-function stopNameHtml(name) {
+function stopNameHtml(name, extraClass = '') {
     const m = (name || '').match(/^([^（(]+)([（(].*)$/);
     const main = m ? m[1] : '';
     const scrollPart = m ? m[2] : (name || '');
-    return `<span class="bus-stop-name">${main ? `<span class="bus-name-main">${main}</span>` : ''}<span class="bus-name-scroll"><span class="bus-name-inner">${scrollPart}</span></span></span>`;
+    return `<span class="bus-stop-name${extraClass ? ' ' + extraClass : ''}">${main ? `<span class="bus-name-main">${main}</span>` : ''}<span class="bus-name-scroll"><span class="bus-name-inner">${scrollPart}</span></span></span>`;
 }
 
 // 渲染完成後量測：只有實際溢出的部分才啟動跑馬燈
@@ -539,7 +581,9 @@ function openStopPickerDialog(pattern, currentStops, onDone) {
 export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
     const targetId = (data.targetLineIds && data.targetLineIds[0]) || '';
     const prefs = getBusPrefs(targetId);
-    let slideDir = ''; // 方向切換的進場動畫方向（'left' | 'right'）
+    let slideDir = '';        // 方向切換的進場動畫方向（'left' | 'right'）
+    let heightAnimFrom = -1;  // 收折／展開的高度過渡起點（-1 表示不做）
+    let listShell = null;     // 停留所列表的外殼（高度動畫用）
 
     const container = document.createElement('div');
     container.className = 'bus-panel-container';
@@ -578,6 +622,11 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         saveBusPrefs(targetId, prefs);
         if (navigator.vibrate) navigator.vibrate(10);
         render();
+    }
+
+    // 收折／展開前記下目前列表高度，供高度過渡動畫使用
+    function markHeightAnim() {
+        if (listShell) heightAnimFrom = listShell.offsetHeight;
     }
 
     // 在停留所列表上左右滑切換方向
@@ -619,15 +668,16 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             return;
         }
 
-        // --- 1. 方向切換塊（只標示終點方向） ---
+        // --- 1. 方向切換塊（只標示終點方向；重複時改抓終點站名） ---
         const slider = document.createElement('div');
         slider.className = 'bus-dir-slider';
+        const dirLabels = directionLabels(patterns, busData.routeName);
         let activeBtn = null;
         patterns.forEach((p, i) => {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'bus-dir-btn' + (i === dirIndex ? ' active' : '');
-            btn.textContent = directionLabel(p, busData.routeName);
+            btn.textContent = dirLabels[i];
             btn.onclick = (e) => {
                 e.stopPropagation();
                 switchDir(i);
@@ -637,17 +687,26 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         });
         container.appendChild(slider);
 
-        // 讓目前方向的按鈕自動捲到可視範圍中央
-        if (activeBtn) {
-            requestAnimationFrame(() => {
-                slider.scrollTo({
-                    left: activeBtn.offsetLeft - slider.clientWidth / 2 + activeBtn.clientWidth / 2,
-                    behavior: 'smooth'
-                });
+        // 目前方向的按鈕置中；使用者滑動後未點選時，閒置 0.8 秒自動回正
+        const centerActive = (smooth = true) => {
+            if (!activeBtn) return;
+            slider.scrollTo({
+                left: activeBtn.offsetLeft - slider.clientWidth / 2 + activeBtn.clientWidth / 2,
+                behavior: smooth ? 'smooth' : 'auto'
             });
-        }
+        };
+        requestAnimationFrame(() => centerActive(false));
 
-        // --- 2. 停留所列表（不包外框，時間獨立成膠囊） ---
+        let sliderIdleTimer = null;
+        slider.addEventListener('scroll', () => {
+            if (sliderIdleTimer) clearTimeout(sliderIdleTimer);
+            sliderIdleTimer = setTimeout(() => centerActive(true), 800);
+        }, { passive: true });
+
+        // --- 2. 停留所列表（外殼負責收折／展開的高度過渡） ---
+        listShell = document.createElement('div');
+        listShell.className = 'bus-stops-shell';
+
         const stopsList = document.createElement('div');
         stopsList.className = 'bus-stops-list';
 
@@ -669,32 +728,68 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             stopsList.appendChild(none);
         }
 
+        // 接近中的站名上色：巴士正接近的站（下一站）橘色、其後一站（下下站）黃色
+        const nameClassByName = {};
+        pattern.stops.forEach((s, i) => {
+            if (s.buses_approaching && s.buses_approaching.length > 0) {
+                nameClassByName[s.name] = 'approach-next';
+            }
+        });
+        pattern.stops.forEach((s, i) => {
+            if (s.buses_approaching && s.buses_approaching.length > 0) {
+                const after = pattern.stops[i + 1];
+                if (after && !nameClassByName[after.name]) {
+                    nameClassByName[after.name] = 'approach-after';
+                }
+            }
+        });
+
         stopsToShow.forEach(stop => {
-            // 有巴士行駛在前一站與本站之間時，於該站上方以文字標示
+            // 有巴士行駛在前一站與本站之間時，於該站上方標示車牌與擁擠度
             if (stop.buses_approaching && stop.buses_approaching.length > 0) {
                 stop.buses_approaching.forEach(bus => {
                     const marker = document.createElement('div');
                     marker.className = 'bus-marker-row';
-                    const occText = bus.occupancy ? `（${bus.occupancy}）` : '';
-                    marker.textContent = `走行中 ${bus.number || ''}${occText}`;
+                    marker.innerHTML = busMarkerHtml(bus);
                     stopsList.appendChild(marker);
                 });
             }
 
             const row = document.createElement('div');
             row.className = 'bus-stop-row';
-
-            const isPreviewStop = prefs.previewStops.includes(stop.name);
             row.innerHTML = `
-                <span class="bus-stop-dot${isPreviewStop ? ' selected' : ''}"></span>
-                ${stopNameHtml(stop.name)}
+                ${stopNameHtml(stop.name, nameClassByName[stop.name] || '')}
                 ${etaPillHtml(stop.eta_text, stop.next_text)}
             `;
             stopsList.appendChild(row);
         });
 
-        container.appendChild(stopsList);
+        listShell.appendChild(stopsList);
+        container.appendChild(listShell);
         applyMarquees(stopsList);
+
+        // 收折／展開的高度過渡動畫
+        if (heightAnimFrom >= 0) {
+            const fromH = heightAnimFrom;
+            heightAnimFrom = -1;
+            const toH = listShell.offsetHeight;
+            if (fromH !== toH) {
+                listShell.style.height = `${fromH}px`;
+                listShell.style.overflow = 'hidden';
+                listShell.style.transition = 'height 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
+                stopsList.classList.add('bus-fade-in');
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        listShell.style.height = `${toH}px`;
+                    });
+                });
+                setTimeout(() => {
+                    listShell.style.height = '';
+                    listShell.style.overflow = '';
+                    listShell.style.transition = '';
+                }, 450);
+            }
+        }
 
         // --- 3. 收折按鈕 ---
         const toggleBtn = document.createElement('button');
@@ -703,6 +798,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
 
         const openPicker = () => {
             openStopPickerDialog(pattern, prefs.previewStops, (picked) => {
+                markHeightAnim();
                 prefs.previewStops = picked;
                 prefs.collapsed = picked.length > 0;
                 saveBusPrefs(targetId, prefs);
@@ -715,6 +811,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             toggleBtn.innerHTML = `${chevronDown}<span>すべての停留所を表示</span>`;
             toggleBtn.onclick = (e) => {
                 e.stopPropagation();
+                markHeightAnim();
                 prefs.collapsed = false;
                 saveBusPrefs(targetId, prefs);
                 render();
@@ -723,6 +820,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             toggleBtn.innerHTML = `${chevronUp}<span>プレビュー表示に折りたたむ</span>`;
             toggleBtn.onclick = (e) => {
                 e.stopPropagation();
+                markHeightAnim();
                 prefs.collapsed = true;
                 saveBusPrefs(targetId, prefs);
                 render();
@@ -830,10 +928,11 @@ export function renderBusStopPanel(data, scrollWrapper) {
             const firstBus = (route.buses || [])[0];
             const firstDep = (route.departures_text || [])[0];
             if (firstBus && firstBus.eta_text) {
-                const isCountdown = firstBus.eta_text.includes('あと') || firstBus.eta_text.includes('まもなく');
-                pill = `<span class="bus-eta-pill ${isCountdown ? 'soon' : 'run'}">${firstBus.eta_text}</span>`;
+                pill = `<span class="bus-eta-pill ${etaPillClass(firstBus.eta_text)}">${firstBus.eta_text}</span>`;
             } else if (firstBus && typeof firstBus.stops_away === 'number') {
-                pill = `<span class="bus-eta-pill run">${firstBus.stops_away === 0 ? 'まもなく' : `${firstBus.stops_away}停留所前`}</span>`;
+                pill = firstBus.stops_away === 0
+                    ? `<span class="bus-eta-pill arriving">まもなく</span>`
+                    : `<span class="bus-eta-pill run">${firstBus.stops_away}停留所前</span>`;
             } else if (firstDep) {
                 pill = `<span class="bus-eta-pill sched">次発 ${firstDep}</span>`;
             } else {
@@ -842,7 +941,6 @@ export function renderBusStopPanel(data, scrollWrapper) {
 
             const displayName = route.destination ? `${route.route}（${route.destination}）` : route.route;
             row.innerHTML = `
-                <span class="bus-stop-dot"></span>
                 ${stopNameHtml(displayName)}
                 ${pill}
             `;

@@ -92,23 +92,6 @@
     padding: 9px 4px;
 }
 
-/* 站點圓點：模擬路線圖的停靠點 */
-.bus-stop-dot {
-    flex-shrink: 0;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    border: 2px solid rgba(120, 120, 128, 0.55);
-    background: transparent;
-    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
-}
-
-.bus-stop-dot.selected {
-    background: #0a84ff;
-    border-color: #0a84ff;
-    transform: scale(1.15);
-}
-
 /* 站名：主名＋可跑馬燈的溢出部分（括弧或整名） */
 .bus-stop-name {
     flex-grow: 1;
@@ -156,7 +139,8 @@
 }
 
 /* 到站時間膠囊：每個停留所的時間獨立包起來
-   三段顏色：soon（倒數中）／run（已發車尚遠）／sched（未發車，灰色） */
+   顏色分級：arriving（進站中）橘／soon（5 分內）黃／near（倒數中）綠／
+   run（已發車尚遠）藍／sched（未發車）灰 */
 .bus-eta-pill {
     flex-shrink: 0;
     padding: 6px 14px;
@@ -170,8 +154,18 @@
     white-space: nowrap;
 }
 
-/* 倒數中（まもなく／あと○分）：綠色 */
+/* 進站中（まもなく）：橘色 */
+.bus-eta-pill.arriving {
+    color: #ff9500;
+}
+
+/* 5 分內（あと1〜5分）：黃色 */
 .bus-eta-pill.soon {
+    color: #b08800;
+}
+
+/* 倒數中（あと6分〜）：綠色 */
+.bus-eta-pill.near {
     color: #0e8a3e;
 }
 
@@ -190,12 +184,59 @@
     opacity: 0.4;
 }
 
-/* 行駛中的巴士標記（位於前一站與本站之間，純文字） */
+/* 接近中的站名上色：巴士正接近的站（下一站）橘色、其後一站（下下站）黃色 */
+.bus-stop-name.approach-next {
+    color: #ff9500;
+}
+
+.bus-stop-name.approach-after {
+    color: #b08800;
+}
+
+/* 行駛中的巴士標記（位於前一站與本站之間）：車牌＋擁擠度 */
 .bus-marker-row {
-    padding: 2px 4px 2px 26px;
-    font-size: 0.78em;
+    padding: 2px 4px 2px 8px;
+    font-size: 0.8em;
     font-weight: 700;
-    color: #0a84ff;
+    opacity: 0.85;
+}
+
+.bus-plate {
+    font-family: monospace;
+    font-weight: 800;
+}
+
+.bus-occ {
+    margin-left: 8px;
+    font-weight: 700;
+}
+
+/* 擁擠度顏色區分：満員紅、混雑橘、立席黃 */
+.bus-occ.full {
+    color: #ff3b30;
+}
+
+.bus-occ.crowded {
+    color: #ff9500;
+}
+
+.bus-occ.standing {
+    color: #b08800;
+}
+
+/* 收折／展開時的內容淡入（配合外殼的高度過渡） */
+.bus-fade-in {
+    animation: busFadeIn 0.4s ease;
+}
+
+@keyframes busFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 /* 乘車處編號（站牌面板） */
@@ -309,7 +350,15 @@
         border-color: rgba(255, 255, 255, 0.1);
     }
 
+    .bus-eta-pill.arriving {
+        color: #ff9f0a;
+    }
+
     .bus-eta-pill.soon {
+        color: #ffd60a;
+    }
+
+    .bus-eta-pill.near {
         color: #30d158;
     }
 
@@ -321,14 +370,26 @@
         color: rgba(174, 174, 178, 0.9);
     }
 
-    .bus-stop-dot {
-        border-color: rgba(255, 255, 255, 0.45);
+    .bus-stop-name.approach-next {
+        color: #ff9f0a;
     }
 
-    .bus-stop-dot.selected {
-        background: #0a84ff;
-        border-color: #0a84ff;
+    .bus-stop-name.approach-after {
+        color: #ffd60a;
     }
+
+    .bus-occ.full {
+        color: #ff453a;
+    }
+
+    .bus-occ.crowded {
+        color: #ff9f0a;
+    }
+
+    .bus-occ.standing {
+        color: #ffd60a;
+    }
+
 
     .bus-picker-item {
         background: rgba(255, 255, 255, 0.05);
