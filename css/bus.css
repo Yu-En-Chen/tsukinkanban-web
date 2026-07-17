@@ -193,23 +193,8 @@
     color: #b08800;
 }
 
-/* 運行狀態橫幅：無車／運行終了時顯示在方向選擇列上方 */
-.bus-service-banner {
-    padding: 10px 14px;
-    border-radius: 14px;
-    background: rgba(120, 120, 128, 0.12);
-    font-size: 0.85em;
-    font-weight: 700;
-    text-align: center;
-}
-
-.bus-service-banner.waiting {
-    color: #b08800;
-}
-
-.bus-service-banner.ended {
-    opacity: 0.6;
-}
+/* 運行狀態卡（無車／運行終了）：樣式完全沿用列車的 extension-route-card，
+   此處不另外覆蓋 */
 
 /* 行駛中的巴士標記（位於前一站與本站之間的空白處）：車牌＋偏差＋擁擠度
    字級與站名一致 */
@@ -461,14 +446,6 @@
 
     .bus-delay.early {
         color: #30d158;
-    }
-
-    .bus-service-banner {
-        background: rgba(255, 255, 255, 0.08);
-    }
-
-    .bus-service-banner.waiting {
-        color: #ffd60a;
     }
 
 

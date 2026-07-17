@@ -617,6 +617,27 @@ function openStopPickerDialog(pattern, currentStops, onDone) {
     });
 }
 
+// 運行狀態卡的內容：與列車詳細面板的資訊卡（標題＋狀態徽章＋訊息）同構
+function busServiceBannerInner(service, busData) {
+    const isWaiting = service.state === 'waiting';
+    const badgeText = isWaiting ? '車両なし' : '運行終了';
+    const message = isWaiting
+        ? `現在、運行中の車両はありません。次の発車は ${service.nextText} の予定です。`
+        : '本日の運行は終了しました。';
+
+    return `
+        <div class="ext-card-header">
+            <div class="ext-card-title-group">
+                <div class="ext-route-name">運行状況</div>
+                <div class="ext-route-company">${busData.label || 'バス'}</div>
+            </div>
+            <div class="ext-status-badge status-attention">${badgeText}</div>
+        </div>
+        <div class="ext-card-divider"></div>
+        <div class="ext-card-message">${message}</div>
+    `;
+}
+
 // ============================================================================
 // 路線詳細面板：方向切換塊、停留所列表、收折／預覽停留所
 // ============================================================================
@@ -737,16 +758,14 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         const rows = [...stopsList.querySelectorAll('.bus-stop-row')];
         if (rows.length !== view.stopsToShow.length) { render(); return; }
 
-        // 0. 運行狀態橫幅：狀態切換（有車↔無車）時退回完整重繪，僅文字變化就地更新
+        // 0. 運行狀態卡：狀態切換（有車↔無車）時退回完整重繪，僅內容變化就地更新
         const service = patternServiceState(pattern);
         const banner = container.querySelector('.bus-service-banner');
         const wantBanner = service.state === 'waiting' || service.state === 'ended';
         if (wantBanner !== !!banner) { render(); return; }
         if (banner) {
-            banner.className = `bus-service-banner ${service.state}`;
-            banner.textContent = service.state === 'waiting'
-                ? `運行中の車両なし・次発 ${service.nextText}`
-                : '本日の運行は終了しました';
+            const bd = data.busData || {};
+            banner.innerHTML = busServiceBannerInner(service, bd);
         }
 
         // 1. 巴士位置標記：只有配置變化時才重建（避免每次 tick 閃爍）
@@ -828,14 +847,13 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             return;
         }
 
-        // --- 0. 運行狀態橫幅：無車或運行終了時，在方向選擇列上方明確標示 ---
+        // --- 0. 運行狀態卡：無車或運行終了時，在方向選擇列上方標示 ---
+        // 樣式沿用列車詳細面板的資訊卡結構（extension-route-card）
         const service = patternServiceState(pattern);
         if (service.state === 'waiting' || service.state === 'ended') {
             const banner = document.createElement('div');
-            banner.className = `bus-service-banner ${service.state}`;
-            banner.textContent = service.state === 'waiting'
-                ? `運行中の車両なし・次発 ${service.nextText}`
-                : '本日の運行は終了しました';
+            banner.className = 'extension-route-card bus-service-banner';
+            banner.innerHTML = busServiceBannerInner(service, busData);
             container.appendChild(banner);
         }
 
