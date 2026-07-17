@@ -196,12 +196,19 @@
 /* 運行狀態卡（無車／運行終了）：樣式完全沿用列車的 extension-route-card，
    此處不另外覆蓋 */
 
-/* 行駛中的巴士標記（位於前一站與本站之間的空白處）：車牌＋偏差＋擁擠度
-   字級與站名一致 */
+/* 行駛中的巴士標記（位於前一站與本站之間的空白處）：
+   車牌與表定偏差包在與時間相同的膠囊裡，擁擠度接在膠囊後 */
 .bus-marker-row {
-    padding: 2px 4px 2px 8px;
-    font-size: 0.95em;
+    display: flex;
+    align-items: center;
+    padding: 4px 4px 4px 8px;
     font-weight: 700;
+}
+
+.bus-plate-pill {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
 }
 
 /* 車牌以醒目藍色標示 */
@@ -211,9 +218,17 @@
     color: #0a84ff;
 }
 
-/* 表定偏差：＋延誤紅、－提早綠 */
+/* 站名可點擊（開啟 Google Maps／站牌總覽選單） */
+.bus-stop-name.tappable {
+    cursor: pointer;
+}
+
+.bus-stop-name.tappable:active {
+    opacity: 0.6;
+}
+
+/* 表定偏差：＋延誤紅、－提早綠（在車牌膠囊內，間距由膠囊 gap 控制） */
 .bus-delay {
-    margin-left: 8px;
     font-weight: 800;
     font-size: 0.9em;
 }

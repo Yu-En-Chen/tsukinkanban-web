@@ -19,7 +19,7 @@ import { initPersonalization } from './personalization.js';
 import { initDynamicClock } from './clock.js';
 import { syncAndLoadDictionary } from '../data/dictionary-db.js';
 import { initFlights, searchFlights } from './flights.js';
-import { initBuses, searchBusesDebounced, refreshSavedBusRoutes, generateBusDataFormat, generateBusLineSummary, renderBusDetailPanel, renderBusStopPanel, isBusTargetId, getBusOperatorColor } from './buses.js';
+import { initBuses, searchBusesDebounced, refreshSavedBusRoutes, ensureBusRouteData, generateBusDataFormat, generateBusLineSummary, renderBusDetailPanel, renderBusStopPanel, isBusTargetId, getBusOperatorColor } from './buses.js';
 import { startRouteEditMode } from './edit-routes.js';
 
 // 全域變數：整個 App 渲染、搜尋、點擊的唯一資料來源
@@ -2236,6 +2236,10 @@ window.previewBusFromSearch = function (targetId) {
     if (tempIndex !== -1) window.appRailwayData[tempIndex] = tempCard;
     else window.appRailwayData.push(tempCard);
 
+    // 詳細時刻表在開啟預覽時才抓（搜尋清單使用輕量端點）
+    // 完成後 busDataUpdated 事件會刷新面板
+    ensureBusRouteData(targetId);
+
     // 4. 等鍵盤收起後再彈出卡片
     setTimeout(() => {
         handleCardClick('temp-search-bus');
@@ -2420,6 +2424,11 @@ window.undoCardPreference = async function () {
 function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
     window.GlobalLiveStatus = liveStatus;
     window.MasterRouteDictionary = routeDict;
+
+    // 保留預覽中的臨時卡片：背景重建時清掉會導致
+    // 開啟中的預覽面板（個性化翻面等）查無資料
+    const preservedTemps = (window.appRailwayData || []).filter(c => c.id && c.id.startsWith('temp-search'));
+
     window.appRailwayData = [];
 
     const baseCards = [...railwayData];
@@ -2681,9 +2690,12 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
         });
     }
 
+    // 臨時預覽卡放回資料陣列（不上看板）
+    preservedTemps.forEach(t => window.appRailwayData.push(t));
+
     let hiddenIds = [];
     try { hiddenIds = JSON.parse(localStorage.getItem('TsukinKanban_HiddenCards') || '[]'); } catch (e) { }
-    const visibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
+    const visibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id) && !r.id.startsWith('temp-search'));
 
     renderCards(visibleData);
     initBottomCard();

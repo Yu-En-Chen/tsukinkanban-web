@@ -2,6 +2,7 @@
 
 import { saveRoutePreference, resetRoutePreference } from '../data/db.js';
 import { railwayData } from '../data/data.js';
+import { isBusTargetId, getBusOperatorColor, toHalfWidth } from './buses.js';
 
 // =========================================================
 // 全域導航防護（同步動畫期間攔截點擊）
@@ -1047,6 +1048,14 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                         }
                         
                         defaultData = { name: flightId, hex: defaultHex };
+                    }
+                    // 狀況 A2：公車路線（targetId 格式 bus:業者:路線）
+                    else if (currentData.targetLineIds && isBusTargetId(currentData.targetLineIds[0])) {
+                        const parts = currentData.targetLineIds[0].split(':');
+                        defaultData = {
+                            name: toHalfWidth(parts.slice(2).join(':')) || 'バス路線',
+                            hex: getBusOperatorColor(parts[1])
+                        };
                     }
                     // 狀況 B：綁定雲端字典的鐵道路線
                     else if (currentData.targetLineIds && currentData.targetLineIds.length > 0 && window.MasterRouteDictionary) {
