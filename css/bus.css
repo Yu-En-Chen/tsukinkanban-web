@@ -193,17 +193,52 @@
     color: #b08800;
 }
 
-/* 行駛中的巴士標記（位於前一站與本站之間）：車牌＋擁擠度 */
-.bus-marker-row {
-    padding: 2px 4px 2px 8px;
-    font-size: 0.8em;
+/* 運行狀態橫幅：無車／運行終了時顯示在方向選擇列上方 */
+.bus-service-banner {
+    padding: 10px 14px;
+    border-radius: 14px;
+    background: rgba(120, 120, 128, 0.12);
+    font-size: 0.85em;
     font-weight: 700;
-    opacity: 0.85;
+    text-align: center;
 }
 
+.bus-service-banner.waiting {
+    color: #b08800;
+}
+
+.bus-service-banner.ended {
+    opacity: 0.6;
+}
+
+/* 行駛中的巴士標記（位於前一站與本站之間的空白處）：車牌＋偏差＋擁擠度
+   字級與站名一致 */
+.bus-marker-row {
+    padding: 2px 4px 2px 8px;
+    font-size: 0.95em;
+    font-weight: 700;
+}
+
+/* 車牌以醒目藍色標示 */
 .bus-plate {
     font-family: monospace;
     font-weight: 800;
+    color: #0a84ff;
+}
+
+/* 表定偏差：＋延誤紅、－提早綠 */
+.bus-delay {
+    margin-left: 8px;
+    font-weight: 800;
+    font-size: 0.9em;
+}
+
+.bus-delay.late {
+    color: #ff3b30;
+}
+
+.bus-delay.early {
+    color: #0e8a3e;
 }
 
 .bus-occ {
@@ -413,6 +448,26 @@
     }
 
     .bus-occ.standing {
+        color: #ffd60a;
+    }
+
+    .bus-plate {
+        color: #64a9ff;
+    }
+
+    .bus-delay.late {
+        color: #ff453a;
+    }
+
+    .bus-delay.early {
+        color: #30d158;
+    }
+
+    .bus-service-banner {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .bus-service-banner.waiting {
         color: #ffd60a;
     }
 

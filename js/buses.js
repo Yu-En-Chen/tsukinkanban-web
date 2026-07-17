@@ -505,12 +505,14 @@ function etaPillHtml(etaText, nextText) {
     if (etaText) {
         return `<span class="bus-eta-pill ${etaPillClass(etaText)}">${etaText}</span>`;
     }
-    if (nextText) return `<span class="bus-eta-pill sched">次発 ${nextText}</span>`;
+    // 「次xx:xx」讓寬度與其他時間顯示一致
+    if (nextText) return `<span class="bus-eta-pill sched">次${nextText}</span>`;
     return `<span class="bus-eta-pill none">--</span>`;
 }
 
-// 行駛中巴士標記：車牌＋擁擠度（満員／混雑等以顏色區分）
-function busMarkerHtml(bus) {
+// 行駛中巴士標記：車牌＋擁擠度（満員／混雑等以顏色區分）＋表定偏差（±分）
+// 偏差以「該站的即時預估 eta」與「表定時刻 next」推算：＋為延誤、－為提早
+function busMarkerHtml(bus, stop) {
     let occHtml = '';
     if (bus.occupancy) {
         let occClass = '';
@@ -519,7 +521,17 @@ function busMarkerHtml(bus) {
         else if (bus.occupancy.includes('立席')) occClass = ' standing';
         occHtml = `<span class="bus-occ${occClass}">${bus.occupancy}</span>`;
     }
-    return `<span class="bus-plate">${bus.number || ''}</span>${occHtml}`;
+
+    let diffHtml = '';
+    if (stop && stop.eta && stop.next) {
+        const diff = Math.round((new Date(stop.eta).getTime() - new Date(stop.next).getTime()) / 60000);
+        // 偏差過大通常代表 next 已指向下一班，不顯示避免誤導
+        if (diff !== 0 && Math.abs(diff) <= 30) {
+            diffHtml = `<span class="bus-delay ${diff > 0 ? 'late' : 'early'}">${diff > 0 ? '+' : ''}${diff}分</span>`;
+        }
+    }
+
+    return `<span class="bus-plate">${bus.number || ''}</span>${diffHtml}${occHtml}`;
 }
 // ============================================================================
 // 共用：站名顯示
@@ -725,6 +737,18 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         const rows = [...stopsList.querySelectorAll('.bus-stop-row')];
         if (rows.length !== view.stopsToShow.length) { render(); return; }
 
+        // 0. 運行狀態橫幅：狀態切換（有車↔無車）時退回完整重繪，僅文字變化就地更新
+        const service = patternServiceState(pattern);
+        const banner = container.querySelector('.bus-service-banner');
+        const wantBanner = service.state === 'waiting' || service.state === 'ended';
+        if (wantBanner !== !!banner) { render(); return; }
+        if (banner) {
+            banner.className = `bus-service-banner ${service.state}`;
+            banner.textContent = service.state === 'waiting'
+                ? `運行中の車両なし・次発 ${service.nextText}`
+                : '本日の運行は終了しました';
+        }
+
         // 1. 巴士位置標記：只有配置變化時才重建（避免每次 tick 閃爍）
         const markerSig = markerSignature(view);
         if (markerSig !== lastMarkerSig) {
@@ -735,7 +759,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
                 (stop.buses_approaching || []).forEach(bus => {
                     const marker = document.createElement('div');
                     marker.className = 'bus-marker-row bus-marker-in';
-                    marker.innerHTML = busMarkerHtml(bus);
+                    marker.innerHTML = busMarkerHtml(bus, stop);
                     stopsList.insertBefore(marker, row);
                 });
             });
@@ -802,6 +826,17 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             container.appendChild(emptyCard);
             appendActionButtons();
             return;
+        }
+
+        // --- 0. 運行狀態橫幅：無車或運行終了時，在方向選擇列上方明確標示 ---
+        const service = patternServiceState(pattern);
+        if (service.state === 'waiting' || service.state === 'ended') {
+            const banner = document.createElement('div');
+            banner.className = `bus-service-banner ${service.state}`;
+            banner.textContent = service.state === 'waiting'
+                ? `運行中の車両なし・次発 ${service.nextText}`
+                : '本日の運行は終了しました';
+            container.appendChild(banner);
         }
 
         // --- 1. 方向切換塊（只標示終點方向；重複時改抓終點站名） ---
@@ -906,7 +941,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             (stop.buses_approaching || []).forEach(bus => {
                 const marker = document.createElement('div');
                 marker.className = 'bus-marker-row';
-                marker.innerHTML = busMarkerHtml(bus);
+                marker.innerHTML = busMarkerHtml(bus, stop);
                 stopsList.appendChild(marker);
             });
 
@@ -1094,7 +1129,7 @@ export function renderBusStopPanel(data, scrollWrapper) {
                     ? `<span class="bus-eta-pill arriving">まもなく</span>`
                     : `<span class="bus-eta-pill run">${firstBus.stops_away}停留所前</span>`;
             } else if (firstDep) {
-                pill = `<span class="bus-eta-pill sched">次発 ${firstDep}</span>`;
+                pill = `<span class="bus-eta-pill sched">次${firstDep}</span>`;
             } else {
                 pill = `<span class="bus-eta-pill none">運行終了</span>`;
             }
