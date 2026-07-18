@@ -588,18 +588,13 @@ function openStopActions(stopName, operator) {
             { text: 'Google マップで開く', value: 'map' },
             { text: 'この停留所の路線総覧を見る', value: 'overview' }
         ]
-    ).then(async (choice) => {
+    ).then((choice) => {
         if (choice === 'map') {
             const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stopName + ' バス停')}`;
             window.open(url, '_blank', 'noopener,noreferrer');
         } else if (choice === 'overview') {
-            // 抓取該站牌資料後，跳轉至站牌路線總覽面板
-            const json = await fetchBusApi(`/stop/${encodeURIComponent(stopName)}`);
-            const keys = storeStopResults(json);
-            const preferred = keys.find(k => k.includes(`:${operator}:`)) || keys[0];
-            if (preferred && typeof window.previewBusStopFromSearch === 'function') {
-                window.previewBusStopFromSearch(preferred);
-            }
+            // 立即跳轉至站牌總覽（資料在背景補抓）
+            openBusStopOverview(stopName, operator);
         }
     });
 }
@@ -714,6 +709,9 @@ function busServiceBannerInner(service, busData) {
 export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
     const targetId = (data.targetLineIds && data.targetLineIds[0]) || '';
     const prefs = getBusPrefs(targetId);
+
+    // 路線面板不需要站牌面板的刷新掛勾
+    window.__busStopPanelRefresh = null;
 
     // 卡片資料還是空殼時，先從全域快取拉最新（詳細資料可能在面板開啟前就已抓完）
     if ((!data.busData || (data.busData.patterns || []).length === 0) && window.GlobalBusData[targetId]) {
@@ -905,6 +903,27 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         container.innerHTML = '';
         const busData = data.busData || {};
         const patterns = getPatterns();
+
+        // 由站牌總覽跳轉而來時，依行き先自動切到對應方向
+        // （資料尚未載入時保留待決，載入後的 render 再解析）
+        const desired = window.__busDesiredDir;
+        if (desired && desired.targetId === targetId && patterns.length > 0) {
+            window.__busDesiredDir = null;
+            const destHalf = toHalfWidth(desired.destination || '');
+            if (destHalf) {
+                const idx = patterns.findIndex(p => {
+                    if (toHalfWidth(p.title || '').includes(destHalf)) return true;
+                    const stops = p.stops || [];
+                    const last = stops[stops.length - 1];
+                    return !!last && (`${last.name}行` === destHalf || destHalf.startsWith(last.name));
+                });
+                if (idx >= 0) {
+                    prefs.dir = idx;
+                    saveBusPrefs(targetId, prefs);
+                }
+            }
+        }
+
         const dirIndex = currentDirIndex();
         const pattern = patterns.length > 0 ? patterns[dirIndex] : null;
 
@@ -1187,12 +1206,10 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
 }
 
 // ============================================================================
-// 站牌詳細面板：列出該站牌每條路線的到站資訊（僅供查看）
+// 站牌詳細面板：列出該站牌每條路線的到站資訊
+// 點擊路線列可跳轉至該路線總覽（並自動切換到對應方向）
 // ============================================================================
 export function renderBusStopPanel(data, scrollWrapper) {
-    const stopData = data.busStopData || {};
-    const poles = (stopData.stop && stopData.stop.poles) || [];
-
     // 站牌面板不需要路線面板的刷新掛勾與倒數計時器
     window.__busPanelRefresh = null;
     window.__busPanelTargetId = null;
@@ -1206,58 +1223,132 @@ export function renderBusStopPanel(data, scrollWrapper) {
     container.style.cssText = 'display: flex; flex-direction: column; gap: 14px;';
     scrollWrapper.appendChild(container);
 
-    if (poles.length === 0) {
-        const emptyCard = document.createElement('div');
-        emptyCard.className = 'extension-route-card';
-        emptyCard.style.cssText = 'padding: 32px 20px; text-align: center;';
-        emptyCard.innerHTML = `<div style="font-weight: 700; opacity: 0.8;">この停留所の情報を取得できません</div>`;
-        container.appendChild(emptyCard);
-        return;
-    }
+    // 背景補抓完成後就地刷新
+    window.__busStopPanelRefresh = () => {
+        if (!container.isConnected) {
+            window.__busStopPanelRefresh = null;
+            return;
+        }
+        render();
+    };
 
-    poles.forEach(pole => {
-        const list = document.createElement('div');
-        list.className = 'bus-stops-list';
+    function render() {
+        container.innerHTML = '';
+        const stopData = data.busStopData || {};
+        const poles = (stopData.stop && stopData.stop.poles) || [];
 
-        // 乘車處編號（有資料時才顯示）
-        if (pole.pole_no) {
-            const heading = document.createElement('div');
-            heading.className = 'bus-pole-heading';
-            heading.textContent = `${pole.pole_no}番のりば`;
-            list.appendChild(heading);
+        // 載入中／查無資料的狀態卡
+        if (poles.length === 0) {
+            const emptyCard = document.createElement('div');
+            emptyCard.className = 'extension-route-card';
+            emptyCard.style.cssText = 'padding: 32px 20px; text-align: center;';
+            emptyCard.innerHTML = stopData.loading
+                ? `<div style="font-weight: 700; opacity: 0.8;">停留所の情報を取得しています...</div>`
+                : `<div style="font-weight: 700; opacity: 0.8;">この停留所の情報を取得できません</div>`;
+            container.appendChild(emptyCard);
+            return;
         }
 
-        (pole.routes || []).forEach(route => {
-            const row = document.createElement('div');
-            row.className = 'bus-stop-row';
+        // 實際搭乘時のりば區分意義不大：不顯示「X番のりば」，
+        // 各乘車處的路線合併為一份清單（同路線×行き先去重）
+        const list = document.createElement('div');
+        list.className = 'bus-stops-list';
+        const seen = new Set();
 
-            // 到站資訊優先序：即時 ETA → 走行中位置 → 表定次発 → 運行終了
-            let pill;
-            const firstBus = (route.buses || [])[0];
-            const firstDep = (route.departures_text || [])[0];
-            if (firstBus && firstBus.eta_text) {
-                pill = `<span class="bus-eta-pill ${etaPillClass(firstBus.eta_text)}">${firstBus.eta_text}</span>`;
-            } else if (firstBus && typeof firstBus.stops_away === 'number') {
-                pill = firstBus.stops_away === 0
-                    ? `<span class="bus-eta-pill arriving">まもなく</span>`
-                    : `<span class="bus-eta-pill run">${firstBus.stops_away}停留所前</span>`;
-            } else if (firstDep) {
-                pill = `<span class="bus-eta-pill sched">次${toHalfWidth(firstDep).replace('：', ':')}</span>`;
-            } else {
-                pill = `<span class="bus-eta-pill none">運行終了</span>`;
-            }
+        poles.forEach(pole => {
+            (pole.routes || []).forEach(route => {
+                const dedupeKey = `${route.route}|${route.destination || ''}`;
+                if (seen.has(dedupeKey)) return;
+                seen.add(dedupeKey);
 
-            const displayName = route.destination
-                ? `${toHalfWidth(route.route)}（${route.destination}）`
-                : toHalfWidth(route.route);
-            row.innerHTML = `
-                ${stopNameHtml(displayName)}
-                ${pill}
-            `;
-            list.appendChild(row);
+                const row = document.createElement('div');
+                row.className = 'bus-stop-row bus-route-link';
+
+                // 到站資訊優先序：即時 ETA → 走行中位置 → 表定次発 → 運行終了
+                let pill;
+                const firstBus = (route.buses || [])[0];
+                const firstDep = (route.departures_text || [])[0];
+                if (firstBus && firstBus.eta_text) {
+                    const t = toHalfWidth(firstBus.eta_text);
+                    pill = `<span class="bus-eta-pill ${etaPillClass(t)}">${t}</span>`;
+                } else if (firstBus && typeof firstBus.stops_away === 'number') {
+                    pill = firstBus.stops_away === 0
+                        ? `<span class="bus-eta-pill arriving">まもなく</span>`
+                        : `<span class="bus-eta-pill run">${firstBus.stops_away}停留所前</span>`;
+                } else if (firstDep) {
+                    pill = `<span class="bus-eta-pill sched">次${toHalfWidth(firstDep).replace('：', ':')}</span>`;
+                } else {
+                    pill = `<span class="bus-eta-pill none">運行終了</span>`;
+                }
+
+                const displayName = route.destination
+                    ? `${toHalfWidth(route.route)}（${route.destination}）`
+                    : toHalfWidth(route.route);
+                row.innerHTML = `
+                    ${stopNameHtml(displayName)}
+                    ${pill}
+                `;
+
+                // 點擊 → 跳轉該路線總覽，並帶上行き先讓方向自動切對
+                row.onclick = (e) => {
+                    e.stopPropagation();
+                    if (navigator.vibrate) navigator.vibrate(10);
+                    const targetId = makeBusTargetId(stopData.operator, toHalfWidth(route.route));
+                    window.__busDesiredDir = { targetId: targetId, destination: route.destination || '' };
+                    if (typeof window.previewBusFromSearch === 'function') {
+                        window.previewBusFromSearch(targetId);
+                    }
+                };
+
+                list.appendChild(row);
+            });
         });
 
         container.appendChild(list);
         applyMarquees(list);
+    }
+
+    render();
+}
+
+// ============================================================================
+// 站牌總覽的立即跳轉：先開面板（有快取用快取、無快取先顯示載入中），
+// 同時在背景抓最新資料，完成後就地刷新
+// ============================================================================
+export function openBusStopOverview(stopName, operator) {
+    const key = `busstop:${operator}:${stopName}`;
+
+    if (!window.GlobalBusStopData[key]) {
+        window.GlobalBusStopData[key] = {
+            operator: operator,
+            label: '',
+            url: '',
+            source: '',
+            stopName: stopName,
+            stop: { name: stopName, poles: [] },
+            loading: true
+        };
+    }
+
+    if (typeof window.previewBusStopFromSearch === 'function') {
+        window.previewBusStopFromSearch(key);
+    }
+
+    // 背景抓取最新資料（即使有快取也更新一次）
+    fetchBusApi(`/stop/${encodeURIComponent(stopName)}`).then(json => {
+        const keys = storeStopResults(json);
+        const freshKey = keys.includes(key) ? key : (keys.find(k => k.endsWith(`:${stopName}`)) || keys[0]);
+
+        if (!freshKey && window.GlobalBusStopData[key]) {
+            delete window.GlobalBusStopData[key].loading; // 查無資料 → 顯示「取得できません」
+        }
+
+        const tempCard = (window.appRailwayData || []).find(c => c.id === 'temp-search-busstop');
+        if (tempCard) {
+            tempCard.busStopData = window.GlobalBusStopData[freshKey || key] || tempCard.busStopData;
+        }
+        if (typeof window.__busStopPanelRefresh === 'function') {
+            window.__busStopPanelRefresh();
+        }
     });
 }

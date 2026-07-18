@@ -1457,6 +1457,7 @@ function closeAllCards(isPopState = false) {
     // 面板關閉後不再需要刷新公車面板，也停止本地倒數
     window.__busPanelRefresh = null;
     window.__busPanelTargetId = null;
+    window.__busStopPanelRefresh = null;
     if (window.__busPanelTicker) {
         clearInterval(window.__busPanelTicker);
         window.__busPanelTicker = null;
