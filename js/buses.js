@@ -540,7 +540,7 @@ function etaPillClass(etaText) {
     return 'run'; // HH:MM頃
 }
 
-function etaPillHtml(etaText, nextText) {
+function etaPillHtml(etaText, nextText, noneText = '--') {
     // 時刻文字可能含全形數字（１６：５８），統一轉半形以維持大小一致
     if (etaText) {
         const t = toHalfWidth(etaText);
@@ -548,7 +548,8 @@ function etaPillHtml(etaText, nextText) {
     }
     // 「次xx:xx」讓寬度與其他時間顯示一致
     if (nextText) return `<span class="bus-eta-pill sched">次${toHalfWidth(nextText).replace('：', ':')}</span>`;
-    return `<span class="bus-eta-pill none">--</span>`;
+    // 無時刻資料：運行終了 →「終了」、終點站（乗車不可）→「終点」
+    return `<span class="bus-eta-pill none">${noneText}</span>`;
 }
 
 // 行駛中巴士標記：車牌＋擁擠度（満員／混雑等以顏色區分）＋表定偏差（±分）
@@ -861,10 +862,12 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         view.stopsToShow.forEach((stop, idx) => {
             const row = rows[idx];
             const t = liveEtaTexts(stop);
+            const isTerminal = stop === pattern.stops[pattern.stops.length - 1];
+            const noneText = service.state === 'ended' ? '終了' : (isTerminal ? '終点' : '--');
 
             const oldPill = row.querySelector('.bus-eta-pill');
             const tmp = document.createElement('div');
-            tmp.innerHTML = etaPillHtml(t.eta, t.next);
+            tmp.innerHTML = etaPillHtml(t.eta, t.next, noneText);
             const newPill = tmp.firstElementChild;
 
             if (oldPill && newPill && oldPill.outerHTML !== newPill.outerHTML) {
@@ -1061,9 +1064,11 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             row.className = 'bus-stop-row';
             row.dataset.stopIndex = String(idx);
             const t = liveEtaTexts(stop);
+            const isTerminal = stop === pattern.stops[pattern.stops.length - 1];
+            const noneText = service.state === 'ended' ? '終了' : (isTerminal ? '終点' : '--');
             row.innerHTML = `
                 ${stopNameHtml(stop.name, view.nameClassByName[stop.name] || '')}
-                ${etaPillHtml(t.eta, t.next)}
+                ${etaPillHtml(t.eta, t.next, noneText)}
             `;
 
             // 點擊站名 → 底部選單（Google Maps／站牌總覽）
