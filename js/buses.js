@@ -446,7 +446,7 @@ export function generateBusDataFormat(targetId) {
             const preview = getPreviewStopInfo(targetId, cached);
             desc = preview
                 ? `運行中の車両なし・${preview}`
-                : `運行中の車両なし・次発 ${service.nextText}`;
+                : `運行中の車両なし・次発 ${toHalfWidth(service.nextText).replace('：', ':')}`;
         } else {
             // 末班已駛離：本日運行終了
             flags = [false, false, false, false, false, false, true];
@@ -484,7 +484,7 @@ function getPreviewStopInfo(targetId, busData) {
     if (!stop) return '';
 
     const t = liveEtaTexts(stop);
-    const eta = t.eta ? t.eta : (t.next ? `次発 ${t.next}` : '');
+    const eta = t.eta ? toHalfWidth(t.eta) : (t.next ? `次発 ${toHalfWidth(t.next).replace('：', ':')}` : '');
     return eta ? `${stop.name}：${eta}` : '';
 }
 
@@ -541,11 +541,13 @@ function etaPillClass(etaText) {
 }
 
 function etaPillHtml(etaText, nextText) {
+    // 時刻文字可能含全形數字（１６：５８），統一轉半形以維持大小一致
     if (etaText) {
-        return `<span class="bus-eta-pill ${etaPillClass(etaText)}">${etaText}</span>`;
+        const t = toHalfWidth(etaText);
+        return `<span class="bus-eta-pill ${etaPillClass(t)}">${t}</span>`;
     }
     // 「次xx:xx」讓寬度與其他時間顯示一致
-    if (nextText) return `<span class="bus-eta-pill sched">次${nextText}</span>`;
+    if (nextText) return `<span class="bus-eta-pill sched">次${toHalfWidth(nextText).replace('：', ':')}</span>`;
     return `<span class="bus-eta-pill none">--</span>`;
 }
 
@@ -689,7 +691,7 @@ function busServiceBannerInner(service, busData) {
     const isWaiting = service.state === 'waiting';
     const badgeText = isWaiting ? '車両なし' : '運行終了';
     const message = isWaiting
-        ? `現在、運行中の車両はありません。次の発車は ${service.nextText} の予定です。`
+        ? `現在、運行中の車両はありません。次の発車は ${toHalfWidth(service.nextText).replace('：', ':')} の予定です。`
         : '本日の運行は終了しました。';
 
     return `
@@ -1239,7 +1241,7 @@ export function renderBusStopPanel(data, scrollWrapper) {
                     ? `<span class="bus-eta-pill arriving">まもなく</span>`
                     : `<span class="bus-eta-pill run">${firstBus.stops_away}停留所前</span>`;
             } else if (firstDep) {
-                pill = `<span class="bus-eta-pill sched">次${firstDep}</span>`;
+                pill = `<span class="bus-eta-pill sched">次${toHalfWidth(firstDep).replace('：', ':')}</span>`;
             } else {
                 pill = `<span class="bus-eta-pill none">運行終了</span>`;
             }
