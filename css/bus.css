@@ -246,7 +246,7 @@
     font-weight: 700;
 }
 
-/* 擁擠度顏色區分：満員紅、混雑橘、立席黃 */
+/* 擁擠度顏色區分：満員紅、混雑橘、立席黃、空位綠 */
 .bus-occ.full {
     color: #ff3b30;
 }
@@ -257,6 +257,10 @@
 
 .bus-occ.standing {
     color: #b08800;
+}
+
+.bus-occ.seats {
+    color: #0e8a3e;
 }
 
 /* 收折／展開時的內容淡入（配合外殼的高度過渡） */
@@ -449,6 +453,10 @@
 
     .bus-occ.standing {
         color: #ffd60a;
+    }
+
+    .bus-occ.seats {
+        color: #30d158;
     }
 
     .bus-plate {

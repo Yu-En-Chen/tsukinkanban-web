@@ -560,6 +560,7 @@ function busMarkerHtml(bus, stop) {
         if (bus.occupancy.includes('満員')) occClass = ' full';
         else if (bus.occupancy.includes('混雑')) occClass = ' crowded';
         else if (bus.occupancy.includes('立席')) occClass = ' standing';
+        else if (bus.occupancy.includes('空')) occClass = ' seats'; // 空車・空席多数・空席あり
         occHtml = `<span class="bus-occ${occClass}">${bus.occupancy}</span>`;
     }
 
