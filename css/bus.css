@@ -147,6 +147,8 @@
     border-radius: 999px;
     font-size: 0.95rem;
     font-weight: 800;
+    /* 數字等寬但字形與其他膠囊一致（不用 monospace，避免視覺大小不一） */
+    font-variant-numeric: tabular-nums;
     background: rgba(255, 255, 255, 0.6);
     border: 1px solid rgba(0, 0, 0, 0.06);
     backdrop-filter: blur(20px);
@@ -176,7 +178,6 @@
 
 /* 未發車（表定次発）：灰色 */
 .bus-eta-pill.sched {
-    font-family: monospace;
     color: rgba(120, 120, 128, 0.95);
 }
 
@@ -213,8 +214,8 @@
 
 /* 車牌以醒目藍色標示 */
 .bus-plate {
-    font-family: monospace;
     font-weight: 800;
+    font-variant-numeric: tabular-nums;
     color: #0a84ff;
 }
 
@@ -230,7 +231,6 @@
 /* 表定偏差：＋延誤紅、－提早綠（在車牌膠囊內，間距由膠囊 gap 控制） */
 .bus-delay {
     font-weight: 800;
-    font-size: 0.9em;
 }
 
 .bus-delay.late {
