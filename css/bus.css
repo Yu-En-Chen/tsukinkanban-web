@@ -224,27 +224,50 @@
     cursor: pointer;
 }
 
-/* 方向名不收縮換行，寬度不足時由右側內容換行 */
-.bus-collapsed-capsule .adv-dir-name {
-    flex-shrink: 0;
-    white-space: nowrap;
-    margin-right: 10px;
+/* 方向別群組：方向名作小標，群組之間留出呼吸空間 */
+.bus-collapsed-card .adv-details-container {
+    gap: 14px;
+    margin-top: 10px;
 }
 
-/* capsule 右側：停留所名＋車牌＋時間；過長時允許換行靠右 */
-.bus-collapsed-capsule .adv-status-group {
+.bus-collapsed-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.bus-collapsed-dir {
+    font-size: 0.8em;
+    font-weight: 700;
+    opacity: 0.55;
+    padding: 0 4px;
+}
+
+/* capsule：主列（站名＋時間）＋副列（行駛中車輛的車牌・偏差） */
+.bus-collapsed-capsule {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+}
+
+.bus-collapsed-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.bus-collapsed-stop {
+    font-weight: 700;
     min-width: 0;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 2px 8px;
-}
-
-.bus-collapsed-capsule .adv-train-count {
-    max-width: 9em;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    margin-right: 0;
+}
+
+.bus-collapsed-sub {
+    display: flex;
+    justify-content: flex-end;
 }
 
 /* chip：capsule 內的時間／車牌沿用配色分級，但去掉膠囊外框融入卡片 */

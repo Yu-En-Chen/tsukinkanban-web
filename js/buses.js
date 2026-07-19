@@ -865,15 +865,21 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         return entries;
     }
 
-    // capsule 右側內容：停留所名＋（行駛中的車牌・偏差）＋到站時間
-    function collapsedGroupHtml(pattern, stop) {
+    // capsule 內容：主列（停留所名＋到站時間）＋副列（行駛中的車牌・偏差）
+    // 資訊分層以維持可讀性，不把全部塞在同一行
+    function collapsedCapsuleInner(pattern, stop) {
         const service = patternServiceState(pattern);
         const t = liveEtaTexts(stop);
         const isTerminal = stop === pattern.stops[pattern.stops.length - 1];
         const noneText = service.state === 'ended' ? '終了' : (isTerminal ? '終点' : '--');
         const markerHtml = collectMarkers(pattern, stop, true)
             .map(m => busMarkerHtml(m.bus, m.srcStop, true)).join('');
-        return `<span class="adv-train-count bus-collapsed-stop">${stop.name}</span>${markerHtml}${etaPillHtml(t.eta, t.next, noneText, true)}`;
+        return `
+            <div class="bus-collapsed-main">
+                <span class="bus-collapsed-stop">${stop.name}</span>
+                ${etaPillHtml(t.eta, t.next, noneText, true)}
+            </div>
+            ${markerHtml ? `<div class="bus-collapsed-sub">${markerHtml}</div>` : ''}`;
     }
 
     // 展開視圖：全停留所與接近站的上色對應
@@ -913,12 +919,20 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         const dirLabels = directionLabels(patterns, busData.routeName);
         const entries = collapsedEntries(patterns);
 
+        // 依方向分組：方向名作為群組小標，其下每個預覽站一列 capsule
+        const groups = [];
+        entries.forEach(en => {
+            const g = groups[groups.length - 1];
+            if (g && g.dirIdx === en.dirIdx) g.items.push(en);
+            else groups.push({ dirIdx: en.dirIdx, items: [en] });
+        });
+
         const capsHtml = entries.length === 0
             ? `<div class="bus-select-hint">選択した停留所が見つかりません</div>`
-            : `<div class="adv-details-container">${entries.map(en => `
-                <div class="adv-detail-capsule bus-collapsed-capsule">
-                    <span class="adv-dir-name">${dirLabels[en.dirIdx]}</span>
-                    <div class="adv-status-group">${collapsedGroupHtml(en.pattern, en.stop)}</div>
+            : `<div class="adv-details-container">${groups.map(g => `
+                <div class="bus-collapsed-group">
+                    <div class="bus-collapsed-dir">${dirLabels[g.dirIdx]}</div>
+                    ${g.items.map(en => `<div class="adv-detail-capsule bus-collapsed-capsule">${collapsedCapsuleInner(en.pattern, en.stop)}</div>`).join('')}
                 </div>`).join('')}</div>`;
 
         let footerHtml = '';
@@ -1057,15 +1071,14 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         if (msg && msg.textContent !== info.message) msg.textContent = info.message;
 
         entries.forEach((en, i) => {
-            const group = caps[i].querySelector('.adv-status-group');
-            if (!group) return;
-            const html = collapsedGroupHtml(en.pattern, en.stop);
-            if (group.dataset.html === html) return;
-            const isUpdate = group.dataset.html !== undefined;
-            group.dataset.html = html;
-            group.innerHTML = html;
+            const cap = caps[i];
+            const html = collapsedCapsuleInner(en.pattern, en.stop);
+            if (cap.dataset.html === html) return;
+            const isUpdate = cap.dataset.html !== undefined;
+            cap.dataset.html = html;
+            cap.innerHTML = html;
             if (isUpdate) {
-                const pill = group.querySelector('.bus-eta-pill:not(.bus-plate-pill)');
+                const pill = cap.querySelector('.bus-eta-pill:not(.bus-plate-pill)');
                 if (pill) {
                     pill.classList.add('bus-pill-updated');
                     setTimeout(() => pill.classList.remove('bus-pill-updated'), 700);
