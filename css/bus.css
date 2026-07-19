@@ -219,6 +219,46 @@
     color: #0a84ff;
 }
 
+/* --- 收折檢視：與列車卡片（多路線・方向別）同構的資訊卡 --- */
+.bus-collapsed-card {
+    cursor: pointer;
+}
+
+/* 方向名不收縮換行，寬度不足時由右側內容換行 */
+.bus-collapsed-capsule .adv-dir-name {
+    flex-shrink: 0;
+    white-space: nowrap;
+    margin-right: 10px;
+}
+
+/* capsule 右側：停留所名＋車牌＋時間；過長時允許換行靠右 */
+.bus-collapsed-capsule .adv-status-group {
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 2px 8px;
+}
+
+.bus-collapsed-capsule .adv-train-count {
+    max-width: 9em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 0;
+}
+
+/* chip：capsule 內的時間／車牌沿用配色分級，但去掉膠囊外框融入卡片 */
+.bus-eta-pill.chip {
+    background: none;
+    border: none;
+    padding: 0;
+    border-radius: 0;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    font-size: inherit;
+    font-weight: 800;
+}
+
 /* 站名可點擊（開啟 Google Maps／站牌總覽選單） */
 .bus-stop-name.tappable {
     cursor: pointer;
