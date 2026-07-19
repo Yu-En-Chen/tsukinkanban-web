@@ -784,9 +784,30 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
 
     let lastMarkerSig = '';
 
-    function markerSignature(view) {
-        return view.stopsToShow.map(s =>
-            (s.buses_approaching || []).map(b => b.number + (b.occupancy || '')).join('|')
+    // 該站上方要標示的巴士（車牌＋偏差＋擁擠度）
+    // 展開檢視：只標示正接近本站的巴士
+    // 收折檢視：往前回溯（至上一個預覽站為止），找出已發車、正朝本站行駛中的最近一班
+    function collectMarkers(pattern, stop, isCollapsedView) {
+        if (!isCollapsedView) {
+            return (stop.buses_approaching || []).map(bus => ({ bus, srcStop: stop }));
+        }
+        const idx = pattern.stops.indexOf(stop);
+        const markers = [];
+        for (let j = idx; j >= 0; j--) {
+            const s = pattern.stops[j];
+            if (j !== idx && prefs.previewStops.includes(s.name)) break;
+            if (s.buses_approaching && s.buses_approaching.length > 0) {
+                s.buses_approaching.forEach(bus => markers.push({ bus, srcStop: s }));
+                break;
+            }
+        }
+        return markers;
+    }
+
+    function markerSignature(pattern, view) {
+        return view.stopsToShow.map(stop =>
+            collectMarkers(pattern, stop, view.isCollapsedView)
+                .map(m => m.srcStop.name + m.bus.number + (m.bus.occupancy || '')).join('|')
         ).join('/');
     }
 
@@ -843,16 +864,16 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         }
 
         // 1. 巴士位置標記：只有配置變化時才重建（避免每次 tick 閃爍）
-        const markerSig = markerSignature(view);
+        const markerSig = markerSignature(pattern, view);
         if (markerSig !== lastMarkerSig) {
             lastMarkerSig = markerSig;
             stopsList.querySelectorAll('.bus-marker-row').forEach(m => m.remove());
             view.stopsToShow.forEach((stop, idx) => {
                 const row = rows[idx];
-                (stop.buses_approaching || []).forEach(bus => {
+                collectMarkers(pattern, stop, view.isCollapsedView).forEach(m => {
                     const marker = document.createElement('div');
                     marker.className = 'bus-marker-row bus-marker-in';
-                    marker.innerHTML = busMarkerHtml(bus, stop);
+                    marker.innerHTML = busMarkerHtml(m.bus, m.srcStop);
                     stopsList.insertBefore(marker, row);
                 });
             });
@@ -1053,10 +1074,11 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
 
         view.stopsToShow.forEach((stop, idx) => {
             // 有巴士行駛在前一站與本站之間時，於該站上方標示車牌與擁擠度
-            (stop.buses_approaching || []).forEach(bus => {
+            // （收折檢視時也涵蓋已發車、位於更前方站點的巴士）
+            collectMarkers(pattern, stop, view.isCollapsedView).forEach(m => {
                 const marker = document.createElement('div');
                 marker.className = 'bus-marker-row';
-                marker.innerHTML = busMarkerHtml(bus, stop);
+                marker.innerHTML = busMarkerHtml(m.bus, m.srcStop);
                 stopsList.appendChild(marker);
             });
 
@@ -1086,7 +1108,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         });
 
         // 記下目前的巴士位置配置，供就地更新比對
-        lastMarkerSig = markerSignature(view);
+        lastMarkerSig = markerSignature(pattern, view);
 
         listShell.appendChild(stopsList);
         container.appendChild(listShell);
