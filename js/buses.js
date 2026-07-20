@@ -4,7 +4,8 @@
 const BUS_API_BASE = 'https://api.tsukinkanban.com/api/bus';
 const BUS_CACHE_KEY = 'Tsukin_Cached_BusData';
 const BUS_PREFS_KEY = 'Tsukin_Bus_Prefs';
-const BUS_REFRESH_MIN_MS = 60000; // 後端建議輪詢間隔 >= 60 秒
+const BUS_POLL_MS = 55000;        // 有公車卡片（儲存或開啟中）時的輪詢間隔
+const BUS_REFRESH_MIN_MS = 50000; // 快取視為新鮮的門檻（略低於輪詢間隔，讓每次輪詢都實際更新）
 
 // 業者識別色
 const OPERATOR_COLORS = {
@@ -47,6 +48,17 @@ export function initBuses() {
         const cached = localStorage.getItem(BUS_CACHE_KEY);
         if (cached) window.GlobalBusData = JSON.parse(cached);
     } catch (e) { }
+
+    // 公車輪詢：有儲存的公車卡片或開啟中的公車面板（含站牌）時，
+    // 每 55 秒抓一次最新資訊；沒有任何公車對象時不發送請求。
+    // 頁面在背景時暫停，回到前景由時鐘的 visibilitychange 更新補上
+    if (!window.__busPollTimer) {
+        window.__busPollTick = async () => {
+            if (document.hidden) return;
+            await Promise.all([refreshSavedBusRoutes(), refreshOpenBusStop()]);
+        };
+        window.__busPollTimer = setInterval(() => window.__busPollTick(), BUS_POLL_MS);
+    }
 }
 
 function persistBusCache() {
@@ -433,6 +445,21 @@ export async function refreshSavedBusRoutes() {
     }
 }
 
+// 站牌面板開啟中：重抓該站牌的最新到站與車輛資訊（輪詢用）
+async function refreshOpenBusStop() {
+    const key = window.__busStopPanelKey;
+    if (!key || typeof window.__busStopPanelRefresh !== 'function') return;
+
+    const stopName = key.split(':').slice(2).join(':');
+    const json = await fetchBusApi(`/stop/${encodeURIComponent(stopName)}`);
+    if (!json || json.error) return;
+    if (storeStopResults(json).length === 0) return;
+
+    const tempCard = (window.appRailwayData || []).find(c => c.id === 'temp-search-busstop');
+    if (tempCard && window.GlobalBusStopData[key]) tempCard.busStopData = window.GlobalBusStopData[key];
+    if (typeof window.__busStopPanelRefresh === 'function') window.__busStopPanelRefresh();
+}
+
 // ============================================================================
 // 卡面資料格式：給 buildAndRender 使用（對應航班的 generateFlightDataFormat）
 // 無車時亮起注意燈並顯示狀態（次発待ち／本日運行終了）
@@ -570,16 +597,19 @@ function etaPillHtml(etaText, nextText, noneText = '--', chip = false) {
 
 // 行駛中巴士標記：車牌＋擁擠度（満員／混雑等以顏色區分）＋表定偏差（±分）
 // 偏差以「該站的即時預估 eta」與「表定時刻 next」推算：＋為延誤、－為提早
+// 擁擠度標示（満員紅／混雑橘／立席黃／空位綠）
+function busOccHtml(occupancy) {
+    if (!occupancy) return '';
+    let occClass = '';
+    if (occupancy.includes('満員')) occClass = ' full';
+    else if (occupancy.includes('混雑')) occClass = ' crowded';
+    else if (occupancy.includes('立席')) occClass = ' standing';
+    else if (occupancy.includes('空')) occClass = ' seats'; // 空車・空席多数・空席あり
+    return `<span class="bus-occ${occClass}">${occupancy}</span>`;
+}
+
 function busMarkerHtml(bus, stop, chip = false) {
-    let occHtml = '';
-    if (bus.occupancy) {
-        let occClass = '';
-        if (bus.occupancy.includes('満員')) occClass = ' full';
-        else if (bus.occupancy.includes('混雑')) occClass = ' crowded';
-        else if (bus.occupancy.includes('立席')) occClass = ' standing';
-        else if (bus.occupancy.includes('空')) occClass = ' seats'; // 空車・空席多数・空席あり
-        occHtml = `<span class="bus-occ${occClass}">${bus.occupancy}</span>`;
-    }
+    const occHtml = busOccHtml(bus.occupancy);
 
     let diffHtml = '';
     if (stop && stop.eta && stop.next) {
@@ -733,6 +763,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
 
     // 路線面板不需要站牌面板的刷新掛勾
     window.__busStopPanelRefresh = null;
+    window.__busStopPanelKey = null;
 
     // 卡片資料還是空殼時，先從全域快取拉最新（詳細資料可能在面板開啟前就已抓完）
     if ((!data.busData || (data.busData.patterns || []).length === 0) && window.GlobalBusData[targetId]) {
@@ -1414,10 +1445,17 @@ export function renderBusStopPanel(data, scrollWrapper) {
     container.style.cssText = 'display: flex; flex-direction: column; gap: 14px;';
     scrollWrapper.appendChild(container);
 
+    // 開啟中的站牌 key：輪詢器據此重抓該站牌的最新資訊
+    const initialStop = data.busStopData || {};
+    window.__busStopPanelKey = initialStop.stopName
+        ? `busstop:${initialStop.operator}:${initialStop.stopName}`
+        : null;
+
     // 背景補抓完成後就地刷新
     window.__busStopPanelRefresh = () => {
         if (!container.isConnected) {
             window.__busStopPanelRefresh = null;
+            window.__busStopPanelKey = null;
             return;
         }
         render();
@@ -1425,6 +1463,9 @@ export function renderBusStopPanel(data, scrollWrapper) {
 
     function render() {
         container.innerHTML = '';
+        // 輪詢可能已寫入更新的資料 → 以全域快取的最新版為準
+        const latest = window.__busStopPanelKey && window.GlobalBusStopData[window.__busStopPanelKey];
+        if (latest) data.busStopData = latest;
         const stopData = data.busStopData || {};
         const poles = (stopData.stop && stopData.stop.poles) || [];
 
@@ -1475,9 +1516,26 @@ export function renderBusStopPanel(data, scrollWrapper) {
                 const displayName = route.destination
                     ? `${toHalfWidth(route.route)}（${route.destination}）`
                     : toHalfWidth(route.route);
+
+                // 車輛資訊副列：車牌（藍）＋擁擠度＋走行位置
+                // 位置已在主列顯示（◯停留所前）時不重複
+                let subHtml = '';
+                if (firstBus && (firstBus.number || firstBus.occupancy)) {
+                    const plate = firstBus.number
+                        ? `<span class="bus-eta-pill bus-plate-pill chip"><span class="bus-plate">${firstBus.number}</span></span>`
+                        : '';
+                    const away = (firstBus.eta_text && typeof firstBus.stops_away === 'number')
+                        ? `<span class="bus-away">${firstBus.stops_away === 0 ? 'まもなく到着' : `${firstBus.stops_away}停留所前`}</span>`
+                        : '';
+                    subHtml = `<div class="bus-stoprow-sub">${plate}${busOccHtml(firstBus.occupancy)}${away}</div>`;
+                }
+
                 row.innerHTML = `
-                    ${stopNameHtml(displayName)}
-                    ${pill}
+                    <div class="bus-stoprow-main">
+                        ${stopNameHtml(displayName)}
+                        ${pill}
+                    </div>
+                    ${subHtml}
                 `;
 
                 // 點擊 → 跳轉該路線總覽，並帶上行き先讓方向自動切對

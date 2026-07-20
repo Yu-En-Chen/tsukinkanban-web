@@ -1458,6 +1458,7 @@ function closeAllCards(isPopState = false) {
     window.__busPanelRefresh = null;
     window.__busPanelTargetId = null;
     window.__busStopPanelRefresh = null;
+    window.__busStopPanelKey = null;
     if (window.__busPanelTicker) {
         clearInterval(window.__busPanelTicker);
         window.__busPanelTicker = null;

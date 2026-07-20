@@ -237,9 +237,9 @@
 }
 
 .bus-collapsed-dir {
-    font-size: 0.8em;
+    font-size: 0.9em;
     font-weight: 700;
-    opacity: 0.55;
+    opacity: 0.6;
     padding: 0 4px;
 }
 
@@ -367,11 +367,40 @@
     animation: busFadeIn 0.4s ease;
 }
 
-/* 站牌總覽的路線列：可點擊跳轉至該路線 */
+/* 站牌總覽的路線列：可點擊跳轉至該路線
+   主列（路線名＋時間）＋副列（車輛資訊）的兩段構成 */
 .bus-stop-row.bus-route-link {
     cursor: pointer;
     border-radius: 12px;
     transition: background 0.15s ease;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+}
+
+.bus-stoprow-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+/* 車輛資訊副列：車牌・擁擠度・走行位置（靠右對齊） */
+.bus-stoprow-sub {
+    display: flex;
+    justify-content: flex-end;
+    align-items: baseline;
+    gap: 10px;
+    font-size: 0.85em;
+    font-weight: 700;
+}
+
+.bus-stoprow-sub .bus-occ {
+    margin-left: 0;
+}
+
+.bus-away {
+    opacity: 0.6;
 }
 
 .bus-stop-row.bus-route-link:active {
