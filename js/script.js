@@ -19,7 +19,7 @@ import { initPersonalization } from './personalization.js';
 import { initDynamicClock } from './clock.js';
 import { syncAndLoadDictionary } from '../data/dictionary-db.js';
 import { initFlights, searchFlights } from './flights.js';
-import { initBuses, searchBusesDebounced, refreshSavedBusRoutes, ensureBusRouteData, generateBusDataFormat, generateBusLineSummary, renderBusDetailPanel, renderBusStopPanel, isBusTargetId, getBusOperatorColor } from './buses.js';
+import { initBuses, searchBusesDebounced, refreshSavedBusRoutes, ensureBusRouteData, generateBusDataFormat, generateBusLineSummary, renderBusDetailPanel, renderBusStopPanel, renderBusLineCard, openStopPickerDialog, getBusPrefs, saveBusPrefs, isBusTargetId, getBusOperatorColor } from './buses.js';
 import { startRouteEditMode } from './edit-routes.js';
 
 // 全域變數：整個 App 渲染、搜尋、點擊的唯一資料來源
@@ -690,6 +690,7 @@ function handleCardClick(id) {
         const busTargetId = (data.targetLineIds && data.targetLineIds[0]) || '';
 
         // 與列車預覽相同：加入既有卡片
+        // 加入前先要求選擇預覽停留所（與收折設定同一套選擇器與上限；已設定過則跳過）
         const handleBusAddToExisting = () => {
             if (isAnimating) return;
 
@@ -699,12 +700,33 @@ function handleCardClick(id) {
                 company: (data.busData && data.busData.label) || 'バス'
             };
 
-            closeAllCards(false);
-            setTimeout(() => {
-                if (window.RouteAppender) {
-                    window.RouteAppender.openPicker(routeData);
-                }
-            }, 300);
+            const proceed = () => {
+                closeAllCards(false);
+                setTimeout(() => {
+                    if (window.RouteAppender) {
+                        window.RouteAppender.openPicker(routeData);
+                    }
+                }, 300);
+            };
+
+            const prefs = getBusPrefs(busTargetId);
+            const bd = window.GlobalBusData[busTargetId];
+            const pattern = (bd && bd.patterns && bd.patterns.length > 0)
+                ? bd.patterns[Math.min(prefs.dir, bd.patterns.length - 1)]
+                : null;
+
+            if (prefs.previewStops.length === 0 && pattern) {
+                openStopPickerDialog(pattern, [], (picked) => {
+                    if (picked.length > 0) {
+                        prefs.previewStops = picked;
+                        prefs.collapsed = true;
+                        saveBusPrefs(busTargetId, prefs);
+                    }
+                    proceed();
+                });
+            } else {
+                proceed();
+            }
         };
 
         // 與列車預覽相同：新增卡片（繼承公車屬性）
@@ -1036,6 +1058,12 @@ function handleCardClick(id) {
 
         if (data.detailedLines && data.detailedLines.length > 0) {
             data.detailedLines.forEach(line => {
+                // 混合卡片內的公車路線：收折資訊卡（點擊跳轉至完整公車面板）
+                if (line.isBusLine) {
+                    scrollWrapper.appendChild(renderBusLineCard(line.id));
+                    return;
+                }
+
                 let statusClass = 'status-normal';
                 if (line.isError) statusClass = 'status-error';
                 else if (line.isAttention) statusClass = 'status-attention';
@@ -3537,6 +3565,12 @@ function silentUpdateExtensionPanel(cardId) {
     // 3. 生成新卡片
     if (data.detailedLines && data.detailedLines.length > 0) {
         data.detailedLines.forEach(line => {
+            // 混合卡片內的公車路線：收折資訊卡（點擊跳轉至完整公車面板）
+            if (line.isBusLine) {
+                fragment.appendChild(renderBusLineCard(line.id));
+                return;
+            }
+
             let statusClass = 'status-normal';
             if (line.isError) statusClass = 'status-error';
             else if (line.isAttention) statusClass = 'status-attention';

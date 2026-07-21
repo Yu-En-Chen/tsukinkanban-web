@@ -286,6 +286,120 @@ function busCardFooterHtml(fetchedAt) {
 }
 
 // ============================================================================
+// 收折資訊卡的組件（路線面板的收折檢視與混合卡片內的公車列共用）
+// ============================================================================
+
+// 該站上方要標示的巴士（車牌＋偏差＋擁擠度）
+// 展開檢視：只標示正接近本站的巴士
+// 收折檢視：往前回溯（至上一個預覽站為止），找出已發車、正朝本站行駛中的最近一班
+function collectBusMarkers(pattern, stop, isCollapsedView, previewStops) {
+    if (!isCollapsedView) {
+        return (stop.buses_approaching || []).map(bus => ({ bus, srcStop: stop }));
+    }
+    const idx = pattern.stops.indexOf(stop);
+    const markers = [];
+    for (let j = idx; j >= 0; j--) {
+        const s = pattern.stops[j];
+        if (j !== idx && previewStops.includes(s.name)) break;
+        if (s.buses_approaching && s.buses_approaching.length > 0) {
+            s.buses_approaching.forEach(bus => markers.push({ bus, srcStop: s }));
+            break;
+        }
+    }
+    return markers;
+}
+
+// 收折檢視的顯示項目：各方向 × 預覽停留所（與列車卡片的方向別 capsule 同構）
+function busCollapsedEntries(patterns, previewStops) {
+    const entries = [];
+    patterns.forEach((p, dirIdx) => {
+        (p.stops || []).forEach(stop => {
+            if (previewStops.includes(stop.name)) entries.push({ pattern: p, dirIdx, stop });
+        });
+    });
+    return entries;
+}
+
+// capsule 內容：主列（停留所名＋到站時間）＋副列（行駛中的車牌・偏差）
+// 資訊分層以維持可讀性，不把全部塞在同一行
+function busCollapsedCapsuleInner(pattern, stop, previewStops) {
+    const service = patternServiceState(pattern);
+    const t = liveEtaTexts(stop);
+    const isTerminal = stop === pattern.stops[pattern.stops.length - 1];
+    const noneText = service.state === 'ended' ? '終了' : (isTerminal ? '終点' : '--');
+    const markerHtml = collectBusMarkers(pattern, stop, true, previewStops)
+        .map(m => busMarkerHtml(m.bus, m.srcStop, true)).join('');
+    return `
+        <div class="bus-collapsed-main">
+            <span class="bus-collapsed-stop">${stop.name}</span>
+            ${etaPillHtml(t.eta, t.next, noneText, true)}
+        </div>
+        ${markerHtml ? `<div class="bus-collapsed-sub">${markerHtml}</div>` : ''}`;
+}
+
+// 收折資訊卡的完整內容：標頭＋訊息＋方向別 capsule 群＋更新時刻
+function busCollapsedCardInner(busData, prefs) {
+    const patterns = busData.patterns || [];
+    const info = overallServiceInfo(patterns);
+    const dirLabels = directionLabels(patterns, busData.routeName);
+    const previewStops = prefs.previewStops || [];
+    const entries = busCollapsedEntries(patterns, previewStops);
+
+    // 依方向分組：方向名作為群組小標，其下每個預覽站一列 capsule
+    const groups = [];
+    entries.forEach(en => {
+        const g = groups[groups.length - 1];
+        if (g && g.dirIdx === en.dirIdx) g.items.push(en);
+        else groups.push({ dirIdx: en.dirIdx, items: [en] });
+    });
+
+    const capsHtml = entries.length === 0
+        ? `<div class="bus-select-hint">${previewStops.length === 0
+            ? 'プレビュー停留所が未設定です。タップして設定できます'
+            : '選択した停留所が見つかりません'}</div>`
+        : `<div class="adv-details-container">${groups.map(g => `
+            <div class="bus-collapsed-group">
+                <div class="bus-collapsed-dir">${dirLabels[g.dirIdx]}</div>
+                ${g.items.map(en => `<div class="adv-detail-capsule bus-collapsed-capsule">${busCollapsedCapsuleInner(en.pattern, en.stop, previewStops)}</div>`).join('')}
+            </div>`).join('')}</div>`;
+
+    return `
+        ${busCardHeaderHtml(busData.routeName || '', busData.label || 'バス', info)}
+        <div class="ext-card-message">${info.message}</div>
+        ${capsHtml}
+        ${busCardFooterHtml(busData.fetchedAt)}
+    `;
+}
+
+// 混合卡片內的公車路線：收折資訊卡樣式（無展開按鈕），
+// 點擊跳轉至該路線的完整公車面板（方向・預覽停留所在那邊設定）
+export function renderBusLineCard(targetId) {
+    const busData = window.GlobalBusData[targetId] || {};
+    const prefs = getBusPrefs(targetId);
+    const card = document.createElement('div');
+    card.className = 'extension-route-card bus-collapsed-card';
+
+    if ((busData.patterns || []).length === 0) {
+        const { route } = parseBusTargetId(targetId);
+        card.innerHTML = `
+            ${busCardHeaderHtml(busData.routeName || route, busData.label || 'バス', { badge: '更新中', cls: 'status-attention' })}
+            <div class="ext-card-message">バス情報を取得しています...</div>
+        `;
+    } else {
+        card.innerHTML = busCollapsedCardInner(busData, prefs);
+    }
+
+    card.onclick = (e) => {
+        e.stopPropagation();
+        if (navigator.vibrate) navigator.vibrate(10);
+        if (typeof window.previewBusFromSearch === 'function') {
+            window.previewBusFromSearch(targetId);
+        }
+    };
+    return card;
+}
+
+// ============================================================================
 // 搜尋整合：由 filterCards 呼叫
 // 250ms debounce，路線與站牌並行查詢，查詢期間先顯示載入中的佔位項目
 // ============================================================================
@@ -708,7 +822,7 @@ function applyMarquees(root) {
 // ============================================================================
 // 預覽停留所選擇：與「既存カード追加」相同的 iOS 對話框樣式
 // ============================================================================
-function openStopPickerDialog(pattern, currentStops, onDone) {
+export function openStopPickerDialog(pattern, currentStops, onDone) {
     if (!window.iosConfirm) return;
 
     const picked = currentStops.slice(0, 2);
@@ -865,24 +979,9 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
 
     let lastMarkerSig = '';
 
-    // 該站上方要標示的巴士（車牌＋偏差＋擁擠度）
-    // 展開檢視：只標示正接近本站的巴士
-    // 收折檢視：往前回溯（至上一個預覽站為止），找出已發車、正朝本站行駛中的最近一班
+    // 模組層級組件的閉包便捷包裝（自動帶入本面板的偏好設定）
     function collectMarkers(pattern, stop, isCollapsedView) {
-        if (!isCollapsedView) {
-            return (stop.buses_approaching || []).map(bus => ({ bus, srcStop: stop }));
-        }
-        const idx = pattern.stops.indexOf(stop);
-        const markers = [];
-        for (let j = idx; j >= 0; j--) {
-            const s = pattern.stops[j];
-            if (j !== idx && prefs.previewStops.includes(s.name)) break;
-            if (s.buses_approaching && s.buses_approaching.length > 0) {
-                s.buses_approaching.forEach(bus => markers.push({ bus, srcStop: s }));
-                break;
-            }
-        }
-        return markers;
+        return collectBusMarkers(pattern, stop, isCollapsedView, prefs.previewStops);
     }
 
     function markerSignature(pattern, view) {
@@ -892,32 +991,12 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         ).join('/');
     }
 
-    // 收折檢視的顯示項目：各方向 × 預覽停留所（與列車卡片的方向別 capsule 同構）
     function collapsedEntries(patterns) {
-        const entries = [];
-        patterns.forEach((p, dirIdx) => {
-            (p.stops || []).forEach(stop => {
-                if (prefs.previewStops.includes(stop.name)) entries.push({ pattern: p, dirIdx, stop });
-            });
-        });
-        return entries;
+        return busCollapsedEntries(patterns, prefs.previewStops);
     }
 
-    // capsule 內容：主列（停留所名＋到站時間）＋副列（行駛中的車牌・偏差）
-    // 資訊分層以維持可讀性，不把全部塞在同一行
     function collapsedCapsuleInner(pattern, stop) {
-        const service = patternServiceState(pattern);
-        const t = liveEtaTexts(stop);
-        const isTerminal = stop === pattern.stops[pattern.stops.length - 1];
-        const noneText = service.state === 'ended' ? '終了' : (isTerminal ? '終点' : '--');
-        const markerHtml = collectMarkers(pattern, stop, true)
-            .map(m => busMarkerHtml(m.bus, m.srcStop, true)).join('');
-        return `
-            <div class="bus-collapsed-main">
-                <span class="bus-collapsed-stop">${stop.name}</span>
-                ${etaPillHtml(t.eta, t.next, noneText, true)}
-            </div>
-            ${markerHtml ? `<div class="bus-collapsed-sub">${markerHtml}</div>` : ''}`;
+        return busCollapsedCapsuleInner(pattern, stop, prefs.previewStops);
     }
 
     // 展開視圖：全停留所與接近站的上色對應
@@ -952,33 +1031,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
 
         const card = document.createElement('div');
         card.className = 'extension-route-card bus-collapsed-card';
-
-        const info = overallServiceInfo(patterns);
-        const dirLabels = directionLabels(patterns, busData.routeName);
-        const entries = collapsedEntries(patterns);
-
-        // 依方向分組：方向名作為群組小標，其下每個預覽站一列 capsule
-        const groups = [];
-        entries.forEach(en => {
-            const g = groups[groups.length - 1];
-            if (g && g.dirIdx === en.dirIdx) g.items.push(en);
-            else groups.push({ dirIdx: en.dirIdx, items: [en] });
-        });
-
-        const capsHtml = entries.length === 0
-            ? `<div class="bus-select-hint">選択した停留所が見つかりません</div>`
-            : `<div class="adv-details-container">${groups.map(g => `
-                <div class="bus-collapsed-group">
-                    <div class="bus-collapsed-dir">${dirLabels[g.dirIdx]}</div>
-                    ${g.items.map(en => `<div class="adv-detail-capsule bus-collapsed-capsule">${collapsedCapsuleInner(en.pattern, en.stop)}</div>`).join('')}
-                </div>`).join('')}</div>`;
-
-        card.innerHTML = `
-            ${busCardHeaderHtml(busData.routeName || '', busData.label || 'バス', info)}
-            <div class="ext-card-message">${info.message}</div>
-            ${capsHtml}
-            ${busCardFooterHtml(busData.fetchedAt)}
-        `;
+        card.innerHTML = busCollapsedCardInner(busData, prefs);
 
         // 點卡片本身也可展開（與收折按鈕同效）
         card.onclick = (e) => {
