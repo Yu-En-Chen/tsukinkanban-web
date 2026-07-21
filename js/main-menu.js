@@ -174,6 +174,14 @@ window.openUniversalPage = function(title, contentHTML) {
     document.getElementById('universal-page-title').textContent = title;
     document.getElementById('universal-page-content').innerHTML = contentHTML;
 
+    // 信箱防採集：位址以分段屬性存放（原始碼不含完整位址，
+    // 不執行 JS 的採集爬蟲掃不到），注入後才在瀏覽器端組回
+    document.querySelectorAll('#universal-page-content a[data-eu]').forEach(a => {
+        const addr = `${a.dataset.eu}@${a.dataset.ed}`;
+        a.textContent = addr;
+        a.href = `mailto:${addr}`;
+    });
+
     // 注意：開啟子頁面時刻意保留主選單於背景（由 CSS 隱藏），返回時可直接復原
 
     // 3. 強制瀏覽器重繪

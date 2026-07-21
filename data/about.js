@@ -11,7 +11,7 @@ export const aboutContent = `
         台湾在住の個人開発者のため、現地の詳細な状況や使い勝手について至らない点があるかもしれません。<br>
         実際に現地で利用されている皆様からのフィードバックが、サイト改善のための何よりの助けとなります。<br>
         <br>
-        <a href="mailto:info@tsukinkanban.com" style="color: inherit; text-decoration: underline; font-weight: 500;">info@tsukinkanban.com</a></p>
+        <a href="#" data-eu="info" data-ed="tsukinkanban.com" style="color: inherit; text-decoration: underline; font-weight: 500;">お問い合わせ先</a></p>
     
         <div style="display: flex; gap: 12px; margin-top: 24px; margin-bottom: 32px;">
             

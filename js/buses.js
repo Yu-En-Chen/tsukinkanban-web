@@ -110,6 +110,8 @@ function groupAndStoreRouteResults(json) {
     json.results.forEach(result => {
         const groups = {};
         (result.patterns || []).forEach(p => {
+            // 完全沒有停靠站資料的運行系統（資訊量為零）不列入方向選擇
+            if (!p.stops || p.stops.length === 0) return;
             const title = toHalfWidth(p.title || '');
             const firstSpace = title.indexOf(' ');
             const token = (firstSpace > 0 ? title.slice(0, firstSpace) : title) || toHalfWidth(json.query || '');
@@ -203,13 +205,24 @@ function directionLabels(patterns, routeName) {
     const counts = {};
     raw.forEach(l => { if (l) counts[l] = (counts[l] || 0) + 1; });
 
-    return raw.map((l, i) => {
+    const labels = raw.map((l, i) => {
         if (!l || counts[l] > 1) {
             const stops = patterns[i].stops || [];
             const last = stops[stops.length - 1];
             if (last && last.name) return `${last.name}行`;
         }
         return l || `方向 ${i + 1}`;
+    });
+
+    // 行き先（終點）也相同的複數運行系統（起点・経由違い）→ 補上起點站區別
+    const dupes = {};
+    labels.forEach(l => { dupes[l] = (dupes[l] || 0) + 1; });
+    return labels.map((l, i) => {
+        if (dupes[l] > 1) {
+            const first = (patterns[i].stops || [])[0];
+            if (first && first.name) return `${l}（${first.name}発）`;
+        }
+        return l;
     });
 }
 

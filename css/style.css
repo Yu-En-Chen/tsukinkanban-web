@@ -2857,8 +2857,9 @@ body.use-system-cursor .custom-cursor {
     justify-content: space-between;
     align-items: center;
     font-size: 0.85em;
-    padding: 8px 12px;
-    border-radius: 8px;
+    padding: 8px 14px;
+    /* 全圓角長膠囊（與全站的膠囊語言一致） */
+    border-radius: 999px;
     /* 淺色模式：微透明的白/灰色底 */
     background: rgba(0, 0, 0, 0.04);
     border: 1px solid rgba(0, 0, 0, 0.06);
