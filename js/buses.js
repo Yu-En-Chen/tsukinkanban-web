@@ -122,7 +122,7 @@ function groupAndStoreRouteResults(json) {
         Object.keys(groups).forEach(token => {
             const targetId = makeBusTargetId(result.operator, token);
             window.GlobalBusData[targetId] = Object.assign({}, result, {
-                patterns: groups[token],
+                patterns: dedupeBusPatterns(groups[token]),
                 routeName: token,
                 fetchedAt: Date.now()
             });
@@ -181,6 +181,30 @@ export async function ensureBusRouteData(targetId) {
     }
 }
 
+// 運行系統的資訊量評分：有車 > 有表定次発 > 無資訊
+function patternScore(p) {
+    if ((p.bus_count || 0) > 0) return 2;
+    if ((p.stops || []).some(s => s.next_text)) return 1;
+    return 0;
+}
+
+// 站點序列完全相同的運行系統（平日／土休日等時刻表帶違い）は
+// 同じ路線の重複表示になるため、資訊のある方だけを残して統合する
+function dedupeBusPatterns(patterns) {
+    const byRoute = {};
+    const order = [];
+    patterns.forEach(p => {
+        const key = (p.stops || []).map(s => s.name).join('|');
+        if (!byRoute[key]) {
+            byRoute[key] = p;
+            order.push(key);
+        } else if (patternScore(p) > patternScore(byRoute[key])) {
+            byRoute[key] = p;
+        }
+    });
+    return order.map(k => byRoute[k]);
+}
+
 // 方向標籤：只顯示終點方向，不重複路線名
 function directionLabel(pattern, routeName) {
     const title = toHalfWidth(pattern.title || '');
@@ -214,15 +238,28 @@ function directionLabels(patterns, routeName) {
         return l || `方向 ${i + 1}`;
     });
 
-    // 行き先（終點）也相同的複數運行系統（起点・経由違い）→ 補上起點站區別
+    // 行き先（終點）也相同的複數運行系統 → 依序以起點、経由站區別
     const dupes = {};
     labels.forEach(l => { dupes[l] = (dupes[l] || 0) + 1; });
     return labels.map((l, i) => {
-        if (dupes[l] > 1) {
-            const first = (patterns[i].stops || [])[0];
-            if (first && first.name) return `${l}（${first.name}発）`;
-        }
-        return l;
+        if (dupes[l] <= 1) return l;
+
+        const stops = patterns[i].stops || [];
+        const others = patterns.filter((p, j) => j !== i && labels[j] === l);
+
+        // 起點不同 → 標「◯◯発」
+        const first = stops[0];
+        const firstUnique = first && first.name &&
+            others.every(o => (((o.stops || [])[0]) || {}).name !== first.name);
+        if (firstUnique) return `${l}（${first.name}発）`;
+
+        // 起點也相同（経由違い）→ 找出只有本系統停靠的站標「◯◯経由」
+        const uniqueStop = stops.find(s =>
+            others.every(o => !(o.stops || []).some(os => os.name === s.name)));
+        if (uniqueStop) return `${l}（${uniqueStop.name}経由）`;
+
+        // 完全無法區別時以序號標示
+        return `${l}（${i + 1}）`;
     });
 }
 

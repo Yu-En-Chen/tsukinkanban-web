@@ -100,7 +100,7 @@ python3 -m http.server 8000
 ### お問い合わせ
 
 - 開発者: YUEN CHEN（[@yueneuy_c](https://x.com/yueneuy_c)）
-- ご意見・不具合報告: [info@tsukinkanban.com](mailto:info@tsukinkanban.com)
+- ご意見・不具合報告: info(at)tsukinkanban.com（(at) を @ に読み替えてください）
 
 ---
 
@@ -190,4 +190,4 @@ python3 -m http.server 8000
 ### 聯絡方式
 
 - 開發者：YUEN CHEN（[@yueneuy_c](https://x.com/yueneuy_c)）
-- 意見回饋、問題回報：[info@tsukinkanban.com](mailto:info@tsukinkanban.com)
+- 意見回饋、問題回報：info(at)tsukinkanban.com（請將 (at) 替換為 @）
