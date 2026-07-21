@@ -1213,21 +1213,84 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         });
     }
 
-    // 在停留所列表上左右滑切換方向
+    // 在停留所列表上左右滑切換方向：
+    // 拖曳時整張卡跟著手指位移（含透明度回饋），放開後依方向滑出→新方向滑入
+    // 第一／最後一個方向再往外拖時加重阻尼並回彈（不循環）
     let touchStartX = 0, touchStartY = 0, touchTracking = false;
+    let touchHorizontal = null; // null＝方向未定，true＝橫向拖曳中
+
+    function canSwipeDir() {
+        return !(prefs.collapsed && prefs.previewStops.length > 0) && getPatterns().length >= 2;
+    }
+
+    function resetShellDrag(animated = true) {
+        if (!listShell) return;
+        if (animated && listShell.style.transform) {
+            listShell.style.transition = 'transform 0.35s var(--ios-snap, cubic-bezier(0.16, 1, 0.3, 1)), opacity 0.25s ease';
+            setTimeout(() => { if (listShell) listShell.style.transition = ''; }, 400);
+        } else {
+            listShell.style.transition = '';
+        }
+        listShell.style.transform = '';
+        listShell.style.opacity = '';
+    }
+
     container.addEventListener('touchstart', (e) => {
         if (e.touches.length !== 1) { touchTracking = false; return; }
+        // 方向切換塊自身可橫向捲動，從那裡起始的拖曳不做整卡位移
+        if (e.target && e.target.closest && e.target.closest('.bus-dir-slider')) {
+            touchTracking = false;
+            return;
+        }
         touchTracking = true;
+        touchHorizontal = null;
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
     }, { passive: true });
+
+    container.addEventListener('touchmove', (e) => {
+        if (!touchTracking || !listShell || !canSwipeDir()) return;
+        const dx = e.touches[0].clientX - touchStartX;
+        const dy = e.touches[0].clientY - touchStartY;
+
+        // 一開始的位移決定這次手勢是橫向拖曳還是縱向捲動
+        if (touchHorizontal === null && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+            touchHorizontal = Math.abs(dx) > Math.abs(dy);
+        }
+        if (!touchHorizontal) return;
+
+        const cur = currentDirIndex();
+        const atEdge = (dx > 0 && cur === 0) || (dx < 0 && cur === getPatterns().length - 1);
+        const damped = dx * (atEdge ? 0.25 : 0.55);
+        listShell.style.transition = 'none';
+        listShell.style.transform = `translateX(${damped}px)`;
+        listShell.style.opacity = String(1 - Math.min(1, Math.abs(damped) / 160) * 0.35);
+    }, { passive: true });
+
     container.addEventListener('touchend', (e) => {
         if (!touchTracking) return;
         touchTracking = false;
+        const wasHorizontal = touchHorizontal;
+        touchHorizontal = null;
+        if (!listShell) return;
+
         const dx = e.changedTouches[0].clientX - touchStartX;
         const dy = e.changedTouches[0].clientY - touchStartY;
-        if (Math.abs(dx) > 60 && Math.abs(dy) < 50) {
-            switchDir(currentDirIndex() + (dx < 0 ? 1 : -1));
+
+        if (!canSwipeDir() || !wasHorizontal) { resetShellDrag(false); return; }
+
+        if (Math.abs(dx) > 60 && Math.abs(dy) < 80) {
+            const cur = currentDirIndex();
+            const next = cur + (dx < 0 ? 1 : -1);
+            if (next < 0 || next >= getPatterns().length) { resetShellDrag(); return; }
+
+            // 目前內容先朝滑動方向滑出並淡出，接著渲染新方向（帶滑入動畫）
+            listShell.style.transition = 'transform 0.18s ease-in, opacity 0.18s ease-in';
+            listShell.style.transform = `translateX(${dx < 0 ? -90 : 90}px)`;
+            listShell.style.opacity = '0';
+            setTimeout(() => switchDir(next), 170);
+        } else {
+            resetShellDrag();
         }
     }, { passive: true });
 
