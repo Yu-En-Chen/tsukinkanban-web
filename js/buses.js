@@ -145,7 +145,8 @@ function storeStopResults(json) {
                 url: result.url,
                 source: result.source,
                 stopName: stop.name,
-                stop: stop
+                stop: stop,
+                fetchedAt: Date.now()
             };
             keys.push(key);
         });
@@ -253,6 +254,35 @@ function overallServiceInfo(patterns) {
         return { badge: '車両なし', cls: 'status-attention', message: `現在、運行中の車両はありません。次の発車は ${toHalfWidth(waiting.nextText).replace('：', ':')} の予定です。` };
     }
     return { badge: '運行終了', cls: 'status-attention', message: '本日の運行は終了しました。' };
+}
+
+// 資訊卡的共用組件：標頭（標題＋事業者＋狀態徽章）與更新時刻 footer
+// 收折卡、展開卡、站牌卡都沿用列車 extension-route-card 的同一套結構
+function busCardHeaderHtml(title, company, info) {
+    return `
+        <div class="ext-card-header">
+            <div class="ext-card-title-group">
+                <div class="ext-route-name">${title}</div>
+                <div class="ext-route-company">${company}</div>
+            </div>
+            <div class="ext-status-badge ${info.cls}">${info.badge}</div>
+        </div>
+        <div class="ext-card-divider"></div>`;
+}
+
+function busUpdateTimeInner(fetchedAt) {
+    const d = new Date(fetchedAt);
+    const hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        更新: ${hm}`;
+}
+
+function busCardFooterHtml(fetchedAt) {
+    if (!fetchedAt) return '';
+    return `
+        <div class="ext-card-footer">
+            <span class="ext-update-time">${busUpdateTimeInner(fetchedAt)}</span>
+        </div>`;
 }
 
 // ============================================================================
@@ -620,12 +650,10 @@ function busMarkerHtml(bus, stop, chip = false) {
         }
     }
 
-    // 車牌與偏差用與時間相同的膠囊包起來，擁擠度接在膠囊後
-    // chip：收折卡的 capsule 內使用，去掉膠囊外框並省略擁擠度以維持精簡
-    if (chip) {
-        return `<span class="bus-eta-pill bus-plate-pill chip"><span class="bus-plate">${bus.number || ''}</span>${diffHtml}</span>`;
-    }
-    return `<span class="bus-eta-pill bus-plate-pill"><span class="bus-plate">${bus.number || ''}</span>${diffHtml}</span>${occHtml}`;
+    // 車牌與偏差用膠囊包起來，擁擠度接在膠囊後
+    // chip：資訊卡內使用，去掉膠囊外框融入卡片
+    const cls = chip ? 'bus-eta-pill bus-plate-pill chip' : 'bus-eta-pill bus-plate-pill';
+    return `<span class="${cls}"><span class="bus-plate">${bus.number || ''}</span>${diffHtml}</span>${occHtml}`;
 }
 
 // 點擊站名 → 底部選單：Google Maps 導航／該站總覽
@@ -731,27 +759,6 @@ function openStopPickerDialog(pattern, currentStops, onDone) {
     window.iosConfirm('プレビュー停留所', html, '決定', 'キャンセル').then(ok => {
         if (ok) onDone(picked.slice(0, 2));
     });
-}
-
-// 運行狀態卡的內容：與列車詳細面板的資訊卡（標題＋狀態徽章＋訊息）同構
-function busServiceBannerInner(service, busData) {
-    const isWaiting = service.state === 'waiting';
-    const badgeText = isWaiting ? '車両なし' : '運行終了';
-    const message = isWaiting
-        ? `現在、運行中の車両はありません。次の発車は ${toHalfWidth(service.nextText).replace('：', ':')} の予定です。`
-        : '本日の運行は終了しました。';
-
-    return `
-        <div class="ext-card-header">
-            <div class="ext-card-title-group">
-                <div class="ext-route-name">運行状況</div>
-                <div class="ext-route-company">${busData.label || 'バス'}</div>
-            </div>
-            <div class="ext-status-badge status-attention">${badgeText}</div>
-        </div>
-        <div class="ext-card-divider"></div>
-        <div class="ext-card-message">${message}</div>
-    `;
 }
 
 // ============================================================================
@@ -966,31 +973,11 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
                     ${g.items.map(en => `<div class="adv-detail-capsule bus-collapsed-capsule">${collapsedCapsuleInner(en.pattern, en.stop)}</div>`).join('')}
                 </div>`).join('')}</div>`;
 
-        let footerHtml = '';
-        if (busData.fetchedAt) {
-            const d = new Date(busData.fetchedAt);
-            const hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-            footerHtml = `
-                <div class="ext-card-footer">
-                    <span class="ext-update-time">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        更新: ${hm}
-                    </span>
-                </div>`;
-        }
-
         card.innerHTML = `
-            <div class="ext-card-header">
-                <div class="ext-card-title-group">
-                    <div class="ext-route-name">${busData.routeName || ''}</div>
-                    <div class="ext-route-company">${busData.label || 'バス'}</div>
-                </div>
-                <div class="ext-status-badge ${info.cls}">${info.badge}</div>
-            </div>
-            <div class="ext-card-divider"></div>
+            ${busCardHeaderHtml(busData.routeName || '', busData.label || 'バス', info)}
             <div class="ext-card-message">${info.message}</div>
             ${capsHtml}
-            ${footerHtml}
+            ${busCardFooterHtml(busData.fetchedAt)}
         `;
 
         // 點卡片本身也可展開（與收折按鈕同效）
@@ -1031,15 +1018,20 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         const rows = [...stopsList.querySelectorAll('.bus-stop-row')];
         if (rows.length !== view.stopsToShow.length) { render(); return; }
 
-        // 0. 運行狀態卡：狀態切換（有車↔無車）時退回完整重繪，僅內容變化就地更新
+        // 0. 資訊卡標頭：徽章、訊息與更新時刻就地更新
         const service = patternServiceState(pattern);
-        const banner = container.querySelector('.bus-service-banner');
-        const wantBanner = service.state === 'waiting' || service.state === 'ended';
-        if (wantBanner !== !!banner) { render(); return; }
-        if (banner) {
-            const bd = data.busData || {};
-            banner.innerHTML = busServiceBannerInner(service, bd);
+        const card = container.querySelector('.bus-expanded-card');
+        if (!card) { render(); return; }
+        const info = overallServiceInfo(patterns);
+        const badge = card.querySelector('.ext-status-badge');
+        if (badge && badge.textContent.trim() !== info.badge) {
+            badge.className = `ext-status-badge ${info.cls}`;
+            badge.textContent = info.badge;
         }
+        const msg = card.querySelector('.ext-card-message');
+        if (msg && msg.textContent !== info.message) msg.textContent = info.message;
+        const upd = card.querySelector('.ext-update-time');
+        if (upd && (data.busData || {}).fetchedAt) upd.innerHTML = busUpdateTimeInner(data.busData.fetchedAt);
 
         // 1. 巴士位置標記：只有配置變化時才重建（避免每次 tick 閃爍）
         const markerSig = markerSignature(pattern, view);
@@ -1051,7 +1043,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
                 collectMarkers(pattern, stop, false).forEach(m => {
                     const marker = document.createElement('div');
                     marker.className = 'bus-marker-row bus-marker-in';
-                    marker.innerHTML = busMarkerHtml(m.bus, m.srcStop);
+                    marker.innerHTML = busMarkerHtml(m.bus, m.srcStop, true);
                     stopsList.insertBefore(marker, row);
                 });
             });
@@ -1066,7 +1058,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
 
             const oldPill = row.querySelector('.bus-eta-pill');
             const tmp = document.createElement('div');
-            tmp.innerHTML = etaPillHtml(t.eta, t.next, noneText);
+            tmp.innerHTML = etaPillHtml(t.eta, t.next, noneText, true);
             const newPill = tmp.firstElementChild;
 
             if (oldPill && newPill && oldPill.outerHTML !== newPill.outerHTML) {
@@ -1200,15 +1192,20 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             return;
         }
 
-        // --- 0. 運行狀態卡：無車或運行終了時，在方向選擇列上方標示 ---
-        // 樣式沿用列車詳細面板的資訊卡結構（extension-route-card）
+        // --- 展開檢視：與收折卡同語言的資訊卡（列車 extension-route-card 同構） ---
+        // 標頭徽章＋訊息取代原本獨立的運行狀態橫幅，方向切換塊與停留所列表都收進卡片內
         const service = patternServiceState(pattern);
-        if (service.state === 'waiting' || service.state === 'ended') {
-            const banner = document.createElement('div');
-            banner.className = 'extension-route-card bus-service-banner';
-            banner.innerHTML = busServiceBannerInner(service, busData);
-            container.appendChild(banner);
-        }
+        const info = overallServiceInfo(patterns);
+
+        listShell = document.createElement('div');
+        listShell.className = 'bus-stops-shell';
+
+        const expCard = document.createElement('div');
+        expCard.className = 'extension-route-card bus-expanded-card';
+        expCard.innerHTML = `
+            ${busCardHeaderHtml(busData.routeName || '', busData.label || 'バス', info)}
+            <div class="ext-card-message">${info.message}</div>
+        `;
 
         // --- 1. 方向切換塊（只標示終點方向；重複時改抓終點站名） ---
         const slider = document.createElement('div');
@@ -1227,7 +1224,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             if (i === dirIndex) activeBtn = btn;
             slider.appendChild(btn);
         });
-        container.appendChild(slider);
+        expCard.appendChild(slider);
 
         // 目前方向的按鈕置中；使用者滑動後未點選時，閒置後自動回正
         // 回正動畫使用與全站 bounce-back 相同的曲線（--ios-snap ≒ easeOutExpo）
@@ -1284,10 +1281,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             armRecenter();
         }, { passive: true });
 
-        // --- 2. 停留所列表（外殼負責收折／展開的高度過渡） ---
-        listShell = document.createElement('div');
-        listShell.className = 'bus-stops-shell';
-
+        // --- 2. 停留所列表 ---
         const stopsList = document.createElement('div');
         stopsList.className = 'bus-stops-list';
 
@@ -1304,7 +1298,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             collectMarkers(pattern, stop, false).forEach(m => {
                 const marker = document.createElement('div');
                 marker.className = 'bus-marker-row';
-                marker.innerHTML = busMarkerHtml(m.bus, m.srcStop);
+                marker.innerHTML = busMarkerHtml(m.bus, m.srcStop, true);
                 stopsList.appendChild(marker);
             });
 
@@ -1316,7 +1310,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             const noneText = service.state === 'ended' ? '終了' : (isTerminal ? '終点' : '--');
             row.innerHTML = `
                 ${stopNameHtml(stop.name, view.nameClassByName[stop.name] || '')}
-                ${etaPillHtml(t.eta, t.next, noneText)}
+                ${etaPillHtml(t.eta, t.next, noneText, true)}
             `;
 
             // 點擊站名 → 底部選單（Google Maps／站牌總覽）
@@ -1336,10 +1330,12 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         // 記下目前的巴士位置配置，供就地更新比對
         lastMarkerSig = markerSignature(pattern, view);
 
-        listShell.appendChild(stopsList);
+        expCard.appendChild(stopsList);
+        expCard.insertAdjacentHTML('beforeend', busCardFooterHtml(busData.fetchedAt));
+        listShell.appendChild(expCard);
         container.appendChild(listShell);
         applyMarquees(stopsList);
-        playHeightAnim(stopsList);
+        playHeightAnim(expCard);
 
         // --- 3. 收折按鈕 ---
         const toggleBtn = document.createElement('button');
@@ -1481,6 +1477,21 @@ export function renderBusStopPanel(data, scrollWrapper) {
             return;
         }
 
+        // 站牌卡：與路線卡同語言的資訊卡（列車 extension-route-card 同構）
+        const card = document.createElement('div');
+        card.className = 'extension-route-card bus-stopcard';
+
+        // 狀態徽章：任一路線有車 → 運行中；只剩表定 → 車両なし；皆無 → 運行終了
+        let hasBus = false, hasDep = false;
+        poles.forEach(pole => (pole.routes || []).forEach(rt => {
+            if ((rt.buses || []).length > 0) hasBus = true;
+            if ((rt.departures_text || []).length > 0) hasDep = true;
+        }));
+        const info = hasBus
+            ? { badge: '運行中', cls: 'status-normal' }
+            : (hasDep ? { badge: '車両なし', cls: 'status-attention' } : { badge: '運行終了', cls: 'status-attention' });
+        card.innerHTML = busCardHeaderHtml(stopData.stopName || '', stopData.label || 'バス停', info);
+
         // 實際搭乘時のりば區分意義不大：不顯示「X番のりば」，
         // 各乘車處的路線合併為一份清單（同路線×行き先去重）
         const list = document.createElement('div');
@@ -1502,15 +1513,15 @@ export function renderBusStopPanel(data, scrollWrapper) {
                 const firstDep = (route.departures_text || [])[0];
                 if (firstBus && firstBus.eta_text) {
                     const t = toHalfWidth(firstBus.eta_text);
-                    pill = `<span class="bus-eta-pill ${etaPillClass(t)}">${t}</span>`;
+                    pill = `<span class="bus-eta-pill chip ${etaPillClass(t)}">${t}</span>`;
                 } else if (firstBus && typeof firstBus.stops_away === 'number') {
                     pill = firstBus.stops_away === 0
-                        ? `<span class="bus-eta-pill arriving">まもなく</span>`
-                        : `<span class="bus-eta-pill run">${firstBus.stops_away}停留所前</span>`;
+                        ? `<span class="bus-eta-pill chip arriving">まもなく</span>`
+                        : `<span class="bus-eta-pill chip run">${firstBus.stops_away}停留所前</span>`;
                 } else if (firstDep) {
-                    pill = `<span class="bus-eta-pill sched">次${toHalfWidth(firstDep).replace('：', ':')}</span>`;
+                    pill = `<span class="bus-eta-pill chip sched">次${toHalfWidth(firstDep).replace('：', ':')}</span>`;
                 } else {
-                    pill = `<span class="bus-eta-pill none">運行終了</span>`;
+                    pill = `<span class="bus-eta-pill chip none">運行終了</span>`;
                 }
 
                 const displayName = route.destination
@@ -1553,7 +1564,9 @@ export function renderBusStopPanel(data, scrollWrapper) {
             });
         });
 
-        container.appendChild(list);
+        card.appendChild(list);
+        card.insertAdjacentHTML('beforeend', busCardFooterHtml(stopData.fetchedAt));
+        container.appendChild(card);
         applyMarquees(list);
     }
 

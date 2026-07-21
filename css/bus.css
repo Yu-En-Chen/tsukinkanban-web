@@ -45,11 +45,12 @@
     border-color: transparent;
 }
 
-/* --- 2. 停留所列表（不包外框，時間獨立成膠囊） --- */
+/* --- 2. 停留所列表（資訊卡內的 capsule 列，列車 adv-detail-capsule 同構） --- */
 .bus-stops-list {
     display: flex;
     flex-direction: column;
-    padding: 0 4px;
+    gap: 6px;
+    padding: 0;
 }
 
 /* 方向切換的進場動畫 */
@@ -89,7 +90,19 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 9px 4px;
+    padding: 9px 12px;
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 8px;
+}
+
+/* 展開卡：標頭與滑動塊、列表之間的間距 */
+.bus-expanded-card .bus-dir-slider {
+    margin: 10px 0;
+}
+
+.bus-stopcard .bus-stops-list {
+    margin-top: 10px;
 }
 
 /* 站名：主名＋可跑馬燈的溢出部分（括弧或整名） */
@@ -202,8 +215,14 @@
 .bus-marker-row {
     display: flex;
     align-items: center;
-    padding: 4px 4px 4px 8px;
+    padding: 2px 12px;
     font-weight: 700;
+    font-size: 0.95em;
+}
+
+/* 列表內的 chip 與站名字級一致 */
+.bus-stop-row .bus-eta-pill.chip {
+    font-size: 0.95em;
 }
 
 .bus-plate-pill {
@@ -371,7 +390,6 @@
    主列（路線名＋時間）＋副列（車輛資訊）的兩段構成 */
 .bus-stop-row.bus-route-link {
     cursor: pointer;
-    border-radius: 12px;
     transition: background 0.15s ease;
     flex-direction: column;
     align-items: stretch;
@@ -508,6 +526,11 @@
     .bus-eta-pill {
         background: rgba(30, 30, 32, 0.65);
         border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .bus-stop-row {
+        background: rgba(0, 0, 0, 0.25);
+        border-color: rgba(255, 255, 255, 0.05);
     }
 
     .bus-eta-pill.arriving {
