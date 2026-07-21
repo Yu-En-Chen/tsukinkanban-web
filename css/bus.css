@@ -246,6 +246,11 @@
     color: #0a84ff;
 }
 
+/* 展開卡：滑動切換時內容在卡框內橫向位移，超出部分裁切 */
+.bus-expanded-card {
+    overflow: hidden;
+}
+
 /* --- 收折檢視：與列車卡片（多路線・方向別）同構的資訊卡 --- */
 .bus-collapsed-card {
     cursor: pointer;

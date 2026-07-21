@@ -943,6 +943,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
     let slideDir = '';        // 方向切換的進場動畫方向（'left' | 'right'）
     let heightAnimFrom = -1;  // 收折／展開的高度過渡起點（-1 表示不做）
     let listShell = null;     // 停留所列表的外殼（高度動畫用）
+    let swipeArea = null;     // 滑動切換的位移範圍（方向切換塊＋停留所列表）
 
     const container = document.createElement('div');
     container.className = 'bus-panel-container';
@@ -1223,16 +1224,17 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         return !(prefs.collapsed && prefs.previewStops.length > 0) && getPatterns().length >= 2;
     }
 
-    function resetShellDrag(animated = true) {
-        if (!listShell) return;
-        if (animated && listShell.style.transform) {
-            listShell.style.transition = 'transform 0.35s var(--ios-snap, cubic-bezier(0.16, 1, 0.3, 1)), opacity 0.25s ease';
-            setTimeout(() => { if (listShell) listShell.style.transition = ''; }, 400);
+    function resetSwipeDrag(animated = true) {
+        if (!swipeArea) return;
+        if (animated && swipeArea.style.transform) {
+            swipeArea.style.transition = 'transform 0.35s var(--ios-snap, cubic-bezier(0.16, 1, 0.3, 1)), opacity 0.25s ease';
+            const el = swipeArea;
+            setTimeout(() => { el.style.transition = ''; }, 400);
         } else {
-            listShell.style.transition = '';
+            swipeArea.style.transition = '';
         }
-        listShell.style.transform = '';
-        listShell.style.opacity = '';
+        swipeArea.style.transform = '';
+        swipeArea.style.opacity = '';
     }
 
     container.addEventListener('touchstart', (e) => {
@@ -1249,7 +1251,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
     }, { passive: true });
 
     container.addEventListener('touchmove', (e) => {
-        if (!touchTracking || !listShell || !canSwipeDir()) return;
+        if (!touchTracking || !swipeArea || !canSwipeDir()) return;
         const dx = e.touches[0].clientX - touchStartX;
         const dy = e.touches[0].clientY - touchStartY;
 
@@ -1262,9 +1264,9 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         const cur = currentDirIndex();
         const atEdge = (dx > 0 && cur === 0) || (dx < 0 && cur === getPatterns().length - 1);
         const damped = dx * (atEdge ? 0.25 : 0.55);
-        listShell.style.transition = 'none';
-        listShell.style.transform = `translateX(${damped}px)`;
-        listShell.style.opacity = String(1 - Math.min(1, Math.abs(damped) / 160) * 0.35);
+        swipeArea.style.transition = 'none';
+        swipeArea.style.transform = `translateX(${damped}px)`;
+        swipeArea.style.opacity = String(1 - Math.min(1, Math.abs(damped) / 160) * 0.35);
     }, { passive: true });
 
     container.addEventListener('touchend', (e) => {
@@ -1272,25 +1274,25 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         touchTracking = false;
         const wasHorizontal = touchHorizontal;
         touchHorizontal = null;
-        if (!listShell) return;
+        if (!swipeArea) return;
 
         const dx = e.changedTouches[0].clientX - touchStartX;
         const dy = e.changedTouches[0].clientY - touchStartY;
 
-        if (!canSwipeDir() || !wasHorizontal) { resetShellDrag(false); return; }
+        if (!canSwipeDir() || !wasHorizontal) { resetSwipeDrag(false); return; }
 
         if (Math.abs(dx) > 60 && Math.abs(dy) < 80) {
             const cur = currentDirIndex();
             const next = cur + (dx < 0 ? 1 : -1);
-            if (next < 0 || next >= getPatterns().length) { resetShellDrag(); return; }
+            if (next < 0 || next >= getPatterns().length) { resetSwipeDrag(); return; }
 
             // 目前內容先朝滑動方向滑出並淡出，接著渲染新方向（帶滑入動畫）
-            listShell.style.transition = 'transform 0.18s ease-in, opacity 0.18s ease-in';
-            listShell.style.transform = `translateX(${dx < 0 ? -90 : 90}px)`;
-            listShell.style.opacity = '0';
+            swipeArea.style.transition = 'transform 0.18s ease-in, opacity 0.18s ease-in';
+            swipeArea.style.transform = `translateX(${dx < 0 ? -90 : 90}px)`;
+            swipeArea.style.opacity = '0';
             setTimeout(() => switchDir(next), 170);
         } else {
-            resetShellDrag();
+            resetSwipeDrag();
         }
     }, { passive: true });
 
@@ -1390,7 +1392,17 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             if (i === dirIndex) activeBtn = btn;
             slider.appendChild(btn);
         });
-        expCard.appendChild(slider);
+
+        // 滑動切換的位移範圍：方向切換塊＋停留所列表跟著手指移動，
+        // 卡框與標頭（路線名・徽章・訊息）保持不動
+        swipeArea = document.createElement('div');
+        swipeArea.className = 'bus-swipe-area';
+        if (slideDir) {
+            swipeArea.classList.add(slideDir === 'left' ? 'bus-slide-in-left' : 'bus-slide-in-right');
+            slideDir = '';
+        }
+        expCard.appendChild(swipeArea);
+        swipeArea.appendChild(slider);
 
         // 目前方向的按鈕置中；使用者滑動後未點選時，閒置後自動回正
         // 回正動畫使用與全站 bounce-back 相同的曲線（--ios-snap ≒ easeOutExpo）
@@ -1451,12 +1463,6 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         const stopsList = document.createElement('div');
         stopsList.className = 'bus-stops-list';
 
-        // 方向切換的進場動畫
-        if (slideDir) {
-            stopsList.classList.add(slideDir === 'left' ? 'bus-slide-in-left' : 'bus-slide-in-right');
-            slideDir = '';
-        }
-
         const view = computeView(pattern);
 
         view.stopsToShow.forEach((stop, idx) => {
@@ -1496,7 +1502,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         // 記下目前的巴士位置配置，供就地更新比對
         lastMarkerSig = markerSignature(pattern, view);
 
-        expCard.appendChild(stopsList);
+        swipeArea.appendChild(stopsList);
         expCard.insertAdjacentHTML('beforeend', busCardFooterHtml(busData.fetchedAt));
         listShell.appendChild(expCard);
         container.appendChild(listShell);
