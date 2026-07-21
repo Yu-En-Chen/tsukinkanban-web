@@ -97,6 +97,13 @@
     border-radius: 999px;
 }
 
+/* 含車輛副列的兩行款：維持與單行相同的圓角半徑（單行高 41px 的一半），
+   不隨列高放大成過大的弧 */
+.bus-stop-row:has(.bus-stoprow-sub),
+.bus-collapsed-capsule:has(.bus-collapsed-sub) {
+    border-radius: 20px;
+}
+
 /* 展開卡：標頭與滑動塊、列表之間的間距 */
 .bus-expanded-card .bus-dir-slider {
     margin: 10px 0;
