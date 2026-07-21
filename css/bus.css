@@ -90,10 +90,11 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 9px 12px;
+    padding: 9px 16px;
     background: rgba(0, 0, 0, 0.04);
     border: 1px solid rgba(0, 0, 0, 0.06);
-    border-radius: 8px;
+    /* 全圓角長膠囊（與方向切換塊、全站的膠囊語言一致） */
+    border-radius: 999px;
 }
 
 /* 展開卡：標頭與滑動塊、列表之間的間距 */
@@ -215,7 +216,7 @@
 .bus-marker-row {
     display: flex;
     align-items: center;
-    padding: 2px 12px;
+    padding: 2px 16px;
     font-weight: 700;
     font-size: 0.95em;
 }
@@ -262,11 +263,15 @@
     padding: 0 4px;
 }
 
-/* capsule：主列（站名＋時間）＋副列（行駛中車輛的車牌・偏差） */
+/* capsule：主列（站名＋時間）＋副列（行駛中車輛的車牌・偏差）
+   字級・內距・圓角與展開列（.bus-stop-row）完全一致，收折前後不跳動 */
 .bus-collapsed-capsule {
     flex-direction: column;
     align-items: stretch;
     gap: 4px;
+    font-size: 1em;
+    padding: 9px 16px;
+    border-radius: 999px;
 }
 
 .bus-collapsed-main {
@@ -278,10 +283,15 @@
 
 .bus-collapsed-stop {
     font-weight: 700;
+    font-size: 0.95em;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.bus-collapsed-capsule .bus-eta-pill.chip {
+    font-size: 0.95em;
 }
 
 .bus-collapsed-sub {
