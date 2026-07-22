@@ -83,11 +83,13 @@ async function fetchHistoryDaemon() {
             const isFlight = card.isFlightCard === true || card.isFlight === true || card.type === 'flight';
             const targetIds = card.targetLineIds || card.targetAirports || card.airports || (card.airport ? [card.airport] : []);
 
-            // 公車卡片沒有歷史紀錄資料，直接跳過
-            if (card.isBusCard === true || (targetIds[0] && String(targetIds[0]).startsWith('bus:'))) return;
+            // 公車路線沒有歷史紀錄資料：混合卡片內的公車路線逐條跳過，
+            // 全部都是公車路線的卡片整張跳過
+            const railIds = targetIds.filter(id => !String(id).startsWith('bus:'));
+            if (card.isBusCard === true || (targetIds.length > 0 && railIds.length === 0)) return;
 
-            if (targetIds && targetIds.length > 0) {
-                targetIds.forEach(id => {
+            if (railIds && railIds.length > 0) {
+                railIds.forEach(id => {
                     const type = isFlight ? 'flight' : 'railway';
                     let finalId = id;
                     

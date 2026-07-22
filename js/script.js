@@ -729,7 +729,9 @@ function handleCardClick(id) {
             }
         };
 
-        // 與列車預覽相同：新增卡片（繼承公車屬性）
+        // 與列車預覽相同：新增卡片
+        // 建立的是一般卡片（不鎖成公車專用），公車路線以混合卡片的收折資訊卡呈現
+        // 建立前先要求選擇預覽停留所（與收折設定同一套選擇器；已設定過則跳過）
         const handleBusCreateCard = () => {
             if (isAnimating) return;
 
@@ -747,16 +749,37 @@ function handleCardClick(id) {
                 detailedLines: [],
                 isFlightCard: false,
                 flightData: null,
-                isBusCard: true,
-                busData: data.busData || null
+                isBusCard: false,
+                busData: null
             };
 
-            closeAllCards(false);
-            setTimeout(() => {
-                if (typeof window.createNewCardAndEdit === 'function') {
-                    window.createNewCardAndEdit(prefillData);
-                }
-            }, 450);
+            const proceed = () => {
+                closeAllCards(false);
+                setTimeout(() => {
+                    if (typeof window.createNewCardAndEdit === 'function') {
+                        window.createNewCardAndEdit(prefillData);
+                    }
+                }, 450);
+            };
+
+            const prefs = getBusPrefs(busTargetId);
+            const bd = window.GlobalBusData[busTargetId];
+            const pattern = (bd && bd.patterns && bd.patterns.length > 0)
+                ? bd.patterns[Math.min(prefs.dir, bd.patterns.length - 1)]
+                : null;
+
+            if (prefs.previewStops.length === 0 && pattern) {
+                openStopPickerDialog(pattern, [], (picked) => {
+                    if (picked.length > 0) {
+                        prefs.previewStops = picked;
+                        prefs.collapsed = true;
+                        saveBusPrefs(busTargetId, prefs);
+                    }
+                    proceed();
+                });
+            } else {
+                proceed();
+            }
         };
 
         renderBusDetailPanel(data, scrollWrapper, {
@@ -2232,18 +2255,8 @@ window.previewBusFromSearch = function (targetId) {
     const cancelBtn = document.querySelector('.cancel-circle-btn');
     if (cancelBtn) cancelBtn.click();
 
-    // 2. 若同一條公車路線已是看板上的卡片，直接展開它
-    const existingCard = window.appRailwayData.find(c =>
-        !c.isTemporarySearch && c.targetLineIds && c.targetLineIds[0] === targetId
-    );
-    if (existingCard) {
-        const cardEl = document.getElementById(`card-${existingCard.id}`);
-        if (cardEl) {
-            setTimeout(() => cardEl.click(), 300);
-            return;
-        }
-    }
-
+    // 2. 一律開啟完整公車面板（臨時預覽卡）
+    // 已儲存的卡片都是一般混合卡片，方向・預覽停留所的設定在這個面板進行
     // 3. 建立臨時卡片資料
     const fmt = generateBusDataFormat(targetId);
     const operator = targetId.split(':')[1] || '';
@@ -2498,14 +2511,9 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
             // 以 ID 特徵判斷（公車以 bus: 開頭；鐵道 ID 必含 . 或 :，航班沒有）
             const isLikelyFlight = !testId.includes('.') && !testId.includes(':');
 
-            if (isBusTargetId(testId)) {
-                isBusCard = true;
-                const fmt = generateBusDataFormat(testId);
-                busDataPayload = fmt.busData;
-                groupFlags = fmt.flags;
-                groupDesc = fmt.desc;
-                groupUpdateTime = fmt.updateTime;
-            } else if (isLikelyFlight) {
+            // 公車路線不再鎖定整張卡片：已儲存的卡片一律維持一般（混合）卡片，
+            // 公車路線於鐵道迴圈中以收折資訊卡呈現；公車專用面板僅存在於搜尋預覽卡
+            if (isLikelyFlight) {
                 isFlightCard = true;
                 const flightInfo = window.GlobalFlights ? window.GlobalFlights.find(f => f.fid.includes(testId)) : null;
 

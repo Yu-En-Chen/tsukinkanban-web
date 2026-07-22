@@ -421,7 +421,8 @@ window.toggleVisibility = async function(id) {
     }
     
     if (hiddenIds.includes(id)) {
-        const visibleCount = window.appRailwayData.filter(r => !hiddenIds.includes(r.id)).length;
+        const visibleCount = window.appRailwayData.filter(r =>
+            !hiddenIds.includes(r.id) && !r.isTemporarySearch && !String(r.id).startsWith('temp-search')).length;
         if (visibleCount >= 5) {
             await window.iosConfirm(
                 "表示上限に達しました", 
@@ -467,8 +468,10 @@ window.toggleVisibility = async function(id) {
     
     dbSandbox.saveHiddenCards(hiddenIds);
     window.renderManagementCards();
-    
-    const visibleData = window.appRailwayData.filter(r => !hiddenIds.includes(r.id));
+
+    // 臨時預覽卡（搜尋中的公車／路線預覽）不得因重繪流入首頁看板
+    const visibleData = window.appRailwayData.filter(r =>
+        !hiddenIds.includes(r.id) && !r.isTemporarySearch && !String(r.id).startsWith('temp-search'));
     if (typeof window.renderMainCards === 'function') window.renderMainCards(visibleData);
 
     const visibleCapsules = document.querySelectorAll('#manage-visible-list .manage-card-capsule');
