@@ -64,28 +64,52 @@ export const dataSourceContent = `
                     <div style="margin-top: 14px;">
                         <br>
                         <div style="margin-bottom: 18px;">
-                            <p style="color: var(--text-main); font-weight: 600; margin: 0 0 6px 0;">完全対応（遅延分数あり）</p>
-                            <ul style="color: var(--text-secondary); margin: 0; padding-left: 20px; line-height: 1.6;">
-                                <li>東京都交通局
-                                （都営浅草線、都営三田線、都営新宿線、都営大江戸線、都電荒川線、都営バス）</li>
-                                <li>横浜市交通局
-                                （横浜ブルーライン、横浜グリーンライン、横浜市営バス）</li>
-                                <li>西武バス株式会社</li>
-                                <li>日本航空</li>
-                                <li>全日本空輸</li>
-                            </ul>
+                            <p style="color: var(--text-main); font-weight: 600; margin: 0 0 10px 0;">完全対応（遅延分数あり）</p>
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <div>
+                                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">東京都交通局</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">都営浅草線、都営三田線、都営新宿線、都営大江戸線、都電荒川線、都営バス</p>
+                                </div>
+                                <div>
+                                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">横浜市交通局</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">横浜ブルーライン、横浜グリーンライン、横浜市営バス</p>
+                                </div>
+                                <div>
+                                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">西武バス</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">全路線</p>
+                                </div>
+                                <div>
+                                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">航空</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">日本航空、全日本空輸</p>
+                                </div>
+                            </div>
                         </div>
                         <br>
                         <div style="margin-bottom: 18px;">
                             <p style="color: var(--text-main); font-weight: 600; margin: 0 0 4px 0;">一部対応（公式テキストのみ）</p>
-                            <p style="color: var(--text-secondary); margin: 0 0 6px 0; font-size: 0.8em;">遅延分数は取得できず、各社の発表テキストに依存します。</p>
-                            <ul style="color: var(--text-secondary); margin: 0; padding-left: 20px; line-height: 1.6;">
-                                <li>東京メトロ（半蔵門線、副都心線、南北線、千代田線、東西線、日比谷線、丸ノ内線、銀座線、有楽町線）</li>
-                                <li>東京都交通局（日暮里・舎人ライナー）</li>
-                                <li>首都圏新都市鉄道（つくばエクスプレス）</li>
-                                <li>東京臨海高速鉄道（りんかい線）</li>
-                                <li>多摩都市モノレール（多摩モノレール）</li>
-                            </ul>
+                            <p style="color: var(--text-secondary); margin: 0 0 10px 0; font-size: 0.8em;">遅延分数は取得できず、各社の発表テキストに依存します。</p>
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <div>
+                                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">東京メトロ</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">半蔵門線、副都心線、南北線、千代田線、東西線、日比谷線、丸ノ内線、銀座線、有楽町線</p>
+                                </div>
+                                <div>
+                                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">東京都交通局</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">日暮里・舎人ライナー</p>
+                                </div>
+                                <div>
+                                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">首都圏新都市鉄道</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">つくばエクスプレス</p>
+                                </div>
+                                <div>
+                                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">東京臨海高速鉄道</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">りんかい線</p>
+                                </div>
+                                <div>
+                                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">多摩都市モノレール</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">多摩モノレール</p>
+                                </div>
+                            </div>
                         </div>
                         <br>
                         <div style="margin-bottom: 18px;">
@@ -98,7 +122,7 @@ export const dataSourceContent = `
                                 </div>
                                 <div>
                                     <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">東武鉄道</p>
-                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">東武スカイツリーライン、東武スカイツリーライン(押上-曳舟)、東武伊勢崎線(久喜以北)、東武東上線、東武アーバンパークライン、東武亀戸線、東武大師線、東武越生線、東武日光線</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">東武スカイツリーライン、東武伊勢崎線(久喜以北)、東武東上線、東武アーバンパークライン、東武亀戸線、東武大師線、東武越生線、東武日光線</p>
                                 </div>
                                 <div>
                                     <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">西武鉄道</p>
