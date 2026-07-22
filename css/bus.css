@@ -251,6 +251,17 @@
     overflow: hidden;
 }
 
+/* 滑動切換的裁切層：位移中的列表在此層內被裁切 */
+.bus-swipe-clip {
+    overflow: hidden;
+}
+
+/* 拖曳／切換動畫進行中：左右邊緣以線性漸層淡出（隱形牆） */
+.bus-swipe-clip.bus-swipe-fade {
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 32px, black calc(100% - 32px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, black 32px, black calc(100% - 32px), transparent 100%);
+}
+
 /* --- 收折檢視：與列車卡片（多路線・方向別）同構的資訊卡 --- */
 .bus-collapsed-card {
     cursor: pointer;

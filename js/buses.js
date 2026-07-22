@@ -943,7 +943,8 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
     let slideDir = '';        // 方向切換的進場動畫方向（'left' | 'right'）
     let heightAnimFrom = -1;  // 收折／展開的高度過渡起點（-1 表示不做）
     let listShell = null;     // 停留所列表的外殼（高度動畫用）
-    let swipeArea = null;     // 滑動切換的位移範圍（方向切換塊＋停留所列表）
+    let swipeArea = null;     // 滑動切換的位移範圍（停留所列表）
+    let swipeClip = null;     // 位移範圍的裁切層（拖曳時左右邊緣線性淡出）
 
     const container = document.createElement('div');
     container.className = 'bus-panel-container';
@@ -1226,12 +1227,17 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
 
     function resetSwipeDrag(animated = true) {
         if (!swipeArea) return;
+        const clipEl = swipeClip;
         if (animated && swipeArea.style.transform) {
             swipeArea.style.transition = 'transform 0.35s var(--ios-snap, cubic-bezier(0.16, 1, 0.3, 1)), opacity 0.25s ease';
             const el = swipeArea;
-            setTimeout(() => { el.style.transition = ''; }, 400);
+            setTimeout(() => {
+                el.style.transition = '';
+                if (clipEl) clipEl.classList.remove('bus-swipe-fade');
+            }, 400);
         } else {
             swipeArea.style.transition = '';
+            if (clipEl) clipEl.classList.remove('bus-swipe-fade');
         }
         swipeArea.style.transform = '';
         swipeArea.style.opacity = '';
@@ -1261,6 +1267,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         }
         if (!touchHorizontal) return;
 
+        if (swipeClip) swipeClip.classList.add('bus-swipe-fade');
         const cur = currentDirIndex();
         const atEdge = (dx > 0 && cur === 0) || (dx < 0 && cur === getPatterns().length - 1);
         const damped = dx * (atEdge ? 0.25 : 0.55);
@@ -1393,16 +1400,24 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             slider.appendChild(btn);
         });
 
-        // 滑動切換的位移範圍：方向切換塊＋停留所列表跟著手指移動，
-        // 卡框與標頭（路線名・徽章・訊息）保持不動
+        expCard.appendChild(slider);
+
+        // 滑動切換的位移範圍：只有停留所列表跟著手指移動，
+        // 方向選單、卡框與標頭保持不動；外層裁切層於拖曳／切換時
+        // 在左右邊緣加上線性淡出（隱形牆）
+        swipeClip = document.createElement('div');
+        swipeClip.className = 'bus-swipe-clip';
         swipeArea = document.createElement('div');
         swipeArea.className = 'bus-swipe-area';
         if (slideDir) {
             swipeArea.classList.add(slideDir === 'left' ? 'bus-slide-in-left' : 'bus-slide-in-right');
+            const clipEl = swipeClip;
+            clipEl.classList.add('bus-swipe-fade');
+            setTimeout(() => clipEl.classList.remove('bus-swipe-fade'), 420);
             slideDir = '';
         }
-        expCard.appendChild(swipeArea);
-        swipeArea.appendChild(slider);
+        swipeClip.appendChild(swipeArea);
+        expCard.appendChild(swipeClip);
 
         // 目前方向的按鈕置中；使用者滑動後未點選時，閒置後自動回正
         // 回正動畫使用與全站 bounce-back 相同的曲線（--ios-snap ≒ easeOutExpo）
