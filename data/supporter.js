@@ -8,7 +8,7 @@ export const supporterContent = `
         <br>
         <p style="color: var(--text-main); font-weight: 600; margin-bottom: 8px;">特典パックを購入して開発を応援する</p>
         
-        <a href="https://store.tsukinkanban.com" target="_blank" rel="noopener noreferrer" style="display: flex; justify-content: center; align-items: center; gap: 8px; background: var(--text-main); color: var(--bg-color); padding: 14px; border-radius: 12px; font-weight: 600; font-size: 1.05em; text-decoration: none; margin-bottom: 8px; transition: transform 0.2s ease, opacity 0.2s ease; transform: translateZ(0); backface-visibility: hidden;">
+        <a href="https://store.tsukinkanban.com" target="_blank" rel="noopener noreferrer" style="display: flex; justify-content: center; align-items: center; gap: 8px; background: var(--text-main); color: var(--bg-color); padding: 14px; border-radius: 20px; font-weight: 600; font-size: 1.05em; text-decoration: none; margin-bottom: 8px; transition: transform 0.2s ease, opacity 0.2s ease; transform: translateZ(0); backface-visibility: hidden;">
             
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: block; transform: translateZ(0); backface-visibility: hidden; animation: none !important;">
                 <rect width="20" height="14" x="2" y="5" rx="2"></rect>
@@ -40,7 +40,7 @@ export const supporterContent = `
             </svg>
         </div>
 
-        <div style="padding: 12px 16px; background: rgba(120, 120, 128, 0.08); border-radius: 12px; margin-bottom: 16px;">
+        <div style="padding: 12px 16px; background: rgba(120, 120, 128, 0.08); border-radius: 20px; margin-bottom: 16px;">
             <p style="font-weight: 600; font-size: 0.9em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;">
                     <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -58,7 +58,7 @@ export const supporterContent = `
             </ul>
         </div>
 
-        <div style="padding: 12px 16px; background: rgba(120, 120, 128, 0.08); border-radius: 12px;">
+        <div style="padding: 12px 16px; background: rgba(120, 120, 128, 0.08); border-radius: 20px;">
             <p style="font-weight: 600; font-size: 0.9em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path>
@@ -72,7 +72,7 @@ export const supporterContent = `
         </div>
 
         <div style="display: flex; gap: 12px; margin-top: 24px; padding-bottom: 8px;">
-            <a href="https://forms.gle/nKKsQd3yx41VPUAZ9" target="_blank" rel="noopener noreferrer" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: rgba(120, 120, 128, 0.08); color: var(--text-main); padding: 14px 8px; border-radius: 12px; text-decoration: none; font-size: 0.85em; font-weight: 600; transition: background 0.2s ease, transform 0.2s ease;">
+            <a href="https://forms.gle/nKKsQd3yx41VPUAZ9" target="_blank" rel="noopener noreferrer" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: rgba(120, 120, 128, 0.08); color: var(--text-main); padding: 14px 8px; border-radius: 20px; text-decoration: none; font-size: 0.85em; font-weight: 600; transition: background 0.2s ease, transform 0.2s ease;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.7;">
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
                     <polyline points="3 3 3 8 8 8"></polyline>

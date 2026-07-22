@@ -49,7 +49,7 @@ export const dataSourceContent = `
             }
         </style>
         
-        <div style="margin-bottom: 24px; padding: 14px 16px; background: var(--bg-secondary, rgba(120, 120, 128, 0.08)); border-radius: 12px; border: 1px solid var(--border-color, rgba(120, 120, 128, 0.2));">
+        <div style="margin-bottom: 24px; padding: 14px 16px; background: var(--bg-secondary, rgba(120, 120, 128, 0.08)); border-radius: 20px; border: 1px solid var(--border-color, rgba(120, 120, 128, 0.2));">
             
             <input type="checkbox" id="ios-accordion-toggle">
             
@@ -92,7 +92,7 @@ export const dataSourceContent = `
                 </div>
             </div>
         </div>
-        <div style="padding: 12px 16px; background: rgba(120, 120, 128, 0.08); border-radius: 12px;">
+        <div style="padding: 12px 16px; background: rgba(120, 120, 128, 0.08); border-radius: 20px;">
             <p style="font-weight: 600; font-size: 0.95em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;">
             <circle cx="12" cy="12" r="10"></circle>
