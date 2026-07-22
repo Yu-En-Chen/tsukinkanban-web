@@ -31,7 +31,13 @@ function parseBusTargetId(targetId) {
 
 // 全形英數 → 半形（路線名顯示用；API 查詢不分全半形）
 export function toHalfWidth(str) {
-    return (str || '').replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+    return (str || '')
+        // 全形 ASCII（英數字・記号：！-～ ＝ U+FF01–FF5E，含全形連字號 － 與 ：）→ 半形
+        .replace(/[！-～]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+        // 全形空白 → 半形空白
+        .replace(/　/g, ' ')
+        // 各種破折號・マイナス記号（U+2010〜2015, U+2212）→ 半形連字號
+        .replace(/[‐‑‒–—―−]/g, '-');
 }
 
 // ============================================================================
@@ -443,32 +449,15 @@ function busCollapsedCardInner(busData, prefs) {
     `;
 }
 
-// 混合卡片內的公車路線：收折資訊卡樣式（無展開按鈕），
-// 點擊跳轉至該路線的完整公車面板（方向・預覽停留所在那邊設定）
+// 混合卡片內的公車路線：直接渲染完整的公車詳細面板（無「既存追加／新規作成」按鈕）
+// 收折卡點一下即「原地」展開為完整路線（方向切換塊＋全停留所），不跳轉至其他卡片
 export function renderBusLineCard(targetId) {
-    const busData = window.GlobalBusData[targetId] || {};
-    const prefs = getBusPrefs(targetId);
-    const card = document.createElement('div');
-    card.className = 'extension-route-card bus-collapsed-card';
-
-    if ((busData.patterns || []).length === 0) {
-        const { route } = parseBusTargetId(targetId);
-        card.innerHTML = `
-            ${busCardHeaderHtml(busData.routeName || route, busData.label || 'バス', { badge: '更新中', cls: 'status-attention' })}
-            <div class="ext-card-message">バス情報を取得しています...</div>
-        `;
-    } else {
-        card.innerHTML = busCollapsedCardInner(busData, prefs);
-    }
-
-    card.onclick = (e) => {
-        e.stopPropagation();
-        if (navigator.vibrate) navigator.vibrate(10);
-        if (typeof window.previewBusFromSearch === 'function') {
-            window.previewBusFromSearch(targetId);
-        }
-    };
-    return card;
+    const wrapper = document.createElement('div');
+    const data = { targetLineIds: [targetId], busData: window.GlobalBusData[targetId] || null };
+    renderBusDetailPanel(data, wrapper, { isPreview: false });
+    // 混合卡片開啟時確保有最新詳細資料（不足時抓取，完成後 busDataUpdated 刷新）
+    ensureBusRouteData(targetId);
+    return wrapper;
 }
 
 // ============================================================================
