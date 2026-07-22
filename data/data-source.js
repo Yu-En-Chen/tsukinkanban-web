@@ -90,16 +90,37 @@ export const dataSourceContent = `
                         <br>
                         <div style="margin-bottom: 18px;">
                             <p style="color: var(--text-main); font-weight: 600; margin: 0 0 4px 0;">ODPTチャレンジ2026限定</p>
-                            <p style="color: var(--text-secondary); margin: 0 0 6px 0; font-size: 0.8em;">2027年2月末まで提供予定。</p>
-                            <ul style="color: var(--text-secondary); margin: 0; padding-left: 20px; line-height: 1.6;">
-                                <li>JR東日本（山手線、中央線快速、中央・総武各駅停車、高崎線、宇都宮線、京浜東北・根岸線、京葉線、埼京・川越線、東海道線、横須賀線、総武快速線、湘南新宿ライン、上野東京ライン、常磐線各駅停車、常磐線快速、青梅線、武蔵野線、南武線、横浜線、相鉄直通線）</li>
-                                <li>東武鉄道（東武スカイツリーライン、東武スカイツリーライン(押上-曳舟)、東武伊勢崎線(久喜以北)、東武東上線、東武アーバンパークライン、東武亀戸線、東武大師線、東武越生線、東武日光線）</li>
-                                <li>西武鉄道（西武池袋線、西武新宿線、西武拝島線、西武有楽町線、西武狭山線、西武豊島線、西武秩父線）</li>
-                                <li>京急電鉄（京急本線、京急空港線、京急逗子線、京急久里浜線）</li>
-                                <li>京王電鉄（京王線、京王新線、京王高尾線、井の頭線、相模原線、京王競馬場線、京王動物園線）</li>
-                                <li>東急電鉄（東急東横線、東急田園都市線、東急目黒線、東急大井町線、東急新横浜線、東急池上線）</li>
-                                <li>空港（成田空港、羽田空港）</li>
-                            </ul>
+                            <p style="color: var(--text-secondary); margin: 0 0 10px 0; font-size: 0.8em;">2027年2月末まで提供予定。</p>
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <div>
+                                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">JR東日本</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">山手線、中央線快速、中央・総武各駅停車、高崎線、宇都宮線、京浜東北・根岸線、京葉線、埼京・川越線、東海道線、横須賀線、総武快速線、湘南新宿ライン、上野東京ライン、常磐線各駅停車、常磐線快速、青梅線、武蔵野線、南武線、横浜線、相鉄直通線</p>
+                                </div>
+                                <div>
+                                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">東武鉄道</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">東武スカイツリーライン、東武スカイツリーライン(押上-曳舟)、東武伊勢崎線(久喜以北)、東武東上線、東武アーバンパークライン、東武亀戸線、東武大師線、東武越生線、東武日光線</p>
+                                </div>
+                                <div>
+                                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">西武鉄道</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">西武池袋線、西武新宿線、西武拝島線、西武有楽町線、西武狭山線、西武豊島線、西武秩父線</p>
+                                </div>
+                                <div>
+                                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">京急電鉄</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">京急本線、京急空港線、京急逗子線、京急久里浜線</p>
+                                </div>
+                                <div>
+                                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">京王電鉄</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">京王線、京王新線、京王高尾線、井の頭線、相模原線、京王競馬場線、京王動物園線</p>
+                                </div>
+                                <div>
+                                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">東急電鉄</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">東急東横線、東急田園都市線、東急目黒線、東急大井町線、東急新横浜線、東急池上線</p>
+                                </div>
+                                <div>
+                                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">空港</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">成田空港、羽田空港</p>
+                                </div>
+                            </div>
                         </div>
 
                     </div>
