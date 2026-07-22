@@ -251,9 +251,11 @@
     overflow: hidden;
 }
 
-/* 滑動切換的裁切層：位移中的列表在此層內被裁切 */
+/* 滑動切換的裁切層：位移中的列表在此層內被裁切
+   touch-action: pan-y 讓瀏覽器不搶先接手橫向手勢（縱向捲動照常） */
 .bus-swipe-clip {
     overflow: hidden;
+    touch-action: pan-y;
 }
 
 /* 拖曳／切換動畫進行中：左右邊緣以線性漸層淡出（隱形牆） */

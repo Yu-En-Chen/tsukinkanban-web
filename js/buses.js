@@ -1267,6 +1267,9 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         }
         if (!touchHorizontal) return;
 
+        // 橫向拖曳期間鎖定縱向捲動，避免左右＋上下同時動造成混亂
+        if (e.cancelable) e.preventDefault();
+
         if (swipeClip) swipeClip.classList.add('bus-swipe-fade');
         const cur = currentDirIndex();
         const atEdge = (dx > 0 && cur === 0) || (dx < 0 && cur === getPatterns().length - 1);
@@ -1274,7 +1277,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         swipeArea.style.transition = 'none';
         swipeArea.style.transform = `translateX(${damped}px)`;
         swipeArea.style.opacity = String(1 - Math.min(1, Math.abs(damped) / 160) * 0.35);
-    }, { passive: true });
+    }, { passive: false }); // 需要 preventDefault 鎖定縱向捲動，不能是 passive
 
     container.addEventListener('touchend', (e) => {
         if (!touchTracking) return;
