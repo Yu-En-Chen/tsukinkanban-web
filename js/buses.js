@@ -181,9 +181,9 @@ export async function ensureBusRouteData(targetId) {
     }
 }
 
-// 運行系統的資訊量評分：有車 > 有表定次発 > 無資訊
+// 運行系統的資訊量評分：有車（實際在途）> 有表定次発 > 無資訊
 function patternScore(p) {
-    if ((p.bus_count || 0) > 0) return 2;
+    if (patternActiveBusCount(p) > 0) return 2;
     if ((p.stops || []).some(s => s.next_text)) return 1;
     return 0;
 }
@@ -283,9 +283,31 @@ function liveEtaTexts(stop) {
 // ============================================================================
 // 運行狀態判定：running（有車）／waiting（無車、有次発）／ended（本日運行終了）
 // ============================================================================
+
+// 實際在途中營運的車輛數
+// 後端的 bus_count 可能包含回送・夜間待機・整備中等未營運車輛，
+// 必須以「有站點正被接近」或「有即時 ETA」佐證才視為運行中：
+// 有車牌的接近車輛以去重後的台數為準，僅有 ETA 時退回 bus_count
+function patternActiveBusCount(pattern) {
+    const stops = (pattern && pattern.stops) || [];
+    const plates = new Set();
+    let unnumbered = 0;
+    let hasEta = false;
+    stops.forEach(s => {
+        (s.buses_approaching || []).forEach(b => {
+            if (b.number) plates.add(b.number);
+            else unnumbered++;
+        });
+        if (s.eta || s.eta_text) hasEta = true;
+    });
+    const seen = plates.size + unnumbered;
+    if (seen > 0) return seen;
+    return hasEta ? Math.max(1, pattern.bus_count || 0) : 0;
+}
+
 function patternServiceState(pattern) {
     if (!pattern) return { state: 'unknown', nextText: '' };
-    if ((pattern.bus_count || 0) > 0) return { state: 'running', nextText: '' };
+    if (patternActiveBusCount(pattern) > 0) return { state: 'running', nextText: '' };
 
     const stopWithNext = (pattern.stops || []).find(s => s.next_text);
     if (stopWithNext) return { state: 'waiting', nextText: stopWithNext.next_text };
@@ -295,7 +317,7 @@ function patternServiceState(pattern) {
 // 全方向彙整的運行狀態（收折檢視的資訊卡用）：
 // 任一方向有車即為運行中，否則依次発待ち／運行終了顯示
 function overallServiceInfo(patterns) {
-    const total = (patterns || []).reduce((n, p) => n + (p.bus_count || 0), 0);
+    const total = (patterns || []).reduce((n, p) => n + patternActiveBusCount(p), 0);
     if (total > 0) {
         return { badge: '運行中', cls: 'status-normal', message: `現在、${total}台の車両が運行中です。` };
     }
