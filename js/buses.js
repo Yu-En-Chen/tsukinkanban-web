@@ -1333,10 +1333,12 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
     }
 
     // 桌面環境：觸控板雙指左右滑或滑鼠側向滾輪也可切換方向
-    // 慣性事件會在手勢結束後持續發送，故切換後鎖住，
-    // 直到橫向滾動完全停止（閒置 180ms）才重新武裝，一次手勢只切一次
+    // 切換後進入固定冷卻期並凍結累積量：
+    //  - 冷卻中丟棄事件（慣性尾巴不會累積 → 不會多切一個）
+    //  - 冷卻為固定時間（不等待完全停止 → 連續滾動仍可持續切換，不會卡住）
+    //  - 橫向滾動停止時清零殘留量（避免與下次手勢合併而誤觸）
     let wheelAccum = 0;
-    let wheelArmed = true;
+    let wheelCooldownUntil = 0;
     let wheelIdleTimer = null;
     container.addEventListener('wheel', (e) => {
         if (!canSwipeDir()) return;
@@ -1346,11 +1348,12 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
         e.preventDefault();
 
-        // 任何橫向滾動都刷新閒置計時：慣性尾巴期間持續延後重新武裝
+        // 滾動停止 150ms 後清零殘留累積量
         clearTimeout(wheelIdleTimer);
-        wheelIdleTimer = setTimeout(() => { wheelArmed = true; wheelAccum = 0; }, 180);
+        wheelIdleTimer = setTimeout(() => { wheelAccum = 0; }, 150);
 
-        if (!wheelArmed) return; // 這次手勢已切換過，等慣性停止
+        const now = performance.now();
+        if (now < wheelCooldownUntil) { wheelAccum = 0; return; } // 冷卻中：凍結，慣性尾巴不累積
 
         wheelAccum += e.deltaX;
         if (Math.abs(wheelAccum) > 60) {
@@ -1358,7 +1361,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             wheelAccum = 0;
             const next = currentDirIndex() + dir;
             if (next < 0 || next >= getPatterns().length) return; // 邊界不循環
-            wheelArmed = false; // 鎖住，直到慣性停止由閒置計時重新武裝
+            wheelCooldownUntil = now + 300; // 固定冷卻，兼顧防慣性重複與連續滾動
             animateSwitchTo(next, dir > 0 ? 'left' : 'right');
         }
     }, { passive: false });
