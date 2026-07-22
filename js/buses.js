@@ -1442,6 +1442,9 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             <div class="ext-card-message">${info.message}</div>
         `;
 
+        // 這次重繪是否來自方向切換（slideDir 稍後會被 swipeArea 區塊清掉，先擷取）
+        const isDirSwitch = !!slideDir;
+
         // --- 1. 方向切換塊（只標示終點方向；重複時改抓終點站名） ---
         const slider = document.createElement('div');
         slider.className = 'bus-dir-slider';
@@ -1450,17 +1453,27 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         patterns.forEach((p, i) => {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'bus-dir-btn' + (i === dirIndex ? ' active' : '');
+            const isActive = i === dirIndex;
+            // 切換時：新藥丸先以非 active 狀態出現，下一幀再加 active，
+            // 讓深色高亮沿 CSS transition 平滑淡入（而非瞬間跳色）
+            btn.className = 'bus-dir-btn' + (isActive && !isDirSwitch ? ' active' : '');
             btn.textContent = dirLabels[i];
             btn.onclick = (e) => {
                 e.stopPropagation();
                 switchDir(i);
             };
-            if (i === dirIndex) activeBtn = btn;
+            if (isActive) activeBtn = btn;
             slider.appendChild(btn);
         });
 
         expCard.appendChild(slider);
+
+        if (isDirSwitch && activeBtn) {
+            const btn = activeBtn;
+            // 雙 rAF：先讓非 active 狀態實際繪製一幀，下一幀再加 active，
+            // 深色高亮才會沿 CSS transition 淡入（單 rAF 會在首繪前就套用，不觸發過渡）
+            requestAnimationFrame(() => requestAnimationFrame(() => btn.classList.add('active')));
+        }
 
         // 滑動切換的位移範圍：只有停留所列表跟著手指移動，
         // 方向選單、卡框與標頭保持不動；外層裁切層於拖曳／切換時
@@ -1511,7 +1524,8 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             };
             recenterRaf = requestAnimationFrame(step);
         };
-        requestAnimationFrame(() => centerActive(false));
+        // 開啟時瞬間置中；方向切換時平滑捲動置中，與下方內容切換的順暢感一致
+        requestAnimationFrame(() => centerActive(isDirSwitch));
 
         // 手指還按著時不回正；放開並閒置 0.6 秒後才啟動
         let sliderIdleTimer = null;
