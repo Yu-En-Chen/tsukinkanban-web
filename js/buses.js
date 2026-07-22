@@ -1326,6 +1326,35 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         }
     }, { passive: true });
 
+    // 桌面環境：觸控板雙指左右滑或滑鼠側向滾輪也可切換方向
+    // 累積橫向滾動量超過門檻即切換，一次手勢只切換一次（cooldown）
+    let wheelAccum = 0;
+    let wheelCooldown = false;
+    let wheelResetTimer = null;
+    container.addEventListener('wheel', (e) => {
+        if (!canSwipeDir()) return;
+        // 方向選單自身可橫向捲動，交給瀏覽器原生行為
+        if (e.target && e.target.closest && e.target.closest('.bus-dir-slider')) return;
+        // 只攔截明顯的橫向捲動，縱向照常
+        if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+        e.preventDefault();
+        if (wheelCooldown) return;
+
+        wheelAccum += e.deltaX;
+        clearTimeout(wheelResetTimer);
+        wheelResetTimer = setTimeout(() => { wheelAccum = 0; }, 200);
+
+        if (Math.abs(wheelAccum) > 60) {
+            const cur = currentDirIndex();
+            const next = cur + (wheelAccum > 0 ? 1 : -1);
+            wheelAccum = 0;
+            if (next < 0 || next >= getPatterns().length) return; // 邊界不循環
+            wheelCooldown = true;
+            setTimeout(() => { wheelCooldown = false; }, 500);
+            switchDir(next);
+        }
+    }, { passive: false });
+
     function render() {
         container.innerHTML = '';
         const busData = data.busData || {};
@@ -1432,11 +1461,13 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         swipeClip.className = 'bus-swipe-clip';
         swipeArea = document.createElement('div');
         swipeArea.className = 'bus-swipe-area';
-        // 淡出遮罩（隱形牆）只在手指拖曳期間存在：
-        // mask-image 無法平滑過渡，靜止內容上掛遮罩再移除會產生瞬間切換感，
-        // 點選或滑入動畫時一律不掛，超出部分交由裁切層的 overflow 處理
+        // 切換動畫（點選或滑動確定）進行中也啟用淡出遮罩：
+        // 遮罩寬度以 @property 平滑過渡，展開與收回都不會有瞬間切換感
         if (slideDir) {
             swipeArea.classList.add(slideDir === 'left' ? 'bus-slide-in-left' : 'bus-slide-in-right');
+            const clipEl = swipeClip;
+            clipEl.classList.add('bus-swipe-fade');
+            setTimeout(() => clipEl.classList.remove('bus-swipe-fade'), 380);
             slideDir = '';
         }
         swipeClip.appendChild(swipeArea);

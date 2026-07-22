@@ -251,17 +251,29 @@
     overflow: hidden;
 }
 
+/* 淡出遮罩的寬度變數：註冊型別後才能平滑過渡（漸層 stop 本身不可動畫） */
+@property --swipe-fade-w {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+}
+
 /* 滑動切換的裁切層：位移中的列表在此層內被裁切
-   touch-action: pan-y 讓瀏覽器不搶先接手橫向手勢（縱向捲動照常） */
+   touch-action: pan-y 讓瀏覽器不搶先接手橫向手勢（縱向捲動照常）
+   遮罩常駐但寬度為 0（無視覺效果），啟用時寬度平滑展開到 32px，
+   解除時平滑收回，不會有隱形牆瞬間冒出／消失的切換感 */
 .bus-swipe-clip {
     overflow: hidden;
     touch-action: pan-y;
+    --swipe-fade-w: 0px;
+    transition: --swipe-fade-w 0.3s ease;
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black var(--swipe-fade-w), black calc(100% - var(--swipe-fade-w)), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, black var(--swipe-fade-w), black calc(100% - var(--swipe-fade-w)), transparent 100%);
 }
 
 /* 拖曳／切換動畫進行中：左右邊緣以線性漸層淡出（隱形牆） */
 .bus-swipe-clip.bus-swipe-fade {
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 32px, black calc(100% - 32px), transparent 100%);
-    mask-image: linear-gradient(to right, transparent 0%, black 32px, black calc(100% - 32px), transparent 100%);
+    --swipe-fade-w: 32px;
 }
 
 /* --- 收折檢視：與列車卡片（多路線・方向別）同構的資訊卡 --- */
