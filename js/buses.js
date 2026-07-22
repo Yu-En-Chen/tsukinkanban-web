@@ -741,14 +741,19 @@ export function generateBusLineSummary(targetId) {
     const hasData = bd.patterns && bd.patterns.length > 0;
 
     let status = '更新中...';
+    let serviceState = 'unknown';
     if (hasData) {
         const prefs = getBusPrefs(targetId);
         const pattern = bd.patterns[Math.min(prefs.dir, bd.patterns.length - 1)];
-        const service = patternServiceState(pattern);
-        if (service.state === 'running') status = bd.source || 'バス';
-        else if (service.state === 'waiting') status = '車両なし';
+        serviceState = patternServiceState(pattern).state;
+        if (serviceState === 'running') status = bd.source || 'バス';
+        else if (serviceState === 'waiting') status = '車両なし';
         else status = '運行終了';
     }
+
+    // 運行中→正常（綠燈）、車両なし／運行終了／資料未就緒→注意燈
+    // 卡片燈號需正確繼承公車的實際運行狀態，不能一律當綠燈
+    const isAttention = serviceState !== 'running';
 
     return {
         id: targetId,
@@ -761,10 +766,11 @@ export function generateBusLineSummary(targetId) {
         url: bd.url || '',
         isDelayed: false,
         isError: false,
-        isAttention: !hasData,
+        isAttention: isAttention,
         advancedDetails: [],
         isBusLine: true,
-        hasData: hasData
+        hasData: hasData,
+        serviceState: serviceState
     };
 }
 

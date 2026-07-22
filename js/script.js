@@ -2576,7 +2576,8 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                 // 混合卡片內的公車路線：以摘要列呈現，不走鐵道字典查詢
                 if (isBusTargetId(lineId)) {
                     const busLine = generateBusLineSummary(lineId);
-                    if (busLine.hasData) hasNormal = true;
+                    // 公車燈號依實際運行狀態繼承：運行中→綠燈、車両なし／運行終了／未就緒→注意燈
+                    if (busLine.serviceState === 'running') hasNormal = true;
                     else hasAttention = true;
                     detailedLines.push(busLine);
                     return;
