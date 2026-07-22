@@ -1400,22 +1400,9 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
 
         // --- 收折檢視：與列車詳細面板（多路線・方向別）同構的資訊卡 ---
         // 運行狀態併入卡片徽章與訊息，方向選擇列不顯示
+        // 展開按鈕不另外顯示：直接點資訊卡即展開（renderCollapsedCard 內已綁定）
         if (prefs.collapsed && prefs.previewStops.length > 0) {
             renderCollapsedCard(patterns, busData);
-
-            const expandBtn = document.createElement('button');
-            expandBtn.type = 'button';
-            expandBtn.className = 'flight-action-btn bus-toggle-btn';
-            expandBtn.innerHTML = `${chevronDown}<span>すべての停留所を表示</span>`;
-            expandBtn.onclick = (e) => {
-                e.stopPropagation();
-                markHeightAnim();
-                prefs.collapsed = false;
-                saveBusPrefs(targetId, prefs);
-                render();
-            };
-            container.appendChild(expandBtn);
-
             appendActionButtons();
             return;
         }
