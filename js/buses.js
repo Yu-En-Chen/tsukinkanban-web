@@ -1315,22 +1315,29 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             const cur = currentDirIndex();
             const next = cur + (dx < 0 ? 1 : -1);
             if (next < 0 || next >= getPatterns().length) { resetSwipeDrag(); return; }
-
-            // 目前內容先朝滑動方向滑出並淡出，接著渲染新方向（帶滑入動畫）
-            swipeArea.style.transition = 'transform 0.18s ease-in, opacity 0.18s ease-in';
-            swipeArea.style.transform = `translateX(${dx < 0 ? -90 : 90}px)`;
-            swipeArea.style.opacity = '0';
-            setTimeout(() => switchDir(next), 170);
+            animateSwitchTo(next, dx < 0 ? 'left' : 'right');
         } else {
             resetSwipeDrag();
         }
     }, { passive: true });
 
+    // 目前內容先掛上淡出遮罩、朝該方向滑出並淡出，接著渲染新方向（帶滑入動畫）
+    // 手指滑動與桌面滾輪切換共用，確保兩者的隱形牆淡化效果一致
+    function animateSwitchTo(next, outDir) {
+        if (!swipeArea || !swipeClip) { switchDir(next); return; }
+        swipeClip.classList.add('bus-swipe-fade');
+        swipeArea.style.transition = 'transform 0.18s ease-in, opacity 0.18s ease-in';
+        swipeArea.style.transform = `translateX(${outDir === 'left' ? -90 : 90}px)`;
+        swipeArea.style.opacity = '0';
+        setTimeout(() => switchDir(next), 170);
+    }
+
     // 桌面環境：觸控板雙指左右滑或滑鼠側向滾輪也可切換方向
-    // 累積橫向滾動量超過門檻即切換，一次手勢只切換一次（cooldown）
+    // 慣性事件會在手勢結束後持續發送，故切換後鎖住，
+    // 直到橫向滾動完全停止（閒置 180ms）才重新武裝，一次手勢只切一次
     let wheelAccum = 0;
-    let wheelCooldown = false;
-    let wheelResetTimer = null;
+    let wheelArmed = true;
+    let wheelIdleTimer = null;
     container.addEventListener('wheel', (e) => {
         if (!canSwipeDir()) return;
         // 方向選單自身可橫向捲動，交給瀏覽器原生行為
@@ -1338,20 +1345,21 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         // 只攔截明顯的橫向捲動，縱向照常
         if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
         e.preventDefault();
-        if (wheelCooldown) return;
+
+        // 任何橫向滾動都刷新閒置計時：慣性尾巴期間持續延後重新武裝
+        clearTimeout(wheelIdleTimer);
+        wheelIdleTimer = setTimeout(() => { wheelArmed = true; wheelAccum = 0; }, 180);
+
+        if (!wheelArmed) return; // 這次手勢已切換過，等慣性停止
 
         wheelAccum += e.deltaX;
-        clearTimeout(wheelResetTimer);
-        wheelResetTimer = setTimeout(() => { wheelAccum = 0; }, 200);
-
         if (Math.abs(wheelAccum) > 60) {
-            const cur = currentDirIndex();
-            const next = cur + (wheelAccum > 0 ? 1 : -1);
+            const dir = wheelAccum > 0 ? 1 : -1;
             wheelAccum = 0;
+            const next = currentDirIndex() + dir;
             if (next < 0 || next >= getPatterns().length) return; // 邊界不循環
-            wheelCooldown = true;
-            setTimeout(() => { wheelCooldown = false; }, 500);
-            switchDir(next);
+            wheelArmed = false; // 鎖住，直到慣性停止由閒置計時重新武裝
+            animateSwitchTo(next, dir > 0 ? 'left' : 'right');
         }
     }, { passive: false });
 
