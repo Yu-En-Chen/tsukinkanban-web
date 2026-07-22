@@ -80,7 +80,7 @@ export const dataSourceContent = `
                                 </div>
                                 <div>
                                     <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">航空</p>
-                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">日本航空、全日本空輸</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">日本航空（成田・羽田発着のみ）、全日本空輸（成田・羽田発着のみ）</p>
                                 </div>
                             </div>
                         </div>
