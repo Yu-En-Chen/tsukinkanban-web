@@ -1249,17 +1249,15 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
 
     function resetSwipeDrag(animated = true) {
         if (!swipeArea) return;
-        const clipEl = swipeClip;
+        // 放手的瞬間就移除淡出遮罩：回彈中的內容以硬裁切收尾即可，
+        // 若等到回彈結束才移除，靜止的膠囊邊緣會出現肉眼可見的瞬間切換
+        if (swipeClip) swipeClip.classList.remove('bus-swipe-fade');
         if (animated && swipeArea.style.transform) {
             swipeArea.style.transition = 'transform 0.35s var(--ios-snap, cubic-bezier(0.16, 1, 0.3, 1)), opacity 0.25s ease';
             const el = swipeArea;
-            setTimeout(() => {
-                el.style.transition = '';
-                if (clipEl) clipEl.classList.remove('bus-swipe-fade');
-            }, 400);
+            setTimeout(() => { el.style.transition = ''; }, 400);
         } else {
             swipeArea.style.transition = '';
-            if (clipEl) clipEl.classList.remove('bus-swipe-fade');
         }
         swipeArea.style.transform = '';
         swipeArea.style.opacity = '';
@@ -1434,11 +1432,11 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         swipeClip.className = 'bus-swipe-clip';
         swipeArea = document.createElement('div');
         swipeArea.className = 'bus-swipe-area';
+        // 淡出遮罩（隱形牆）只在手指拖曳期間存在：
+        // mask-image 無法平滑過渡，靜止內容上掛遮罩再移除會產生瞬間切換感，
+        // 點選或滑入動畫時一律不掛，超出部分交由裁切層的 overflow 處理
         if (slideDir) {
             swipeArea.classList.add(slideDir === 'left' ? 'bus-slide-in-left' : 'bus-slide-in-right');
-            const clipEl = swipeClip;
-            clipEl.classList.add('bus-swipe-fade');
-            setTimeout(() => clipEl.classList.remove('bus-swipe-fade'), 420);
             slideDir = '';
         }
         swipeClip.appendChild(swipeArea);
