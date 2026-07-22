@@ -67,9 +67,10 @@ export const dataSourceContent = `
                             <p style="color: var(--text-main); font-weight: 600; margin: 0 0 6px 0;">完全対応（遅延分数あり）</p>
                             <ul style="color: var(--text-secondary); margin: 0; padding-left: 20px; line-height: 1.6;">
                                 <li>東京都交通局
-                                （都営浅草線、都営三田線、都営新宿線、都営大江戸線、都電荒川線）</li>
+                                （都営浅草線、都営三田線、都営新宿線、都営大江戸線、都電荒川線、都営バス）</li>
                                 <li>横浜市交通局
-                                （横浜ブルーライン、横浜グリーンライン）</li>
+                                （横浜ブルーライン、横浜グリーンライン、横浜市営バス）</li>
+                                <li>西武バス株式会社</li>
                                 <li>日本航空</li>
                                 <li>全日本空輸</li>
                             </ul>
