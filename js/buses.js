@@ -967,6 +967,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
     let listShell = null;     // 停留所列表的外殼（高度動畫用）
     let swipeArea = null;     // 滑動切換的位移範圍（停留所列表）
     let swipeClip = null;     // 位移範圍的裁切層（拖曳時左右邊緣線性淡出）
+    let sliderScrollMemo = 0; // 方向選單的捲動位置（跨重繪保留，避免切換時跳回 0）
 
     const container = document.createElement('div');
     container.className = 'bus-panel-container';
@@ -1510,7 +1511,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             if (!activeBtn) return;
             if (recenterRaf) cancelAnimationFrame(recenterRaf);
             const target = targetScrollLeft();
-            if (!smooth) { slider.scrollLeft = target; return; }
+            if (!smooth) { slider.scrollLeft = target; sliderScrollMemo = target; return; }
 
             const start = slider.scrollLeft;
             const change = target - start;
@@ -1522,13 +1523,19 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             const step = (now) => {
                 const p = Math.min(1, (now - t0) / duration);
                 slider.scrollLeft = start + change * easeOutExpo(p);
+                sliderScrollMemo = slider.scrollLeft;
                 if (p < 1) recenterRaf = requestAnimationFrame(step);
                 else recenterRaf = null;
             };
             recenterRaf = requestAnimationFrame(step);
         };
         // 開啟時瞬間置中；方向切換時平滑捲動置中，與下方內容切換的順暢感一致
-        requestAnimationFrame(() => centerActive(isDirSwitch));
+        // 切換時先還原上一個渲染的捲動位置（新 slider 預設在 0），
+        // 否則會先瞬間跳回最左再捲過去，產生「多滑一次」的違和感
+        requestAnimationFrame(() => {
+            if (isDirSwitch) slider.scrollLeft = sliderScrollMemo;
+            centerActive(isDirSwitch);
+        });
 
         // 手指還按著時不回正；放開並閒置 0.6 秒後才啟動
         let sliderIdleTimer = null;
@@ -1549,6 +1556,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             armRecenter();
         }, { passive: true });
         slider.addEventListener('scroll', () => {
+            sliderScrollMemo = slider.scrollLeft; // 記錄目前位置供下次重繪還原
             if (recenterRaf) return; // 回正動畫自身觸發的捲動不重置計時
             armRecenter();
         }, { passive: true });
