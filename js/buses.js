@@ -342,6 +342,39 @@ function isPlausibleBusDiff(diff) {
     return Number.isFinite(diff) && diff <= BUS_DIFF_LATE_LIMIT && diff >= -BUS_DIFF_EARLY_LIMIT;
 }
 
+// その停留所の表定時刻の候補を集める
+// next だけだと、遅れている車両に対して既に「次便」の時刻を指していることがあり、
+// 偏差が大きなマイナスに化ける。バックエンドが prev（直前の表定時刻）や
+// scheduled（時刻の配列）を返す場合はそれも候補に入れて正しい便を選べるようにする。
+// どちらも無い旧レスポンスでは従来どおり next だけを使う
+function scheduledCandidates(stop) {
+    const list = [];
+    if (Array.isArray(stop.scheduled)) stop.scheduled.forEach(t => { if (t) list.push(t); });
+    if (stop.prev) list.push(stop.prev);
+    if (stop.next) list.push(stop.next);
+    return list;
+}
+
+// eta に対応する表定時刻を選び、偏差（分）を返す。判定できない場合は null
+// 候補のうち eta に最も近いものを採用し、絶対値が同じなら遅れ側を優先する
+// （バスは早発より遅れが圧倒的に多いため）
+function busDiffMinutes(stop) {
+    if (!stop || !stop.eta) return null;
+    const etaMs = new Date(stop.eta).getTime();
+    if (!Number.isFinite(etaMs)) return null;
+
+    let best = null;
+    scheduledCandidates(stop).forEach(t => {
+        const ms = new Date(t).getTime();
+        if (!Number.isFinite(ms)) return;
+        const diff = Math.round((etaMs - ms) / 60000);
+        if (best === null) { best = diff; return; }
+        const da = Math.abs(diff), db = Math.abs(best);
+        if (da < db || (da === db && diff > best)) best = diff;
+    });
+    return best;
+}
+
 // 走行中の各車両の遅れ（分）を集める
 // 偏差は「その停留所の即時 ETA」と「表定時刻」の差＝接近中の先頭車両の遅れ。
 // 同一車両を二重に数えないよう車牌でまとめ、車牌がない場合は停留所を鍵にする
@@ -350,11 +383,11 @@ function collectBusDelays(patterns) {
     (patterns || []).forEach(p => {
         (p.stops || []).forEach(s => {
             const bus = (s.buses_approaching || [])[0];
-            if (!bus || !s.eta || !s.next) return;
-            const diff = Math.round((new Date(s.eta).getTime() - new Date(s.next).getTime()) / 60000);
+            if (!bus) return;
+            const diff = busDiffMinutes(s);
             // 組み違いの疑いがある値は 0 扱いにもせず標本から除外する
             // （0 として平均に入れると本当の遅れを薄めてしまうため）
-            if (!isPlausibleBusDiff(diff)) return;
+            if (diff === null || !isPlausibleBusDiff(diff)) return;
             const key = bus.number || `${p.id || ''}#${s.name}`;
             if (!seen.has(key)) seen.set(key, diff);
         });
@@ -913,11 +946,11 @@ function busMarkerHtml(bus, stop, chip = false) {
     const occHtml = busOccHtml(bus.occupancy);
 
     let diffHtml = '';
-    if (stop && stop.eta && stop.next) {
-        const diff = Math.round((new Date(stop.eta).getTime() - new Date(stop.next).getTime()) / 60000);
+    if (stop) {
+        const diff = busDiffMinutes(stop);
         // 妥当範囲外は next が次便を指す組み違いとみなし、表示しない
         // （とくに大きなマイナスは実際には遅延中の車両であることが多く誤解を招く）
-        if (diff !== 0 && isPlausibleBusDiff(diff)) {
+        if (diff !== null && diff !== 0 && isPlausibleBusDiff(diff)) {
             diffHtml = `<span class="bus-delay ${diff > 0 ? 'late' : 'early'}">${diff > 0 ? '+' : ''}${diff}分</span>`;
         }
     }
