@@ -17,7 +17,12 @@ const BUS_DELAY_SEVERE_AVG = 5;  // 平均がこの分数以上 → 遅延（赤
 // 平均は「路線全体の底上げ」を捉えるための指標なので、走行中が1台だけのときは
 // max と同値になり単台しきい値を上書きしてしまう。2台以上そろって初めて評価する
 const BUS_DELAY_AVG_MIN_COUNT = 2;
-const BUS_DELAY_SANE_LIMIT = 30; // これを超える偏差は next が次便を指す誤りとみなし除外
+// 偏差（eta − next）の妥当範囲。範囲外は「実時刻の車両」と「次便の表定時刻」が
+// 組み違った値とみなし、表示にも判定にも使わない。
+// 早発側を厳しくするのは、バスは時点停留所での早発が原則ないため、
+// 大きなマイナスはまず班次のずれだから（例：−20分は実際には遅延中の車両）
+const BUS_DIFF_LATE_LIMIT = 30; // これを超える遅れは組み違いとみなす
+const BUS_DIFF_EARLY_LIMIT = 5; // これを超える早発は組み違いとみなす
 
 // 業者識別色
 const OPERATOR_COLORS = {
@@ -332,6 +337,11 @@ function patternServiceState(pattern) {
     return { state: 'ended', nextText: '' };
 }
 
+// 偏差が実際の遅れ／早発として妥当か（範囲外は班次の組み違い）
+function isPlausibleBusDiff(diff) {
+    return Number.isFinite(diff) && diff <= BUS_DIFF_LATE_LIMIT && diff >= -BUS_DIFF_EARLY_LIMIT;
+}
+
 // 走行中の各車両の遅れ（分）を集める
 // 偏差は「その停留所の即時 ETA」と「表定時刻」の差＝接近中の先頭車両の遅れ。
 // 同一車両を二重に数えないよう車牌でまとめ、車牌がない場合は停留所を鍵にする
@@ -342,7 +352,9 @@ function collectBusDelays(patterns) {
             const bus = (s.buses_approaching || [])[0];
             if (!bus || !s.eta || !s.next) return;
             const diff = Math.round((new Date(s.eta).getTime() - new Date(s.next).getTime()) / 60000);
-            if (!Number.isFinite(diff) || Math.abs(diff) > BUS_DELAY_SANE_LIMIT) return;
+            // 組み違いの疑いがある値は 0 扱いにもせず標本から除外する
+            // （0 として平均に入れると本当の遅れを薄めてしまうため）
+            if (!isPlausibleBusDiff(diff)) return;
             const key = bus.number || `${p.id || ''}#${s.name}`;
             if (!seen.has(key)) seen.set(key, diff);
         });
@@ -903,8 +915,9 @@ function busMarkerHtml(bus, stop, chip = false) {
     let diffHtml = '';
     if (stop && stop.eta && stop.next) {
         const diff = Math.round((new Date(stop.eta).getTime() - new Date(stop.next).getTime()) / 60000);
-        // 偏差過大通常代表 next 已指向下一班，不顯示避免誤導
-        if (diff !== 0 && Math.abs(diff) <= 30) {
+        // 妥当範囲外は next が次便を指す組み違いとみなし、表示しない
+        // （とくに大きなマイナスは実際には遅延中の車両であることが多く誤解を招く）
+        if (diff !== 0 && isPlausibleBusDiff(diff)) {
             diffHtml = `<span class="bus-delay ${diff > 0 ? 'late' : 'early'}">${diff > 0 ? '+' : ''}${diff}分</span>`;
         }
     }
