@@ -7,6 +7,18 @@ const BUS_PREFS_KEY = 'Tsukin_Bus_Prefs';
 const BUS_POLL_MS = 55000;        // 有公車卡片（儲存或開啟中）時的輪詢間隔
 const BUS_REFRESH_MIN_MS = 50000; // 快取視為新鮮的門檻（略低於輪詢間隔，讓每次輪詢都實際更新）
 
+// 遅延判定のしきい値（分）
+// バスは1台の遅れが後続に連鎖しないため、列車のような路線全体の乱れとしてではなく
+// 「単独の大きな遅れ」か「路線全体の底上げ（平均）」のどちらかで判定する
+const BUS_DELAY_MINOR_MAX = 6;   // 単台がこの分数以上 → 注意（黄）
+const BUS_DELAY_MINOR_AVG = 3;   // 平均がこの分数以上 → 注意（黄）
+const BUS_DELAY_SEVERE_MAX = 10; // 単台がこの分数以上 → 遅延（赤）
+const BUS_DELAY_SEVERE_AVG = 5;  // 平均がこの分数以上 → 遅延（赤）
+// 平均は「路線全体の底上げ」を捉えるための指標なので、走行中が1台だけのときは
+// max と同値になり単台しきい値を上書きしてしまう。2台以上そろって初めて評価する
+const BUS_DELAY_AVG_MIN_COUNT = 2;
+const BUS_DELAY_SANE_LIMIT = 30; // これを超える偏差は next が次便を指す誤りとみなし除外
+
 // 業者識別色
 const OPERATOR_COLORS = {
     Toei: '#2E7D32',
@@ -320,11 +332,56 @@ function patternServiceState(pattern) {
     return { state: 'ended', nextText: '' };
 }
 
+// 走行中の各車両の遅れ（分）を集める
+// 偏差は「その停留所の即時 ETA」と「表定時刻」の差＝接近中の先頭車両の遅れ。
+// 同一車両を二重に数えないよう車牌でまとめ、車牌がない場合は停留所を鍵にする
+function collectBusDelays(patterns) {
+    const seen = new Map();
+    (patterns || []).forEach(p => {
+        (p.stops || []).forEach(s => {
+            const bus = (s.buses_approaching || [])[0];
+            if (!bus || !s.eta || !s.next) return;
+            const diff = Math.round((new Date(s.eta).getTime() - new Date(s.next).getTime()) / 60000);
+            if (!Number.isFinite(diff) || Math.abs(diff) > BUS_DELAY_SANE_LIMIT) return;
+            const key = bus.number || `${p.id || ''}#${s.name}`;
+            if (!seen.has(key)) seen.set(key, diff);
+        });
+    });
+    return [...seen.values()];
+}
+
+// 遅延レベル：none（平常）／minor（黄）／severe（赤）
+// 平均は「各車両の遅れ（早発は0扱い）」の平均。早発が遅れを打ち消さないようにする
+function busDelayInfo(patterns) {
+    const delays = collectBusDelays(patterns);
+    if (delays.length === 0) return { level: 'none', max: 0, avg: 0, count: 0 };
+
+    const lateness = delays.map(d => Math.max(0, d));
+    const max = Math.max(...lateness);
+    const avg = lateness.reduce((a, b) => a + b, 0) / lateness.length;
+
+    const useAvg = lateness.length >= BUS_DELAY_AVG_MIN_COUNT;
+    let level = 'none';
+    if (max >= BUS_DELAY_SEVERE_MAX || (useAvg && avg >= BUS_DELAY_SEVERE_AVG)) level = 'severe';
+    else if (max >= BUS_DELAY_MINOR_MAX || (useAvg && avg >= BUS_DELAY_MINOR_AVG)) level = 'minor';
+
+    return { level, max, avg: Math.round(avg * 10) / 10, count: lateness.length };
+}
+
 // 全方向彙整的運行狀態（收折檢視的資訊卡用）：
-// 任一方向有車即為運行中，否則依次発待ち／運行終了顯示
+// 任一方向有車即為運行中（遅延レベルに応じて徽章と文言を変える）、
+// 否則依次発待ち／運行終了顯示
 function overallServiceInfo(patterns) {
     const total = (patterns || []).reduce((n, p) => n + patternActiveBusCount(p), 0);
     if (total > 0) {
+        const d = busDelayInfo(patterns);
+        if (d.level !== 'none') {
+            return {
+                badge: d.level === 'severe' ? '遅延' : 'やや遅れ',
+                cls: d.level === 'severe' ? 'status-delayed' : 'status-delayed-minor',
+                message: `現在、${total}台が運行中です。最大${d.max}分・平均${d.avg}分の遅れが発生しています。`
+            };
+        }
         return { badge: '運行中', cls: 'status-normal', message: `現在、${total}台の車両が運行中です。` };
     }
     const waiting = (patterns || []).map(patternServiceState).find(s => s.state === 'waiting');
@@ -684,8 +741,20 @@ export function generateBusDataFormat(targetId) {
         const isRealtime = (cached.source || '').includes('リアルタイム');
 
         if (service.state === 'running') {
-            flags = [false, false, false, false, false, isRealtime, !isRealtime];
-            desc = getPreviewStopInfo(targetId, cached) || `${cached.label}（${cached.source || 'データなし'}）`;
+            // 遅延は全方向をまとめて評価（カード面・パネル徽章・混合カードで同じ判定を共有）
+            const d = busDelayInfo(cached.patterns);
+            const base = getPreviewStopInfo(targetId, cached) || `${cached.label}（${cached.source || 'データなし'}）`;
+
+            if (d.level === 'severe') {
+                flags = [false, false, false, true, false, false, false];  // 打叉（大幅な遅れ）
+                desc = `最大${d.max}分の遅れ・${base}`;
+            } else if (d.level === 'minor') {
+                flags = [false, false, false, false, true, false, false];  // 三角形（遅れ小）
+                desc = `最大${d.max}分の遅れ・${base}`;
+            } else {
+                flags = [false, false, false, false, false, isRealtime, !isRealtime];
+                desc = base;
+            }
         } else if (service.state === 'waiting') {
             // 無車輛（首班未發車或班距空窗）：亮注意燈
             flags = [false, false, false, false, false, false, true];
@@ -742,18 +811,25 @@ export function generateBusLineSummary(targetId) {
 
     let status = '更新中...';
     let serviceState = 'unknown';
+    let delayInfo = { level: 'none', max: 0, avg: 0, count: 0 };
     if (hasData) {
         const prefs = getBusPrefs(targetId);
         const pattern = bd.patterns[Math.min(prefs.dir, bd.patterns.length - 1)];
         serviceState = patternServiceState(pattern).state;
-        if (serviceState === 'running') status = bd.source || 'バス';
-        else if (serviceState === 'waiting') status = '車両なし';
+        delayInfo = busDelayInfo(bd.patterns);
+
+        if (serviceState === 'running') {
+            if (delayInfo.level === 'severe') status = '遅延';
+            else if (delayInfo.level === 'minor') status = 'やや遅れ';
+            else status = bd.source || 'バス';
+        } else if (serviceState === 'waiting') status = '車両なし';
         else status = '運行終了';
     }
 
-    // 運行中→正常（綠燈）、車両なし／運行終了／資料未就緒→注意燈
+    // 運行中→遅延レベルに応じて緑／黄／赤、車両なし／運行終了／資料未就緒→注意燈
     // 卡片燈號需正確繼承公車的實際運行狀態，不能一律當綠燈
-    const isAttention = serviceState !== 'running';
+    const isRunning = serviceState === 'running';
+    const delayLevel = isRunning ? delayInfo.level : 'none';
 
     return {
         id: targetId,
@@ -761,16 +837,18 @@ export function generateBusLineSummary(targetId) {
         company: bd.label || 'バス',
         status: status,
         message: hasData ? fmt.desc : 'バス情報を取得しています...',
-        delay: 0,
+        delay: delayLevel === 'none' ? 0 : delayInfo.max,
         updateTime: fmt.updateTime,
         url: bd.url || '',
-        isDelayed: false,
+        isDelayed: delayLevel !== 'none',
         isError: false,
-        isAttention: isAttention,
+        isAttention: !isRunning,
         advancedDetails: [],
         isBusLine: true,
         hasData: hasData,
-        serviceState: serviceState
+        serviceState: serviceState,
+        delayLevel: delayLevel,
+        delayAvg: delayInfo.avg
     };
 }
 

@@ -2576,9 +2576,12 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                 // 混合卡片內的公車路線：以摘要列呈現，不走鐵道字典查詢
                 if (isBusTargetId(lineId)) {
                     const busLine = generateBusLineSummary(lineId);
-                    // 公車燈號依實際運行狀態繼承：運行中→綠燈、車両なし／運行終了／未就緒→注意燈
-                    if (busLine.serviceState === 'running') hasNormal = true;
-                    else hasAttention = true;
+                    // 公車燈號依實際運行狀態與遅延レベル繼承：
+                    // 車両なし／運行終了／未就緒→注意燈、遅延→赤、やや遅れ→黄、平常→綠
+                    if (busLine.serviceState !== 'running') hasAttention = true;
+                    else if (busLine.delayLevel === 'severe') hasSevere = true;
+                    else if (busLine.delayLevel === 'minor') hasDelay = true;
+                    else hasNormal = true;
                     detailedLines.push(busLine);
                     return;
                 }
