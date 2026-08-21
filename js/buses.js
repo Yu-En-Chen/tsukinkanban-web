@@ -413,11 +413,23 @@ function busDelayInfo(patterns) {
     return { level, max, avg: Math.round(avg * 10) / 10, count: lateness.length };
 }
 
+// 全方向をまとめた運行狀態（カード面の燈号・パネルの徽章・牌組の集計で共通に使う）
+// 1方向でも走行中の車両があれば「運行中」。カードは路線そのものを表すため、
+// 現在選んでいる方向だけで判定すると、他方向が走行中でも注意ランプになってしまう
+function overallServiceState(patterns) {
+    const total = (patterns || []).reduce((n, p) => n + patternActiveBusCount(p), 0);
+    if (total > 0) return { state: 'running', nextText: '', total };
+
+    const waiting = (patterns || []).map(patternServiceState).find(s => s.state === 'waiting');
+    if (waiting) return { state: 'waiting', nextText: waiting.nextText, total: 0 };
+    return { state: 'ended', nextText: '', total: 0 };
+}
+
 // 全方向彙整的運行狀態（收折檢視的資訊卡用）：
 // 任一方向有車即為運行中（遅延レベルに応じて徽章と文言を変える）、
 // 否則依次発待ち／運行終了顯示
 function overallServiceInfo(patterns) {
-    const total = (patterns || []).reduce((n, p) => n + patternActiveBusCount(p), 0);
+    const { total } = overallServiceState(patterns);
     if (total > 0) {
         const d = busDelayInfo(patterns);
         if (d.level !== 'none') {
@@ -780,9 +792,9 @@ export function generateBusDataFormat(targetId) {
     let updateTime = '--:--';
 
     if (cached && cached.patterns && cached.patterns.length > 0) {
-        const prefs = getBusPrefs(targetId);
-        const pattern = cached.patterns[Math.min(prefs.dir, cached.patterns.length - 1)];
-        const service = patternServiceState(pattern);
+        // 運行狀態は全方向をまとめて判定（パネルの徽章と同じ基準にそろえる）。
+        // 現在方向だけで見ると、他方向が走行中でも注意ランプになってしまう
+        const service = overallServiceState(cached.patterns);
         const isRealtime = (cached.source || '').includes('リアルタイム');
 
         if (service.state === 'running') {
@@ -858,9 +870,8 @@ export function generateBusLineSummary(targetId) {
     let serviceState = 'unknown';
     let delayInfo = { level: 'none', max: 0, avg: 0, count: 0 };
     if (hasData) {
-        const prefs = getBusPrefs(targetId);
-        const pattern = bd.patterns[Math.min(prefs.dir, bd.patterns.length - 1)];
-        serviceState = patternServiceState(pattern).state;
+        // カード面・パネルと同じく全方向で判定する
+        serviceState = overallServiceState(bd.patterns).state;
         delayInfo = busDelayInfo(bd.patterns);
 
         if (serviceState === 'running') {
