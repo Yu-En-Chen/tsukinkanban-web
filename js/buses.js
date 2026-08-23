@@ -11,7 +11,7 @@ const BUS_REFRESH_MIN_MS = 50000; // 快取視為新鮮的門檻（略低於輪�
 // バスは1台の遅れが後続に連鎖しないため、列車のような路線全体の乱れとしてではなく
 // 「単独の大きな遅れ」か「路線全体の底上げ（平均）」のどちらかで判定する
 const BUS_DELAY_MINOR_MAX = 6;   // 単台がこの分数以上 → 注意（黄）
-const BUS_DELAY_MINOR_AVG = 3;   // 平均がこの分数以上 → 注意（黄）
+const BUS_DELAY_MINOR_AVG = 4;   // 平均がこの分数以上 → 注意（黄）
 const BUS_DELAY_SEVERE_MAX = 10; // 単台がこの分数以上 → 遅延（赤）
 const BUS_DELAY_SEVERE_AVG = 5;  // 平均がこの分数以上 → 遅延（赤）
 // 平均は「路線全体の底上げ」を捉えるための指標なので、走行中が1台だけのときは

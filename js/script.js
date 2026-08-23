@@ -2834,15 +2834,45 @@ async function initApp() {
 // script type="module" 延遲執行，可直接呼叫啟動
 initApp();
 
-// 公車資料更新後：公車面板開啟中（含預覽卡）就地刷新；否則閒置時重建看板
-// 注意：不能以 appRailwayData 查詢判斷，背景重建會清掉 temp-search 的預覽卡片
-window.addEventListener('busDataUpdated', () => {
-    if (typeof window.__busPanelRefresh === 'function') {
-        window.__busPanelRefresh();
-        return;
+// 開啟中卡片的卡面（燈號與說明文）也要跟著公車資料更新
+// 面板だけ更新すると、上部のランプが「取得中」の注意ランプのまま取り残される
+function refreshOpenBusCardFace() {
+    if (!activeCardId) return;
+    const data = window.appRailwayData.find(c => c.id === activeCardId);
+    if (!data) return;
+
+    // 檢索プレビューの純公車カードは buildAndRender の対象外（temp-search はそのまま保持
+    // されるだけ）なので、ここで最新データから燈號と説明文を再計算する
+    const targetId = (data.targetLineIds || [])[0];
+    if (data.isBusCard && isBusTargetId(targetId)) {
+        const fmt = generateBusDataFormat(targetId);
+        data.statusFlags = fmt.flags;
+        data.desc = fmt.desc;
+        data.busData = fmt.busData;
+        data.updateTime = fmt.updateTime;
     }
-    if (!activeCardId && !document.body.classList.contains('universal-active') && window.__lastBuildArgs) {
+
+    const tag = detailContainer.querySelector('.status-tag');
+    if (tag) tag.innerHTML = window.getStatusIconsHTML(data.statusFlags || []);
+
+    const descEl = detailContainer.querySelector('.description');
+    if (descEl && data.desc) descEl.textContent = data.desc;
+}
+
+// 公車資料更新後：牌組卡片の集計燈號を再計算し、面板と卡面の両方を最新化する
+// 注意：不能以 appRailwayData 查詢判斷面板是否開啟，背景重建會清掉 temp-search 的預覽卡片
+window.addEventListener('busDataUpdated', () => {
+    const panelOpen = typeof window.__busPanelRefresh === 'function';
+
+    // 混合カード内のバス路線を含め、保存カードの集計燈號を最新化する
+    // 面板を開いている間は主畫面が背面に隠れているため、再構築しても見た目に影響しない
+    if (window.__lastBuildArgs && !document.body.classList.contains('universal-active')) {
         buildAndRender(...window.__lastBuildArgs);
+    }
+
+    if (panelOpen) {
+        window.__busPanelRefresh();
+        refreshOpenBusCardFace();
     }
 });
 
