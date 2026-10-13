@@ -262,7 +262,8 @@
     position: relative;
     isolation: isolate;
     --glow-rgb: 10 132 255;
-    --glow-halo: 0.4; /* 枠のすぐ外の光暈の濃さ */
+    --glow-a: 0.7;    /* 光の最大の濃さ */
+    --glow-halo: 0.3; /* 外側の光暈の強さ */
 }
 
 /* 地色・枠の上、文字の下に重ねる。JS が動かし始めるまでは表示しない
@@ -704,7 +705,8 @@
         border-color: rgba(100, 169, 255, 0.22);
         /* 暗い背景では明るめの色と強めの光暈で光って見えるように */
         --glow-rgb: 120 182 255;
-        --glow-halo: 0.55;
+        --glow-a: 0.75;
+        --glow-halo: 0.4;
     }
 
     .bus-delay.late {
