@@ -14,22 +14,22 @@ export const bottomCardConfig = {
 //實際預設牌組
 export const railwayData = [
     { 
-        id: 'tokyo', name: '遅れやすい通勤路線', kana: '', status: '正常運転', hex: '#009100', desc: '', detail: [''],
+        id: 'tokyo', name: '平日の通勤', kana: '', status: '正常運転', hex: '#009100', desc: '', detail: [''],
         
         targetLineIds: ['odpt.Railway:TokyoMetro.Tozai', 'odpt.Railway:TokyoMetro.Chiyoda', 'odpt.Railway:TokyoMetro.Fukutoshin', 'odpt.Railway:TokyoMetro.Hanzomon', 'odpt.Railway:Toei.Asakusa', 'odpt.Railway:Toei.Shinjuku']
     },
     { 
-        id: 'kanagawa', name: '都心・お出かけ路線', kana: '', status: '正常運転', hex: '#007979', desc: '', detail: [''],
+        id: 'kanagawa', name: '都心へお出かけ', kana: '', status: '正常運転', hex: '#007979', desc: '', detail: [''],
         
         targetLineIds: ['odpt.Railway:TokyoMetro.Ginza', 'odpt.Railway:TokyoMetro.Marunouchi', 'odpt.Railway:TokyoMetro.Hibiya', 'odpt.Railway:TokyoMetro.Yurakucho', 'odpt.Railway:Toei.Oedo', 'odpt.Railway:Toei.Mita']
     },
     { 
-        id: 'saitama', name: '郊外・横浜方面の路線', kana: '', status: '正常運転', hex: '#BB3D00', desc: '', detail: [''],
+        id: 'saitama', name: '週末の遠出', kana: '', status: '正常運転', hex: '#BB3D00', desc: '', detail: [''],
         
         targetLineIds: ['odpt.Railway:MIR.TsukubaExpress', 'odpt.Railway:TokyoMetro.Namboku', 'odpt.Railway:TWR.Rinkai', 'odpt.Railway:YokohamaMunicipal.Blue', 'odpt.Railway:YokohamaMunicipal.Green', 'odpt.Railway:Tobu.Tojo']
     },
     { 
-        id: 'chiba', name: 'モノレール・路面電車', kana: '', status: '正常運転', hex: '#FFD306', desc: '', detail: [''],
+        id: 'chiba', name: '子どもの通学', kana: '', status: '正常運転', hex: '#FFD306', desc: '', detail: [''],
         
         targetLineIds: ['odpt.Railway:Toei.NipporiToneri', 'odpt.Railway:TamaMonorail.TamaMonorail', 'odpt.Railway:Toei.Arakawa']
     },
