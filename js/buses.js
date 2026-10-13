@@ -981,23 +981,28 @@ function busMarkerHtml(bus, stop, chip = false) {
 const BUS_VEHICLE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6 2 7"/><path d="M10 6h4"/><path d="m22 7-2-1"/><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M8 15h.01"/><path d="M16 15h.01"/><path d="M6 19v2"/><path d="M18 21v-2"/></svg>`;
 
 function busVehicleRowInner(bus, stop) {
-    return `<span class="bus-water" aria-hidden="true"><span class="bus-water-fill"></span></span>`
+    return BUS_WATER_BODY
         + `<span class="bus-vehicle-icon" aria-hidden="true">${BUS_VEHICLE_ICON}</span>`
         + `<span class="bus-vehicle-main">${busPlatePillHtml(bus, stop, true)}</span>`
-        + busOccHtml(bus.occupancy)
-        + `<span class="bus-water-neck" aria-hidden="true">${BUS_WATER_NECK}</span>`;
+        + busOccHtml(bus.occupancy);
 }
 
 // ============================================================================
-// 水の演出：車輛膠囊（上）の填色が下へ流れ落ち、曲線の頸部を通って
-// 停留所膠囊（下）で中央から左右へ広がる
-// transform／opacity だけで動かし（合成のみで再描画なし）、柔らかい縁は
-// filter: blur ではなく透明へ抜けるグラデーションで表現する
-// 演出は .bus-water-anim が付いたときだけ一度再生し、既定は満水の最終狀態
+// 水の演出：車輛膠囊（上）と直下の停留所膠囊（下）を一つの水の塊として融合させる
+// ・形：上下の膠囊＋その間の液橋。液橋の内側の曲線は、膠囊の外側の圓角
+//   （半径 R＝高さ/2）から求めた半径 r＝R の円で、上下両端の円弧に接する
+//   （メタボールの接続と同じ幾何）。寸法は実測して CSS 変数へ渡す
+// ・色：塊の中は不透明色で描き、塊全体に透明度をかける（重なり部分が濃くならない）
+// ・動き：下は中央から左右へ切り開き、同時に上は流れ落ち、液橋が中央から広がって融合
+//   transform／opacity のみで動かす（合成のみ）。柔らかい縁はコサイン曲線の
+//   グラデーション（傾きが折れないのでマッハバンドが出ない）
+// ・演出は .bus-water-anim が付いたときだけ一度再生し、既定は融合後の最終狀態
 // ============================================================================
-
-// 頸部：上下の膠囊へ水平に接し、中央がくびれた液橋の形
-const BUS_WATER_NECK = `<svg viewBox="0 0 80 8" preserveAspectRatio="none"><path d="M0 0H80C58 0 52 2.4 52 4S58 8 80 8H0C22 8 28 5.6 28 4S22 0 0 0Z"/></svg>`;
+const BUS_WATER_BODY = '<span class="bus-water-body" aria-hidden="true">'
+    + '<span class="bw-part bw-top"><span class="bw-fill"></span></span>'
+    + '<span class="bw-part bw-neck"><span class="bw-fill"></span></span>'
+    + '<span class="bw-part bw-bot"><span class="bw-fill"></span></span>'
+    + '</span>';
 
 function busMarkerKey(m) {
     return `${m.srcStop.name}|${m.bus.number || ''}`;
@@ -1012,31 +1017,59 @@ function createBusMarkerRow(m, animate) {
     return marker;
 }
 
-// 車輛膠囊の直下にある停留所膠囊へ「着水」の填色を同期する
-// 直上の車両が変わった列だけ入れ替え、車両が去った列は水を引かせて消す
-function syncBusWaterTargets(rows) {
-    rows.forEach(row => {
-        const prev = row.previousElementSibling;
+// 液橋の幾何を実測から求める
+// 膠囊の高さ H・間隔 g、両端の圓角 R＝H/2 の円（中心間距離 d＝H+g）に
+// 外接する半径 r の円が液橋の内側の曲線。r は外側の圓角と揃えて R とする
+function measureBusWater(list) {
+    const marker = list.querySelector('.bus-marker-row');
+    const next = marker && marker.nextElementSibling;
+    if (!next || !marker.offsetHeight) return; // 未配置（DOM に入る前）は既定値のまま
+    const H = marker.offsetHeight;
+    const g = next.offsetTop - marker.offsetTop - H;
+    const R = H / 2, r = R, d = H + g;
+    const h = Math.sqrt(Math.max(0, (R + r) ** 2 - (d / 2) ** 2));
+    const top = R + R * (d / 2) / (R + r); // 液橋の上端＝上の円弧との接点
+    const vars = {
+        '--bw-h': H, '--bw-g': g, '--bw-r': r,
+        '--bw-fx': R - h,              // 曲線の円の中心（膠囊の端からの水平位置）
+        '--bw-t': top,
+        '--bw-bh': 2 * H + g - 2 * top // 液橋の高さ
+    };
+    Object.entries(vars).forEach(([k, v]) => list.style.setProperty(k, `${v.toFixed(2)}px`));
+}
+
+// 初めて配置されたとき・幅が変わったときに測り直す
+const busWaterObserved = new WeakSet();
+function observeBusWater(list) {
+    if (busWaterObserved.has(list) || typeof ResizeObserver === 'undefined') return;
+    busWaterObserved.add(list);
+    new ResizeObserver(() => measureBusWater(list)).observe(list);
+}
+
+// 車輛膠囊と直下の停留所膠囊の融合狀態を同期する
+// 車輛膠囊の直下が停留所なら融合（液橋＋下の膠囊の水）、停留所側は枠と地色を水に溶かす
+// 直上の車両が変わった停留所だけ更新し、車両が去った停留所は元の膠囊へ戻る
+function syncBusWaterTargets(list) {
+    const items = [...list.children];
+    items.forEach((el, i) => {
+        if (!el.classList.contains('bus-marker-row')) return;
+        const next = items[i + 1];
+        el.classList.toggle('bus-water-paired', !!next && next.classList.contains('bus-stop-row'));
+    });
+    items.forEach((row, i) => {
+        if (!row.classList.contains('bus-stop-row')) return;
+        const prev = items[i - 1];
         const src = prev && prev.classList.contains('bus-marker-row') ? prev : null;
         const key = src ? src.dataset.waterKey : '';
         if ((row.dataset.waterKey || '') === key) return;
+        const wasTarget = !!row.dataset.waterKey;
         row.dataset.waterKey = key;
-
-        const old = row.querySelector(':scope > .bus-water');
-        if (old) {
-            old.classList.add('bus-water-drain');
-            setTimeout(() => old.remove(), 450);
-        }
-        if (!src) return;
-
-        const water = document.createElement('span');
-        water.className = 'bus-water';
-        water.setAttribute('aria-hidden', 'true');
-        water.innerHTML = '<span class="bus-water-fill"></span>';
-        row.classList.add('bus-water-target');
-        row.classList.toggle('bus-water-anim', src.classList.contains('bus-water-anim'));
-        row.prepend(water);
+        row.classList.toggle('bus-water-target', !!src);
+        // 膠囊が水に溶ける演出：新たに融合し、車両側も演出するときだけ
+        row.classList.toggle('bus-water-anim', !!src && !wasTarget && src.classList.contains('bus-water-anim'));
     });
+    observeBusWater(list);
+    measureBusWater(list);
 }
 
 // 點擊站名 → 底部選單：Google Maps 導航／該站總覽
@@ -1375,7 +1408,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
                     stopsList.insertBefore(marker, row);
                 });
             });
-            syncBusWaterTargets(rows);
+            syncBusWaterTargets(stopsList);
         }
 
         // 2. 時間膠囊與站名顏色
@@ -1789,7 +1822,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
 
             stopsList.appendChild(row);
         });
-        syncBusWaterTargets([...stopsList.querySelectorAll('.bus-stop-row')]);
+        syncBusWaterTargets(stopsList);
 
         // 記下目前的巴士位置配置，供就地更新比對
         lastMarkerSig = markerSignature(pattern, view);

@@ -87,12 +87,14 @@
 }
 
 .bus-stop-row {
+    --cap-bg: rgba(0, 0, 0, 0.04);
+    --cap-bd: rgba(0, 0, 0, 0.06);
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 9px 16px;
-    background: rgba(0, 0, 0, 0.04);
-    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: var(--cap-bg);
+    border: 1px solid var(--cap-bd);
     /* 全圓角長膠囊（與方向切換塊、全站的膠囊語言一致） */
     border-radius: 999px;
 }
@@ -222,12 +224,14 @@
    內距・圓角・高度與 .bus-stop-row 一致，以淡藍底＋巴士圖示區別於停留所
    左側車牌・表定偏差、右側擁擠度 */
 .bus-marker-row {
+    --cap-bg: rgba(10, 132, 255, 0.08);
+    --cap-bd: rgba(10, 132, 255, 0.22);
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 9px 16px;
-    background: rgba(10, 132, 255, 0.08);
-    border: 1px solid rgba(10, 132, 255, 0.22);
+    background: var(--cap-bg);
+    border: 1px solid var(--cap-bd);
     border-radius: 999px;
     font-weight: 700;
     font-size: 0.95em;
@@ -255,150 +259,227 @@
     flex-shrink: 0;
 }
 
-/* --- 水の演出：車輛膠囊の填色が流れ落ち → 頸部 → 停留所膠囊で左右へ広がる ---
-   transform／opacity のみ動かす（合成だけで再描画なし）。柔らかい縁は
-   filter: blur ではなく透明へ抜けるグラデーションで表現する */
+/* --- 水の演出：車輛膠囊と直下の停留所膠囊が一つの水の塊に融合する ---
+   形：上下の膠囊＋液橋。液橋の内側の曲線は外側の圓角（R＝高さ/2）と同じ半径の円で
+   上下の円弧に接する（幾何 --bw-* は JS が実測して設定。既定値は高さ 41px・間隔 6px）
+   色：塊の中は不透明色で描き、塊全体に透明度をかける（重なり部分が濃くならない）
+   柔らかい縁：コサイン曲線のグラデーション（傾きが折れないのでマッハバンドが出ない）
+   動き：transform／opacity のみ（合成のみ）。膠囊の地色が溶けるところだけ色の遷移 */
 .bus-stops-list {
-    --bus-water: rgba(10, 132, 255, 0.13);
-    --bus-water-low: rgba(10, 132, 255, 0.1);
-    --bus-water-crest: rgba(10, 132, 255, 0.18);
-    --bus-water-neck: rgba(10, 132, 255, 0.18);
+    --bw-rgb: 10 132 255;
+    --bw-alpha: 0.15;
+    --bw-h: 41px;
+    --bw-g: 6px;
+    --bw-r: 20.5px;
+    --bw-fx: -13.10px;
+    --bw-t: 32.25px;
+    --bw-bh: 23.50px;
 }
 
-.bus-marker-row,
-.bus-stop-row.bus-water-target {
+.bus-marker-row {
     position: relative;
     isolation: isolate;
 }
 
-/* 頸部が下の膠囊の枠線の上に描かれるよう、車輛膠囊を前面に */
-.bus-marker-row {
+/* 下の膠囊は水の塊より前面に置く（文字が水の下に沈まない） */
+.bus-stop-row.bus-water-target {
+    position: relative;
     z-index: 1;
 }
 
-/* 填色層：膠囊の形で裁切し、文字の背面に敷く */
-.bus-water {
+/* 融合後：上下の膠囊の地色と枠は水に溶けて、一つの形になる
+   溶ける演出は地色と枠を同じ見た目の疑似要素へ移し、その不透明度だけを動かす
+   （背景色の遷移は毎フレーム再描画になるため使わない） */
+.bus-marker-row.bus-water-paired,
+.bus-stop-row.bus-water-target {
+    background-color: transparent;
+    border-color: transparent;
+}
+
+.bus-marker-row.bus-water-paired::before,
+.bus-stop-row.bus-water-target::before {
+    content: '';
     position: absolute;
-    inset: 0;
+    inset: -1px;
     border-radius: inherit;
-    overflow: hidden;
+    background: var(--cap-bg);
+    border: 1px solid var(--cap-bd);
     z-index: -1;
+    opacity: 0;
     pointer-events: none;
 }
 
-.bus-water-fill {
+/* 水の塊：上の膠囊の上端から下の膠囊の下端まで（枠線ぶん外側まで覆う） */
+.bus-water-body {
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    height: calc(var(--bw-h) * 2 + var(--bw-g));
+    z-index: -1;
+    opacity: var(--bw-alpha);
+    pointer-events: none;
+}
+
+.bw-part {
+    position: absolute;
+    left: 0;
+    right: 0;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.bw-fill {
     position: absolute;
 }
 
-/* 上（車輛）：前縁は表面張力の盛り上がり → 透明へ抜ける
-   満水時は 0〜62.5%（＝膠囊の高さ全体）が均一な水色 */
-.bus-marker-row .bus-water-fill {
+.bw-top {
+    top: 0;
+    height: var(--bw-h);
+    border-radius: 999px;
+}
+
+.bw-bot {
+    top: calc(var(--bw-h) + var(--bw-g));
+    height: var(--bw-h);
+    border-radius: 999px;
+}
+
+/* 液橋：上下の円弧に接する半径 --bw-r の円で左右の端をくり抜く
+   （左右それぞれ幅 60% のマスクを重ね、中央は両方とも不透明） */
+.bw-neck {
+    top: var(--bw-t);
+    height: var(--bw-bh);
+    -webkit-mask: radial-gradient(circle at var(--bw-fx) 50%, transparent calc(var(--bw-r) - 0.5px), #000 calc(var(--bw-r) + 0.5px)) left / 60% 100% no-repeat,
+        radial-gradient(circle at calc(100% - var(--bw-fx)) 50%, transparent calc(var(--bw-r) - 0.5px), #000 calc(var(--bw-r) + 0.5px)) right / 60% 100% no-repeat;
+    mask: radial-gradient(circle at var(--bw-fx) 50%, transparent calc(var(--bw-r) - 0.5px), #000 calc(var(--bw-r) + 0.5px)) left / 60% 100% no-repeat,
+        radial-gradient(circle at calc(100% - var(--bw-fx)) 50%, transparent calc(var(--bw-r) - 0.5px), #000 calc(var(--bw-r) + 0.5px)) right / 60% 100% no-repeat;
+}
+
+/* 液橋と下の膠囊は融合しているときだけ */
+.bus-marker-row:not(.bus-water-paired) .bw-neck,
+.bus-marker-row:not(.bus-water-paired) .bw-bot {
+    display: none;
+}
+
+/* 上：前縁がコサインで抜ける水の層（満水時は膠囊の高さ全体が均一） */
+.bw-top .bw-fill {
     left: 0;
     right: 0;
     top: 0;
-    height: 160%;
-    background: linear-gradient(to bottom, var(--bus-water) 0%, var(--bus-water) 62.5%, var(--bus-water-crest) 70%, transparent 100%);
+    height: 170%;
+    background: linear-gradient(to bottom,
+        rgb(var(--bw-rgb)) 58.82%,
+        rgb(var(--bw-rgb) / 0.962) 63.97%,
+        rgb(var(--bw-rgb) / 0.854) 69.12%,
+        rgb(var(--bw-rgb) / 0.691) 74.26%,
+        rgb(var(--bw-rgb) / 0.500) 79.41%,
+        rgb(var(--bw-rgb) / 0.309) 84.56%,
+        rgb(var(--bw-rgb) / 0.146) 89.71%,
+        rgb(var(--bw-rgb) / 0.038) 94.85%,
+        rgb(var(--bw-rgb) / 0) 100.00%);
 }
 
-/* 下（停留所）：左右の縁は盛り上がり → 透明へ抜ける
-   満水時は 16.7〜83.3%（＝膠囊の幅全体）が均一な水色 */
-.bus-stop-row .bus-water-fill {
+/* 下・液橋：左右の縁がコサインで抜ける山型の層（満水時は幅全体が均一） */
+.bw-bot .bw-fill,
+.bw-neck .bw-fill {
     top: 0;
     bottom: 0;
-    left: -25%;
-    width: 150%;
-    background: linear-gradient(to right, transparent 0%, var(--bus-water-crest) 10%, var(--bus-water-low) 16.7%, var(--bus-water-low) 83.3%, var(--bus-water-crest) 90%, transparent 100%);
+    left: -30%;
+    width: 160%;
+    background: linear-gradient(to right,
+        rgb(var(--bw-rgb) / 0) 0.00%,
+        rgb(var(--bw-rgb) / 0.038) 2.34%,
+        rgb(var(--bw-rgb) / 0.146) 4.69%,
+        rgb(var(--bw-rgb) / 0.309) 7.03%,
+        rgb(var(--bw-rgb) / 0.500) 9.38%,
+        rgb(var(--bw-rgb) / 0.691) 11.72%,
+        rgb(var(--bw-rgb) / 0.854) 14.06%,
+        rgb(var(--bw-rgb) / 0.962) 16.41%,
+        rgb(var(--bw-rgb)) 18.75%,
+        rgb(var(--bw-rgb)) 81.25%,
+        rgb(var(--bw-rgb) / 0.962) 83.59%,
+        rgb(var(--bw-rgb) / 0.854) 85.94%,
+        rgb(var(--bw-rgb) / 0.691) 88.28%,
+        rgb(var(--bw-rgb) / 0.500) 90.62%,
+        rgb(var(--bw-rgb) / 0.309) 92.97%,
+        rgb(var(--bw-rgb) / 0.146) 95.31%,
+        rgb(var(--bw-rgb) / 0.038) 97.66%,
+        rgb(var(--bw-rgb) / 0) 100.00%);
 }
 
-/* 頸部：自分の下枠線・間隔 6px・次の膠囊の上枠線をまたぐ液橋 */
-.bus-water-neck {
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    width: 80px;
-    height: 8px;
-    margin-left: -40px;
-    pointer-events: none;
-    transform-origin: 50% 0;
+/* 一度だけ再生：下が中央から切り開くのと同時に上が流れ落ち、
+   液橋が中央から広がって融合、最後に膠囊の地色と枠が水に溶ける（約 1.3 秒） */
+.bus-water-anim .bw-bot .bw-fill {
+    animation: bwSplit 1.15s var(--premium-ease, cubic-bezier(0.19, 1, 0.22, 1)) both;
 }
 
-.bus-water-neck svg {
-    display: block;
-    width: 100%;
-    height: 100%;
+.bus-water-anim .bw-top .bw-fill {
+    animation: bwDrop 0.85s cubic-bezier(0.45, 0, 0.15, 1) 0.06s both;
 }
 
-.bus-water-neck path {
-    fill: var(--bus-water-neck);
+.bus-water-anim .bw-neck .bw-fill {
+    animation: bwSplit 0.95s var(--ios-snap, cubic-bezier(0.16, 1, 0.3, 1)) 0.4s both;
 }
 
-/* 一度だけ再生：流れ落ちる（0〜0.6s）→ 頸部が伸びる → 着水して左右へ広がる */
-.bus-marker-row.bus-water-anim .bus-water-fill {
-    animation: busWaterDrop 0.6s cubic-bezier(0.55, 0, 0.35, 1) both;
+.bus-marker-row.bus-water-anim.bus-water-paired::before {
+    animation: bwMelt 0.6s ease 0.32s both;
 }
 
-.bus-marker-row.bus-water-anim .bus-water-neck {
-    animation: busWaterNeck 0.32s cubic-bezier(0.33, 1, 0.68, 1) 0.45s both;
+/* 下の膠囊は切り開きと同時に地色を溶かし始める（灰色と水色が混ざって濁らないように） */
+.bus-stop-row.bus-water-target.bus-water-anim::before {
+    animation: bwMelt 0.7s ease 0.04s both;
 }
 
-.bus-stop-row.bus-water-anim .bus-water-fill {
-    animation: busWaterSpread 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.62s both;
+/* 車両が去った停留所は元の膠囊へ戻る */
+.bus-stop-row {
+    transition: background-color 0.5s ease, border-color 0.5s ease;
 }
 
-/* 車両が去った停留所は水が引くように消える */
-.bus-water.bus-water-drain {
-    animation: busWaterDrain 0.45s ease forwards;
-}
-
-@keyframes busWaterDrop {
+@keyframes bwDrop {
     from {
         transform: translateY(-100%);
     }
 
     to {
-        transform: translateY(0);
+        transform: none;
     }
 }
 
-@keyframes busWaterNeck {
+/* 切り開き：細いが縁の柔らかい光から始まり（縮めすぎると縁が硬くなる）、
+   不透明度は序盤ですばやく立ち上げる */
+@keyframes bwSplit {
     from {
-        transform: scale(0.3, 0);
+        transform: scaleX(0.14);
         opacity: 0;
     }
 
+    30% {
+        opacity: 1;
+    }
+
     to {
-        transform: scale(1, 1);
+        transform: none;
         opacity: 1;
     }
 }
 
-@keyframes busWaterSpread {
+@keyframes bwMelt {
     from {
-        transform: scaleX(0.12);
-        opacity: 0;
-    }
-
-    25% {
         opacity: 1;
     }
 
-    to {
-        transform: scaleX(1);
-        opacity: 1;
-    }
-}
-
-@keyframes busWaterDrain {
     to {
         opacity: 0;
     }
 }
 
-/* 動きを減らす設定：演出を省いて満水の最終狀態だけ表示 */
+/* 動きを減らす設定：演出を省いて融合後の最終狀態だけ表示 */
 @media (prefers-reduced-motion: reduce) {
 
-    .bus-water-anim .bus-water-fill,
-    .bus-water-anim .bus-water-neck {
+    .bus-water-anim .bw-fill,
+    .bus-marker-row.bus-water-anim.bus-water-paired::before,
+    .bus-stop-row.bus-water-target.bus-water-anim::before {
         animation: none;
     }
 }
@@ -751,8 +832,8 @@
     }
 
     .bus-stop-row {
-        background: rgba(0, 0, 0, 0.25);
-        border-color: rgba(255, 255, 255, 0.05);
+        --cap-bg: rgba(0, 0, 0, 0.25);
+        --cap-bd: rgba(255, 255, 255, 0.05);
     }
 
     .bus-eta-pill.arriving {
@@ -805,15 +886,13 @@
     }
 
     .bus-marker-row {
-        background: rgba(10, 132, 255, 0.14);
-        border-color: rgba(100, 169, 255, 0.22);
+        --cap-bg: rgba(10, 132, 255, 0.14);
+        --cap-bd: rgba(100, 169, 255, 0.22);
     }
 
     .bus-stops-list {
-        --bus-water: rgba(64, 156, 255, 0.2);
-        --bus-water-low: rgba(64, 156, 255, 0.15);
-        --bus-water-crest: rgba(100, 169, 255, 0.28);
-        --bus-water-neck: rgba(64, 156, 255, 0.26);
+        --bw-rgb: 64 156 255;
+        --bw-alpha: 0.22;
     }
 
     .bus-delay.late {
