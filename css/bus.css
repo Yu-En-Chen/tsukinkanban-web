@@ -218,14 +218,41 @@
 /* 運行狀態卡（無車／運行終了）：樣式完全沿用列車的 extension-route-card，
    此處不另外覆蓋 */
 
-/* 行駛中的巴士標記（位於前一站與本站之間的空白處）：
-   車牌與表定偏差包在與時間相同的膠囊裡，擁擠度接在膠囊後 */
+/* 行駛中的巴士（位於前一站與本站之間）：與停留所列同形的獨立膠囊
+   內距・圓角・高度與 .bus-stop-row 一致，以淡藍底＋巴士圖示區別於停留所
+   左側車牌・表定偏差、右側擁擠度 */
 .bus-marker-row {
     display: flex;
     align-items: center;
-    padding: 2px 16px;
+    gap: 10px;
+    padding: 9px 16px;
+    background: rgba(10, 132, 255, 0.08);
+    border: 1px solid rgba(10, 132, 255, 0.22);
+    border-radius: 999px;
     font-weight: 700;
     font-size: 0.95em;
+}
+
+.bus-vehicle-icon {
+    display: flex;
+    flex-shrink: 0;
+    color: #0a84ff;
+}
+
+.bus-vehicle-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.bus-vehicle-main {
+    flex-grow: 1;
+    min-width: 0;
+    display: flex;
+}
+
+.bus-marker-row .bus-occ {
+    margin-left: 0;
+    flex-shrink: 0;
 }
 
 /* 列表內的 chip 與站名字級一致 */
@@ -624,8 +651,14 @@
         color: #30d158;
     }
 
-    .bus-plate {
+    .bus-plate,
+    .bus-vehicle-icon {
         color: #64a9ff;
+    }
+
+    .bus-marker-row {
+        background: rgba(10, 132, 255, 0.14);
+        border-color: rgba(100, 169, 255, 0.22);
     }
 
     .bus-delay.late {

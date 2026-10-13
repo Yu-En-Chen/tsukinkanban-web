@@ -953,9 +953,8 @@ function busOccHtml(occupancy) {
     return `<span class="bus-occ${occClass}">${occupancy}</span>`;
 }
 
-function busMarkerHtml(bus, stop, chip = false) {
-    const occHtml = busOccHtml(bus.occupancy);
-
+// 車牌＋表定偏差の膠囊
+function busPlatePillHtml(bus, stop, chip = false) {
     let diffHtml = '';
     if (stop) {
         const diff = busDiffMinutes(stop);
@@ -966,10 +965,24 @@ function busMarkerHtml(bus, stop, chip = false) {
         }
     }
 
-    // 車牌與偏差用膠囊包起來，擁擠度接在膠囊後
     // chip：資訊卡內使用，去掉膠囊外框融入卡片
     const cls = chip ? 'bus-eta-pill bus-plate-pill chip' : 'bus-eta-pill bus-plate-pill';
-    return `<span class="${cls}"><span class="bus-plate">${bus.number || ''}</span>${diffHtml}</span>${occHtml}`;
+    return `<span class="${cls}"><span class="bus-plate">${bus.number || ''}</span>${diffHtml}</span>`;
+}
+
+// 車牌與偏差用膠囊包起來，擁擠度接在膠囊後（收折 capsule 的副列用）
+function busMarkerHtml(bus, stop, chip = false) {
+    return busPlatePillHtml(bus, stop, chip) + busOccHtml(bus.occupancy);
+}
+
+// 展開列表的車輛膠囊：與停留所列同形的獨立一列（位於前一站與本站之間）
+// 左：巴士圖示＋車牌・偏差、右：擁擠度（對應停留所列的「站名左・時間右」）
+const BUS_VEHICLE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6 2 7"/><path d="M10 6h4"/><path d="m22 7-2-1"/><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M8 15h.01"/><path d="M16 15h.01"/><path d="M6 19v2"/><path d="M18 21v-2"/></svg>`;
+
+function busVehicleRowInner(bus, stop) {
+    return `<span class="bus-vehicle-icon" aria-hidden="true">${BUS_VEHICLE_ICON}</span>`
+        + `<span class="bus-vehicle-main">${busPlatePillHtml(bus, stop, true)}</span>`
+        + busOccHtml(bus.occupancy);
 }
 
 // 點擊站名 → 底部選單：Google Maps 導航／該站總覽
@@ -1301,7 +1314,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
                 collectMarkers(pattern, stop, false).forEach(m => {
                     const marker = document.createElement('div');
                     marker.className = 'bus-marker-row bus-marker-in';
-                    marker.innerHTML = busMarkerHtml(m.bus, m.srcStop, true);
+                    marker.innerHTML = busVehicleRowInner(m.bus, m.srcStop);
                     stopsList.insertBefore(marker, row);
                 });
             });
@@ -1685,11 +1698,11 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         const view = computeView(pattern);
 
         view.stopsToShow.forEach((stop, idx) => {
-            // 有巴士行駛在前一站與本站之間時，於該站上方標示車牌與擁擠度
+            // 有巴士行駛在前一站與本站之間時，於該站上方插入一列車輛膠囊
             collectMarkers(pattern, stop, false).forEach(m => {
                 const marker = document.createElement('div');
                 marker.className = 'bus-marker-row';
-                marker.innerHTML = busMarkerHtml(m.bus, m.srcStop, true);
+                marker.innerHTML = busVehicleRowInner(m.bus, m.srcStop);
                 stopsList.appendChild(marker);
             });
 
