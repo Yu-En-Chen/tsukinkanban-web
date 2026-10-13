@@ -565,10 +565,11 @@ function busCollapsedCardInner(busData, prefs) {
 
 // 混合卡片內的公車路線：直接渲染完整的公車詳細面板（無「既存追加／新規作成」按鈕）
 // 收折卡點一下即「原地」展開為完整路線（方向切換塊＋全停留所），不跳轉至其他卡片
-export function renderBusLineCard(targetId) {
+// quiet：背景の再構築（列車情報の更新など）では水の演出を再生しない
+export function renderBusLineCard(targetId, { quiet = false } = {}) {
     const wrapper = document.createElement('div');
     const data = { targetLineIds: [targetId], busData: window.GlobalBusData[targetId] || null };
-    renderBusDetailPanel(data, wrapper, { isPreview: false });
+    renderBusDetailPanel(data, wrapper, { isPreview: false, quiet });
     // 混合卡片開啟時確保有最新詳細資料（不足時抓取，完成後 busDataUpdated 刷新）
     ensureBusRouteData(targetId);
     return wrapper;
@@ -980,9 +981,62 @@ function busMarkerHtml(bus, stop, chip = false) {
 const BUS_VEHICLE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6 2 7"/><path d="M10 6h4"/><path d="m22 7-2-1"/><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M8 15h.01"/><path d="M16 15h.01"/><path d="M6 19v2"/><path d="M18 21v-2"/></svg>`;
 
 function busVehicleRowInner(bus, stop) {
-    return `<span class="bus-vehicle-icon" aria-hidden="true">${BUS_VEHICLE_ICON}</span>`
+    return `<span class="bus-water" aria-hidden="true"><span class="bus-water-fill"></span></span>`
+        + `<span class="bus-vehicle-icon" aria-hidden="true">${BUS_VEHICLE_ICON}</span>`
         + `<span class="bus-vehicle-main">${busPlatePillHtml(bus, stop, true)}</span>`
-        + busOccHtml(bus.occupancy);
+        + busOccHtml(bus.occupancy)
+        + `<span class="bus-water-neck" aria-hidden="true">${BUS_WATER_NECK}</span>`;
+}
+
+// ============================================================================
+// 水の演出：車輛膠囊（上）の填色が下へ流れ落ち、曲線の頸部を通って
+// 停留所膠囊（下）で中央から左右へ広がる
+// transform／opacity だけで動かし（合成のみで再描画なし）、柔らかい縁は
+// filter: blur ではなく透明へ抜けるグラデーションで表現する
+// 演出は .bus-water-anim が付いたときだけ一度再生し、既定は満水の最終狀態
+// ============================================================================
+
+// 頸部：上下の膠囊へ水平に接し、中央がくびれた液橋の形
+const BUS_WATER_NECK = `<svg viewBox="0 0 80 8" preserveAspectRatio="none"><path d="M0 0H80C58 0 52 2.4 52 4S58 8 80 8H0C22 8 28 5.6 28 4S22 0 0 0Z"/></svg>`;
+
+function busMarkerKey(m) {
+    return `${m.srcStop.name}|${m.bus.number || ''}`;
+}
+
+// animate=false：最終狀態で表示（同じ車両を背景の再構築で再演出しない）
+function createBusMarkerRow(m, animate) {
+    const marker = document.createElement('div');
+    marker.className = animate ? 'bus-marker-row bus-water-anim' : 'bus-marker-row';
+    marker.dataset.waterKey = busMarkerKey(m);
+    marker.innerHTML = busVehicleRowInner(m.bus, m.srcStop);
+    return marker;
+}
+
+// 車輛膠囊の直下にある停留所膠囊へ「着水」の填色を同期する
+// 直上の車両が変わった列だけ入れ替え、車両が去った列は水を引かせて消す
+function syncBusWaterTargets(rows) {
+    rows.forEach(row => {
+        const prev = row.previousElementSibling;
+        const src = prev && prev.classList.contains('bus-marker-row') ? prev : null;
+        const key = src ? src.dataset.waterKey : '';
+        if ((row.dataset.waterKey || '') === key) return;
+        row.dataset.waterKey = key;
+
+        const old = row.querySelector(':scope > .bus-water');
+        if (old) {
+            old.classList.add('bus-water-drain');
+            setTimeout(() => old.remove(), 450);
+        }
+        if (!src) return;
+
+        const water = document.createElement('span');
+        water.className = 'bus-water';
+        water.setAttribute('aria-hidden', 'true');
+        water.innerHTML = '<span class="bus-water-fill"></span>';
+        row.classList.add('bus-water-target');
+        row.classList.toggle('bus-water-anim', src.classList.contains('bus-water-anim'));
+        row.prepend(water);
+    });
 }
 
 // 點擊站名 → 底部選單：Google Maps 導航／該站總覽
@@ -1111,6 +1165,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
     let swipeArea = null;     // 滑動切換的位移範圍（停留所列表）
     let swipeClip = null;     // 位移範圍的裁切層（拖曳時左右邊緣線性淡出）
     let sliderScrollMemo = 0; // 方向選單的捲動位置（跨重繪保留，避免切換時跳回 0）
+    let waterQuiet = !!opts.quiet; // 初回描画で水の演出を省く（背景の再構築）
 
     const container = document.createElement('div');
     container.className = 'bus-panel-container';
@@ -1308,16 +1363,19 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         const markerSig = markerSignature(pattern, view);
         if (markerSig !== lastMarkerSig) {
             lastMarkerSig = markerSig;
+            // 位置が変わった車両だけ淡入＋水の演出、留まっている車両は最終狀態のまま
+            const prevKeys = new Set([...stopsList.querySelectorAll('.bus-marker-row')].map(m => m.dataset.waterKey));
             stopsList.querySelectorAll('.bus-marker-row').forEach(m => m.remove());
             view.stopsToShow.forEach((stop, idx) => {
                 const row = rows[idx];
                 collectMarkers(pattern, stop, false).forEach(m => {
-                    const marker = document.createElement('div');
-                    marker.className = 'bus-marker-row bus-marker-in';
-                    marker.innerHTML = busVehicleRowInner(m.bus, m.srcStop);
+                    const isNew = !prevKeys.has(busMarkerKey(m));
+                    const marker = createBusMarkerRow(m, isNew);
+                    if (isNew) marker.classList.add('bus-marker-in');
                     stopsList.insertBefore(marker, row);
                 });
             });
+            syncBusWaterTargets(rows);
         }
 
         // 2. 時間膠囊與站名顏色
@@ -1514,6 +1572,10 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         container.innerHTML = '';
         const busData = data.busData || {};
         const patterns = getPatterns();
+        // 水の演出は面板を開いた・方向を切り替えたときに一度だけ再生
+        // （背景の再構築で作り直された面板の初回描画では再生しない）
+        const animateWater = !waterQuiet;
+        waterQuiet = false;
 
         // 由站牌總覽跳轉而來時，依行き先自動切到對應方向
         // （資料尚未載入時保留待決，載入後的 render 再解析）
@@ -1700,10 +1762,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         view.stopsToShow.forEach((stop, idx) => {
             // 有巴士行駛在前一站與本站之間時，於該站上方插入一列車輛膠囊
             collectMarkers(pattern, stop, false).forEach(m => {
-                const marker = document.createElement('div');
-                marker.className = 'bus-marker-row';
-                marker.innerHTML = busVehicleRowInner(m.bus, m.srcStop);
-                stopsList.appendChild(marker);
+                stopsList.appendChild(createBusMarkerRow(m, animateWater));
             });
 
             const row = document.createElement('div');
@@ -1730,6 +1789,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
 
             stopsList.appendChild(row);
         });
+        syncBusWaterTargets([...stopsList.querySelectorAll('.bus-stop-row')]);
 
         // 記下目前的巴士位置配置，供就地更新比對
         lastMarkerSig = markerSignature(pattern, view);

@@ -255,6 +255,154 @@
     flex-shrink: 0;
 }
 
+/* --- 水の演出：車輛膠囊の填色が流れ落ち → 頸部 → 停留所膠囊で左右へ広がる ---
+   transform／opacity のみ動かす（合成だけで再描画なし）。柔らかい縁は
+   filter: blur ではなく透明へ抜けるグラデーションで表現する */
+.bus-stops-list {
+    --bus-water: rgba(10, 132, 255, 0.13);
+    --bus-water-low: rgba(10, 132, 255, 0.1);
+    --bus-water-crest: rgba(10, 132, 255, 0.18);
+    --bus-water-neck: rgba(10, 132, 255, 0.18);
+}
+
+.bus-marker-row,
+.bus-stop-row.bus-water-target {
+    position: relative;
+    isolation: isolate;
+}
+
+/* 頸部が下の膠囊の枠線の上に描かれるよう、車輛膠囊を前面に */
+.bus-marker-row {
+    z-index: 1;
+}
+
+/* 填色層：膠囊の形で裁切し、文字の背面に敷く */
+.bus-water {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    overflow: hidden;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.bus-water-fill {
+    position: absolute;
+}
+
+/* 上（車輛）：前縁は表面張力の盛り上がり → 透明へ抜ける
+   満水時は 0〜62.5%（＝膠囊の高さ全体）が均一な水色 */
+.bus-marker-row .bus-water-fill {
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 160%;
+    background: linear-gradient(to bottom, var(--bus-water) 0%, var(--bus-water) 62.5%, var(--bus-water-crest) 70%, transparent 100%);
+}
+
+/* 下（停留所）：左右の縁は盛り上がり → 透明へ抜ける
+   満水時は 16.7〜83.3%（＝膠囊の幅全体）が均一な水色 */
+.bus-stop-row .bus-water-fill {
+    top: 0;
+    bottom: 0;
+    left: -25%;
+    width: 150%;
+    background: linear-gradient(to right, transparent 0%, var(--bus-water-crest) 10%, var(--bus-water-low) 16.7%, var(--bus-water-low) 83.3%, var(--bus-water-crest) 90%, transparent 100%);
+}
+
+/* 頸部：自分の下枠線・間隔 6px・次の膠囊の上枠線をまたぐ液橋 */
+.bus-water-neck {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    width: 80px;
+    height: 8px;
+    margin-left: -40px;
+    pointer-events: none;
+    transform-origin: 50% 0;
+}
+
+.bus-water-neck svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.bus-water-neck path {
+    fill: var(--bus-water-neck);
+}
+
+/* 一度だけ再生：流れ落ちる（0〜0.6s）→ 頸部が伸びる → 着水して左右へ広がる */
+.bus-marker-row.bus-water-anim .bus-water-fill {
+    animation: busWaterDrop 0.6s cubic-bezier(0.55, 0, 0.35, 1) both;
+}
+
+.bus-marker-row.bus-water-anim .bus-water-neck {
+    animation: busWaterNeck 0.32s cubic-bezier(0.33, 1, 0.68, 1) 0.45s both;
+}
+
+.bus-stop-row.bus-water-anim .bus-water-fill {
+    animation: busWaterSpread 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.62s both;
+}
+
+/* 車両が去った停留所は水が引くように消える */
+.bus-water.bus-water-drain {
+    animation: busWaterDrain 0.45s ease forwards;
+}
+
+@keyframes busWaterDrop {
+    from {
+        transform: translateY(-100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes busWaterNeck {
+    from {
+        transform: scale(0.3, 0);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1, 1);
+        opacity: 1;
+    }
+}
+
+@keyframes busWaterSpread {
+    from {
+        transform: scaleX(0.12);
+        opacity: 0;
+    }
+
+    25% {
+        opacity: 1;
+    }
+
+    to {
+        transform: scaleX(1);
+        opacity: 1;
+    }
+}
+
+@keyframes busWaterDrain {
+    to {
+        opacity: 0;
+    }
+}
+
+/* 動きを減らす設定：演出を省いて満水の最終狀態だけ表示 */
+@media (prefers-reduced-motion: reduce) {
+
+    .bus-water-anim .bus-water-fill,
+    .bus-water-anim .bus-water-neck {
+        animation: none;
+    }
+}
+
 /* 列表內的 chip 與站名字級一致 */
 .bus-stop-row .bus-eta-pill.chip {
     font-size: 0.95em;
@@ -659,6 +807,13 @@
     .bus-marker-row {
         background: rgba(10, 132, 255, 0.14);
         border-color: rgba(100, 169, 255, 0.22);
+    }
+
+    .bus-stops-list {
+        --bus-water: rgba(64, 156, 255, 0.2);
+        --bus-water-low: rgba(64, 156, 255, 0.15);
+        --bus-water-crest: rgba(100, 169, 255, 0.28);
+        --bus-water-neck: rgba(64, 156, 255, 0.26);
     }
 
     .bus-delay.late {

@@ -3609,7 +3609,7 @@ function silentUpdateExtensionPanel(cardId) {
         data.detailedLines.forEach(line => {
             // 混合卡片內的公車路線：收折資訊卡（點擊跳轉至完整公車面板）
             if (line.isBusLine) {
-                fragment.appendChild(renderBusLineCard(line.id));
+                fragment.appendChild(renderBusLineCard(line.id, { quiet: true }));
                 return;
             }
 
