@@ -128,18 +128,39 @@ window.backToMainMenu = function() {
     window.closeUniversalPage(false); // 傳入 false，代表「不關閉」背景的主選單
 };
 
-// 內文區上緣的漸隱：高度＝min(捲動量, 內文一行的高度)
-// 剛開啟（未捲動）時為 0（完全不影響），捲動後最多只影響一行
+// 內文區上下緣的漸隱（各最多一行）
+// 上緣：高度＝min(已捲上去的量, 一行高)。剛開啟（未捲動）時為 0，第一行完全不受影響
+// 下緣：高度＝min(下方還沒捲到的量, 一行高)。捲到底時為 0，最後一行完全不受影響
 function updateUniversalFade(el) {
     if (!el._fadeLine) {
         const cs = getComputedStyle(el);
         el._fadeLine = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.6;
     }
-    const h = Math.min(Math.max(el.scrollTop, 0), el._fadeLine);
-    if (h === el._fadeH) return;
-    el._fadeH = h;
-    el.style.setProperty('--uni-fade', `${h.toFixed(2)}px`);
-    el.classList.toggle('uni-fade-on', h > 0);
+    const below = el.scrollHeight - el.clientHeight - el.scrollTop;
+    const top = Math.min(Math.max(el.scrollTop, 0), el._fadeLine);
+    const bottom = Math.min(Math.max(below, 0), el._fadeLine);
+    const sig = `${top.toFixed(2)}/${bottom.toFixed(2)}`;
+    if (sig === el._fadeSig) return;
+    el._fadeSig = sig;
+    el.style.setProperty('--uni-fade-top', `${top.toFixed(2)}px`);
+    el.style.setProperty('--uni-fade-bottom', `${bottom.toFixed(2)}px`);
+    el.classList.toggle('uni-fade-on', top > 0 || bottom > 0);
+}
+
+// 內容的高度變化（輪播載入、設定項目展開等）也會改變下方剩餘量，捲動以外也要重算
+function watchUniversalFade(el) {
+    if (typeof ResizeObserver === 'undefined') return;
+    const observeAll = () => {
+        el._fadeRO.disconnect();
+        el._fadeRO.observe(el);
+        [...el.children].forEach(c => el._fadeRO.observe(c));
+    };
+    if (!el._fadeRO) {
+        el._fadeRO = new ResizeObserver(() => updateUniversalFade(el));
+        // 之後才加進來的區塊也納入觀察
+        new MutationObserver(() => { observeAll(); updateUniversalFade(el); }).observe(el, { childList: true });
+    }
+    observeAll();
 }
 
 window.openUniversalPage = function(title, contentHTML) {
@@ -160,7 +181,7 @@ window.openUniversalPage = function(title, contentHTML) {
         `;
         searchContainer.appendChild(wrapper);
 
-        // 捲動時，內文區上緣（標題下）的裁切改為漸隱
+        // 捲動時，內文區上下緣的裁切改為漸隱
         const contentEl = document.getElementById('universal-page-content');
         contentEl.addEventListener('scroll', () => updateUniversalFade(contentEl), { passive: true });
 
@@ -195,6 +216,7 @@ window.openUniversalPage = function(title, contentHTML) {
     contentEl.scrollTop = 0;
     contentEl._fadeLine = 0;
     updateUniversalFade(contentEl);
+    watchUniversalFade(contentEl);
 
     // 信箱防採集：位址以分段屬性存放（原始碼不含完整位址，
     // 不執行 JS 的採集爬蟲掃不到），注入後才在瀏覽器端組回

@@ -313,32 +313,54 @@ body.universal-active .universal-page-wrapper {
     display: none; 
 }
 
-/* 捲動時，標題下的上緣由硬裁切改為漸隱
-   高度 --uni-fade＝min(捲動量, 內文一行的高度)，由 JS 設定：未捲動時不套用（不影響開啟時的第一行），
-   捲動後最多一行。10 個停止點依 smootherstep 排列（兩端的斜率與曲率都連續，避免馬赫帶） */
+/* 捲動時，內文區的上下緣由硬裁切改為漸隱（各最多一行）
+   上緣 --uni-fade-top＝min(已捲上去的量, 一行高)：未捲動時為 0，開啟時的第一行不受影響
+   下緣 --uni-fade-bottom＝min(下方剩餘量, 一行高)：捲到底時為 0，最後一行不受影響
+   兩者都由 JS 設定，都是 0 時不套用遮罩。各 10 個停止點依 smootherstep 排列
+   （兩端的斜率與曲率都連續，避免馬赫帶） */
 .universal-page-content.uni-fade-on {
     -webkit-mask-image: linear-gradient(to bottom,
             rgba(0, 0, 0, 0) 0px,
-            rgba(0, 0, 0, 0.0115) calc(var(--uni-fade) * 0.1111),
-            rgba(0, 0, 0, 0.0764) calc(var(--uni-fade) * 0.2222),
-            rgba(0, 0, 0, 0.2099) calc(var(--uni-fade) * 0.3333),
-            rgba(0, 0, 0, 0.3967) calc(var(--uni-fade) * 0.4444),
-            rgba(0, 0, 0, 0.6033) calc(var(--uni-fade) * 0.5556),
-            rgba(0, 0, 0, 0.7901) calc(var(--uni-fade) * 0.6667),
-            rgba(0, 0, 0, 0.9236) calc(var(--uni-fade) * 0.7778),
-            rgba(0, 0, 0, 0.9885) calc(var(--uni-fade) * 0.8889),
-            #000 var(--uni-fade));
+            rgba(0, 0, 0, 0.0115) calc(var(--uni-fade-top) * 0.1111),
+            rgba(0, 0, 0, 0.0764) calc(var(--uni-fade-top) * 0.2222),
+            rgba(0, 0, 0, 0.2099) calc(var(--uni-fade-top) * 0.3333),
+            rgba(0, 0, 0, 0.3967) calc(var(--uni-fade-top) * 0.4444),
+            rgba(0, 0, 0, 0.6033) calc(var(--uni-fade-top) * 0.5556),
+            rgba(0, 0, 0, 0.7901) calc(var(--uni-fade-top) * 0.6667),
+            rgba(0, 0, 0, 0.9236) calc(var(--uni-fade-top) * 0.7778),
+            rgba(0, 0, 0, 0.9885) calc(var(--uni-fade-top) * 0.8889),
+            #000 var(--uni-fade-top),
+            #000 calc(100% - var(--uni-fade-bottom)),
+            rgba(0, 0, 0, 0.9885) calc(100% - var(--uni-fade-bottom) * 0.8889),
+            rgba(0, 0, 0, 0.9236) calc(100% - var(--uni-fade-bottom) * 0.7778),
+            rgba(0, 0, 0, 0.7901) calc(100% - var(--uni-fade-bottom) * 0.6667),
+            rgba(0, 0, 0, 0.6033) calc(100% - var(--uni-fade-bottom) * 0.5556),
+            rgba(0, 0, 0, 0.3967) calc(100% - var(--uni-fade-bottom) * 0.4444),
+            rgba(0, 0, 0, 0.2099) calc(100% - var(--uni-fade-bottom) * 0.3333),
+            rgba(0, 0, 0, 0.0764) calc(100% - var(--uni-fade-bottom) * 0.2222),
+            rgba(0, 0, 0, 0.0115) calc(100% - var(--uni-fade-bottom) * 0.1111),
+            rgba(0, 0, 0, 0) 100%);
     mask-image: linear-gradient(to bottom,
             rgba(0, 0, 0, 0) 0px,
-            rgba(0, 0, 0, 0.0115) calc(var(--uni-fade) * 0.1111),
-            rgba(0, 0, 0, 0.0764) calc(var(--uni-fade) * 0.2222),
-            rgba(0, 0, 0, 0.2099) calc(var(--uni-fade) * 0.3333),
-            rgba(0, 0, 0, 0.3967) calc(var(--uni-fade) * 0.4444),
-            rgba(0, 0, 0, 0.6033) calc(var(--uni-fade) * 0.5556),
-            rgba(0, 0, 0, 0.7901) calc(var(--uni-fade) * 0.6667),
-            rgba(0, 0, 0, 0.9236) calc(var(--uni-fade) * 0.7778),
-            rgba(0, 0, 0, 0.9885) calc(var(--uni-fade) * 0.8889),
-            #000 var(--uni-fade));
+            rgba(0, 0, 0, 0.0115) calc(var(--uni-fade-top) * 0.1111),
+            rgba(0, 0, 0, 0.0764) calc(var(--uni-fade-top) * 0.2222),
+            rgba(0, 0, 0, 0.2099) calc(var(--uni-fade-top) * 0.3333),
+            rgba(0, 0, 0, 0.3967) calc(var(--uni-fade-top) * 0.4444),
+            rgba(0, 0, 0, 0.6033) calc(var(--uni-fade-top) * 0.5556),
+            rgba(0, 0, 0, 0.7901) calc(var(--uni-fade-top) * 0.6667),
+            rgba(0, 0, 0, 0.9236) calc(var(--uni-fade-top) * 0.7778),
+            rgba(0, 0, 0, 0.9885) calc(var(--uni-fade-top) * 0.8889),
+            #000 var(--uni-fade-top),
+            #000 calc(100% - var(--uni-fade-bottom)),
+            rgba(0, 0, 0, 0.9885) calc(100% - var(--uni-fade-bottom) * 0.8889),
+            rgba(0, 0, 0, 0.9236) calc(100% - var(--uni-fade-bottom) * 0.7778),
+            rgba(0, 0, 0, 0.7901) calc(100% - var(--uni-fade-bottom) * 0.6667),
+            rgba(0, 0, 0, 0.6033) calc(100% - var(--uni-fade-bottom) * 0.5556),
+            rgba(0, 0, 0, 0.3967) calc(100% - var(--uni-fade-bottom) * 0.4444),
+            rgba(0, 0, 0, 0.2099) calc(100% - var(--uni-fade-bottom) * 0.3333),
+            rgba(0, 0, 0, 0.0764) calc(100% - var(--uni-fade-bottom) * 0.2222),
+            rgba(0, 0, 0, 0.0115) calc(100% - var(--uni-fade-bottom) * 0.1111),
+            rgba(0, 0, 0, 0) 100%);
 }
 
 /* =========================================
