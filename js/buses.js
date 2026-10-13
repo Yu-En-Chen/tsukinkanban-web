@@ -991,24 +991,22 @@ function busVehicleRowInner(bus, stop) {
 // 水の演出：車輛膠囊（上）と直下の停留所膠囊（下）を一つの水の塊として融合させる
 // ・形：上下の膠囊＋その間の液橋。液橋の内側の曲線は、膠囊の外側の圓角
 //   （半径 R＝高さ/2）から求めた半径 r＝R の円で、上下両端の円弧に接する
-//   （メタボールの接続と同じ幾何）。寸法は実測して CSS 変数へ渡す
-// ・動き：まず両方の膠囊の輪郭が消え、下の膠囊の淺灰色が中央から左右へ切り開かれて
-//   背景が透ける → 上から水色が一つの前縁として流れ落ち、液橋を通って下まで満たす
-//   transform／opacity のみで動かす（合成のみ）。柔らかい縁はコサイン曲線の
-//   グラデーション（傾きが折れないのでマッハバンドが出ない）
+//   （メタボールの接続と同じ幾何）。輪郭を実測から一本のパスにして clip-path で切り抜く
+// ・動き：下の膠囊の淺灰色が中央から左右へ切り開かれて背景が透ける →
+//   上から水が流れ落ち、液橋を通って下まで満たす。前縁には位置・幅・速さが
+//   毎回ランダムな「水の舌」を二本重ね、まっすぐな線ではなく不揃いに流れ落ちる
+// ・膠囊の枠線は常に表示し、演出はすべて枠線の下で動く
+// ・transform／opacity のみで動かす（合成のみ）。柔らかい縁は smootherstep の
+//   グラデーション（両端で傾きも曲率も連続なのでマッハバンドが出にくい）
 // ・色：水の中は不透明色で描き、水全体に透明度をかける（重なり部分が濃くならない）
 // ・演出は .bus-water-anim が付いたときだけ一度再生し、既定は融合後の最終狀態
 // ============================================================================
 const BUS_WATER_BODY = '<span class="bus-water-body" aria-hidden="true">'
-    // 下の膠囊の「皮」：左右に切り開かれて背景が透ける
+    // 下の膠囊の「皮」（地色）：左右に切り開かれて背景が透ける
     + '<span class="bw-veil"><span class="bw-veil-half bw-veil-l"></span><span class="bw-veil-half bw-veil-r"></span></span>'
-    + '<span class="bw-veil-edge"></span>'
-    // 水：上の膠囊・液橋・下の膠囊を同じ前縁が流れ落ちる
-    + '<span class="bw-water">'
-    + '<span class="bw-part bw-top"><span class="bw-flood"></span></span>'
-    + '<span class="bw-part bw-neck"><span class="bw-flood"></span></span>'
-    + '<span class="bw-part bw-bot"><span class="bw-flood"></span></span>'
-    + '</span></span>';
+    // 水：前縁の本体＋不揃いさを出す二本の舌
+    + '<span class="bw-water"><span class="bw-flood"></span><span class="bw-lobe bw-lobe-a"></span><span class="bw-lobe bw-lobe-b"></span></span>'
+    + '</span>';
 
 function busMarkerKey(m) {
     return `${m.srcStop.name}|${m.bus.number || ''}`;
@@ -1020,28 +1018,59 @@ function createBusMarkerRow(m, animate) {
     marker.className = animate ? 'bus-marker-row bus-water-anim' : 'bus-marker-row';
     marker.dataset.waterKey = busMarkerKey(m);
     marker.innerHTML = busVehicleRowInner(m.bus, m.srcStop);
+    if (animate) randomizeBusWater(marker);
     return marker;
 }
 
-// 液橋の幾何を実測から求める
-// 膠囊の高さ H・間隔 g、両端の圓角 R＝H/2 の円（中心間距離 d＝H+g）に
+// 流れ落ちる水の揺らぎ：本体の速さと、二本の舌の位置・幅・先行量を毎回ランダムに
+// （舌は本体より少し速く動くため、前縁がところどころ先に垂れ下がる）
+function randomizeBusWater(marker) {
+    const rnd = (min, max) => min + Math.random() * (max - min);
+    const dur = rnd(0.95, 1.2);
+    const delay = rnd(0.08, 0.18);
+    const vars = {
+        '--bw-fd': `${dur.toFixed(3)}s`,
+        '--bw-fdl': `${delay.toFixed(3)}s`,
+        '--bw-ax': `${rnd(18, 45).toFixed(1)}%`,
+        '--bw-aw': `${rnd(34, 56).toFixed(1)}%`,
+        '--bw-ad': `${(dur * rnd(0.74, 0.88)).toFixed(3)}s`,
+        '--bw-adl': `${(delay + rnd(-0.04, 0.03)).toFixed(3)}s`,
+        '--bw-bx': `${rnd(55, 84).toFixed(1)}%`,
+        '--bw-bw': `${rnd(28, 48).toFixed(1)}%`,
+        '--bw-bd': `${(dur * rnd(0.8, 0.94)).toFixed(3)}s`,
+        '--bw-bdl': `${(delay + rnd(-0.02, 0.06)).toFixed(3)}s`
+    };
+    Object.entries(vars).forEach(([k, v]) => marker.style.setProperty(k, v));
+}
+
+// 水の塊の輪郭（上下の膠囊＋液橋）を一本のパスにする。座標は上の膠囊の外枠基準
+// 膠囊の幅 W・高さ H・間隔 g、両端の圓角 R＝H/2 の円（上下の中心間距離 d＝H+g）に
 // 外接する半径 r の円が液橋の内側の曲線。r は外側の圓角と揃えて R とする
+function busWaterClipPath(W, H, g) {
+    const R = H / 2, r = R, d = H + g, B = 2 * H + g;
+    const h = Math.sqrt(Math.max(0, (R + r) ** 2 - (d / 2) ** 2));
+    const ux = R * h / (R + r), uy = R * (d / 2) / (R + r);
+    const xl = R - ux, xr = W - R + ux; // 円弧と液橋の接点の x（左右）
+    const y1 = R + uy, y2 = R + d - uy; // 上の円弧・下の円弧との接点の y
+    const f = n => n.toFixed(2);
+    return `M${f(R)} 0H${f(W - R)}`
+        + `A${f(R)} ${f(R)} 0 0 1 ${f(xr)} ${f(y1)}`
+        + `A${f(r)} ${f(r)} 0 0 0 ${f(xr)} ${f(y2)}`
+        + `A${f(R)} ${f(R)} 0 0 1 ${f(W - R)} ${f(B)}H${f(R)}`
+        + `A${f(R)} ${f(R)} 0 0 1 ${f(xl)} ${f(y2)}`
+        + `A${f(r)} ${f(r)} 0 0 0 ${f(xl)} ${f(y1)}`
+        + `A${f(R)} ${f(R)} 0 0 1 ${f(R)} 0Z`;
+}
+
 function measureBusWater(list) {
     const marker = list.querySelector('.bus-marker-row');
     const next = marker && marker.nextElementSibling;
     if (!next || !marker.offsetHeight) return; // 未配置（DOM に入る前）は既定値のまま
-    const H = marker.offsetHeight;
+    const W = marker.offsetWidth, H = marker.offsetHeight;
     const g = next.offsetTop - marker.offsetTop - H;
-    const R = H / 2, r = R, d = H + g;
-    const h = Math.sqrt(Math.max(0, (R + r) ** 2 - (d / 2) ** 2));
-    const top = R + R * (d / 2) / (R + r); // 液橋の上端＝上の円弧との接点
-    const vars = {
-        '--bw-h': H, '--bw-g': g, '--bw-r': r,
-        '--bw-fx': R - h,              // 曲線の円の中心（膠囊の端からの水平位置）
-        '--bw-t': top,
-        '--bw-bh': 2 * H + g - 2 * top // 液橋の高さ
-    };
-    Object.entries(vars).forEach(([k, v]) => list.style.setProperty(k, `${v.toFixed(2)}px`));
+    list.style.setProperty('--bw-h', `${H}px`);
+    list.style.setProperty('--bw-g', `${g}px`);
+    list.style.setProperty('--bw-clip', `path('${busWaterClipPath(W, H, g)}')`);
 }
 
 // 初めて配置されたとき・幅が変わったときに測り直す
