@@ -998,48 +998,43 @@ function createBusMarkerRow(m) {
 
 // ============================================================================
 // 車輛膠囊の枠を回る光：二つの高光點が尾を引きながら枠線に沿って周回する
-// ・回転するグラデーションでは横長の膠囊で速さが偏るため、周長に沿って等間隔に
-//   取った点を transform のキーフレームにして等速で動かす（合成のみ・再描画なし）
-// ・尾は頭を少しずつ遅れて追う小さな点の列（枠線の帯の中だけに見せる）。
-//   頭には膠囊の内側へにじむ淡い光を添える
-// ・開始時刻を文書の時間軸の原点に揃える：背景の更新で膠囊が作り直されても
-//   光の位置が飛ばない
+// ・光は枠線の太さの帯の中だけで光り、光暈は膠囊の外側（背景）へだけにじむ
+//   （内側には一切かけない：文字の読みやすさを損なわない）
+// ・枠を「上辺・右の半円・下辺・左の半円」の四区間に分け、各区間で光の帯を
+//   一枚のグラデーションとして動かす（尾が途切れない）
+//     直線：周期（半周＝頭と頭の間隔）で繰り返す線形グラデーションを平行移動
+//     半円：円錐グラデーションを円の中心で回転（円弧上ではこれが等速）。
+//           尾が円弧を通過している間だけ表示し、それ以外は見えない側へ逃がす
+//   各区間は自分の区間だけを表示し、つなぎ目で光の強さが一致する
+// ・transform／opacity のみ（合成のみ・再描画なし）。動く要素は一台につき四つ
+// ・開始時刻を文書の時間軸の原点に揃え、位相を車牌から決める：車両ごとに
+//   位置が異なり、背景の更新で作り直しても光が飛ばない
 // ============================================================================
-const BUS_GLOW_LAP_MS = 6000;  // 一周の時間
-const BUS_GLOW_TRAIL = 4;      // 尾の点の数（頭を除く。動く要素の数は毎フレームの負荷に比例するので最小限に）
-const BUS_GLOW_TRAIL_MS = 800; // 尾の長さ（頭からの遅れ）
-const BUS_GLOW_HALO = 36;      // 内側の光の直径
+const BUS_GLOW_LAP_MS = 6000; // 一周の時間
+const BUS_GLOW_TAIL = 54;     // 尾の長さ px（端の半円の弧長より短く：尾が円弧から抜けきれるように）
+const BUS_GLOW_FRONT = 3;     // 頭の前縁の柔らかさ px
+const BUS_GLOW_CORE = 1.5;    // 光る帯の幅 px（枠線＋わずかなにじみ）
+const BUS_GLOW_SPREAD = 8;    // 外側へにじむ光暈の幅 px
+const BUS_GLOW_BLEND = 3;     // 直線と半円の受け渡し幅（境目の両側へ）px
 
-const BUS_GLOW_HTML = (() => {
-    const dots = '<span class="bus-glow-dot"></span>'.repeat(2 * (BUS_GLOW_TRAIL + 1));
-    return '<span class="bus-glow" aria-hidden="true">'
-        + '<span class="bus-glow-inner"><span class="bus-glow-halo"></span><span class="bus-glow-halo"></span></span>'
-        + `<span class="bus-glow-ring">${dots}</span>`
-        + '</span>';
-})();
+const BUS_GLOW_HTML = '<span class="bus-glow" aria-hidden="true">'
+    + ['top', 'right', 'bottom', 'left'].map(k =>
+        `<span class="bus-glow-seg bus-glow-${k}"><span class="bus-glow-run"></span></span>`).join('')
+    + '</span>';
 
-// 枠線の帯（外枠から幅 2px）の中心線を周長で等間隔に辿るキーフレーム
-// 上辺 → 右の半円 → 下辺 → 左の半円（時計回り）。直径 size の点の中心を通す
-function busGlowKeyframes(W, H, size) {
-    const R = H / 2, inset = 1;
-    const r = R - inset, L = Math.max(0, W - 2 * R);
-    const arc = Math.PI * r, P = 2 * L + 2 * arc;
-    const N = 16; // 半円の分割数
-    const pts = [[0, R, inset], [L, W - R, inset]];
-    for (let i = 1; i <= N; i++) {
-        const a = -Math.PI / 2 + Math.PI * i / N;
-        pts.push([L + arc * i / N, W - R + r * Math.cos(a), R + r * Math.sin(a)]);
+const busSmoother = t => t * t * t * (t * (t * 6 - 15) + 10);
+
+// 光の強さの断面（一周期 period の中）：頭は period（＝0）の位置で 1、
+// 尾は手前へ tail で 0、前縁は 0〜front で 0（どちらも smootherstep で途切れなく）
+function busGlowProfile(period, tail, front, unit) {
+    const c = a => `rgb(var(--glow-rgb) / ${a.toFixed(3)})`;
+    const stops = [`${c(1)} 0${unit}`];
+    for (let i = 1; i <= 4; i++) stops.push(`${c(1 - busSmoother(i / 4))} ${(front * i / 4).toFixed(3)}${unit}`);
+    for (let i = 16; i >= 0; i--) {
+        const d = tail * i / 16;
+        stops.push(`${c(1 - busSmoother(d / tail))} ${(period - d).toFixed(3)}${unit}`);
     }
-    pts.push([2 * L + arc, R, H - inset]);
-    for (let i = 1; i <= N; i++) {
-        const a = Math.PI / 2 + Math.PI * i / N;
-        pts.push([2 * L + arc + arc * i / N, R + r * Math.cos(a), R + r * Math.sin(a)]);
-    }
-    const h = size / 2;
-    return pts.map(([d, x, y]) => ({
-        offset: d / P,
-        transform: `translate(${(x - h).toFixed(2)}px, ${(y - h).toFixed(2)}px)`
-    }));
+    return stops.join(', ');
 }
 
 // 車両ごとの光の位相（0〜1）：車牌から決めるので車両ごとに異なり、作り直しても変わらない
@@ -1088,38 +1083,100 @@ function unwatchBusGlow(marker) {
 function startBusGlow(marker) {
     pruneBusGlow();
     if (!marker.isConnected || typeof marker.animate !== 'function') return;
-    const W = marker.offsetWidth, H = marker.offsetHeight;
-    if (!W || !H || marker._glowSig === `${W}x${H}`) return;
+    // 小数まで正確な外枠の寸法（offsetWidth は整数に丸められ、区間の位置がずれるため）。
+    // 祖先が拡大縮小中で外見の寸法が食い違うときだけ offset 系に戻す
+    const rect = marker.getBoundingClientRect();
+    const exact = Math.abs(rect.width - marker.offsetWidth) < 1 && Math.abs(rect.height - marker.offsetHeight) < 1;
+    const W = exact ? rect.width : marker.offsetWidth, H = exact ? rect.height : marker.offsetHeight;
+    const sig = `${W.toFixed(2)}x${H.toFixed(2)}`;
+    if (!W || !H || marker._glowSig === sig) return;
     stopBusGlow(marker);
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    marker._glowSig = `${W}x${H}`;
+    const lap = BUS_GLOW_LAP_MS, G = BUS_GLOW_SPREAD, C = BUS_GLOW_CORE, F = BUS_GLOW_FRONT, X = BUS_GLOW_BLEND;
+    const R = H / 2, L = Math.max(0, W - 2 * R), P = 2 * L + 2 * Math.PI * R, Q = P / 2;
+    const v = P / lap; // px/ms
+    // 尾は半円の「見えない側」へ抜けきれる長さまで（受け渡し幅のぶん両端を差し引く）
+    const T = Math.min(BUS_GLOW_TAIL, Math.PI * R - 2 * X - F - 2);
+    const peak = parseFloat(getComputedStyle(marker).getPropertyValue('--glow-halo')) || 0.4;
+    // 直線と半円の境目（接点 x=R）の前後 X px で、片方が淡出・もう片方が淡入する。
+    // 区間どうしは加算合成なので、受け渡しの間も明るさの合計が変わらない
+    // （境目をぴったり接するだけだと、画素への丸めで継ぎ目の線が出る）
+    const xs = R;
+    const blendFade = dir => `linear-gradient(${dir}, transparent 0px, #000 ${(2 * X).toFixed(3)}px)`;
+    const blendBoth = `linear-gradient(to right, transparent 0px, #000 ${(2 * X).toFixed(3)}px, #000 calc(100% - ${(2 * X).toFixed(3)}px), transparent 100%)`;
+    const phase = busGlowPhase(marker.dataset.plate || '') * P; // 車両ごとの位相（px）
+    const px = n => `${n.toFixed(3)}px`;
+    const deg = rad => `${(rad * 180 / Math.PI).toFixed(3)}deg`;
+    // 遅延は周期で割った余りを負の範囲に（開始直後から周回中にする）
+    const delayOf = (ms, period) => (((ms % period) + period) % period) - 2 * period;
+    // 光の断面のマスクと受け渡しのマスクを掛け合わせる
+    const mask = (el, m, fade) => {
+        el.style.webkitMaskImage = `${m}, ${fade}`;
+        el.style.maskImage = `${m}, ${fade}`;
+        el.style.webkitMaskComposite = 'source-in';
+        el.style.maskComposite = 'intersect';
+    };
+
+    marker._glowSig = sig;
     marker._glowAnims = [];
-    const run = (el, size, delay) => {
-        const anim = el.animate(busGlowKeyframes(W, H, size), {
-            duration: BUS_GLOW_LAP_MS, iterations: Infinity, easing: 'linear', delay, fill: 'both'
-        });
+    const run = (el, keyframes, duration, delay) => {
+        const anim = el.animate(keyframes, { duration, delay, iterations: Infinity, easing: 'linear', fill: 'both' });
         anim.startTime = 0; // 位相を文書の時間軸に固定
         marker._glowAnims.push(anim);
     };
-    const smoother = t => t * t * t * (t * (t * 6 - 15) + 10);
-    const dots = marker.querySelectorAll('.bus-glow-dot');
-    const halos = marker.querySelectorAll('.bus-glow-halo');
-    for (let head = 0; head < 2; head++) {
-        // 二つの頭は半周ずらし、車両ごとの位相を足す。遅延は負の範囲に収め、開始直後から周回中にする
-        const phase = busGlowPhase(marker.dataset.plate || '');
-        const headDelay = -BUS_GLOW_LAP_MS * (1 + phase) - head * BUS_GLOW_LAP_MS / 2;
-        for (let k = 0; k <= BUS_GLOW_TRAIL; k++) {
-            const t = k / BUS_GLOW_TRAIL;
-            // 頭は短く鋭い点、尾は長めの点を間隔より大きく重ねて一続きの光にする
-            const size = k === 0 ? 14 : 34 - 14 * t;
-            const dot = dots[head * (BUS_GLOW_TRAIL + 1) + k];
-            dot.style.width = dot.style.height = `${size}px`;
-            dot.style.opacity = (k === 0 ? 1 : 0.8 * (1 - smoother(t)) + 0.04).toFixed(3); // 尾ほど淡く
-            run(dot, size, headDelay + k * BUS_GLOW_TRAIL_MS / BUS_GLOW_TRAIL);
-        }
-        run(halos[head], BUS_GLOW_HALO, headDelay);
-    }
+
+    // --- 直線（上辺・下辺）：外側の光暈（遠い側 0 → 枠のすぐ外 peak）＋光る帯 ---
+    const haloLinear = dir => {
+        const st = [];
+        for (let i = 0; i <= 8; i++) st.push(`rgba(0, 0, 0, ${(peak * busSmoother(i / 8)).toFixed(3)}) ${px(G * i / 8)}`);
+        st.push(`#000 ${px(G)}`, `#000 ${px(G + C)}`);
+        return `linear-gradient(${dir}, ${st.join(', ')})`;
+    };
+    const straight = (el, top, dir, sStart, mirror) => {
+        const x0 = xs - X, span = W - 2 * xs + 2 * X;
+        Object.assign(el.style, { left: px(x0), top: px(top), width: px(span), height: px(G + C), transform: mirror ? 'scaleX(-1)' : '' });
+        mask(el, haloLinear(dir), blendBoth);
+        const runEl = el.firstElementChild;
+        Object.assign(runEl.style, {
+            left: px(-Q), width: px(span + Q), height: '100%',
+            background: `repeating-linear-gradient(to right, ${busGlowProfile(Q, T, F, 'px')})`
+        });
+        // 区間の左端から進行方向への距離 u で、頭が u ≡ s_head − sStart − (x0 − R) にくるように
+        run(runEl, [{ transform: 'translateX(0)' }, { transform: `translateX(${px(Q)})` }],
+            lap / 2, delayOf((sStart + (x0 - R) - phase) / v, lap / 2));
+    };
+    straight(marker.querySelector('.bus-glow-top'), -G, 'to bottom', 0, false);
+    // 下辺は右→左へ進むので左右反転して同じ動きにする
+    straight(marker.querySelector('.bus-glow-bottom'), H - C, 'to top', L + Math.PI * R, true);
+
+    // --- 半円（右・左）：円の中心で円錐グラデーションを回す ---
+    const haloRadial = (cx, cy) => {
+        const st = [`transparent ${px(R - C - 0.25)}`, `#000 ${px(R - C + 0.25)}`, `#000 ${px(R - 0.25)}`];
+        for (let i = 0; i <= 8; i++) st.push(`rgba(0, 0, 0, ${(peak * (1 - busSmoother(i / 8))).toFixed(3)}) ${px(R + 0.25 + (G - 0.25) * i / 8)}`);
+        return `radial-gradient(circle at ${px(cx)} ${px(cy)}, ${st.join(', ')})`;
+    };
+    const D = 2 * (R + G);
+    const conic = `conic-gradient(${busGlowProfile(360, T / R * 180 / Math.PI, F / R * 180 / Math.PI, 'deg')})`;
+    // 尾が円弧（受け渡し幅を含む）にかかっている間（頭の角度 θs〜θe）だけ表示。
+    // 前後は円の見えない側にあるので表示の切り替えは見えない
+    const thS = -(F + X + 1) / R, thE = Math.PI + (T + X + 1) / R;
+    const w = (thE - thS) * R / P, e = 0.0005;
+    const a1 = 0.25 - w / 2, b1 = 0.25 + w / 2, a2 = 0.75 - w / 2, b2 = 0.75 + w / 2;
+    const cap = (el, left, cx, sCap, base, fadeDir) => {
+        Object.assign(el.style, { left: px(left), top: px(-G), width: px(xs + X + G), height: px(H + 2 * G) });
+        mask(el, haloRadial(cx, R + G), blendFade(fadeDir));
+        const runEl = el.firstElementChild;
+        Object.assign(runEl.style, { left: px(cx - (R + G)), width: px(D), height: px(D), background: conic });
+        const k = (offset, th, opacity) => ({ offset, opacity, transform: `rotate(${deg(base + th)})` });
+        run(runEl, [
+            k(0, thS, 0), k(a1 - e, thS, 0), k(a1, thS, 1), k(b1, thE, 1), k(b1 + e, thE, 0),
+            k(a2 - e, thS, 0), k(a2, thS, 1), k(b2, thE, 1), k(b2 + e, thE, 0), k(1, thE, 0)
+        ], lap, delayOf((sCap + thS * R - phase) / v - a1 * lap, lap));
+    };
+    cap(marker.querySelector('.bus-glow-right'), W - xs - X, X + xs - R, L, 0, 'to right');            // 上→下
+    cap(marker.querySelector('.bus-glow-left'), -G, R + G, 2 * L + Math.PI * R, Math.PI, 'to left');   // 下→上
+
     marker.classList.add('bus-glow-on');
     busGlowMarkers.add(marker);
 }

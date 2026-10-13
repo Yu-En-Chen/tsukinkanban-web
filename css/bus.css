@@ -256,74 +256,43 @@
 }
 
 /* --- 車輛膠囊の枠を回る光：二つの高光點が尾を引いて周回する ---
-   動きは JS（Web Animations）で transform のみ。ここでは見た目だけを定義 */
+   光は枠線の帯の中だけで光り、光暈は外側（背景）へだけにじむ。
+   各区間の位置・グラデーション・マスク・動きは JS（Web Animations）が設定 */
 .bus-marker-row {
     position: relative;
     isolation: isolate;
     --glow-rgb: 10 132 255;
-    --glow-core: 10 132 255;
+    --glow-halo: 0.4; /* 枠のすぐ外の光暈の濃さ */
 }
 
-/* 地色・枠の上、文字の下に重ねる。JS が動かし始めるまでは表示しない */
+/* 地色・枠の上、文字の下に重ねる。JS が動かし始めるまでは表示しない
+   四つの区間は群の中で加算合成（境目の画素で覆い率が足して 1 になり、継ぎ目が出ない）
+   群ごと通常合成で膠囊へ重ねる */
 .bus-glow {
     position: absolute;
     inset: -1px;
-    border-radius: inherit;
     z-index: -1;
     pointer-events: none;
     display: none;
+    isolation: isolate;
 }
 
 .bus-glow-on .bus-glow {
     display: block;
 }
 
-.bus-glow-inner,
-.bus-glow-ring {
+.bus-glow-seg {
     position: absolute;
-    inset: 0;
-    border-radius: inherit;
-}
-
-/* 頭が膠囊の内側へにじむ淡い光（膠囊の形で切り抜き、外へははみ出さない） */
-.bus-glow-inner {
     overflow: hidden;
+    mix-blend-mode: plus-lighter;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
 }
 
-/* 尾：外枠から幅 2px の帯（枠線の上）だけを見せる */
-.bus-glow-ring {
-    padding: 2px;
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    mask-composite: exclude;
-}
-
-.bus-glow-dot,
-.bus-glow-halo {
+.bus-glow-run {
     position: absolute;
     top: 0;
     left: 0;
-    border-radius: 50%;
-}
-
-.bus-glow-dot {
-    background: radial-gradient(closest-side,
-            rgb(var(--glow-core)) 0%,
-            rgb(var(--glow-rgb) / 0.9) 40%,
-            rgb(var(--glow-rgb) / 0.45) 70%,
-            rgb(var(--glow-rgb) / 0) 100%);
-}
-
-.bus-glow-halo {
-    width: 36px;
-    height: 36px;
-    background: radial-gradient(closest-side,
-            rgb(var(--glow-rgb) / 0.2) 0%,
-            rgb(var(--glow-rgb) / 0.17) 25%,
-            rgb(var(--glow-rgb) / 0.1) 50%,
-            rgb(var(--glow-rgb) / 0.03) 75%,
-            rgb(var(--glow-rgb) / 0) 100%);
 }
 
 /* 列表內的 chip 與站名字級一致 */
@@ -362,6 +331,9 @@
    解除時平滑收回，不會有隱形牆瞬間冒出／消失的切換感 */
 .bus-swipe-clip {
     overflow: hidden;
+    /* 車輛膠囊の外側へにじむ光暈が切れないよう、裁切範囲を周囲 10px 広げる（見た目の位置は不変） */
+    padding: 10px;
+    margin: -10px;
     touch-action: pan-y;
     --swipe-fade-w: 0px;
     transition: --swipe-fade-w 0.3s ease;
@@ -371,7 +343,7 @@
 
 /* 拖曳／切換動畫進行中：左右邊緣以線性漸層淡出（隱形牆） */
 .bus-swipe-clip.bus-swipe-fade {
-    --swipe-fade-w: 32px;
+    --swipe-fade-w: 42px; /* 余白 10px ＋ 従来の 32px */
 }
 
 /* --- 收折檢視：與列車卡片（多路線・方向別）同構的資訊卡 --- */
@@ -730,9 +702,9 @@
     .bus-marker-row {
         background: rgba(10, 132, 255, 0.14);
         border-color: rgba(100, 169, 255, 0.22);
-        /* 暗い背景では芯を白っぽくして光って見えるように */
-        --glow-rgb: 100 169 255;
-        --glow-core: 190 222 255;
+        /* 暗い背景では明るめの色と強めの光暈で光って見えるように */
+        --glow-rgb: 120 182 255;
+        --glow-halo: 0.55;
     }
 
     .bus-delay.late {
