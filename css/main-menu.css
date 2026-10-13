@@ -313,6 +313,34 @@ body.universal-active .universal-page-wrapper {
     display: none; 
 }
 
+/* 捲動時，標題下的上緣由硬裁切改為漸隱
+   高度 --uni-fade＝min(捲動量, 內文一行的高度)，由 JS 設定：未捲動時不套用（不影響開啟時的第一行），
+   捲動後最多一行。10 個停止點依 smootherstep 排列（兩端的斜率與曲率都連續，避免馬赫帶） */
+.universal-page-content.uni-fade-on {
+    -webkit-mask-image: linear-gradient(to bottom,
+            rgba(0, 0, 0, 0) 0px,
+            rgba(0, 0, 0, 0.0115) calc(var(--uni-fade) * 0.1111),
+            rgba(0, 0, 0, 0.0764) calc(var(--uni-fade) * 0.2222),
+            rgba(0, 0, 0, 0.2099) calc(var(--uni-fade) * 0.3333),
+            rgba(0, 0, 0, 0.3967) calc(var(--uni-fade) * 0.4444),
+            rgba(0, 0, 0, 0.6033) calc(var(--uni-fade) * 0.5556),
+            rgba(0, 0, 0, 0.7901) calc(var(--uni-fade) * 0.6667),
+            rgba(0, 0, 0, 0.9236) calc(var(--uni-fade) * 0.7778),
+            rgba(0, 0, 0, 0.9885) calc(var(--uni-fade) * 0.8889),
+            #000 var(--uni-fade));
+    mask-image: linear-gradient(to bottom,
+            rgba(0, 0, 0, 0) 0px,
+            rgba(0, 0, 0, 0.0115) calc(var(--uni-fade) * 0.1111),
+            rgba(0, 0, 0, 0.0764) calc(var(--uni-fade) * 0.2222),
+            rgba(0, 0, 0, 0.2099) calc(var(--uni-fade) * 0.3333),
+            rgba(0, 0, 0, 0.3967) calc(var(--uni-fade) * 0.4444),
+            rgba(0, 0, 0, 0.6033) calc(var(--uni-fade) * 0.5556),
+            rgba(0, 0, 0, 0.7901) calc(var(--uni-fade) * 0.6667),
+            rgba(0, 0, 0, 0.9236) calc(var(--uni-fade) * 0.7778),
+            rgba(0, 0, 0, 0.9885) calc(var(--uni-fade) * 0.8889),
+            #000 var(--uni-fade));
+}
+
 /* =========================================
    通用頁面省電與防誤觸鎖定 (Scroll Isolation)
    ========================================= */

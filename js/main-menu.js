@@ -128,6 +128,20 @@ window.backToMainMenu = function() {
     window.closeUniversalPage(false); // 傳入 false，代表「不關閉」背景的主選單
 };
 
+// 內文區上緣的漸隱：高度＝min(捲動量, 內文一行的高度)
+// 剛開啟（未捲動）時為 0（完全不影響），捲動後最多只影響一行
+function updateUniversalFade(el) {
+    if (!el._fadeLine) {
+        const cs = getComputedStyle(el);
+        el._fadeLine = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.6;
+    }
+    const h = Math.min(Math.max(el.scrollTop, 0), el._fadeLine);
+    if (h === el._fadeH) return;
+    el._fadeH = h;
+    el.style.setProperty('--uni-fade', `${h.toFixed(2)}px`);
+    el.classList.toggle('uni-fade-on', h > 0);
+}
+
 window.openUniversalPage = function(title, contentHTML) {
     let wrapper = document.getElementById('universal-page-wrapper');
     let navBtns = document.getElementById('universal-nav-buttons');
@@ -145,6 +159,10 @@ window.openUniversalPage = function(title, contentHTML) {
             <div id="universal-page-content" class="universal-page-content"></div>
         `;
         searchContainer.appendChild(wrapper);
+
+        // 捲動時，內文區上緣（標題下）的裁切改為漸隱
+        const contentEl = document.getElementById('universal-page-content');
+        contentEl.addEventListener('scroll', () => updateUniversalFade(contentEl), { passive: true });
 
         // 導航按鈕（返回／關閉）
         navBtns = document.createElement('div');
@@ -170,9 +188,13 @@ window.openUniversalPage = function(title, contentHTML) {
         searchContainer.appendChild(navBtns);
     }
 
-    // 2. 填入標題與內容
+    // 2. 填入標題與內容（沿用中的容器也從頂端開始、漸隱歸零）
     document.getElementById('universal-page-title').textContent = title;
-    document.getElementById('universal-page-content').innerHTML = contentHTML;
+    const contentEl = document.getElementById('universal-page-content');
+    contentEl.innerHTML = contentHTML;
+    contentEl.scrollTop = 0;
+    contentEl._fadeLine = 0;
+    updateUniversalFade(contentEl);
 
     // 信箱防採集：位址以分段屬性存放（原始碼不含完整位址，
     // 不執行 JS 的採集爬蟲掃不到），注入後才在瀏覽器端組回
