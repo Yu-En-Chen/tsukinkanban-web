@@ -262,12 +262,18 @@
 /* --- 水の演出：車輛膠囊と直下の停留所膠囊が一つの水の塊に融合する ---
    形：上下の膠囊＋液橋。液橋の内側の曲線は外側の圓角（R＝高さ/2）と同じ半径の円で
    上下の円弧に接する（幾何 --bw-* は JS が実測して設定。既定値は高さ 41px・間隔 6px）
-   色：塊の中は不透明色で描き、塊全体に透明度をかける（重なり部分が濃くならない）
-   柔らかい縁：コサイン曲線のグラデーション（傾きが折れないのでマッハバンドが出ない）
-   動き：transform／opacity のみ（合成のみ）。膠囊の地色が溶けるところだけ色の遷移 */
+   動き：①両方の膠囊の輪郭が消える ②下の膠囊の淺灰色が中央から左右へ切り開かれ
+   背景が透ける ③上から水色が一つの前縁として流れ落ち、液橋を通って下まで満たす
+   transform／opacity のみ（合成のみ）。柔らかい縁はコサイン曲線のグラデーション */
 .bus-stops-list {
     --bw-rgb: 10 132 255;
     --bw-alpha: 0.15;
+    --bw-ramp: 36px;
+    /* 下の膠囊の「皮」＝停留所膠囊と同じ地色・枠（.bus-stop-row の --cap-* と揃える） */
+    --bw-veil-rgb: 0 0 0;
+    --bw-veil-a: 0.04;
+    --bw-veil-bd: rgba(0, 0, 0, 0.06);
+    --bw-veil-ramp: 32px;
     --bw-h: 41px;
     --bw-g: 6px;
     --bw-r: 20.5px;
@@ -281,35 +287,48 @@
     isolation: isolate;
 }
 
-/* 下の膠囊は水の塊より前面に置く（文字が水の下に沈まない） */
+/* 下の膠囊：地色と枠は外し（演出中は車輛膠囊側の「皮」が同じ見た目を引き継ぐ）、
+   水の塊より前面に置く（文字が水の下に沈まない） */
 .bus-stop-row.bus-water-target {
     position: relative;
     z-index: 1;
+    background-color: transparent;
+    border-color: transparent;
+    transition: none;
 }
 
-/* 融合後：上下の膠囊の地色と枠は水に溶けて、一つの形になる
-   溶ける演出は地色と枠を同じ見た目の疑似要素へ移し、その不透明度だけを動かす
+/* 車両が去った停留所は元の膠囊へ戻る */
+.bus-stop-row {
+    transition: background-color 0.5s ease, border-color 0.5s ease;
+}
+
+/* 上の膠囊：地色（::before）と枠（::after）を疑似要素へ移し、不透明度だけで消す
    （背景色の遷移は毎フレーム再描画になるため使わない） */
-.bus-marker-row.bus-water-paired,
-.bus-stop-row.bus-water-target {
+.bus-marker-row.bus-water-paired {
     background-color: transparent;
     border-color: transparent;
 }
 
 .bus-marker-row.bus-water-paired::before,
-.bus-stop-row.bus-water-target::before {
+.bus-marker-row.bus-water-paired::after {
     content: '';
     position: absolute;
     inset: -1px;
     border-radius: inherit;
-    background: var(--cap-bg);
-    border: 1px solid var(--cap-bd);
     z-index: -1;
     opacity: 0;
     pointer-events: none;
 }
 
-/* 水の塊：上の膠囊の上端から下の膠囊の下端まで（枠線ぶん外側まで覆う） */
+.bus-marker-row.bus-water-paired::before {
+    background: var(--cap-bg);
+}
+
+.bus-marker-row.bus-water-paired::after {
+    border: 1px solid var(--cap-bd);
+}
+
+/* 水の塊の範囲：上の膠囊の上端から下の膠囊の下端まで（枠線ぶん外側まで覆う） */
 .bus-water-body {
     position: absolute;
     top: -1px;
@@ -317,8 +336,78 @@
     right: -1px;
     height: calc(var(--bw-h) * 2 + var(--bw-g));
     z-index: -1;
-    opacity: var(--bw-alpha);
     pointer-events: none;
+}
+
+/* 下の膠囊の「皮」：演出中だけ表示。左右の半分が中央の柔らかい縁から外へ引き、
+   不透明色で描いて全体に地色の透明度をかける（重なっても濃くならない） */
+.bw-veil,
+.bw-veil-edge {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(var(--bw-h) + var(--bw-g));
+    height: var(--bw-h);
+    border-radius: 999px;
+    display: none;
+}
+
+.bw-veil {
+    overflow: hidden;
+    isolation: isolate;
+    opacity: var(--bw-veil-a);
+}
+
+.bw-veil-edge {
+    box-sizing: border-box;
+    border: 1px solid var(--bw-veil-bd);
+}
+
+.bus-water-anim.bus-water-paired .bw-veil,
+.bus-water-anim.bus-water-paired .bw-veil-edge {
+    display: block;
+}
+
+.bw-veil-half {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: calc(100% + var(--bw-veil-ramp));
+}
+
+.bw-veil-l {
+    left: -50%;
+    background: linear-gradient(to right,
+        rgb(var(--bw-veil-rgb)) calc(100% - var(--bw-veil-ramp)),
+        rgb(var(--bw-veil-rgb) / 0.962) calc(100% - var(--bw-veil-ramp) * 0.875),
+        rgb(var(--bw-veil-rgb) / 0.854) calc(100% - var(--bw-veil-ramp) * 0.750),
+        rgb(var(--bw-veil-rgb) / 0.691) calc(100% - var(--bw-veil-ramp) * 0.625),
+        rgb(var(--bw-veil-rgb) / 0.500) calc(100% - var(--bw-veil-ramp) * 0.500),
+        rgb(var(--bw-veil-rgb) / 0.309) calc(100% - var(--bw-veil-ramp) * 0.375),
+        rgb(var(--bw-veil-rgb) / 0.146) calc(100% - var(--bw-veil-ramp) * 0.250),
+        rgb(var(--bw-veil-rgb) / 0.038) calc(100% - var(--bw-veil-ramp) * 0.125),
+        rgb(var(--bw-veil-rgb) / 0) 100%);
+}
+
+.bw-veil-r {
+    left: calc(50% - var(--bw-veil-ramp));
+    background: linear-gradient(to left,
+        rgb(var(--bw-veil-rgb)) calc(100% - var(--bw-veil-ramp)),
+        rgb(var(--bw-veil-rgb) / 0.962) calc(100% - var(--bw-veil-ramp) * 0.875),
+        rgb(var(--bw-veil-rgb) / 0.854) calc(100% - var(--bw-veil-ramp) * 0.750),
+        rgb(var(--bw-veil-rgb) / 0.691) calc(100% - var(--bw-veil-ramp) * 0.625),
+        rgb(var(--bw-veil-rgb) / 0.500) calc(100% - var(--bw-veil-ramp) * 0.500),
+        rgb(var(--bw-veil-rgb) / 0.309) calc(100% - var(--bw-veil-ramp) * 0.375),
+        rgb(var(--bw-veil-rgb) / 0.146) calc(100% - var(--bw-veil-ramp) * 0.250),
+        rgb(var(--bw-veil-rgb) / 0.038) calc(100% - var(--bw-veil-ramp) * 0.125),
+        rgb(var(--bw-veil-rgb) / 0) 100%);
+}
+
+/* 水：不透明色で描き、全体に透明度をかける */
+.bw-water {
+    position: absolute;
+    inset: 0;
+    opacity: var(--bw-alpha);
 }
 
 .bw-part {
@@ -327,10 +416,6 @@
     right: 0;
     overflow: hidden;
     isolation: isolate;
-}
-
-.bw-fill {
-    position: absolute;
 }
 
 .bw-top {
@@ -362,81 +447,85 @@
     display: none;
 }
 
-/* 上：前縁がコサインで抜ける水の層（満水時は膠囊の高さ全体が均一） */
-.bw-top .bw-fill {
+/* 流れ落ちる水の層：三つの部分とも塊の座標に揃えて置き、同じ移動量で動かす
+   → 上の膠囊・液橋・下の膠囊を一つの前縁が途切れず通過する */
+.bw-flood {
+    position: absolute;
     left: 0;
     right: 0;
-    top: 0;
-    height: 170%;
+    height: calc(var(--bw-h) * 2 + var(--bw-g) + var(--bw-ramp));
     background: linear-gradient(to bottom,
-        rgb(var(--bw-rgb)) 58.82%,
-        rgb(var(--bw-rgb) / 0.962) 63.97%,
-        rgb(var(--bw-rgb) / 0.854) 69.12%,
-        rgb(var(--bw-rgb) / 0.691) 74.26%,
-        rgb(var(--bw-rgb) / 0.500) 79.41%,
-        rgb(var(--bw-rgb) / 0.309) 84.56%,
-        rgb(var(--bw-rgb) / 0.146) 89.71%,
-        rgb(var(--bw-rgb) / 0.038) 94.85%,
-        rgb(var(--bw-rgb) / 0) 100.00%);
+        rgb(var(--bw-rgb)) calc(100% - var(--bw-ramp)),
+        rgb(var(--bw-rgb) / 0.962) calc(100% - var(--bw-ramp) * 0.875),
+        rgb(var(--bw-rgb) / 0.854) calc(100% - var(--bw-ramp) * 0.750),
+        rgb(var(--bw-rgb) / 0.691) calc(100% - var(--bw-ramp) * 0.625),
+        rgb(var(--bw-rgb) / 0.500) calc(100% - var(--bw-ramp) * 0.500),
+        rgb(var(--bw-rgb) / 0.309) calc(100% - var(--bw-ramp) * 0.375),
+        rgb(var(--bw-rgb) / 0.146) calc(100% - var(--bw-ramp) * 0.250),
+        rgb(var(--bw-rgb) / 0.038) calc(100% - var(--bw-ramp) * 0.125),
+        rgb(var(--bw-rgb) / 0) 100%);
 }
 
-/* 下・液橋：左右の縁がコサインで抜ける山型の層（満水時は幅全体が均一） */
-.bw-bot .bw-fill,
-.bw-neck .bw-fill {
+.bw-top .bw-flood {
     top: 0;
-    bottom: 0;
-    left: -30%;
-    width: 160%;
-    background: linear-gradient(to right,
-        rgb(var(--bw-rgb) / 0) 0.00%,
-        rgb(var(--bw-rgb) / 0.038) 2.34%,
-        rgb(var(--bw-rgb) / 0.146) 4.69%,
-        rgb(var(--bw-rgb) / 0.309) 7.03%,
-        rgb(var(--bw-rgb) / 0.500) 9.38%,
-        rgb(var(--bw-rgb) / 0.691) 11.72%,
-        rgb(var(--bw-rgb) / 0.854) 14.06%,
-        rgb(var(--bw-rgb) / 0.962) 16.41%,
-        rgb(var(--bw-rgb)) 18.75%,
-        rgb(var(--bw-rgb)) 81.25%,
-        rgb(var(--bw-rgb) / 0.962) 83.59%,
-        rgb(var(--bw-rgb) / 0.854) 85.94%,
-        rgb(var(--bw-rgb) / 0.691) 88.28%,
-        rgb(var(--bw-rgb) / 0.500) 90.62%,
-        rgb(var(--bw-rgb) / 0.309) 92.97%,
-        rgb(var(--bw-rgb) / 0.146) 95.31%,
-        rgb(var(--bw-rgb) / 0.038) 97.66%,
-        rgb(var(--bw-rgb) / 0) 100.00%);
 }
 
-/* 一度だけ再生：下が中央から切り開くのと同時に上が流れ落ち、
-   液橋が中央から広がって融合、最後に膠囊の地色と枠が水に溶ける（約 1.3 秒） */
-.bus-water-anim .bw-bot .bw-fill {
-    animation: bwSplit 1.15s var(--premium-ease, cubic-bezier(0.19, 1, 0.22, 1)) both;
+.bw-neck .bw-flood {
+    top: calc(var(--bw-t) * -1);
 }
 
-.bus-water-anim .bw-top .bw-fill {
-    animation: bwDrop 0.85s cubic-bezier(0.45, 0, 0.15, 1) 0.06s both;
+.bw-bot .bw-flood {
+    top: calc((var(--bw-h) + var(--bw-g)) * -1);
 }
 
-.bus-water-anim .bw-neck .bw-fill {
-    animation: bwSplit 0.95s var(--ios-snap, cubic-bezier(0.16, 1, 0.3, 1)) 0.4s both;
+/* 一度だけ再生（約 1.2 秒）
+   0〜0.35s 輪郭が消える／0〜0.75s 下の淺灰色が切り開かれる／
+   0.12〜1.17s 水が流れ落ちる／上の膠囊の地色は水に覆われながら消える */
+.bus-water-anim.bus-water-paired::after,
+.bus-water-anim .bw-veil-edge {
+    animation: bwFadeOut 0.35s ease both;
 }
 
-.bus-marker-row.bus-water-anim.bus-water-paired::before {
-    animation: bwMelt 0.6s ease 0.32s both;
+.bus-water-anim.bus-water-paired::before {
+    animation: bwFadeOut 0.5s ease 0.3s both;
 }
 
-/* 下の膠囊は切り開きと同時に地色を溶かし始める（灰色と水色が混ざって濁らないように） */
-.bus-stop-row.bus-water-target.bus-water-anim::before {
-    animation: bwMelt 0.7s ease 0.04s both;
+.bus-water-anim .bw-veil-l {
+    animation: bwVeilL 0.75s cubic-bezier(0.45, 0, 0.25, 1) both;
 }
 
-/* 車両が去った停留所は元の膠囊へ戻る */
-.bus-stop-row {
-    transition: background-color 0.5s ease, border-color 0.5s ease;
+.bus-water-anim .bw-veil-r {
+    animation: bwVeilR 0.75s cubic-bezier(0.45, 0, 0.25, 1) both;
 }
 
-@keyframes bwDrop {
+.bus-water-anim .bw-flood {
+    animation: bwFlood 1.05s cubic-bezier(0.5, 0, 0.25, 1) 0.12s both;
+}
+
+@keyframes bwFadeOut {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+/* 半分の層の幅は（膠囊幅＋縁）。半分＋縁の半分だけ動かすと、ちょうど膠囊の外へ出る */
+@keyframes bwVeilL {
+    to {
+        transform: translateX(calc(-50% - var(--bw-veil-ramp) / 2));
+    }
+}
+
+@keyframes bwVeilR {
+    to {
+        transform: translateX(calc(50% + var(--bw-veil-ramp) / 2));
+    }
+}
+
+@keyframes bwFlood {
     from {
         transform: translateY(-100%);
     }
@@ -446,41 +535,18 @@
     }
 }
 
-/* 切り開き：細いが縁の柔らかい光から始まり（縮めすぎると縁が硬くなる）、
-   不透明度は序盤ですばやく立ち上げる */
-@keyframes bwSplit {
-    from {
-        transform: scaleX(0.14);
-        opacity: 0;
-    }
-
-    30% {
-        opacity: 1;
-    }
-
-    to {
-        transform: none;
-        opacity: 1;
-    }
-}
-
-@keyframes bwMelt {
-    from {
-        opacity: 1;
-    }
-
-    to {
-        opacity: 0;
-    }
-}
-
 /* 動きを減らす設定：演出を省いて融合後の最終狀態だけ表示 */
 @media (prefers-reduced-motion: reduce) {
 
-    .bus-water-anim .bw-fill,
-    .bus-marker-row.bus-water-anim.bus-water-paired::before,
-    .bus-stop-row.bus-water-target.bus-water-anim::before {
+    .bus-water-anim .bw-flood,
+    .bus-water-anim.bus-water-paired::before,
+    .bus-water-anim.bus-water-paired::after {
         animation: none;
+    }
+
+    .bus-water-anim.bus-water-paired .bw-veil,
+    .bus-water-anim.bus-water-paired .bw-veil-edge {
+        display: none;
     }
 }
 
@@ -893,6 +959,9 @@
     .bus-stops-list {
         --bw-rgb: 64 156 255;
         --bw-alpha: 0.22;
+        --bw-veil-rgb: 0 0 0;
+        --bw-veil-a: 0.25;
+        --bw-veil-bd: rgba(255, 255, 255, 0.05);
     }
 
     .bus-delay.late {

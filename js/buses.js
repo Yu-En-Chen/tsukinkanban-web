@@ -992,17 +992,23 @@ function busVehicleRowInner(bus, stop) {
 // ・形：上下の膠囊＋その間の液橋。液橋の内側の曲線は、膠囊の外側の圓角
 //   （半径 R＝高さ/2）から求めた半径 r＝R の円で、上下両端の円弧に接する
 //   （メタボールの接続と同じ幾何）。寸法は実測して CSS 変数へ渡す
-// ・色：塊の中は不透明色で描き、塊全体に透明度をかける（重なり部分が濃くならない）
-// ・動き：下は中央から左右へ切り開き、同時に上は流れ落ち、液橋が中央から広がって融合
+// ・動き：まず両方の膠囊の輪郭が消え、下の膠囊の淺灰色が中央から左右へ切り開かれて
+//   背景が透ける → 上から水色が一つの前縁として流れ落ち、液橋を通って下まで満たす
 //   transform／opacity のみで動かす（合成のみ）。柔らかい縁はコサイン曲線の
 //   グラデーション（傾きが折れないのでマッハバンドが出ない）
+// ・色：水の中は不透明色で描き、水全体に透明度をかける（重なり部分が濃くならない）
 // ・演出は .bus-water-anim が付いたときだけ一度再生し、既定は融合後の最終狀態
 // ============================================================================
 const BUS_WATER_BODY = '<span class="bus-water-body" aria-hidden="true">'
-    + '<span class="bw-part bw-top"><span class="bw-fill"></span></span>'
-    + '<span class="bw-part bw-neck"><span class="bw-fill"></span></span>'
-    + '<span class="bw-part bw-bot"><span class="bw-fill"></span></span>'
-    + '</span>';
+    // 下の膠囊の「皮」：左右に切り開かれて背景が透ける
+    + '<span class="bw-veil"><span class="bw-veil-half bw-veil-l"></span><span class="bw-veil-half bw-veil-r"></span></span>'
+    + '<span class="bw-veil-edge"></span>'
+    // 水：上の膠囊・液橋・下の膠囊を同じ前縁が流れ落ちる
+    + '<span class="bw-water">'
+    + '<span class="bw-part bw-top"><span class="bw-flood"></span></span>'
+    + '<span class="bw-part bw-neck"><span class="bw-flood"></span></span>'
+    + '<span class="bw-part bw-bot"><span class="bw-flood"></span></span>'
+    + '</span></span>';
 
 function busMarkerKey(m) {
     return `${m.srcStop.name}|${m.bus.number || ''}`;
@@ -1047,26 +1053,18 @@ function observeBusWater(list) {
 }
 
 // 車輛膠囊と直下の停留所膠囊の融合狀態を同期する
-// 車輛膠囊の直下が停留所なら融合（液橋＋下の膠囊の水）、停留所側は枠と地色を水に溶かす
-// 直上の車両が変わった停留所だけ更新し、車両が去った停留所は元の膠囊へ戻る
+// 車輛膠囊の直下が停留所なら融合（液橋＋下の膠囊の水）。停留所側は地色と枠を外し、
+// 演出中の見た目は車輛膠囊側の「皮」が引き継ぐ。車両が去った停留所は元の膠囊へ戻る
 function syncBusWaterTargets(list) {
     const items = [...list.children];
     items.forEach((el, i) => {
-        if (!el.classList.contains('bus-marker-row')) return;
-        const next = items[i + 1];
-        el.classList.toggle('bus-water-paired', !!next && next.classList.contains('bus-stop-row'));
-    });
-    items.forEach((row, i) => {
-        if (!row.classList.contains('bus-stop-row')) return;
-        const prev = items[i - 1];
-        const src = prev && prev.classList.contains('bus-marker-row') ? prev : null;
-        const key = src ? src.dataset.waterKey : '';
-        if ((row.dataset.waterKey || '') === key) return;
-        const wasTarget = !!row.dataset.waterKey;
-        row.dataset.waterKey = key;
-        row.classList.toggle('bus-water-target', !!src);
-        // 膠囊が水に溶ける演出：新たに融合し、車両側も演出するときだけ
-        row.classList.toggle('bus-water-anim', !!src && !wasTarget && src.classList.contains('bus-water-anim'));
+        if (el.classList.contains('bus-marker-row')) {
+            const next = items[i + 1];
+            el.classList.toggle('bus-water-paired', !!next && next.classList.contains('bus-stop-row'));
+        } else if (el.classList.contains('bus-stop-row')) {
+            const prev = items[i - 1];
+            el.classList.toggle('bus-water-target', !!prev && prev.classList.contains('bus-marker-row'));
+        }
     });
     observeBusWater(list);
     measureBusWater(list);
