@@ -565,11 +565,10 @@ function busCollapsedCardInner(busData, prefs) {
 
 // 混合卡片內的公車路線：直接渲染完整的公車詳細面板（無「既存追加／新規作成」按鈕）
 // 收折卡點一下即「原地」展開為完整路線（方向切換塊＋全停留所），不跳轉至其他卡片
-// quiet：背景の再構築（列車情報の更新など）では水の演出を再生しない
-export function renderBusLineCard(targetId, { quiet = false } = {}) {
+export function renderBusLineCard(targetId) {
     const wrapper = document.createElement('div');
     const data = { targetLineIds: [targetId], busData: window.GlobalBusData[targetId] || null };
-    renderBusDetailPanel(data, wrapper, { isPreview: false, quiet });
+    renderBusDetailPanel(data, wrapper, { isPreview: false });
     // 混合卡片開啟時確保有最新詳細資料（不足時抓取，完成後 busDataUpdated 刷新）
     ensureBusRouteData(targetId);
     return wrapper;
@@ -981,122 +980,162 @@ function busMarkerHtml(bus, stop, chip = false) {
 const BUS_VEHICLE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6 2 7"/><path d="M10 6h4"/><path d="m22 7-2-1"/><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M8 15h.01"/><path d="M16 15h.01"/><path d="M6 19v2"/><path d="M18 21v-2"/></svg>`;
 
 function busVehicleRowInner(bus, stop) {
-    return BUS_WATER_BODY
+    return BUS_GLOW_HTML
         + `<span class="bus-vehicle-icon" aria-hidden="true">${BUS_VEHICLE_ICON}</span>`
         + `<span class="bus-vehicle-main">${busPlatePillHtml(bus, stop, true)}</span>`
         + busOccHtml(bus.occupancy);
 }
 
-// ============================================================================
-// 水の演出：車輛膠囊（上）と直下の停留所膠囊（下）を一つの水の塊として融合させる
-// ・形：上下の膠囊＋その間の液橋。液橋の内側の曲線は、膠囊の外側の圓角
-//   （半径 R＝高さ/2）から求めた半径 r＝R の円で、上下両端の円弧に接する
-//   （メタボールの接続と同じ幾何）。輪郭を実測から一本のパスにして clip-path で切り抜く
-// ・動き：下の膠囊の淺灰色が中央から左右へ切り開かれて背景が透ける →
-//   上から水が流れ落ち、液橋を通って下まで満たす。前縁には位置・幅・速さが
-//   毎回ランダムな「水の舌」を二本重ね、まっすぐな線ではなく不揃いに流れ落ちる
-// ・膠囊の枠線は常に表示し、演出はすべて枠線の下で動く
-// ・transform／opacity のみで動かす（合成のみ）。柔らかい縁は smootherstep の
-//   グラデーション（両端で傾きも曲率も連続なのでマッハバンドが出にくい）
-// ・色：水の中は不透明色で描き、水全体に透明度をかける（重なり部分が濃くならない）
-// ・演出は .bus-water-anim が付いたときだけ一度再生し、既定は融合後の最終狀態
-// ============================================================================
-const BUS_WATER_BODY = '<span class="bus-water-body" aria-hidden="true">'
-    // 下の膠囊の「皮」（地色）：左右に切り開かれて背景が透ける
-    + '<span class="bw-veil"><span class="bw-veil-half bw-veil-l"></span><span class="bw-veil-half bw-veil-r"></span></span>'
-    // 水：前縁の本体＋不揃いさを出す二本の舌
-    + '<span class="bw-water"><span class="bw-flood"></span><span class="bw-lobe bw-lobe-a"></span><span class="bw-lobe bw-lobe-b"></span></span>'
-    + '</span>';
-
-function busMarkerKey(m) {
-    return `${m.srcStop.name}|${m.bus.number || ''}`;
-}
-
-// animate=false：最終狀態で表示（同じ車両を背景の再構築で再演出しない）
-function createBusMarkerRow(m, animate) {
+// 車輛膠囊の DOM。data-key は「どの停留所へ向かうどの車両か」（再構築時の比較用）
+function createBusMarkerRow(m) {
     const marker = document.createElement('div');
-    marker.className = animate ? 'bus-marker-row bus-water-anim' : 'bus-marker-row';
-    marker.dataset.waterKey = busMarkerKey(m);
+    marker.className = 'bus-marker-row';
+    marker.dataset.key = `${m.srcStop.name}|${m.bus.number || ''}`;
+    marker.dataset.plate = m.bus.number || m.srcStop.name;
     marker.innerHTML = busVehicleRowInner(m.bus, m.srcStop);
-    if (animate) randomizeBusWater(marker);
     return marker;
 }
 
-// 流れ落ちる水の揺らぎ：本体の速さと、二本の舌の位置・幅・先行量を毎回ランダムに
-// （舌は本体より少し速く動くため、前縁がところどころ先に垂れ下がる）
-function randomizeBusWater(marker) {
-    const rnd = (min, max) => min + Math.random() * (max - min);
-    const dur = rnd(0.95, 1.2);
-    const delay = rnd(0.08, 0.18);
-    const vars = {
-        '--bw-fd': `${dur.toFixed(3)}s`,
-        '--bw-fdl': `${delay.toFixed(3)}s`,
-        '--bw-ax': `${rnd(18, 45).toFixed(1)}%`,
-        '--bw-aw': `${rnd(34, 56).toFixed(1)}%`,
-        '--bw-ad': `${(dur * rnd(0.74, 0.88)).toFixed(3)}s`,
-        '--bw-adl': `${(delay + rnd(-0.04, 0.03)).toFixed(3)}s`,
-        '--bw-bx': `${rnd(55, 84).toFixed(1)}%`,
-        '--bw-bw': `${rnd(28, 48).toFixed(1)}%`,
-        '--bw-bd': `${(dur * rnd(0.8, 0.94)).toFixed(3)}s`,
-        '--bw-bdl': `${(delay + rnd(-0.02, 0.06)).toFixed(3)}s`
-    };
-    Object.entries(vars).forEach(([k, v]) => marker.style.setProperty(k, v));
+// ============================================================================
+// 車輛膠囊の枠を回る光：二つの高光點が尾を引きながら枠線に沿って周回する
+// ・回転するグラデーションでは横長の膠囊で速さが偏るため、周長に沿って等間隔に
+//   取った点を transform のキーフレームにして等速で動かす（合成のみ・再描画なし）
+// ・尾は頭を少しずつ遅れて追う小さな点の列（枠線の帯の中だけに見せる）。
+//   頭には膠囊の内側へにじむ淡い光を添える
+// ・開始時刻を文書の時間軸の原点に揃える：背景の更新で膠囊が作り直されても
+//   光の位置が飛ばない
+// ============================================================================
+const BUS_GLOW_LAP_MS = 6000;  // 一周の時間
+const BUS_GLOW_TRAIL = 4;      // 尾の点の数（頭を除く。動く要素の数は毎フレームの負荷に比例するので最小限に）
+const BUS_GLOW_TRAIL_MS = 800; // 尾の長さ（頭からの遅れ）
+const BUS_GLOW_HALO = 36;      // 内側の光の直径
+
+const BUS_GLOW_HTML = (() => {
+    const dots = '<span class="bus-glow-dot"></span>'.repeat(2 * (BUS_GLOW_TRAIL + 1));
+    return '<span class="bus-glow" aria-hidden="true">'
+        + '<span class="bus-glow-inner"><span class="bus-glow-halo"></span><span class="bus-glow-halo"></span></span>'
+        + `<span class="bus-glow-ring">${dots}</span>`
+        + '</span>';
+})();
+
+// 枠線の帯（外枠から幅 2px）の中心線を周長で等間隔に辿るキーフレーム
+// 上辺 → 右の半円 → 下辺 → 左の半円（時計回り）。直径 size の点の中心を通す
+function busGlowKeyframes(W, H, size) {
+    const R = H / 2, inset = 1;
+    const r = R - inset, L = Math.max(0, W - 2 * R);
+    const arc = Math.PI * r, P = 2 * L + 2 * arc;
+    const N = 16; // 半円の分割数
+    const pts = [[0, R, inset], [L, W - R, inset]];
+    for (let i = 1; i <= N; i++) {
+        const a = -Math.PI / 2 + Math.PI * i / N;
+        pts.push([L + arc * i / N, W - R + r * Math.cos(a), R + r * Math.sin(a)]);
+    }
+    pts.push([2 * L + arc, R, H - inset]);
+    for (let i = 1; i <= N; i++) {
+        const a = Math.PI / 2 + Math.PI * i / N;
+        pts.push([2 * L + arc + arc * i / N, R + r * Math.cos(a), R + r * Math.sin(a)]);
+    }
+    const h = size / 2;
+    return pts.map(([d, x, y]) => ({
+        offset: d / P,
+        transform: `translate(${(x - h).toFixed(2)}px, ${(y - h).toFixed(2)}px)`
+    }));
 }
 
-// 水の塊の輪郭（上下の膠囊＋液橋）を一本のパスにする。座標は上の膠囊の外枠基準
-// 膠囊の幅 W・高さ H・間隔 g、両端の圓角 R＝H/2 の円（上下の中心間距離 d＝H+g）に
-// 外接する半径 r の円が液橋の内側の曲線。r は外側の圓角と揃えて R とする
-function busWaterClipPath(W, H, g) {
-    const R = H / 2, r = R, d = H + g, B = 2 * H + g;
-    const h = Math.sqrt(Math.max(0, (R + r) ** 2 - (d / 2) ** 2));
-    const ux = R * h / (R + r), uy = R * (d / 2) / (R + r);
-    const xl = R - ux, xr = W - R + ux; // 円弧と液橋の接点の x（左右）
-    const y1 = R + uy, y2 = R + d - uy; // 上の円弧・下の円弧との接点の y
-    const f = n => n.toFixed(2);
-    return `M${f(R)} 0H${f(W - R)}`
-        + `A${f(R)} ${f(R)} 0 0 1 ${f(xr)} ${f(y1)}`
-        + `A${f(r)} ${f(r)} 0 0 0 ${f(xr)} ${f(y2)}`
-        + `A${f(R)} ${f(R)} 0 0 1 ${f(W - R)} ${f(B)}H${f(R)}`
-        + `A${f(R)} ${f(R)} 0 0 1 ${f(xl)} ${f(y2)}`
-        + `A${f(r)} ${f(r)} 0 0 0 ${f(xl)} ${f(y1)}`
-        + `A${f(R)} ${f(R)} 0 0 1 ${f(R)} 0Z`;
+// 車両ごとの光の位相（0〜1）：車牌から決めるので車両ごとに異なり、作り直しても変わらない
+function busGlowPhase(plate) {
+    let h = 0;
+    for (const c of String(plate)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+    return (h % 1000) / 1000;
 }
 
-function measureBusWater(list) {
-    const marker = list.querySelector('.bus-marker-row');
-    const next = marker && marker.nextElementSibling;
-    if (!next || !marker.offsetHeight) return; // 未配置（DOM に入る前）は既定値のまま
+// 動いている光の一覧（DOM から外れた膠囊のアニメーションを止めるため）
+const busGlowMarkers = new Set();
+
+function stopBusGlow(marker) {
+    (marker._glowAnims || []).forEach(a => a.cancel());
+    marker._glowAnims = null;
+    marker._glowSig = '';
+    marker.classList.remove('bus-glow-on');
+    busGlowMarkers.delete(marker);
+}
+
+function pruneBusGlow() {
+    busGlowMarkers.forEach(m => { if (!m.isConnected) unwatchBusGlow(m); });
+}
+
+// 画面に見えている膠囊だけ光らせる（スクロールで外れたら止め、戻ったら位相どおりに再開）
+let busGlowIO = null;
+function watchBusGlow(marker) {
+    if (typeof IntersectionObserver === 'undefined') { marker._glowVisible = true; startBusGlow(marker); return; }
+    if (!busGlowIO) {
+        busGlowIO = new IntersectionObserver(entries => entries.forEach(e => {
+            e.target._glowVisible = e.isIntersecting;
+            if (e.isIntersecting) startBusGlow(e.target);
+            else stopBusGlow(e.target);
+            if (!e.target.isConnected) busGlowIO.unobserve(e.target);
+        }), { rootMargin: '40px' });
+    }
+    busGlowIO.observe(marker);
+}
+
+function unwatchBusGlow(marker) {
+    stopBusGlow(marker);
+    if (busGlowIO) busGlowIO.unobserve(marker);
+}
+
+// 膠囊の寸法が決まってから（DOM に入ってから）光を走らせる。寸法が変われば作り直す
+function startBusGlow(marker) {
+    pruneBusGlow();
+    if (!marker.isConnected || typeof marker.animate !== 'function') return;
     const W = marker.offsetWidth, H = marker.offsetHeight;
-    const g = next.offsetTop - marker.offsetTop - H;
-    list.style.setProperty('--bw-h', `${H}px`);
-    list.style.setProperty('--bw-g', `${g}px`);
-    list.style.setProperty('--bw-clip', `path('${busWaterClipPath(W, H, g)}')`);
-}
+    if (!W || !H || marker._glowSig === `${W}x${H}`) return;
+    stopBusGlow(marker);
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-// 初めて配置されたとき・幅が変わったときに測り直す
-const busWaterObserved = new WeakSet();
-function observeBusWater(list) {
-    if (busWaterObserved.has(list) || typeof ResizeObserver === 'undefined') return;
-    busWaterObserved.add(list);
-    new ResizeObserver(() => measureBusWater(list)).observe(list);
-}
-
-// 車輛膠囊と直下の停留所膠囊の融合狀態を同期する
-// 車輛膠囊の直下が停留所なら融合（液橋＋下の膠囊の水）。停留所側は地色と枠を外し、
-// 演出中の見た目は車輛膠囊側の「皮」が引き継ぐ。車両が去った停留所は元の膠囊へ戻る
-function syncBusWaterTargets(list) {
-    const items = [...list.children];
-    items.forEach((el, i) => {
-        if (el.classList.contains('bus-marker-row')) {
-            const next = items[i + 1];
-            el.classList.toggle('bus-water-paired', !!next && next.classList.contains('bus-stop-row'));
-        } else if (el.classList.contains('bus-stop-row')) {
-            const prev = items[i - 1];
-            el.classList.toggle('bus-water-target', !!prev && prev.classList.contains('bus-marker-row'));
+    marker._glowSig = `${W}x${H}`;
+    marker._glowAnims = [];
+    const run = (el, size, delay) => {
+        const anim = el.animate(busGlowKeyframes(W, H, size), {
+            duration: BUS_GLOW_LAP_MS, iterations: Infinity, easing: 'linear', delay, fill: 'both'
+        });
+        anim.startTime = 0; // 位相を文書の時間軸に固定
+        marker._glowAnims.push(anim);
+    };
+    const smoother = t => t * t * t * (t * (t * 6 - 15) + 10);
+    const dots = marker.querySelectorAll('.bus-glow-dot');
+    const halos = marker.querySelectorAll('.bus-glow-halo');
+    for (let head = 0; head < 2; head++) {
+        // 二つの頭は半周ずらし、車両ごとの位相を足す。遅延は負の範囲に収め、開始直後から周回中にする
+        const phase = busGlowPhase(marker.dataset.plate || '');
+        const headDelay = -BUS_GLOW_LAP_MS * (1 + phase) - head * BUS_GLOW_LAP_MS / 2;
+        for (let k = 0; k <= BUS_GLOW_TRAIL; k++) {
+            const t = k / BUS_GLOW_TRAIL;
+            // 頭は短く鋭い点、尾は長めの点を間隔より大きく重ねて一続きの光にする
+            const size = k === 0 ? 14 : 34 - 14 * t;
+            const dot = dots[head * (BUS_GLOW_TRAIL + 1) + k];
+            dot.style.width = dot.style.height = `${size}px`;
+            dot.style.opacity = (k === 0 ? 1 : 0.8 * (1 - smoother(t)) + 0.04).toFixed(3); // 尾ほど淡く
+            run(dot, size, headDelay + k * BUS_GLOW_TRAIL_MS / BUS_GLOW_TRAIL);
         }
+        run(halos[head], BUS_GLOW_HALO, headDelay);
+    }
+    marker.classList.add('bus-glow-on');
+    busGlowMarkers.add(marker);
+}
+
+// 列表内の膠囊を見え方の監視に登録し、幅が変わったら見えている膠囊の光を作り直す
+const busGlowObserved = new WeakSet();
+function observeBusGlow(list) {
+    list.querySelectorAll('.bus-marker-row').forEach(m => {
+        if (!m._glowWatched) { m._glowWatched = true; watchBusGlow(m); }
     });
-    observeBusWater(list);
-    measureBusWater(list);
+    if (!busGlowObserved.has(list) && typeof ResizeObserver !== 'undefined') {
+        busGlowObserved.add(list);
+        new ResizeObserver(() => list.querySelectorAll('.bus-marker-row').forEach(m => {
+            if (m._glowVisible) startBusGlow(m);
+        })).observe(list);
+    }
 }
 
 // 點擊站名 → 底部選單：Google Maps 導航／該站總覽
@@ -1225,7 +1264,6 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
     let swipeArea = null;     // 滑動切換的位移範圍（停留所列表）
     let swipeClip = null;     // 位移範圍的裁切層（拖曳時左右邊緣線性淡出）
     let sliderScrollMemo = 0; // 方向選單的捲動位置（跨重繪保留，避免切換時跳回 0）
-    let waterQuiet = !!opts.quiet; // 初回描画で水の演出を省く（背景の再構築）
 
     const container = document.createElement('div');
     container.className = 'bus-panel-container';
@@ -1250,6 +1288,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             clearInterval(window.__busPanelTicker);
             window.__busPanelTicker = null;
             if (window.__busPanelTargetId === targetId) window.__busPanelTargetId = null;
+            pruneBusGlow(); // 閉じた面板の光を止める
             return;
         }
         updateInPlace();
@@ -1423,19 +1462,18 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         const markerSig = markerSignature(pattern, view);
         if (markerSig !== lastMarkerSig) {
             lastMarkerSig = markerSig;
-            // 位置が変わった車両だけ淡入＋水の演出、留まっている車両は最終狀態のまま
-            const prevKeys = new Set([...stopsList.querySelectorAll('.bus-marker-row')].map(m => m.dataset.waterKey));
-            stopsList.querySelectorAll('.bus-marker-row').forEach(m => m.remove());
+            // 位置が変わった車両だけ淡入（留まっている車両は作り直しても見た目を変えない）
+            const prevKeys = new Set([...stopsList.querySelectorAll('.bus-marker-row')].map(m => m.dataset.key));
+            stopsList.querySelectorAll('.bus-marker-row').forEach(m => { unwatchBusGlow(m); m.remove(); });
             view.stopsToShow.forEach((stop, idx) => {
                 const row = rows[idx];
                 collectMarkers(pattern, stop, false).forEach(m => {
-                    const isNew = !prevKeys.has(busMarkerKey(m));
-                    const marker = createBusMarkerRow(m, isNew);
-                    if (isNew) marker.classList.add('bus-marker-in');
+                    const marker = createBusMarkerRow(m);
+                    if (!prevKeys.has(marker.dataset.key)) marker.classList.add('bus-marker-in');
                     stopsList.insertBefore(marker, row);
                 });
             });
-            syncBusWaterTargets(stopsList);
+            observeBusGlow(stopsList);
         }
 
         // 2. 時間膠囊與站名顏色
@@ -1629,13 +1667,10 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
     }, { passive: false });
 
     function render() {
+        container.querySelectorAll('.bus-marker-row').forEach(unwatchBusGlow);
         container.innerHTML = '';
         const busData = data.busData || {};
         const patterns = getPatterns();
-        // 水の演出は面板を開いた・方向を切り替えたときに一度だけ再生
-        // （背景の再構築で作り直された面板の初回描画では再生しない）
-        const animateWater = !waterQuiet;
-        waterQuiet = false;
 
         // 由站牌總覽跳轉而來時，依行き先自動切到對應方向
         // （資料尚未載入時保留待決，載入後的 render 再解析）
@@ -1822,7 +1857,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         view.stopsToShow.forEach((stop, idx) => {
             // 有巴士行駛在前一站與本站之間時，於該站上方插入一列車輛膠囊
             collectMarkers(pattern, stop, false).forEach(m => {
-                stopsList.appendChild(createBusMarkerRow(m, animateWater));
+                stopsList.appendChild(createBusMarkerRow(m));
             });
 
             const row = document.createElement('div');
@@ -1849,7 +1884,6 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
 
             stopsList.appendChild(row);
         });
-        syncBusWaterTargets(stopsList);
 
         // 記下目前的巴士位置配置，供就地更新比對
         lastMarkerSig = markerSignature(pattern, view);
@@ -1859,6 +1893,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         listShell.appendChild(expCard);
         container.appendChild(listShell);
         applyMarquees(stopsList);
+        observeBusGlow(stopsList);
         playHeightAnim(expCard);
 
         // --- 3. 收折按鈕 ---

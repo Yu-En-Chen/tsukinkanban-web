@@ -87,14 +87,12 @@
 }
 
 .bus-stop-row {
-    --cap-bg: rgba(0, 0, 0, 0.04);
-    --cap-bd: rgba(0, 0, 0, 0.06);
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 9px 16px;
-    background: var(--cap-bg);
-    border: 1px solid var(--cap-bd);
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     /* 全圓角長膠囊（與方向切換塊、全站的膠囊語言一致） */
     border-radius: 999px;
 }
@@ -224,14 +222,12 @@
    內距・圓角・高度與 .bus-stop-row 一致，以淡藍底＋巴士圖示區別於停留所
    左側車牌・表定偏差、右側擁擠度 */
 .bus-marker-row {
-    --cap-bg: rgba(10, 132, 255, 0.08);
-    --cap-bd: rgba(10, 132, 255, 0.22);
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 9px 16px;
-    /* 地色と枠は疑似要素で描く（水の演出を枠の下へ挟むため。下の水の演出を参照） */
-    border: 1px solid transparent;
+    background: rgba(10, 132, 255, 0.08);
+    border: 1px solid rgba(10, 132, 255, 0.22);
     border-radius: 999px;
     font-weight: 700;
     font-size: 0.95em;
@@ -259,307 +255,75 @@
     flex-shrink: 0;
 }
 
-/* --- 水の演出：車輛膠囊と直下の停留所膠囊が一つの水の塊に融合する ---
-   形：上下の膠囊＋液橋（内側の曲線は外側の圓角と同じ半径で接する）。
-       輪郭は JS が実測から一本のパスにして --bw-clip へ渡す
-   動き：①下の膠囊の淺灰色が中央から左右へ切り開かれ背景が透ける
-         ②上から水が流れ落ち、液橋を通って下まで満たす（前縁は二本の「水の舌」で
-           毎回ランダムに不揃い）
-   膠囊の枠線は常に表示し、演出はすべて枠線の下で動く
-   transform／opacity のみ（合成のみ）。柔らかい縁は smootherstep のグラデーション */
-.bus-stops-list {
-    --bw-rgb: 10 132 255;
-    --bw-alpha: 0.1;
-    --bw-ramp: 56px;
-    /* 下の膠囊の「皮」＝停留所膠囊と同じ地色（.bus-stop-row の --cap-bg と揃える） */
-    --bw-veil-rgb: 0 0 0;
-    --bw-veil-a: 0.04;
-    --bw-veil-ramp: 44px;
-    --bw-h: 41px;
-    --bw-g: 6px;
-    --bw-clip: inset(0 round 20px);
-}
-
-/* 車輛膠囊：地色（::before）と枠（::after）を疑似要素で描く
-   水の塊は ::before の上・::after（枠）の下に重なる */
+/* --- 車輛膠囊の枠を回る光：二つの高光點が尾を引いて周回する ---
+   動きは JS（Web Animations）で transform のみ。ここでは見た目だけを定義 */
 .bus-marker-row {
     position: relative;
     isolation: isolate;
+    --glow-rgb: 10 132 255;
+    --glow-core: 10 132 255;
 }
 
-.bus-marker-row::before,
-.bus-marker-row::after {
-    content: '';
+/* 地色・枠の上、文字の下に重ねる。JS が動かし始めるまでは表示しない */
+.bus-glow {
     position: absolute;
     inset: -1px;
     border-radius: inherit;
     z-index: -1;
     pointer-events: none;
-}
-
-/* 地色は水に置き換わる（最終狀態では水だけ） */
-.bus-marker-row::before {
-    background: var(--cap-bg);
-    opacity: 0;
-}
-
-.bus-marker-row::after {
-    border: 1px solid var(--cap-bd);
-}
-
-/* 下の膠囊：地色は外し（演出中は車輛膠囊側の「皮」が同じ見た目を引き継ぐ）、
-   枠と文字は水の塊より前面 */
-.bus-stop-row.bus-water-target {
-    position: relative;
-    z-index: 1;
-    background-color: transparent;
-    transition: none;
-}
-
-/* 車両が去った停留所は元の膠囊へ戻る */
-.bus-stop-row {
-    transition: background-color 0.5s ease;
-}
-
-/* 水の塊の範囲：上の膠囊の上端から下の膠囊の下端まで（外枠基準） */
-.bus-water-body {
-    position: absolute;
-    top: -1px;
-    left: -1px;
-    right: -1px;
-    height: calc(var(--bw-h) * 2 + var(--bw-g));
-    z-index: -1;
-    pointer-events: none;
-}
-
-/* 融合していない車輛膠囊（直下も車両）は自分の膠囊の中だけ */
-.bus-marker-row:not(.bus-water-paired) .bus-water-body {
-    height: var(--bw-h);
-}
-
-/* 下の膠囊の「皮」：演出中だけ表示。左右の半分が中央の柔らかい縁から外へ引く
-   不透明色で描いて全体に地色の透明度をかける（重なっても濃くならない） */
-.bw-veil {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: calc(var(--bw-h) + var(--bw-g));
-    height: var(--bw-h);
-    border-radius: 999px;
-    overflow: hidden;
-    isolation: isolate;
-    opacity: var(--bw-veil-a);
     display: none;
 }
 
-.bus-water-anim.bus-water-paired .bw-veil {
+.bus-glow-on .bus-glow {
     display: block;
 }
 
-.bw-veil-half {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: calc(100% + var(--bw-veil-ramp));
-}
-
-.bw-veil-l {
-    left: -50%;
-    background: linear-gradient(to right,
-        rgb(var(--bw-veil-rgb)) calc(100% - var(--bw-veil-ramp)),
-        rgb(var(--bw-veil-rgb) / 0.998) calc(100% - var(--bw-veil-ramp) * 0.9375),
-        rgb(var(--bw-veil-rgb) / 0.984) calc(100% - var(--bw-veil-ramp) * 0.8750),
-        rgb(var(--bw-veil-rgb) / 0.951) calc(100% - var(--bw-veil-ramp) * 0.8125),
-        rgb(var(--bw-veil-rgb) / 0.896) calc(100% - var(--bw-veil-ramp) * 0.7500),
-        rgb(var(--bw-veil-rgb) / 0.820) calc(100% - var(--bw-veil-ramp) * 0.6875),
-        rgb(var(--bw-veil-rgb) / 0.725) calc(100% - var(--bw-veil-ramp) * 0.6250),
-        rgb(var(--bw-veil-rgb) / 0.616) calc(100% - var(--bw-veil-ramp) * 0.5625),
-        rgb(var(--bw-veil-rgb) / 0.500) calc(100% - var(--bw-veil-ramp) * 0.5000),
-        rgb(var(--bw-veil-rgb) / 0.384) calc(100% - var(--bw-veil-ramp) * 0.4375),
-        rgb(var(--bw-veil-rgb) / 0.275) calc(100% - var(--bw-veil-ramp) * 0.3750),
-        rgb(var(--bw-veil-rgb) / 0.180) calc(100% - var(--bw-veil-ramp) * 0.3125),
-        rgb(var(--bw-veil-rgb) / 0.104) calc(100% - var(--bw-veil-ramp) * 0.2500),
-        rgb(var(--bw-veil-rgb) / 0.049) calc(100% - var(--bw-veil-ramp) * 0.1875),
-        rgb(var(--bw-veil-rgb) / 0.016) calc(100% - var(--bw-veil-ramp) * 0.1250),
-        rgb(var(--bw-veil-rgb) / 0.002) calc(100% - var(--bw-veil-ramp) * 0.0625),
-        rgb(var(--bw-veil-rgb) / 0) 100%);
-}
-
-.bw-veil-r {
-    left: calc(50% - var(--bw-veil-ramp));
-    background: linear-gradient(to left,
-        rgb(var(--bw-veil-rgb)) calc(100% - var(--bw-veil-ramp)),
-        rgb(var(--bw-veil-rgb) / 0.998) calc(100% - var(--bw-veil-ramp) * 0.9375),
-        rgb(var(--bw-veil-rgb) / 0.984) calc(100% - var(--bw-veil-ramp) * 0.8750),
-        rgb(var(--bw-veil-rgb) / 0.951) calc(100% - var(--bw-veil-ramp) * 0.8125),
-        rgb(var(--bw-veil-rgb) / 0.896) calc(100% - var(--bw-veil-ramp) * 0.7500),
-        rgb(var(--bw-veil-rgb) / 0.820) calc(100% - var(--bw-veil-ramp) * 0.6875),
-        rgb(var(--bw-veil-rgb) / 0.725) calc(100% - var(--bw-veil-ramp) * 0.6250),
-        rgb(var(--bw-veil-rgb) / 0.616) calc(100% - var(--bw-veil-ramp) * 0.5625),
-        rgb(var(--bw-veil-rgb) / 0.500) calc(100% - var(--bw-veil-ramp) * 0.5000),
-        rgb(var(--bw-veil-rgb) / 0.384) calc(100% - var(--bw-veil-ramp) * 0.4375),
-        rgb(var(--bw-veil-rgb) / 0.275) calc(100% - var(--bw-veil-ramp) * 0.3750),
-        rgb(var(--bw-veil-rgb) / 0.180) calc(100% - var(--bw-veil-ramp) * 0.3125),
-        rgb(var(--bw-veil-rgb) / 0.104) calc(100% - var(--bw-veil-ramp) * 0.2500),
-        rgb(var(--bw-veil-rgb) / 0.049) calc(100% - var(--bw-veil-ramp) * 0.1875),
-        rgb(var(--bw-veil-rgb) / 0.016) calc(100% - var(--bw-veil-ramp) * 0.1250),
-        rgb(var(--bw-veil-rgb) / 0.002) calc(100% - var(--bw-veil-ramp) * 0.0625),
-        rgb(var(--bw-veil-rgb) / 0) 100%);
-}
-
-/* 水：輪郭のパスで切り抜き、不透明色で描いて全体に透明度をかける */
-.bw-water {
+.bus-glow-inner,
+.bus-glow-ring {
     position: absolute;
     inset: 0;
-    clip-path: var(--bw-clip);
-    opacity: var(--bw-alpha);
+    border-radius: inherit;
 }
 
-.bus-marker-row:not(.bus-water-paired) .bw-water {
-    clip-path: inset(0 round 999px);
+/* 頭が膠囊の内側へにじむ淡い光（膠囊の形で切り抜き、外へははみ出さない） */
+.bus-glow-inner {
+    overflow: hidden;
 }
 
-/* 流れ落ちる水の本体：満水時は塊の高さ全体が均一 */
-.bw-flood {
+/* 尾：外枠から幅 2px の帯（枠線の上）だけを見せる */
+.bus-glow-ring {
+    padding: 2px;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+}
+
+.bus-glow-dot,
+.bus-glow-halo {
     position: absolute;
     top: 0;
     left: 0;
-    right: 0;
-    height: calc(var(--bw-h) * 2 + var(--bw-g) + var(--bw-ramp));
-    background: linear-gradient(to bottom,
-        rgb(var(--bw-rgb)) calc(100% - var(--bw-ramp)),
-        rgb(var(--bw-rgb) / 0.998) calc(100% - var(--bw-ramp) * 0.9375),
-        rgb(var(--bw-rgb) / 0.984) calc(100% - var(--bw-ramp) * 0.8750),
-        rgb(var(--bw-rgb) / 0.951) calc(100% - var(--bw-ramp) * 0.8125),
-        rgb(var(--bw-rgb) / 0.896) calc(100% - var(--bw-ramp) * 0.7500),
-        rgb(var(--bw-rgb) / 0.820) calc(100% - var(--bw-ramp) * 0.6875),
-        rgb(var(--bw-rgb) / 0.725) calc(100% - var(--bw-ramp) * 0.6250),
-        rgb(var(--bw-rgb) / 0.616) calc(100% - var(--bw-ramp) * 0.5625),
-        rgb(var(--bw-rgb) / 0.500) calc(100% - var(--bw-ramp) * 0.5000),
-        rgb(var(--bw-rgb) / 0.384) calc(100% - var(--bw-ramp) * 0.4375),
-        rgb(var(--bw-rgb) / 0.275) calc(100% - var(--bw-ramp) * 0.3750),
-        rgb(var(--bw-rgb) / 0.180) calc(100% - var(--bw-ramp) * 0.3125),
-        rgb(var(--bw-rgb) / 0.104) calc(100% - var(--bw-ramp) * 0.2500),
-        rgb(var(--bw-rgb) / 0.049) calc(100% - var(--bw-ramp) * 0.1875),
-        rgb(var(--bw-rgb) / 0.016) calc(100% - var(--bw-ramp) * 0.1250),
-        rgb(var(--bw-rgb) / 0.002) calc(100% - var(--bw-ramp) * 0.0625),
-        rgb(var(--bw-rgb) / 0) 100%);
+    border-radius: 50%;
 }
 
-/* 水の舌：前縁から垂れ下がる丸い先端（満水時は本体に隠れる） */
-.bw-lobe {
-    position: absolute;
-    top: 0;
-    height: calc(var(--bw-h) * 2 + var(--bw-g) + var(--bw-ramp));
-    background: radial-gradient(ellipse 50% 100% at 50% 0%,
-        rgb(var(--bw-rgb)) 0%,
-        rgb(var(--bw-rgb)) 62.00%,
-        rgb(var(--bw-rgb) / 0.998) 64.38%,
-        rgb(var(--bw-rgb) / 0.984) 66.75%,
-        rgb(var(--bw-rgb) / 0.951) 69.12%,
-        rgb(var(--bw-rgb) / 0.896) 71.50%,
-        rgb(var(--bw-rgb) / 0.820) 73.88%,
-        rgb(var(--bw-rgb) / 0.725) 76.25%,
-        rgb(var(--bw-rgb) / 0.616) 78.62%,
-        rgb(var(--bw-rgb) / 0.500) 81.00%,
-        rgb(var(--bw-rgb) / 0.384) 83.38%,
-        rgb(var(--bw-rgb) / 0.275) 85.75%,
-        rgb(var(--bw-rgb) / 0.180) 88.12%,
-        rgb(var(--bw-rgb) / 0.104) 90.50%,
-        rgb(var(--bw-rgb) / 0.049) 92.88%,
-        rgb(var(--bw-rgb) / 0.016) 95.25%,
-        rgb(var(--bw-rgb) / 0.002) 97.62%,
-        rgb(var(--bw-rgb) / 0) 100.00%);
-    display: none;
+.bus-glow-dot {
+    background: radial-gradient(closest-side,
+            rgb(var(--glow-core)) 0%,
+            rgb(var(--glow-rgb) / 0.9) 40%,
+            rgb(var(--glow-rgb) / 0.45) 70%,
+            rgb(var(--glow-rgb) / 0) 100%);
 }
 
-.bus-water-anim .bw-lobe {
-    display: block;
-}
-
-.bw-lobe-a {
-    left: calc(var(--bw-ax, 30%) - var(--bw-aw, 45%) / 2);
-    width: var(--bw-aw, 45%);
-}
-
-.bw-lobe-b {
-    left: calc(var(--bw-bx, 70%) - var(--bw-bw, 38%) / 2);
-    width: var(--bw-bw, 38%);
-}
-
-/* 一度だけ再生（約 1.3 秒）：0〜0.75s 下の淺灰色が切り開かれる／
-   0.1s 前後から水が流れ落ちる（速さ・舌の位置は毎回ランダム）／
-   上の膠囊の地色は水に覆われながら消える */
-/* 上の膠囊の地色は水がほぼ覆ってから消す（先に消えると一瞬白く抜ける） */
-.bus-water-anim::before {
-    animation: bwFadeOut 0.55s ease 0.55s both;
-}
-
-.bus-water-anim .bw-veil-l {
-    animation: bwVeilL 0.75s cubic-bezier(0.45, 0, 0.25, 1) both;
-}
-
-.bus-water-anim .bw-veil-r {
-    animation: bwVeilR 0.75s cubic-bezier(0.45, 0, 0.25, 1) both;
-}
-
-.bus-water-anim .bw-flood {
-    animation: bwFlood var(--bw-fd, 1.05s) cubic-bezier(0.5, 0, 0.25, 1) var(--bw-fdl, 0.12s) both;
-}
-
-.bus-water-anim .bw-lobe-a {
-    animation: bwFlood var(--bw-ad, 0.85s) cubic-bezier(0.45, 0, 0.3, 1) var(--bw-adl, 0.1s) both;
-}
-
-.bus-water-anim .bw-lobe-b {
-    animation: bwFlood var(--bw-bd, 0.92s) cubic-bezier(0.55, 0, 0.3, 1) var(--bw-bdl, 0.14s) both;
-}
-
-@keyframes bwFadeOut {
-    from {
-        opacity: 1;
-    }
-
-    to {
-        opacity: 0;
-    }
-}
-
-/* 半分の層の幅は（膠囊幅＋縁）。半分＋縁の半分だけ動かすと、ちょうど膠囊の外へ出る */
-@keyframes bwVeilL {
-    to {
-        transform: translateX(calc(-50% - var(--bw-veil-ramp) / 2));
-    }
-}
-
-@keyframes bwVeilR {
-    to {
-        transform: translateX(calc(50% + var(--bw-veil-ramp) / 2));
-    }
-}
-
-@keyframes bwFlood {
-    from {
-        transform: translateY(-100%);
-    }
-
-    to {
-        transform: none;
-    }
-}
-
-/* 動きを減らす設定：演出を省いて融合後の最終狀態だけ表示 */
-@media (prefers-reduced-motion: reduce) {
-
-    .bus-water-anim .bw-flood,
-    .bus-water-anim::before {
-        animation: none;
-    }
-
-    .bus-water-anim.bus-water-paired .bw-veil,
-    .bus-water-anim .bw-lobe {
-        display: none;
-    }
+.bus-glow-halo {
+    width: 36px;
+    height: 36px;
+    background: radial-gradient(closest-side,
+            rgb(var(--glow-rgb) / 0.2) 0%,
+            rgb(var(--glow-rgb) / 0.17) 25%,
+            rgb(var(--glow-rgb) / 0.1) 50%,
+            rgb(var(--glow-rgb) / 0.03) 75%,
+            rgb(var(--glow-rgb) / 0) 100%);
 }
 
 /* 列表內的 chip 與站名字級一致 */
@@ -910,8 +674,8 @@
     }
 
     .bus-stop-row {
-        --cap-bg: rgba(0, 0, 0, 0.25);
-        --cap-bd: rgba(255, 255, 255, 0.05);
+        background: rgba(0, 0, 0, 0.25);
+        border-color: rgba(255, 255, 255, 0.05);
     }
 
     .bus-eta-pill.arriving {
@@ -964,15 +728,11 @@
     }
 
     .bus-marker-row {
-        --cap-bg: rgba(10, 132, 255, 0.14);
-        --cap-bd: rgba(100, 169, 255, 0.22);
-    }
-
-    .bus-stops-list {
-        --bw-rgb: 64 156 255;
-        --bw-alpha: 0.15;
-        --bw-veil-rgb: 0 0 0;
-        --bw-veil-a: 0.25;
+        background: rgba(10, 132, 255, 0.14);
+        border-color: rgba(100, 169, 255, 0.22);
+        /* 暗い背景では芯を白っぽくして光って見えるように */
+        --glow-rgb: 100 169 255;
+        --glow-core: 190 222 255;
     }
 
     .bus-delay.late {
