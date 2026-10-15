@@ -592,17 +592,16 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                 if (timetableEntries.length > 0) {
                     const buttons = uniqueLinks.map(link => ({ text: link.name, value: link.url }))
                         .concat(timetableEntries.map((entry, i) => ({ text: entry.name, value: `timetable:${i}` })));
+                    const hasSheet = buttons.length > 1 && typeof window.iosActionSheet === 'function';
+                    // 選單：時刻表を開いたときは、時刻表の「返回」でこの選單に戻れるようにする
+                    const showSheet = () => window.iosActionSheet('公式サイト・時刻表', '開く項目を選択してください', buttons).then(openChoice);
                     const openChoice = (value) => {
                         if (!value) return;
-                        if (value.startsWith('timetable:')) timetableEntries[Number(value.slice(10))].open();
+                        if (value.startsWith('timetable:')) timetableEntries[Number(value.slice(10))].open(hasSheet ? showSheet : null);
                         else window.open(value, '_blank');
                     };
-                    if (buttons.length === 1) openChoice(buttons[0].value);
-                    else if (typeof window.iosActionSheet === 'function') {
-                        window.iosActionSheet('公式サイト・時刻表', '開く項目を選択してください', buttons).then(openChoice);
-                    } else {
-                        openChoice(buttons[0].value);
-                    }
+                    if (hasSheet) showSheet();
+                    else openChoice(buttons[0].value);
                     return;
                 }
 

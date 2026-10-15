@@ -124,8 +124,15 @@ window.toggleMainMenu = function () {
 // ============================================================================
 
 // 返回主選單 (只關閉通用頁面，保留主選單)
+// 返回鈕的去處：預設回到主選單（主選單保留在背景）。
+// 從主選單以外開啟的頁面（例：卡片右上角選單開的時刻表）可在開啟時指定 onBack，
+// 返回時先關閉本頁再執行它（例：回到「官網／時刻表」選單）
+let universalBackHandler = null;
+
 window.backToMainMenu = function() {
+    const onBack = universalBackHandler;
     window.closeUniversalPage(false); // 傳入 false，代表「不關閉」背景的主選單
+    if (onBack) setTimeout(onBack, 250); // 等本頁開始淡出再接上一層
 };
 
 // 內文區上下緣的漸隱（各最多一行）
@@ -163,7 +170,9 @@ function watchUniversalFade(el) {
     observeAll();
 }
 
-window.openUniversalPage = function(title, contentHTML) {
+window.openUniversalPage = function(title, contentHTML, options = {}) {
+    universalBackHandler = typeof options.onBack === 'function' ? options.onBack : null;
+
     let wrapper = document.getElementById('universal-page-wrapper');
     let navBtns = document.getElementById('universal-nav-buttons');
     const searchContainer = document.getElementById('search-container');
@@ -238,6 +247,7 @@ window.openUniversalPage = function(title, contentHTML) {
 };
 
 window.closeUniversalPage = function(closeAll = false) {
+    universalBackHandler = null;
     // 1. 移除通用底版的顯示狀態
     document.body.classList.remove('universal-active');
 

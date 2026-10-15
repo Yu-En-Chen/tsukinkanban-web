@@ -320,9 +320,10 @@ async function load(root, state) {
 
 // 停留所カードから：stop（その停留所の全路線）
 // 路線から開いたとき：route（路線名）、dirs（[{ label, dest, stops, preview }]）、dir（方向）、stop（停留所）
-export function openBusTimetable({ title, stop, route = '', operator = '', dirs = null, dir = 0 }) {
+// onBack：返回鈕的去處（例：回到「官網／時刻表」選單）。未指定時返回＝關閉
+export function openBusTimetable({ title, stop, route = '', operator = '', dirs = null, dir = 0, onBack = null }) {
     if (typeof window.openUniversalPage !== 'function' || !stop) return;
-    window.openUniversalPage(title, '<div class="tt-root"></div>');
+    window.openUniversalPage(title, '<div class="tt-root"></div>', { onBack });
     const root = document.querySelector('#universal-page-content .tt-root');
     if (!root) return;
 
@@ -424,7 +425,7 @@ window.getBusTimetableEntries = function (card) {
     if (card.isBusStopCard && card.busStopData && card.busStopData.stopName) {
         const sd = card.busStopData;
         const title = `${sd.stopName} 時刻表`;
-        entries.push({ name: title, open: () => openBusTimetable({ title, stop: sd.stopName, operator: sd.operator || '' }) });
+        entries.push({ name: title, open: (onBack) => openBusTimetable({ title, stop: sd.stopName, operator: sd.operator || '', onBack }) });
         return entries;
     }
 
@@ -437,7 +438,7 @@ window.getBusTimetableEntries = function (card) {
         const cand = routeDirections(id, route);
         if (!cand) return; // 路線データ未取得
         const title = `${route} 時刻表`;
-        entries.push({ name: title, open: () => openBusTimetable({ title, stop: cand.stop, route, operator, dirs: cand.dirs, dir: cand.dir }) });
+        entries.push({ name: title, open: (onBack) => openBusTimetable({ title, stop: cand.stop, route, operator, dirs: cand.dirs, dir: cand.dir, onBack }) });
     });
     return entries;
 };
