@@ -190,12 +190,39 @@ function dirTabsHtml(dirs, index) {
             ${ARROW_SVG}${esc(d.label)}</button>`).join('')}</div>`;
 }
 
-// 乗車する停留所の選択（選んだ方向の停留所を路線順に。プレビュー中の停留所には印）
+// 乗車する停留所の選択：既定の <select> は端末のメニューが出て見た目がそろわないため自作する。
+// 膠囊を押すと下に路線図ふうの一覧（縦線で停留所の点をつなぎ、路線の順に並べる）が開く。
+// 選択中は青い点＋太字、プレビュー中の停留所には★
+const CHEVRON_SVG = '<svg class="tt-stop-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+
 function stopPickerHtml(dir, stopName) {
-    const options = dir.stops.map(name =>
-        `<option value="${esc(name)}"${name === stopName ? ' selected' : ''}>${esc(name)}${dir.preview.includes(name) ? ' ★' : ''}</option>`).join('');
-    return `<label class="tt-stop-pick"><span>乗車停留所</span><select>${options}</select>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></label>`;
+    const options = dir.stops.map(name => {
+        const sel = name === stopName;
+        return `<button type="button" role="option" class="tt-stop-opt${sel ? ' selected' : ''}" data-stop="${esc(name)}" aria-selected="${sel}">
+            <span class="tt-stop-dot"></span><span class="tt-stop-optname">${esc(name)}</span>
+            ${dir.preview.includes(name) ? '<span class="tt-stop-badge">★ プレビュー</span>' : ''}</button>`;
+    }).join('');
+    return `<div class="tt-stop-pick">
+        <button type="button" class="tt-stop-btn" aria-haspopup="listbox" aria-expanded="false">
+            <span class="tt-stop-label">乗車停留所</span><span class="tt-stop-current">${esc(stopName)}</span>${CHEVRON_SVG}
+        </button>
+        <div class="tt-stop-panel"><div class="tt-stop-clip"><div class="tt-stop-card">
+            <div class="tt-stop-list" role="listbox" aria-label="乗車停留所">${options}</div>
+        </div></div></div>
+    </div>`;
+}
+
+function setStopPickerOpen(root, open) {
+    const pick = root.querySelector('.tt-stop-pick');
+    if (!pick || pick.classList.contains('open') === open) return;
+    pick.classList.toggle('open', open);
+    pick.querySelector('.tt-stop-btn').setAttribute('aria-expanded', String(open));
+    if (open) {
+        // 選択中の停留所が一覧の中ほどに来るように
+        const list = pick.querySelector('.tt-stop-list');
+        const sel = list.querySelector('.tt-stop-opt.selected');
+        if (sel) list.scrollTop = sel.offsetTop - (list.clientHeight - sel.offsetHeight) / 2;
+    }
 }
 
 function controlsHtml(state) {
@@ -311,6 +338,25 @@ export function openBusTimetable({ title, stop, route = '', operator = '', dirs 
             if (state.data && state.day === state.data.today) scrollToNext(root);
             return;
         }
+        // 停留所の一覧：膠囊で開閉、項目で選択、ほかの場所を押したら閉じる
+        if (e.target.closest('.tt-stop-btn')) {
+            const pick = root.querySelector('.tt-stop-pick');
+            setStopPickerOpen(root, !(pick && pick.classList.contains('open')));
+            if (navigator.vibrate) navigator.vibrate(8);
+            return;
+        }
+        const opt = e.target.closest('.tt-stop-opt');
+        if (opt) {
+            setStopPickerOpen(root, false);
+            if (opt.dataset.stop !== state.stop) {
+                state.stop = opt.dataset.stop;
+                if (navigator.vibrate) navigator.vibrate(8);
+                setTimeout(() => { if (root.isConnected) load(root, state); }, 220); // 閉じる動きを見せてから
+            }
+            return;
+        }
+        if (!e.target.closest('.tt-stop-panel')) setStopPickerOpen(root, false);
+
         const dirBtn = e.target.closest('.tt-dir[data-dir]');
         if (dirBtn && Number(dirBtn.dataset.dir) !== state.dir) {
             // 方向を変える：同じ停留所がその方向にもあれば維持、なければプレビュー停留所→始発
@@ -323,10 +369,14 @@ export function openBusTimetable({ title, stop, route = '', operator = '', dirs 
         }
         if (e.target.closest('.tt-retry')) load(root, state);
     });
-    root.addEventListener('change', (e) => {
-        if (!e.target.matches('.tt-stop-pick select')) return;
-        state.stop = e.target.value;
-        load(root, state);
+    // Esc：一覧が開いていれば一覧だけ閉じる（全体の「Esc で通用頁面を閉じる」には伝えない）
+    root.addEventListener('keydown', (e) => {
+        const pick = root.querySelector('.tt-stop-pick.open');
+        if (e.key === 'Escape' && pick) {
+            e.stopPropagation();
+            setStopPickerOpen(root, false);
+            pick.querySelector('.tt-stop-btn').focus();
+        }
     });
 
     // 開いている間、毎分の境目で下一班を更新（API は再取得しない）。閉じたら止める

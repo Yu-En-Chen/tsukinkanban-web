@@ -787,42 +787,50 @@
     stroke-linejoin: round;
 }
 
-/* 停留所の選択（路線から開いたとき） */
+/* 乗車停留所の選択（路線から開いたとき）：膠囊を押すと下に路線図ふうの一覧が開く */
 .tt-stop-pick {
-    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.tt-stop-btn {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 44px 10px 18px;
+    width: 100%;
+    padding: 10px 16px 10px 18px;
     border-radius: 999px;
-    background: rgba(0, 0, 0, 0.04);
     border: 1px solid rgba(0, 0, 0, 0.06);
-    font-weight: 700;
-}
-
-.tt-stop-pick > span {
-    font-size: 0.85em;
-    opacity: 0.55;
-    flex-shrink: 0;
-}
-
-.tt-stop-pick select {
-    flex: 1;
-    min-width: 0;
-    appearance: none;
-    -webkit-appearance: none;
-    background: none;
-    border: none;
+    background: rgba(0, 0, 0, 0.04);
     color: inherit;
     font: inherit;
-    font-weight: 800;
-    outline: none;
+    text-align: left;
     cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
 }
 
-.tt-stop-pick svg {
-    position: absolute;
-    right: 16px;
+.tt-stop-btn:active {
+    transform: scale(0.98);
+}
+
+.tt-stop-label {
+    flex-shrink: 0;
+    font-size: 0.85em;
+    font-weight: 700;
+    opacity: 0.55;
+}
+
+.tt-stop-current {
+    flex: 1;
+    min-width: 0;
+    font-weight: 800;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tt-stop-chev {
+    flex-shrink: 0;
     width: 18px;
     height: 18px;
     fill: none;
@@ -831,7 +839,145 @@
     stroke-linecap: round;
     stroke-linejoin: round;
     opacity: 0.5;
-    pointer-events: none;
+    transition: transform 0.35s var(--ios-snap, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.tt-stop-pick.open .tt-stop-chev {
+    transform: rotate(180deg);
+}
+
+/* 開閉：高さ 0fr ↔ 1fr の過渡で滑らかに伸び縮みさせる */
+.tt-stop-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition: grid-template-rows 0.35s var(--ios-snap, cubic-bezier(0.16, 1, 0.3, 1)), opacity 0.25s ease, margin-top 0.35s ease;
+}
+
+.tt-stop-pick.open .tt-stop-panel {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    margin-top: 8px;
+}
+
+.tt-stop-clip {
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* 外側の卡片が地色と枠、内側の一覧だけが捲動して上下端で淡出する */
+.tt-stop-card {
+    border-radius: 22px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    overflow: hidden;
+}
+
+.tt-stop-list {
+    max-height: 296px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    padding: 6px 0;
+}
+
+.tt-stop-list::-webkit-scrollbar {
+    display: none;
+}
+
+/* 一覧の上下端：捲動中に行が硬く切れないよう 14px で淡出（静止時は上下の余白にかかるだけで文字は欠けない） */
+.tt-stop-list {
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.000) 0.0px, rgba(0, 0, 0, 0.058) 2.8px, rgba(0, 0, 0, 0.317) 5.6px, rgba(0, 0, 0, 0.683) 8.4px, rgba(0, 0, 0, 0.942) 11.2px, rgba(0, 0, 0, 1.000) 14.0px, rgba(0, 0, 0, 1.000) calc(100% - 14.0px), rgba(0, 0, 0, 0.942) calc(100% - 11.2px), rgba(0, 0, 0, 0.683) calc(100% - 8.4px), rgba(0, 0, 0, 0.317) calc(100% - 5.6px), rgba(0, 0, 0, 0.058) calc(100% - 2.8px), rgba(0, 0, 0, 0.000) calc(100% - 0.0px));
+    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.000) 0.0px, rgba(0, 0, 0, 0.058) 2.8px, rgba(0, 0, 0, 0.317) 5.6px, rgba(0, 0, 0, 0.683) 8.4px, rgba(0, 0, 0, 0.942) 11.2px, rgba(0, 0, 0, 1.000) 14.0px, rgba(0, 0, 0, 1.000) calc(100% - 14.0px), rgba(0, 0, 0, 0.942) calc(100% - 11.2px), rgba(0, 0, 0, 0.683) calc(100% - 8.4px), rgba(0, 0, 0, 0.317) calc(100% - 5.6px), rgba(0, 0, 0, 0.058) calc(100% - 2.8px), rgba(0, 0, 0, 0.000) calc(100% - 0.0px));
+}
+
+/* 一覧の各行：左の縦線で停留所の点をつなぐ（路線図） */
+.tt-stop-opt {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 44px;
+    padding: 0 16px 0 46px;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.tt-stop-opt::before {
+    content: '';
+    position: absolute;
+    left: 24px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    margin-left: -1px;
+    background: rgba(10, 132, 255, 0.3);
+}
+
+.tt-stop-opt:first-child::before {
+    top: 50%;
+}
+
+.tt-stop-opt:last-child::before {
+    bottom: 50%;
+}
+
+.tt-stop-dot {
+    position: absolute;
+    left: 24px;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    margin: -5px 0 0 -5px;
+    border-radius: 50%;
+    border: 2px solid #0a84ff;
+    background: var(--tt-list-bg, #f2f2f7);
+    box-sizing: border-box;
+}
+
+.tt-stop-optname {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tt-stop-opt:active {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+/* 選択中：青く塗った点（外側に輪）＋太字 */
+.tt-stop-opt.selected {
+    font-weight: 800;
+    color: #0a84ff;
+}
+
+.tt-stop-opt.selected .tt-stop-dot {
+    width: 14px;
+    height: 14px;
+    margin: -7px 0 0 -7px;
+    border: none;
+    background: #0a84ff;
+    box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.2);
+}
+
+.tt-stop-badge {
+    flex-shrink: 0;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.75em;
+    font-weight: 700;
+    background: rgba(255, 149, 0, 0.14);
+    color: #c76a00;
 }
 
 /* 日別分頁（平日／土曜／休日）：全圓角の切り替え */
@@ -1119,10 +1265,32 @@
 
 @media (prefers-color-scheme: dark) {
 
-    .tt-stop-pick,
+    .tt-stop-btn,
     .tt-dir {
         background: rgba(255, 255, 255, 0.06);
         border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .tt-stop-card {
+        background: rgba(44, 44, 46, 0.6);
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .tt-stop-list {
+        --tt-list-bg: #2c2c2e;
+    }
+
+    .tt-stop-opt:active {
+        background: rgba(255, 255, 255, 0.06);
+    }
+
+    .tt-stop-opt.selected {
+        color: #64a9ff;
+    }
+
+    .tt-stop-badge {
+        background: rgba(255, 159, 10, 0.18);
+        color: #ffb340;
     }
 
     .tt-dir.active {
