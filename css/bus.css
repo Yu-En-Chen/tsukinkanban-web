@@ -728,3 +728,332 @@
         background: rgba(10, 132, 255, 0.15);
     }
 }
+
+/* ==========================================================================
+   巴士站牌時刻表（通用頁面模組內）：日別分頁＋路線ごとの表
+   日本の時刻表の慣例：左欄に「時」、右に「分」を横に並べて折り返す（ページの横捲動なし）
+   ========================================================================== */
+.tt-root {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    font-size: 0.8em;
+    padding-top: 22px;
+}
+
+/* 停留所の選択（路線から開いたとき） */
+.tt-stop-pick {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 44px 10px 18px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    font-weight: 700;
+}
+
+.tt-stop-pick > span {
+    font-size: 0.85em;
+    opacity: 0.55;
+    flex-shrink: 0;
+}
+
+.tt-stop-pick select {
+    flex: 1;
+    min-width: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 800;
+    outline: none;
+    cursor: pointer;
+}
+
+.tt-stop-pick svg {
+    position: absolute;
+    right: 16px;
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* 日別分頁（平日／土曜／休日）：全圓角の切り替え */
+.tt-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.tt-tab {
+    flex: 1;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 0;
+    border: none;
+    border-radius: 999px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 700;
+    opacity: 0.55;
+    cursor: pointer;
+    transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.tt-tab.active {
+    background: #fff;
+    opacity: 1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.tt-count {
+    font-size: 0.75em;
+    font-weight: 600;
+    opacity: 0.6;
+    font-variant-numeric: tabular-nums;
+}
+
+.tt-body,
+.tt-section,
+.tt-stop {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tt-body {
+    gap: 22px;
+}
+
+/* 停留所名＋時刻表、業者名（官網へのリンク） */
+.tt-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    padding: 0 4px;
+}
+
+.tt-stop-name {
+    font-size: 1.25em;
+    font-weight: 800;
+}
+
+.tt-stop-name span {
+    margin-left: 6px;
+    font-size: 0.7em;
+    opacity: 0.55;
+}
+
+.tt-operator {
+    font-size: 0.8em;
+    font-weight: 700;
+    opacity: 0.6;
+    color: inherit;
+}
+
+.tt-pole {
+    font-size: 0.85em;
+    font-weight: 700;
+    opacity: 0.6;
+    padding: 2px 4px 0;
+}
+
+/* 路線ブロック */
+.tt-route {
+    padding: 12px 16px 8px;
+    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.tt-route-title {
+    font-weight: 800;
+    margin-bottom: 6px;
+}
+
+.tt-route-no {
+    color: #0a84ff;
+    margin-right: 8px;
+}
+
+.tt-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+}
+
+.tt-table tr + tr {
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.tt-table th {
+    width: 2.2em;
+    padding: 7px 12px 7px 0;
+    text-align: right;
+    vertical-align: top;
+    font-weight: 800;
+}
+
+.tt-table td {
+    padding: 7px 0;
+}
+
+.tt-mins {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+}
+
+.tt-min {
+    font-weight: 600;
+    border-radius: 6px;
+    transition: opacity 0.3s ease;
+}
+
+/* 今日の分頁：過ぎた便は淡く、次の便を強調（影で広げてレイアウトを動かさない） */
+.tt-min.tt-past {
+    opacity: 0.3;
+}
+
+.tt-min.tt-next {
+    background: #0a84ff;
+    color: #fff;
+    font-weight: 800;
+    box-shadow: 0 0 0 4px #0a84ff;
+}
+
+.tt-ended,
+.tt-empty {
+    padding: 6px 2px;
+    font-size: 0.9em;
+    font-weight: 700;
+    opacity: 0.55;
+}
+
+.tt-empty-page {
+    text-align: center;
+    padding: 30px 0;
+}
+
+.tt-hint {
+    padding: 10px 16px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 700;
+    background: rgba(255, 149, 0, 0.12);
+    color: #c76a00;
+}
+
+.tt-updated,
+.tt-credit {
+    font-size: 0.75em;
+    opacity: 0.5;
+    padding: 0 4px;
+}
+
+.tt-credit {
+    margin: 4px 0 0;
+}
+
+/* 読み込み中・エラー */
+.tt-status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 36px 8px;
+    text-align: center;
+    font-weight: 700;
+}
+
+.tt-sub {
+    font-size: 0.8em;
+    font-weight: 600;
+    opacity: 0.55;
+}
+
+.tt-dots i {
+    font-style: normal;
+    animation: ttDot 1.2s ease-in-out infinite;
+}
+
+.tt-dots i:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.tt-dots i:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes ttDot {
+
+    0%,
+    100% {
+        opacity: 0.2;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+.tt-retry {
+    margin-top: 6px;
+    padding: 9px 22px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.05);
+    color: inherit;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+@media (prefers-color-scheme: dark) {
+
+    .tt-stop-pick,
+    .tt-route {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .tt-tabs,
+    .tt-retry {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .tt-tab.active {
+        background: rgba(255, 255, 255, 0.92);
+        color: #000;
+    }
+
+    .tt-route-no {
+        color: #64a9ff;
+    }
+
+    .tt-table tr + tr {
+        border-top-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .tt-hint {
+        background: rgba(255, 159, 10, 0.16);
+        color: #ffb340;
+    }
+}

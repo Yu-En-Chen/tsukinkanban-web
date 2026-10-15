@@ -586,6 +586,26 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                     }
                 });
 
+                // 公車：與官網並列「◯◯ 時刻表」（以通用頁面開啟）
+                const timetableEntries = typeof window.getBusTimetableEntries === 'function'
+                    ? window.getBusTimetableEntries(currentData) : [];
+                if (timetableEntries.length > 0) {
+                    const buttons = uniqueLinks.map(link => ({ text: link.name, value: link.url }))
+                        .concat(timetableEntries.map((entry, i) => ({ text: entry.name, value: `timetable:${i}` })));
+                    const openChoice = (value) => {
+                        if (!value) return;
+                        if (value.startsWith('timetable:')) timetableEntries[Number(value.slice(10))].open();
+                        else window.open(value, '_blank');
+                    };
+                    if (buttons.length === 1) openChoice(buttons[0].value);
+                    else if (typeof window.iosActionSheet === 'function') {
+                        window.iosActionSheet('公式サイト・時刻表', '開く項目を選択してください', buttons).then(openChoice);
+                    } else {
+                        openChoice(buttons[0].value);
+                    }
+                    return;
+                }
+
                 // 沒有可用網址時，僅給予按鈕縮放回饋
                 if (uniqueLinks.length === 0) {
                     const btn = document.getElementById('capsule-secondary-btn');

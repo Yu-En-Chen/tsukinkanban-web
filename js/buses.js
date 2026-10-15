@@ -1,7 +1,7 @@
 // buses.js - 公車資料模組（搜尋、快取、卡面格式與詳細面板）
 // 原則：預設不主動請求公車 API，只有「使用者搜尋當下」與「牌組內已有儲存的公車路線」才發送請求。
 
-const BUS_API_BASE = 'https://api.tsukinkanban.com/api/bus';
+export const BUS_API_BASE = 'https://api.tsukinkanban.com/api/bus';
 const BUS_CACHE_KEY = 'Tsukin_Cached_BusData';
 const BUS_PREFS_KEY = 'Tsukin_Bus_Prefs';
 const BUS_POLL_MS = 55000;        // 有公車卡片（儲存或開啟中）時的輪詢間隔

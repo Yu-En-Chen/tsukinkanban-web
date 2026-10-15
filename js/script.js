@@ -19,6 +19,7 @@ import { initPersonalization } from './personalization.js';
 import { initDynamicClock } from './clock.js';
 import { syncAndLoadDictionary } from '../data/dictionary-db.js';
 import { initFlights, searchFlights } from './flights.js';
+import './bus-timetable.js';
 import { initBuses, searchBusesDebounced, refreshSavedBusRoutes, ensureBusRouteData, generateBusDataFormat, generateBusLineSummary, renderBusDetailPanel, renderBusStopPanel, renderBusLineCard, openStopPickerDialog, getBusPrefs, saveBusPrefs, isBusTargetId, getBusOperatorColor } from './buses.js';
 import { startRouteEditMode } from './edit-routes.js';
 
