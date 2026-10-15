@@ -2,7 +2,7 @@
 // 入口：詳情卡片右上角「官方網站」按鈕的選單中，與官網並列的「◯◯ 時刻表」
 // 顯示：沿用主選單的通用頁面模組（openUniversalPage），以表格呈現各路線的全日發車時刻
 // 資料：GET /api/bus/timetable/{站牌名}（靜態資料：開啟時抓一次，不輪詢）
-import { BUS_API_BASE, toHalfWidth, getBusPrefs } from './buses.js';
+import { BUS_API_BASE, toHalfWidth, getBusPrefs, directionLabels } from './buses.js';
 
 const TT_TIMEOUT_MS = 60000;        // 某站牌第一次被查詢時後端要現場下載，至少等 60 秒
 const TT_RETRY_MS = 5000;           // 後端初始化中（error 回應）時的自動重試間隔
@@ -80,13 +80,20 @@ function filterResults(data, opts) {
         const stops = r.stops || [];
         // 部分一致で複数の停留所が返ったときは、名前が完全一致する停留所だけにする
         const exact = stops.filter(s => norm(s.name) === norm(opts.stop));
-        const shownStops = (exact.length > 0 ? exact : stops).map(s => ({
-            ...s,
-            poles: (s.poles || []).map(p => ({
+        const shownStops = (exact.length > 0 ? exact : stops).map(s => {
+            const poles = (s.poles || []).map(p => ({
                 ...p,
                 routes: (p.routes || []).filter(rt => !opts.route || norm(rt.route) === norm(opts.route))
-            })).filter(p => !opts.route || p.routes.length > 0)
-        }));
+            })).filter(p => !opts.route || p.routes.length > 0);
+            // 路線から開いたときは選んだ方向（終点）行きだけにする。
+            // 行き先の表記が終点名と合わず一つも残らないときは、方向で絞らず全部見せる
+            if (opts.dest) {
+                const toDest = poles.map(p => ({ ...p, routes: p.routes.filter(rt => norm(rt.destination).includes(norm(opts.dest))) }))
+                    .filter(p => p.routes.length > 0);
+                if (toDest.length > 0) return { ...s, poles: toDest };
+            }
+            return { ...s, poles };
+        });
         return { ...r, stops: shownStops, tooMany: (r.matched || 0) > stops.length };
     });
 }
@@ -102,20 +109,35 @@ function countFor(results, day) {
 // ============================================================================
 // 描畫
 // ============================================================================
-function routeHtml(rt, day) {
+const ARROW_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>';
+
+// 路線ブロックの見出し：路線番号＋「→ 行き先」（どの方向の車か一目で分かるように）＋のりば
+function routeHeadHtml(rt, poleNo) {
+    return `<div class="tt-route-head">
+        <span class="tt-route-no">${esc(toHalfWidth(rt.route || ''))}</span>
+        <span class="tt-route-dest">${ARROW_SVG}${esc(rt.destination || '')}</span>
+        ${poleNo ? `<span class="tt-route-pole">${esc(poleNo)}番のりば</span>` : ''}
+    </div>`;
+}
+
+function routeHtml(rt, day, poleNo) {
     const rows = (rt.timetable && rt.timetable[day]) || [];
-    const title = `<div class="tt-route-title"><span class="tt-route-no">${esc(toHalfWidth(rt.route || ''))}</span>${esc(rt.destination || '')}</div>`;
+    const head = routeHeadHtml(rt, poleNo);
     if (rows.length === 0) {
-        return `<div class="tt-route">${title}<div class="tt-empty">この日は運行がありません</div></div>`;
+        return `<div class="tt-route">${head}<div class="tt-empty">この日は運行がありません</div></div>`;
     }
-    // 日本の時刻表の慣例：左に「時」、右に「分」を横に並べる（24 時以降もそのまま表示）
+    // 伝統的な時刻表：見出し行（時｜日別）と罫線、時の列は色付き、
+    // 分は固定幅のマスに並べて行をまたいで縦にそろえる（24 時以降もそのまま表示）
     const body = rows.map(row => {
         const mins = (row.minutes || []).map(mm =>
             `<span class="tt-min" data-t="${row.hour * 60 + Number(mm)}">${esc(mm)}</span>`).join('');
         return `<tr><th scope="row">${row.hour}</th><td><div class="tt-mins">${mins}</div></td></tr>`;
     }).join('');
-    return `<div class="tt-route">${title}
-        <table class="tt-table"><tbody>${body}</tbody></table>
+    return `<div class="tt-route">${head}
+        <table class="tt-table">
+            <thead><tr><th scope="col">時</th><th scope="col">${DAY_LABELS[day]}<small>（分）</small></th></tr></thead>
+            <tbody>${body}</tbody>
+        </table>
         <div class="tt-ended" hidden>本日の運行は終了しました</div></div>`;
 }
 
@@ -137,9 +159,7 @@ function resultsHtml(results, day, opts) {
                     ? `<div class="tt-empty">この停留所に${esc(opts.route)}の時刻表はありません</div>`
                     : '<div class="tt-empty">この停留所から乗車できる路線はありません</div>';
             } else {
-                inner = s.poles.map(p =>
-                    (p.pole_no ? `<div class="tt-pole">${esc(p.pole_no)}番のりば</div>` : '')
-                    + p.routes.map(rt => routeHtml(rt, day)).join('')).join('');
+                inner = s.poles.map(p => p.routes.map(rt => routeHtml(rt, day, p.pole_no)).join('')).join('');
             }
             return `<div class="tt-stop">
                 <div class="tt-head"><div class="tt-stop-name">${esc(s.name)}<span>時刻表</span></div>${opLink}</div>
@@ -160,18 +180,28 @@ function tabsHtml(results, day) {
         </button>`).join('')}</div>`;
 }
 
-// 停留所の選択（路線から開いたとき：プレビュー停留所と各方向の全停留所）
-function stopPickerHtml(stops, index) {
-    const groups = [];
-    stops.forEach((s, i) => {
-        let g = groups.find(x => x.label === s.group);
-        if (!g) { g = { label: s.group, items: [] }; groups.push(g); }
-        g.items.push(`<option value="${i}"${i === index ? ' selected' : ''}>${esc(s.name)}</option>`);
-    });
-    const options = groups.map(g => g.label
-        ? `<optgroup label="${esc(g.label)}">${g.items.join('')}</optgroup>` : g.items.join('')).join('');
-    return `<label class="tt-stop-pick"><span>停留所</span><select>${options}</select>
+// 方向の切り替え（路線から開いたとき）：路線パネルの方向ボタンと同じ表記
+function dirTabsHtml(dirs, index) {
+    if (dirs.length === 1) {
+        return `<div class="tt-dirs single"><span class="tt-dir active">${ARROW_SVG}${esc(dirs[0].label)}</span></div>`;
+    }
+    return `<div class="tt-dirs" role="tablist" aria-label="方向">${dirs.map((d, i) => `
+        <button type="button" role="tab" class="tt-dir${i === index ? ' active' : ''}" data-dir="${i}" aria-selected="${i === index}">
+            ${ARROW_SVG}${esc(d.label)}</button>`).join('')}</div>`;
+}
+
+// 乗車する停留所の選択（選んだ方向の停留所を路線順に。プレビュー中の停留所には印）
+function stopPickerHtml(dir, stopName) {
+    const options = dir.stops.map(name =>
+        `<option value="${esc(name)}"${name === stopName ? ' selected' : ''}>${esc(name)}${dir.preview.includes(name) ? ' ★' : ''}</option>`).join('');
+    return `<label class="tt-stop-pick"><span>乗車停留所</span><select>${options}</select>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></label>`;
+}
+
+function controlsHtml(state) {
+    if (!state.dirs) return '';
+    const dir = state.dirs[state.dir];
+    return dirTabsHtml(state.dirs, state.dir) + stopPickerHtml(dir, state.stop);
 }
 
 // ============================================================================
@@ -210,7 +240,7 @@ function scrollToNext(root) {
 // 主流程
 // ============================================================================
 function render(root, state) {
-    const picker = state.stops.length > 1 ? stopPickerHtml(state.stops, state.index) : '';
+    const picker = controlsHtml(state);
     if (state.error) {
         root.innerHTML = `${picker}<div class="tt-status">
             <div>${esc(state.error)}</div>
@@ -221,7 +251,8 @@ function render(root, state) {
             <div>時刻表を読み込んでいます<span class="tt-dots"><i>.</i><i>.</i><i>.</i></span></div>
             <div class="tt-sub">初めて表示する停留所は、1分ほどかかる場合があります</div></div>`;
     } else {
-        const results = filterResults(state.data, { stop: state.stops[state.index].name, route: state.route, operator: state.operator });
+        const dest = state.dirs ? state.dirs[state.dir].dest : '';
+        const results = filterResults(state.data, { stop: state.stop, route: state.route, operator: state.operator, dest });
         root.innerHTML = `${picker}${results.length > 0 ? tabsHtml(results, state.day) : ''}
             <div class="tt-body">${resultsHtml(results, state.day, { route: state.route })}</div>`;
         updateNext(root, state);
@@ -230,7 +261,7 @@ function render(root, state) {
 
 async function load(root, state) {
     const token = ++state.loadToken;
-    const stop = state.stops[state.index].name;
+    const stop = state.stop;
     state.data = null;
     state.error = '';
     state.retrying = false;
@@ -260,15 +291,15 @@ async function load(root, state) {
     }
 }
 
-// stops: [{ name, group }]、index: 最初に表示する停留所
-// route: 路線から開いたときの路線名（その路線だけ表示）、operator: 事業者 ID
-export function openBusTimetable({ title, stops, index = 0, route = '', operator = '' }) {
-    if (typeof window.openUniversalPage !== 'function' || !stops || stops.length === 0) return;
+// 停留所カードから：stop（その停留所の全路線）
+// 路線から開いたとき：route（路線名）、dirs（[{ label, dest, stops, preview }]）、dir（方向）、stop（停留所）
+export function openBusTimetable({ title, stop, route = '', operator = '', dirs = null, dir = 0 }) {
+    if (typeof window.openUniversalPage !== 'function' || !stop) return;
     window.openUniversalPage(title, '<div class="tt-root"></div>');
     const root = document.querySelector('#universal-page-content .tt-root');
     if (!root) return;
 
-    const state = { stops, index: Math.min(index, stops.length - 1), route, operator, day: 'weekday', userDay: false, data: null, error: '', retrying: false, loadToken: 0 };
+    const state = { stop, route, operator, dirs, dir: dirs ? Math.min(dir, dirs.length - 1) : 0, day: 'weekday', userDay: false, data: null, error: '', retrying: false, loadToken: 0 };
 
     root.addEventListener('click', (e) => {
         const tab = e.target.closest('.tt-tab');
@@ -280,11 +311,21 @@ export function openBusTimetable({ title, stops, index = 0, route = '', operator
             if (state.data && state.day === state.data.today) scrollToNext(root);
             return;
         }
+        const dirBtn = e.target.closest('.tt-dir[data-dir]');
+        if (dirBtn && Number(dirBtn.dataset.dir) !== state.dir) {
+            // 方向を変える：同じ停留所がその方向にもあれば維持、なければプレビュー停留所→始発
+            state.dir = Number(dirBtn.dataset.dir);
+            const d = state.dirs[state.dir];
+            if (!d.stops.includes(state.stop)) state.stop = d.preview[0] || d.stops[0];
+            if (navigator.vibrate) navigator.vibrate(8);
+            load(root, state);
+            return;
+        }
         if (e.target.closest('.tt-retry')) load(root, state);
     });
     root.addEventListener('change', (e) => {
         if (!e.target.matches('.tt-stop-pick select')) return;
-        state.index = Number(e.target.value) || 0;
+        state.stop = e.target.value;
         load(root, state);
     });
 
@@ -303,27 +344,26 @@ export function openBusTimetable({ title, stops, index = 0, route = '', operator
 // 右上の外部サイトボタンに並べる「◯◯ 時刻表」の項目
 // ============================================================================
 
-// 路線の停留所の候補：プレビュー停留所（ユーザーの使う停留所）→ 各方向の全停留所
-// 最初に表示するのは最初のプレビュー停留所、なければ選択中の方向の始発
-function routeStops(targetId) {
+// 路線の方向と停留所：方向は路線パネルと同じ表記・同じ選択中の方向から。
+// 停留所はその方向のプレビュー停留所（ユーザーの使う停留所）、なければ始発
+function routeDirections(targetId, route) {
     const bd = window.GlobalBusData && window.GlobalBusData[targetId];
     const patterns = (bd && bd.patterns) || [];
     if (patterns.length === 0) return null;
     const prefs = getBusPrefs(targetId);
-    const stops = [];
-    const names = new Set(patterns.flatMap(p => (p.stops || []).map(s => s.name)));
-    prefs.previewStops.filter(n => names.has(n)).forEach(name => stops.push({ name, group: 'プレビュー中の停留所' }));
-    const preferred = stops.length;
-    const dirIdx = Math.min(prefs.dir, patterns.length - 1);
-    let originIndex = -1;
-    patterns.forEach((p, pi) => {
-        const list = p.stops || [];
-        const last = list[list.length - 1];
-        const group = last ? `${last.name}行` : '';
-        if (pi === dirIdx) originIndex = stops.length; // 選択中の方向の始発
-        list.forEach(s => stops.push({ name: s.name, group }));
-    });
-    return { stops, index: preferred > 0 ? 0 : Math.max(0, originIndex) };
+    const labels = directionLabels(patterns, route);
+    const dirs = patterns.map((p, i) => {
+        const names = (p.stops || []).map(s => s.name);
+        return {
+            label: labels[i] || `${names[names.length - 1] || ''}行`,
+            dest: names[names.length - 1] || '',
+            stops: names,
+            preview: prefs.previewStops.filter(n => names.includes(n))
+        };
+    }).filter(d => d.stops.length > 0);
+    if (dirs.length === 0) return null;
+    const dir = Math.min(prefs.dir, dirs.length - 1);
+    return { dirs, dir, stop: dirs[dir].preview[0] || dirs[dir].stops[0] };
 }
 
 window.getBusTimetableEntries = function (card) {
@@ -334,20 +374,20 @@ window.getBusTimetableEntries = function (card) {
     if (card.isBusStopCard && card.busStopData && card.busStopData.stopName) {
         const sd = card.busStopData;
         const title = `${sd.stopName} 時刻表`;
-        entries.push({ name: title, open: () => openBusTimetable({ title, stops: [{ name: sd.stopName, group: '' }], operator: sd.operator || '' }) });
+        entries.push({ name: title, open: () => openBusTimetable({ title, stop: sd.stopName, operator: sd.operator || '' }) });
         return entries;
     }
 
-    // 路線カード・混合カード内のバス路線：その路線の時刻表（停留所は選択式）
+    // 路線カード・混合カード内のバス路線：その路線の時刻表（方向と停留所は選択式）
     (card.targetLineIds || []).forEach(id => {
         if (typeof id !== 'string' || !id.startsWith('bus:')) return;
         const parts = id.split(':');
         const operator = parts[1] || '';
         const route = parts.slice(2).join(':');
-        const cand = routeStops(id);
+        const cand = routeDirections(id, route);
         if (!cand) return; // 路線データ未取得
         const title = `${route} 時刻表`;
-        entries.push({ name: title, open: () => openBusTimetable({ title, stops: cand.stops, index: cand.index, route, operator }) });
+        entries.push({ name: title, open: () => openBusTimetable({ title, stop: cand.stop, route, operator, dirs: cand.dirs, dir: cand.dir }) });
     });
     return entries;
 };

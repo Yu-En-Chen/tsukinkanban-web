@@ -243,7 +243,7 @@ function directionLabel(pattern, routeName) {
 // 一次算出所有方向的標籤：
 // 部分業者（西武・横浜市営）的 title 只有路線名，各方向會長得一樣，
 // 這種情況改抓該方向的終點站名自行標示
-function directionLabels(patterns, routeName) {
+export function directionLabels(patterns, routeName) {
     const raw = patterns.map(p => {
         const l = directionLabel(p, routeName);
         return (l && l !== routeName) ? l : '';
