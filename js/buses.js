@@ -1211,19 +1211,34 @@ function observeBusGlow(list) {
     }
 }
 
-// 點擊站名 → 底部選單：Google Maps 導航／該站總覽
-function openStopActions(stopName, operator) {
+// 點擊站名 → 底部選單：時刻表（路線面板）／Google Maps 導航／該站總覽
+// route：路線面板から開いたとき { targetId, dir }（表示中の方向）。
+// 「この停留所の時刻表を見る」はその方向・押した停留所で時刻表を開く（既定の停留所でなくても）。
+// 時刻表の返回鈕でこの選單に戻る
+function openStopActions(stopName, operator, route = null) {
     if (!window.iosActionSheet) return;
+
+    const buttons = [];
+    if (route && typeof window.openBusRouteTimetable === 'function') {
+        buttons.push({ text: 'この停留所の時刻表を見る', value: 'timetable' });
+    }
+    buttons.push(
+        { text: 'Google マップで開く', value: 'map' },
+        { text: 'この停留所の路線総覧を見る', value: 'overview' }
+    );
 
     window.iosActionSheet(
         stopName,
         'この停留所の操作を選択してください',
-        [
-            { text: 'Google マップで開く', value: 'map' },
-            { text: 'この停留所の路線総覧を見る', value: 'overview' }
-        ]
+        buttons
     ).then((choice) => {
-        if (choice === 'map') {
+        if (choice === 'timetable') {
+            window.openBusRouteTimetable(route.targetId, {
+                dir: route.dir,
+                stop: stopName,
+                onBack: () => openStopActions(stopName, operator, route)
+            });
+        } else if (choice === 'map') {
             const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stopName + ' バス停')}`;
             window.open(url, '_blank', 'noopener,noreferrer');
         } else if (choice === 'overview') {
@@ -1951,7 +1966,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
                 nameEl.onclick = (e) => {
                     e.stopPropagation();
                     if (navigator.vibrate) navigator.vibrate(10);
-                    openStopActions(stop.name, busData.operator);
+                    openStopActions(stop.name, busData.operator, { targetId, dir: dirIndex });
                 };
             }
 

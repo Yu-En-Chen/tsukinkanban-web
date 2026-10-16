@@ -443,4 +443,17 @@ window.getBusTimetableEntries = function (card) {
     return entries;
 };
 
+// 路線面板の站名から：表示中の方向・押した停留所で開く（既定の停留所でなくても）
+window.openBusRouteTimetable = function (targetId, { dir, stop, onBack = null } = {}) {
+    const parts = String(targetId).split(':');
+    const operator = parts[1] || '';
+    const route = parts.slice(2).join(':');
+    const cand = routeDirections(targetId, route);
+    if (!cand) return;
+    const d = Number.isInteger(dir) ? Math.min(Math.max(dir, 0), cand.dirs.length - 1) : cand.dir;
+    const dirInfo = cand.dirs[d];
+    const target = stop && dirInfo.stops.includes(stop) ? stop : (dirInfo.preview[0] || dirInfo.stops[0]);
+    openBusTimetable({ title: `${route} 時刻表`, stop: target, route, operator, dirs: cand.dirs, dir: d, onBack });
+};
+
 window.openBusTimetable = openBusTimetable;
