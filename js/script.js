@@ -20,7 +20,7 @@ import { initDynamicClock } from './clock.js';
 import { syncAndLoadDictionary } from '../data/dictionary-db.js';
 import { initFlights, searchFlights } from './flights.js';
 import './bus-timetable.js';
-import { openShipSchedule, searchShip } from './ship.js';
+import { openShipSchedule, searchShip, initShips, refreshSavedShips, ensureShipToday, isShipTargetId, generateShipDataFormat, generateShipLineSummary, renderShipRoutePanel, renderShipLineCard, getShipColor } from './ship.js';
 import { initBuses, searchBusesDebounced, refreshSavedBusRoutes, ensureBusRouteData, generateBusDataFormat, generateBusLineSummary, renderBusDetailPanel, renderBusStopPanel, renderBusLineCard, openStopPickerDialog, getBusPrefs, saveBusPrefs, isBusTargetId, getBusOperatorColor, busStopCardFace } from './buses.js';
 import { startRouteEditMode } from './edit-routes.js';
 
@@ -790,6 +790,59 @@ function handleCardClick(id) {
             onCreateCard: handleBusCreateCard
         });
 
+    } else if (data.isShipCard) {
+        // 航路（東海汽船）卡片：主卡片顯示描述，面板是航路の資訊卡（今日の各便）
+        const shipDescEl = clone.querySelector('.description');
+        if (shipDescEl) shipDescEl.textContent = data.desc;
+
+        const shipTagsContainer = clone.querySelector('.info-tags-container');
+        if (shipTagsContainer) {
+            shipTagsContainer.innerHTML = '';
+            shipTagsContainer.style.display = 'none';
+        }
+
+        const shipTargetId = (data.targetLineIds && data.targetLineIds[0]) || '';
+
+        // 與公車預覽相同：加入既有卡片／新增卡片（建立的是一般卡片，航路以混合卡片的資訊卡呈現）
+        const handleShipAddToExisting = () => {
+            if (isAnimating) return;
+            closeAllCards(false);
+            setTimeout(() => {
+                if (window.RouteAppender) {
+                    window.RouteAppender.openPicker({ id: shipTargetId, name: data.name, company: '東海汽船' });
+                }
+            }, 300);
+        };
+
+        const handleShipCreateCard = () => {
+            if (isAnimating) return;
+            const prefillData = {
+                name: data.name,
+                hex: data.hex,
+                desc: data.desc,
+                detail: ['航路', '-', '-', '-'],
+                statusFlags: data.statusFlags || [false, false, false, false, false, false, false],
+                targetLineIds: data.targetLineIds || [],
+                detailedLines: [],
+                isFlightCard: false,
+                flightData: null,
+                isBusCard: false,
+                busData: null
+            };
+            closeAllCards(false);
+            setTimeout(() => {
+                if (typeof window.createNewCardAndEdit === 'function') {
+                    window.createNewCardAndEdit(prefillData);
+                }
+            }, 450);
+        };
+
+        renderShipRoutePanel(data, scrollWrapper, {
+            isPreview: data.id.startsWith('temp-search'),
+            onAddToExisting: handleShipAddToExisting,
+            onCreateCard: handleShipCreateCard
+        });
+
     } else if (data.isFlightCard && data.flightData) {
         // 航班卡片排版
         const isCancelled = data.flightData.isCancelled;
@@ -1086,6 +1139,11 @@ function handleCardClick(id) {
                 // 混合卡片內的公車路線：收折資訊卡（點擊跳轉至完整公車面板）
                 if (line.isBusLine) {
                     scrollWrapper.appendChild(renderBusLineCard(line.id));
+                    return;
+                }
+                // 混合卡片內的航路：今日の各便を載せた資訊卡
+                if (line.isShipLine) {
+                    scrollWrapper.appendChild(renderShipLineCard(line.id));
                     return;
                 }
 
@@ -2098,6 +2156,7 @@ function filterCards(keyword) {
             const cursorStyle = 'cursor: pointer;';
             const clickAction = route.isFlight ? `onclick="window.previewFlightFromSearch('${route.id}')"`
                 : route.isShip ? `onclick="window.openShipFromSearch()"`
+                : route.isShipRoute ? `onclick="window.previewShipFromSearch('${encodeURIComponent(route.id)}')"`
                 : `onclick="window.previewRouteFromSearch('${route.id}')"`;
 
             // 套用 CSS class，結尾的 customBottomHtml 支援底部排版
@@ -2298,6 +2357,48 @@ window.previewBusFromSearch = function (targetId) {
     // 4. 等鍵盤收起後再彈出卡片
     setTimeout(() => {
         handleCardClick('temp-search-bus');
+    }, 250);
+};
+
+// ============================================================================
+// 點擊航路的搜尋結果：與公車路線相同，以臨時卡片開啟航路の資訊卡（可加入既有／新規卡片）
+// ============================================================================
+window.previewShipFromSearch = function (encodedId) {
+    const targetId = decodeURIComponent(encodedId);
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.blur();
+    }
+    filterCards('');
+
+    const cancelBtn = document.querySelector('.cancel-circle-btn');
+    if (cancelBtn) cancelBtn.click();
+
+    const fmt = generateShipDataFormat(targetId);
+    const tempCard = {
+        id: 'temp-search-ship',
+        name: targetId.slice(5),
+        hex: getShipColor(),
+        desc: fmt.desc,
+        statusFlags: fmt.flags,
+        updateTime: fmt.updateTime,
+        isTemporarySearch: true,
+        detail: ['検索結果', '-', '-', '-'],
+        targetLineIds: [targetId],
+        detailedLines: [],
+        isShipCard: true
+    };
+
+    const tempIndex = window.appRailwayData.findIndex(c => c.id === 'temp-search-ship');
+    if (tempIndex !== -1) window.appRailwayData[tempIndex] = tempCard;
+    else window.appRailwayData.push(tempCard);
+
+    // 5 分以内の資料はそのまま、古ければ取得（届いたら shipDataUpdated で卡面と面板を更新）
+    ensureShipToday();
+
+    setTimeout(() => {
+        handleCardClick('temp-search-ship');
     }, 250);
 };
 
@@ -2621,6 +2722,19 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                     return;
                 }
 
+                // 混合卡片內的航路：今日の運航状況で燈號を集計
+                // 欠航→打叉、条件付き・出帆港変更→三角、判断待ち・未定・情報なし→注意、運航予定→綠、今日便なし→打叉
+                if (isShipTargetId(lineId)) {
+                    const shipLine = generateShipLineSummary(lineId);
+                    if (shipLine.lamp === 'severe') hasSevere = true;
+                    else if (shipLine.lamp === 'none') hasNoService = true;
+                    else if (shipLine.lamp === 'minor') hasDelay = true;
+                    else if (shipLine.lamp === 'normal') hasNormal = true;
+                    else hasAttention = true;
+                    detailedLines.push(shipLine);
+                    return;
+                }
+
                 const dictInfo = routeDict[lineId] || { name: "未知の路線", company: "不明" };
 
                 let statusInfo = liveStatus[lineId] || {
@@ -2785,6 +2899,8 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
 
     // 牌組內有已儲存的公車卡時才會發送請求（內含 60 秒節流）
     refreshSavedBusRoutes();
+    // 航路も同様（牌組に航路があるときだけ、5 分以内なら通信しない）
+    refreshSavedShips();
 }
 
 // ============================================================================
@@ -2866,6 +2982,7 @@ async function initApp() {
     }
     initFlights();
     initBuses(); // 只還原本地快取，不發送請求
+    initShips(); // 航路の輪詢だけ（快取は模組載入時に還原、請求は牌組に航路があるときだけ）
 }
 
 // script type="module" 延遲執行，可直接呼叫啟動
@@ -2896,6 +3013,12 @@ function refreshBusCardData(data) {
         data.statusFlags = fmt.flags;
         data.desc = fmt.desc;
         data.busData = fmt.busData;
+        data.updateTime = fmt.updateTime;
+    } else if (data.isShipCard && isShipTargetId(targetId)) {
+        // 航路卡：今日の運航情報が届いた・更新されたら燈號と説明文を再計算
+        const fmt = generateShipDataFormat(targetId);
+        data.statusFlags = fmt.flags;
+        data.desc = fmt.desc;
         data.updateTime = fmt.updateTime;
     } else if (data.isBusStopCard && data.busStopData) {
         // 站牌卡：載入中的佔位資料補抓完成、或輪詢更新後重算（只有時刻表的業者）
@@ -2931,6 +3054,27 @@ window.addEventListener('busDataUpdated', () => {
 
 // 站牌面板（buses.js）的資料更新後也要刷新卡面
 window.__refreshBusCardFace = refreshOpenBusCardFace;
+
+// 航路（東海汽船）の運航情報が届いた・更新された：
+// 牌組に航路があれば集計燈號を再計算（無ければ主畫面は触らない）、開いている／これから開く預覽卡の卡面も更新
+// 面板の資訊卡は ship.js が自分で差し替える
+window.addEventListener('shipDataUpdated', () => {
+    const hasSavedShip = (window.appRailwayData || []).some(c => !String(c.id).startsWith('temp-search') &&
+        (c.targetLineIds || []).some(isShipTargetId));
+    if (hasSavedShip && window.__lastBuildArgs && !document.body.classList.contains('universal-active')) {
+        buildAndRender(...window.__lastBuildArgs);
+    }
+    const pending = window.appRailwayData.find(c => c.id === 'temp-search-ship');
+    if (pending) refreshBusCardData(pending);
+    refreshOpenBusCardFace();
+});
+
+// 搜尋中に今日の航路一覧が届いた：同じ語でもう一度検索して航路を出す
+window.addEventListener('shipSearchReady', () => {
+    const input = document.getElementById('search-input');
+    const dropdown = document.getElementById('home-search-dropdown');
+    if (input && input.value.trim() && dropdown && dropdown.style.display !== 'none') filterCards(input.value);
+});
 
 document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
 
@@ -3643,7 +3787,7 @@ function silentUpdateExtensionPanel(cardId) {
 
     // 3. 航班與公車卡片不可用鐵道的更新邏輯清空
     // （公車面板由 busDataUpdated 事件自行刷新）
-    if (data.isFlightCard || data.isBusCard) return;
+    if (data.isFlightCard || data.isBusCard || data.isShipCard) return;
 
     const currentScroll = extension.scrollTop;
 
@@ -3666,6 +3810,11 @@ function silentUpdateExtensionPanel(cardId) {
             // 混合卡片內的公車路線：收折資訊卡（點擊跳轉至完整公車面板）
             if (line.isBusLine) {
                 fragment.appendChild(renderBusLineCard(line.id));
+                return;
+            }
+            // 混合卡片內的航路
+            if (line.isShipLine) {
+                fragment.appendChild(renderShipLineCard(line.id));
                 return;
             }
 

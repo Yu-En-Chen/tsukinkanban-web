@@ -3,6 +3,7 @@
 import { saveRoutePreference, resetRoutePreference } from '../data/db.js';
 import { railwayData } from '../data/data.js';
 import { isBusTargetId, getBusOperatorColor, toHalfWidth } from './buses.js';
+import { isShipTargetId, shipRouteName, getShipColor } from './ship.js';
 
 // =========================================================
 // 全域導航防護（同步動畫期間攔截點擊）
@@ -1056,6 +1057,10 @@ export function initPersonalization(applyThemeToCard, getActiveCardId) {
                             name: toHalfWidth(parts.slice(2).join(':')) || 'バス路線',
                             hex: getBusOperatorColor(parts[1])
                         };
+                    }
+                    // 狀況 A3：航路（targetId 格式 ship:航路名）
+                    else if (currentData.targetLineIds && isShipTargetId(currentData.targetLineIds[0])) {
+                        defaultData = { name: shipRouteName(currentData.targetLineIds[0]) || '航路', hex: getShipColor() };
                     }
                     // 狀況 B：綁定雲端字典的鐵道路線
                     else if (currentData.targetLineIds && currentData.targetLineIds.length > 0 && window.MasterRouteDictionary) {

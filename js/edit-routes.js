@@ -223,11 +223,12 @@ export function startRouteEditMode(cardId, currentLineIds) {
     const deleteBtnsCol = editContainer.querySelector('#delete-btns-col');
 
     currentLineIds.forEach(lineId => {
-        // 公車路線不在鐵道字典中，從 targetId 取路線名（避免在編輯清單中消失）
+        // 公車路線・航路不在鐵道字典中，從 targetId 取路線名（避免在編輯清單中消失）
         const isBusLine = typeof lineId === 'string' && lineId.startsWith('bus:');
+        const isShipLine = typeof lineId === 'string' && lineId.startsWith('ship:');
         const lineData = dict[lineId] || (isBusLine
             ? { name: (lineId.split(':').slice(2).join(':') || 'バス路線'), company: 'バス' }
-            : null);
+            : isShipLine ? { name: lineId.slice(5) || '航路', company: '東海汽船' } : null);
         if (!lineData) return;
 
         // 1. 生成膠囊（左欄）

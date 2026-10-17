@@ -553,6 +553,12 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                 } else if (currentData.targetLineIds && currentData.targetLineIds.length > 0) {
                     // 鐵道卡片：從 MasterRouteDictionary 查對應官網
                     currentData.targetLineIds.forEach(id => {
+                        // 航路（東海汽船）：公式の運航状況
+                        if (typeof id === 'string' && id.startsWith('ship:')) {
+                            linksToCheck.push({ name: '東海汽船 運航状況（公式）', url: 'https://www.tokaikisen.co.jp/schedule/' });
+                            return;
+                        }
+
                         // 混合卡片內的公車路線：從公車快取取得業者官網
                         if (typeof id === 'string' && id.startsWith('bus:')) {
                             const busInfo = window.GlobalBusData ? window.GlobalBusData[id] : null;
@@ -586,15 +592,20 @@ export function initHeader(onSearchCallback, getActiveCardId) {
                     }
                 });
 
-                // 公車：與官網並列「◯◯ 時刻表」（以通用頁面開啟）
-                const timetableEntries = typeof window.getBusTimetableEntries === 'function'
+                // 公車：與官網並列「◯◯ 時刻表」、航路：「◯◯航路 運航情報」（皆以通用頁面開啟）
+                const busEntries = typeof window.getBusTimetableEntries === 'function'
                     ? window.getBusTimetableEntries(currentData) : [];
+                const shipEntries = typeof window.getShipEntries === 'function'
+                    ? window.getShipEntries(currentData) : [];
+                const timetableEntries = busEntries.concat(shipEntries);
                 if (timetableEntries.length > 0) {
                     const buttons = uniqueLinks.map(link => ({ text: link.name, value: link.url }))
                         .concat(timetableEntries.map((entry, i) => ({ text: entry.name, value: `timetable:${i}` })));
                     const hasSheet = buttons.length > 1 && typeof window.iosActionSheet === 'function';
+                    const sheetTitle = busEntries.length === 0 ? '公式サイト・運航情報'
+                        : (shipEntries.length === 0 ? '公式サイト・時刻表' : '公式サイト・時刻表・運航情報');
                     // 選單：時刻表を開いたときは、時刻表の「返回」でこの選單に戻れるようにする
-                    const showSheet = () => window.iosActionSheet('公式サイト・時刻表', '開く項目を選択してください', buttons).then(openChoice);
+                    const showSheet = () => window.iosActionSheet(sheetTitle, '開く項目を選択してください', buttons).then(openChoice);
                     const openChoice = (value) => {
                         if (!value) return;
                         if (value.startsWith('timetable:')) timetableEntries[Number(value.slice(10))].open(hasSheet ? showSheet : null);
