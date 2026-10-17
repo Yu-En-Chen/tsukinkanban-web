@@ -1339,3 +1339,217 @@
         color: #ffb340;
     }
 }
+
+/* ============================================================================
+   只有時刻表的島嶼巴士（大島バス・三宅村営バス）
+   ============================================================================ */
+
+/* 本日の着岸港（資訊卡訊息的下方） */
+.bus-ship-note {
+    font-size: 0.85em;
+    font-weight: 700;
+    opacity: 0.65;
+}
+
+/* 三宅村的港別班次：本日運行（綠）／本日運休（灰） */
+.bus-day-tag,
+.tt-day-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.8em;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.bus-day-tag.on,
+.tt-day-tag.on {
+    background: rgba(52, 199, 89, 0.15);
+    color: #1f8f3a;
+}
+
+.bus-day-tag.off,
+.tt-day-tag.off {
+    background: rgba(120, 120, 128, 0.14);
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.bus-collapsed-dir .bus-day-tag {
+    margin-left: 8px;
+    font-size: 0.85em;
+}
+
+.bus-note-text {
+    opacity: 0.6;
+}
+
+/* 目前方向的註記列（列表上方，隨方向切換一起滑動） */
+.bus-pattern-note {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    padding: 0 4px 8px;
+    font-size: 0.85em;
+    font-weight: 700;
+}
+
+/* 站牌卡的副列：左＝註記・標籤、右＝之後的表定時刻 */
+.bus-stoprow-sub.bus-tt-sub {
+    justify-content: space-between;
+    align-items: center;
+}
+
+.bus-tt-sub-l {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    min-width: 0;
+}
+
+.bus-later {
+    opacity: 0.6;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* 今天不開的港別版本：淡化 */
+.bus-dir-btn.inactive:not(.active) {
+    opacity: 0.45;
+}
+
+.bus-stops-list.inactive,
+.bus-collapsed-group.inactive .bus-collapsed-capsule,
+.bus-stop-row.inactive {
+    opacity: 0.4;
+}
+
+/* --- 時刻表頁面 --- */
+.tt-route-note {
+    font-size: 0.85em;
+    font-weight: 700;
+    opacity: 0.6;
+}
+
+.tt-route.tt-inactive {
+    opacity: 0.4;
+}
+
+/* 本日の着岸港（東海汽船の運航情報） */
+.tt-ship {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 16px;
+    border-radius: 20px;
+    background: rgba(10, 132, 255, 0.08);
+}
+
+.tt-ship-title {
+    font-size: 0.9em;
+    font-weight: 800;
+}
+
+/* 出典は見出しの下に一行で（見出しの途中で折り返さない） */
+.tt-ship-title small {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.8em;
+    font-weight: 700;
+    opacity: 0.55;
+}
+
+.tt-ship-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.85em;
+}
+
+/* 各便：左＝到着時刻、右上＝着岸港（太字）、右下＝便名・船名（小さく） */
+.tt-ship-list li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "time port" ". name";
+    column-gap: 12px;
+    row-gap: 1px;
+    align-items: baseline;
+}
+
+.tt-ship-time {
+    grid-area: time;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.tt-ship-port {
+    grid-area: port;
+    font-weight: 800;
+}
+
+.tt-ship-port.unknown {
+    opacity: 0.5;
+}
+
+.tt-ship-name {
+    grid-area: name;
+    font-size: 0.9em;
+    font-weight: 600;
+    opacity: 0.65;
+}
+
+.tt-ship-link {
+    align-self: flex-start;
+    font-size: 0.85em;
+    font-weight: 700;
+    color: #0a84ff;
+    text-decoration: none;
+}
+
+/* 時刻表の有効期限切れ */
+.tt-expired {
+    padding: 10px 16px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 700;
+    background: rgba(255, 59, 48, 0.1);
+    color: #d70015;
+}
+
+.tt-expired a {
+    margin-left: 4px;
+    color: inherit;
+}
+
+@media (prefers-color-scheme: dark) {
+
+    .bus-day-tag.on,
+    .tt-day-tag.on {
+        background: rgba(48, 209, 88, 0.16);
+        color: #4cd964;
+    }
+
+    .bus-day-tag.off,
+    .tt-day-tag.off {
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .tt-ship {
+        background: rgba(10, 132, 255, 0.14);
+    }
+
+    .tt-ship-link {
+        color: #64a9ff;
+    }
+
+    .tt-expired {
+        background: rgba(255, 69, 58, 0.14);
+        color: #ff6961;
+    }
+}

@@ -20,7 +20,7 @@ import { initDynamicClock } from './clock.js';
 import { syncAndLoadDictionary } from '../data/dictionary-db.js';
 import { initFlights, searchFlights } from './flights.js';
 import './bus-timetable.js';
-import { initBuses, searchBusesDebounced, refreshSavedBusRoutes, ensureBusRouteData, generateBusDataFormat, generateBusLineSummary, renderBusDetailPanel, renderBusStopPanel, renderBusLineCard, openStopPickerDialog, getBusPrefs, saveBusPrefs, isBusTargetId, getBusOperatorColor } from './buses.js';
+import { initBuses, searchBusesDebounced, refreshSavedBusRoutes, ensureBusRouteData, generateBusDataFormat, generateBusLineSummary, renderBusDetailPanel, renderBusStopPanel, renderBusLineCard, openStopPickerDialog, getBusPrefs, saveBusPrefs, isBusTargetId, getBusOperatorColor, busStopCardFace } from './buses.js';
 import { startRouteEditMode } from './edit-routes.js';
 
 // 全域變數：整個 App 渲染、搜尋、點擊的唯一資料來源
@@ -2309,13 +2309,15 @@ window.previewBusStopFromSearch = function (stopKey) {
 
     const routeCount = (stopData.stop.poles || []).reduce((sum, p) => sum + (p.routes || []).length, 0);
     const isRealtime = (stopData.source || '').includes('リアルタイム');
+    // 只有時刻表的業者（島嶼巴士）：燈號與說明依今天的表定班次
+    const face = busStopCardFace(stopData);
 
     const tempCard = {
         id: 'temp-search-busstop',
         name: stopData.stopName,
         hex: getBusOperatorColor(stopData.operator),
-        desc: `バス停・${routeCount}路線が停車します`,
-        statusFlags: [false, false, false, false, false, isRealtime, !isRealtime],
+        desc: face ? face.desc : `バス停・${routeCount}路線が停車します`,
+        statusFlags: face ? face.flags : [false, false, false, false, false, isRealtime, !isRealtime],
         isTemporarySearch: true,
         detail: ['検索結果', '-', '-', '-'],
         targetLineIds: [],
@@ -2566,6 +2568,7 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
             let hasDelay = false;
             let hasAttention = false;
             let hasNormal = false;
+            let hasNoService = false;   // 只有時刻表的公車今天沒有班次（打叉）
             let hasMessageNote = false; // 追蹤這組卡片是否有具體事故文字
 
             // 追蹤這組卡片內的天候與天災狀況
@@ -2579,7 +2582,9 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                     const busLine = generateBusLineSummary(lineId);
                     // 公車燈號依實際運行狀態與遅延レベル繼承：
                     // 車両なし／運行終了／未就緒→注意燈、遅延→赤、やや遅れ→黄、平常→綠
-                    if (busLine.serviceState !== 'running') hasAttention = true;
+                    // 只有時刻表的業者：今天有班次→注意燈、今天沒有班次→打叉
+                    if (busLine.noServiceToday) hasNoService = true;
+                    else if (busLine.serviceState !== 'running') hasAttention = true;
                     else if (busLine.delayLevel === 'severe') hasSevere = true;
                     else if (busLine.delayLevel === 'minor') hasDelay = true;
                     else hasNormal = true;
@@ -2681,7 +2686,7 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
             if (hasEarthquake) groupFlags[0] = true; // 第1顆：地震
             if (hasRain) groupFlags[1] = true;       // 第2顆：雨天
             if (hasSnow) groupFlags[2] = true;       // 第3顆：雪天
-            if (hasError || hasSevere) groupFlags[3] = true; // 第4顆：打叉（系統錯誤或嚴重延誤/停駛）
+            if (hasError || hasSevere || hasNoService) groupFlags[3] = true; // 第4顆：打叉（系統錯誤或嚴重延誤/停駛）
             if (hasDelay) groupFlags[4] = true; // 第5顆：三角形（6~15 分延誤）
             if (hasNormal) groupFlags[5] = true; // 第6顆：圓形（0~5 分正常）
             if (hasAttention || hasMessageNote || hasEarthquake || hasRain || hasSnow) groupFlags[6] = true; // 第7顆：注意（非対応、官方公告或天候因素）
@@ -2695,6 +2700,8 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                 groupDesc = "一部の路線で大幅な遅延、または運転見合わせが発生しています。"; // 嚴重延誤說明
             } else if (hasDelay) {
                 groupDesc = "一部の路線で遅延やダイヤ乱れが発生しています。";
+            } else if (hasNoService) {
+                groupDesc = "一部の路線は本日の運行がありません。";
             } else if (hasNormal && hasAttention && !hasError && !hasSevere && !hasDelay) {
                 groupDesc = "一部の路線は平常運転、その他は情報確認中です。";
             } else if (hasAttention && !hasNormal && !hasError && !hasSevere && !hasDelay) {
@@ -2842,8 +2849,18 @@ function refreshOpenBusCardFace() {
     const data = window.appRailwayData.find(c => c.id === activeCardId);
     if (!data) return;
 
-    // 檢索プレビューの純公車カードは buildAndRender の対象外（temp-search はそのまま保持
-    // されるだけ）なので、ここで最新データから燈號と説明文を再計算する
+    refreshBusCardData(data);
+
+    const tag = detailContainer.querySelector('.status-tag');
+    if (tag) tag.innerHTML = window.getStatusIconsHTML(data.statusFlags || []);
+
+    const descEl = detailContainer.querySelector('.description');
+    if (descEl && data.desc) descEl.textContent = data.desc;
+}
+
+// 檢索プレビューの純公車カードは buildAndRender の対象外（temp-search はそのまま保持
+// されるだけ）なので、ここで最新データから燈號と説明文を再計算する
+function refreshBusCardData(data) {
     const targetId = (data.targetLineIds || [])[0];
     if (data.isBusCard && isBusTargetId(targetId)) {
         const fmt = generateBusDataFormat(targetId);
@@ -2851,13 +2868,14 @@ function refreshOpenBusCardFace() {
         data.desc = fmt.desc;
         data.busData = fmt.busData;
         data.updateTime = fmt.updateTime;
+    } else if (data.isBusStopCard && data.busStopData) {
+        // 站牌卡：載入中的佔位資料補抓完成、或輪詢更新後重算（只有時刻表的業者）
+        const face = busStopCardFace(data.busStopData);
+        if (face) {
+            data.statusFlags = face.flags;
+            data.desc = face.desc;
+        }
     }
-
-    const tag = detailContainer.querySelector('.status-tag');
-    if (tag) tag.innerHTML = window.getStatusIconsHTML(data.statusFlags || []);
-
-    const descEl = detailContainer.querySelector('.description');
-    if (descEl && data.desc) descEl.textContent = data.desc;
 }
 
 // 公車資料更新後：牌組卡片の集計燈號を再計算し、面板と卡面の両方を最新化する
@@ -2875,7 +2893,15 @@ window.addEventListener('busDataUpdated', () => {
         window.__busPanelRefresh();
         refreshOpenBusCardFace();
     }
+
+    // 回應很快（快取命中）時，資料會在預覽卡彈出（250ms 後）之前就到：
+    // 這時面板還沒開，先更新卡片資料，彈出時就直接是最新的燈號與說明
+    const pending = window.appRailwayData.find(c => c.id === 'temp-search-bus');
+    if (pending && !panelOpen) refreshBusCardData(pending);
 });
+
+// 站牌面板（buses.js）的資料更新後也要刷新卡面
+window.__refreshBusCardFace = refreshOpenBusCardFace;
 
 document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
 

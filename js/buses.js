@@ -4,6 +4,7 @@
 export const BUS_API_BASE = 'https://api.tsukinkanban.com/api/bus';
 const BUS_CACHE_KEY = 'Tsukin_Cached_BusData';
 const BUS_PREFS_KEY = 'Tsukin_Bus_Prefs';
+const BUS_ROUTE_NAME_KEY = 'Tsukin_Bus_RouteNames';
 const BUS_POLL_MS = 55000;        // 有公車卡片（儲存或開啟中）時的輪詢間隔
 const BUS_REFRESH_MIN_MS = 50000; // 快取視為新鮮的門檻（略低於輪詢間隔，讓每次輪詢都實際更新）
 
@@ -111,6 +112,28 @@ export function saveBusPrefs(targetId, prefs) {
 }
 
 // ============================================================================
+// 正式路線名：targetId 用半形寫法（Ａ 大島公園ライン → A 大島公園ライン），
+// 兩者不同時記下後端的正式名稱，查詢 /route 時用原本的寫法
+// ============================================================================
+function rememberRouteName(targetId, official) {
+    if (!official || toHalfWidth(official) === official) return;
+    try {
+        const all = JSON.parse(localStorage.getItem(BUS_ROUTE_NAME_KEY) || '{}');
+        if (all[targetId] === official) return;
+        all[targetId] = official;
+        localStorage.setItem(BUS_ROUTE_NAME_KEY, JSON.stringify(all));
+    } catch (e) { }
+}
+
+function routeQueryName(targetId) {
+    try {
+        const all = JSON.parse(localStorage.getItem(BUS_ROUTE_NAME_KEY) || '{}');
+        if (all[targetId]) return all[targetId];
+    } catch (e) { }
+    return parseBusTargetId(targetId).route;
+}
+
+// ============================================================================
 // API 請求
 // ============================================================================
 async function fetchBusApi(path) {
@@ -126,9 +149,12 @@ async function fetchBusApi(path) {
 // 將一次路線查詢的回應寫入快取
 // 同一次查詢可能命中多條路線（例：東42 → 東42-1・東42-2），
 // 依 pattern 標題的路線名分組，各自獨立成一筆
-function groupAndStoreRouteResults(json) {
+// requestedTargetId：呼叫端要求的路線。後端回傳的路線名寫法若和它不同（空白・全半形），
+// 仍以要求的 targetId 存一份，避免面板一直等不到資料
+function groupAndStoreRouteResults(json, requestedTargetId = '') {
     const stored = [];
     if (!json || !Array.isArray(json.results)) return stored;
+    const query = toHalfWidth(json.query || '');
 
     json.results.forEach(result => {
         const groups = {};
@@ -137,7 +163,11 @@ function groupAndStoreRouteResults(json) {
             if (!p.stops || p.stops.length === 0) return;
             const title = toHalfWidth(p.title || '');
             const firstSpace = title.indexOf(' ');
-            const token = (firstSpace > 0 ? title.slice(0, firstSpace) : title) || toHalfWidth(json.query || '');
+            // 島嶼巴士（只有時刻表）的路線名含空白（Ａ 大島公園ライン），
+            // 以第一個空白切會變成「A」，改用查詢的路線名分組
+            const token = (isTimetableOnly(result) && query)
+                ? query
+                : ((firstSpace > 0 ? title.slice(0, firstSpace) : title) || query);
             if (!groups[token]) groups[token] = [];
             groups[token].push(p);
         });
@@ -153,6 +183,19 @@ function groupAndStoreRouteResults(json) {
         });
     });
 
+    if (requestedTargetId && stored.length > 0 && !stored.includes(requestedTargetId)) {
+        const { operator, route } = parseBusTargetId(requestedTargetId);
+        const loose = r => toHalfWidth(r).replace(/\s+/g, '');
+        const match = stored.find(id => {
+            const p = parseBusTargetId(id);
+            return p.operator === operator && loose(p.route) === loose(route);
+        });
+        if (match) {
+            window.GlobalBusData[requestedTargetId] = Object.assign({}, window.GlobalBusData[match], { routeName: route });
+            stored.push(requestedTargetId);
+        }
+    }
+
     if (stored.length > 0) persistBusCache();
     return stored;
 }
@@ -163,12 +206,18 @@ function storeStopResults(json) {
     if (!json || json.error || !Array.isArray(json.results)) return keys;
     json.results.forEach(result => {
         (result.stops || []).forEach(stop => {
+            (stop.poles || []).forEach(pole => (pole.routes || []).forEach(rt => {
+                if (rt.route) rememberRouteName(makeBusTargetId(result.operator, toHalfWidth(rt.route)), rt.route);
+            }));
             const key = `busstop:${result.operator}:${stop.name}`;
             window.GlobalBusStopData[key] = {
                 operator: result.operator,
                 label: result.label,
                 url: result.url,
                 source: result.source,
+                realtime: result.realtime,   // false＝只有時刻表（島嶼巴士）
+                today: result.today,
+                ship_link: result.ship_link,
                 stopName: stop.name,
                 stop: stop,
                 fetchedAt: Date.now()
@@ -193,10 +242,9 @@ export async function ensureBusRouteData(targetId) {
     pendingRouteFetches.add(targetId);
 
     try {
-        const { route } = parseBusTargetId(targetId);
-        const json = await fetchBusApi(`/route/${encodeURIComponent(route)}`);
+        const json = await fetchBusApi(`/route/${encodeURIComponent(routeQueryName(targetId))}`);
         if (json && !json.error) {
-            const stored = groupAndStoreRouteResults(json);
+            const stored = groupAndStoreRouteResults(json, targetId);
             if (stored.length > 0) window.dispatchEvent(new CustomEvent('busDataUpdated'));
         }
     } finally {
@@ -206,6 +254,7 @@ export async function ensureBusRouteData(targetId) {
 
 // 運行系統的資訊量評分：有車（實際在途）> 有表定次発 > 無資訊
 function patternScore(p) {
+    if (p.active_today === false) return -1; // 三宅村：今天不開的港別版本
     if (patternActiveBusCount(p) > 0) return 2;
     if ((p.stops || []).some(s => s.next_text)) return 1;
     return 0;
@@ -259,7 +308,7 @@ export function directionLabels(patterns, routeName) {
             if (last && last.name) return `${last.name}行`;
         }
         return l || `方向 ${i + 1}`;
-    });
+    }).map((l, i) => patterns[i].note ? `${l} ※${patterns[i].note}` : l); // 島嶼：班次註記
 
     // 行き先（終點）也相同的複數運行系統 → 依序以起點、経由站區別
     const dupes = {};
@@ -291,7 +340,12 @@ export function directionLabels(patterns, routeName) {
 // 以 ISO 時間戳與當下時刻重新計算，而不是直接顯示後端算好的文字，
 // 這樣離線或資料過期時，倒數仍會隨時間自然遞減，不會卡在舊的分鐘數
 // ============================================================================
-function liveEtaTexts(stop) {
+// timetableOnly：只有時刻表的業者。次発は今天（日本時間的營業日）還沒過的表定時刻才顯示
+function liveEtaTexts(stop, timetableOnly = false) {
+    if (timetableOnly) {
+        const n = timetableNextToday(stop);
+        return { eta: null, next: n ? n.text : null };
+    }
     if (stop.eta) {
         const diffMin = Math.round((new Date(stop.eta).getTime() - Date.now()) / 60000);
         if (diffMin <= 1) return { eta: 'まもなく', next: null };
@@ -301,6 +355,130 @@ function liveEtaTexts(stop) {
     }
     if (stop.eta_text) return { eta: stop.eta_text, next: null }; // 後端只給文字時直接沿用
     return { eta: null, next: stop.next_text || null };
+}
+
+// ============================================================================
+// 只有時刻表的業者（島嶼巴士：大島バス・三宅村営バス）
+// 後端在結果帶 realtime: false：沒有即時位置與 ETA，各站的 next／next_text 是表定時刻。
+// 燈號：今天還有班次 → 注意（無法確認實際運行，不亮綠燈）；
+//       今天沒有班次（不是運行日，或最後一班已過）→ 打叉
+// 三宅村的港別班次 active_today === false（船靠別的港）今天不開，不列入判定
+// ============================================================================
+export function isTimetableOnly(data) {
+    return !!data && data.realtime === false;
+}
+
+// 日本時間的營業日（凌晨 4 點前算前一天，與時刻表的日別一致）
+function jstServiceDay(ms) {
+    return new Date(ms + (9 - 4) * 3600000).toISOString().slice(0, 10);
+}
+
+// 該站今天接下來的表定發車：已過、或屬於其他營業日（明天的首班）的不算
+function timetableNextToday(stop) {
+    if (!stop || !stop.next_text) return null;
+    const text = toHalfWidth(stop.next_text).replace('：', ':');
+    if (!stop.next) return { ms: Infinity, text };
+    const ms = new Date(stop.next).getTime();
+    if (!Number.isFinite(ms)) return { ms: Infinity, text };
+    const now = Date.now();
+    if (ms < now - 60000 || jstServiceDay(ms) !== jstServiceDay(now)) return null;
+    return { ms, text };
+}
+
+// 路線整體：今天還有沒有班次，以及最近的「起點發車」（各方向的第一站）
+function timetableRouteState(patterns) {
+    let hasTrip = false;
+    let next = null;
+    (patterns || []).forEach(p => {
+        if (p.active_today === false) return;
+        (p.stops || []).forEach((s, i) => {
+            const n = timetableNextToday(s);
+            if (!n) return;
+            hasTrip = true;
+            if (i === 0 && (!next || n.ms < next.ms)) next = { ...n, stop: s.name };
+        });
+    });
+    return { hasTrip, next };
+}
+
+// 面板的徽章與訊息（只有時刻表的業者用）
+function timetableServiceInfo(patterns) {
+    const st = timetableRouteState(patterns);
+    if (!st.hasTrip) {
+        return { badge: '運行なし', cls: 'status-delayed', message: '本日の運行はありません（運行日ではないか、最終便が出発しました）。表示は時刻表に基づいています。' };
+    }
+    const nextText = st.next ? `次発は ${st.next.text}（${st.next.stop}発）の予定です。` : '本日の残りの便は運行中です。';
+    return { badge: '時刻表のみ', cls: 'status-attention', message: `リアルタイムの運行情報はありません（時刻表のみ）。${nextText}` };
+}
+
+// 徽章與訊息：只有時刻表的業者依時刻表判定，其他業者照舊依運行狀態
+function busServiceInfo(busData) {
+    const patterns = (busData && busData.patterns) || [];
+    return isTimetableOnly(busData) ? timetableServiceInfo(patterns) : overallServiceInfo(patterns);
+}
+
+// 「⛴ 本日の着岸港：錆ヶ浜（阿古）港」：島嶼巴士的結果附帶今天靠島船班的著岸港（港未公布顯示「未発表」）
+function shipPortNoteHtml(data) {
+    const sailings = (data && data.ship_link && data.ship_link.sailings) || [];
+    if (sailings.length === 0) return '';
+    const ports = [...new Set(sailings.map(sl => sl.port || '未発表'))];
+    return `<div class="bus-ship-note">⛴ 本日の着岸港：${ports.join('・')}</div>`;
+}
+
+// 站牌卡片的卡面（燈號與說明文字）：只處理只有時刻表的業者，其他回傳 null
+// departures 是後端算好的「今天接下來的表定發車」（今天不開的港別版本為空陣列）
+// 站牌各路線今天接下來的表定發車（文字）：資料抓取後已經過去的班次去掉
+function upcomingDepartures(rt) {
+    if (rt.active_today === false) return [];
+    const now = Date.now();
+    return (rt.departures_text || []).map((txt, i) => ({ iso: (rt.departures || [])[i] || '', txt: toHalfWidth(txt).replace('：', ':') }))
+        .filter(d => !d.iso || !(new Date(d.iso).getTime() < now - 60000));
+}
+
+export function busStopCardFace(stopData) {
+    if (!isTimetableOnly(stopData)) return null;
+    let first = null;
+    ((stopData.stop && stopData.stop.poles) || []).forEach(pole => (pole.routes || []).forEach(rt => {
+        const d = upcomingDepartures(rt)[0];
+        if (!d) return;
+        if (!first || (d.iso && first.iso && d.iso < first.iso)) first = { iso: d.iso, txt: d.txt, route: toHalfWidth(rt.route || '') };
+    }));
+    if (first) {
+        return { flags: [false, false, false, false, false, false, true], desc: `時刻表のみ・次発 ${first.txt}（${first.route}）` };
+    }
+    return { flags: [false, false, false, true, false, false, false], desc: '本日の運行はありません' };
+}
+
+// 各站的時間膠囊內容：今天不開的港別版本不顯示時刻
+function busStopTimes(pattern, stop, timetableOnly) {
+    if (timetableOnly && pattern.active_today === false) return { eta: null, next: null };
+    return liveEtaTexts(stop, timetableOnly);
+}
+
+// 沒有到站時間時膠囊的文字
+// 一般業者：本日運行終了 →「終了」、終點站（乗車不可）→「終点」
+// 只有時刻表：今天不開的港別版本 →「運休」、今天沒有（剩下的）班次 →「本日なし」
+function busNoneText(pattern, stop, timetableOnly) {
+    const isTerminal = stop === pattern.stops[pattern.stops.length - 1];
+    if (timetableOnly) {
+        if (pattern.active_today === false) return '運休';
+        if (!timetableRouteState([pattern]).hasTrip) return '本日なし';
+        return isTerminal ? '終点' : '--';
+    }
+    return patternServiceState(pattern).state === 'ended' ? '終了' : (isTerminal ? '終点' : '--');
+}
+
+// 三宅村的港別班次：本日運行／本日運休／著岸港未公布 的標籤
+function activeTodayTagHtml(activeToday) {
+    if (activeToday === true) return '<span class="bus-day-tag on">本日運行</span>';
+    if (activeToday === false) return '<span class="bus-day-tag off">本日運休（着岸港が異なるため）</span>';
+    return '';
+}
+
+// 路線面板：目前方向今天開不開（班次註記 ※錆ヶ浜港着岸時 已在方向按鈕上，不重複）
+function patternNoteHtml(pattern) {
+    const tag = pattern ? activeTodayTagHtml(pattern.active_today) : '';
+    return tag ? `<div class="bus-pattern-note">${tag}</div>` : '';
 }
 
 // ============================================================================
@@ -514,11 +692,9 @@ function busCollapsedEntries(patterns, previewStops) {
 
 // capsule 內容：主列（停留所名＋到站時間）＋副列（行駛中的車牌・偏差）
 // 資訊分層以維持可讀性，不把全部塞在同一行
-function busCollapsedCapsuleInner(pattern, stop, previewStops) {
-    const service = patternServiceState(pattern);
-    const t = liveEtaTexts(stop);
-    const isTerminal = stop === pattern.stops[pattern.stops.length - 1];
-    const noneText = service.state === 'ended' ? '終了' : (isTerminal ? '終点' : '--');
+function busCollapsedCapsuleInner(pattern, stop, previewStops, timetableOnly = false) {
+    const t = busStopTimes(pattern, stop, timetableOnly);
+    const noneText = busNoneText(pattern, stop, timetableOnly);
     const markerHtml = collectBusMarkers(pattern, stop, true, previewStops)
         .map(m => busMarkerHtml(m.bus, m.srcStop, true)).join('');
     return `
@@ -532,7 +708,8 @@ function busCollapsedCapsuleInner(pattern, stop, previewStops) {
 // 收折資訊卡的完整內容：標頭＋訊息＋方向別 capsule 群＋更新時刻
 function busCollapsedCardInner(busData, prefs) {
     const patterns = busData.patterns || [];
-    const info = overallServiceInfo(patterns);
+    const info = busServiceInfo(busData);
+    const timetableOnly = isTimetableOnly(busData);
     const dirLabels = directionLabels(patterns, busData.routeName);
     const previewStops = prefs.previewStops || [];
     const entries = busCollapsedEntries(patterns, previewStops);
@@ -550,14 +727,15 @@ function busCollapsedCardInner(busData, prefs) {
             ? 'プレビュー停留所が未設定です。タップして設定できます'
             : '選択した停留所が見つかりません'}</div>`
         : `<div class="adv-details-container">${groups.map(g => `
-            <div class="bus-collapsed-group">
-                <div class="bus-collapsed-dir">${dirLabels[g.dirIdx]}</div>
-                ${g.items.map(en => `<div class="adv-detail-capsule bus-collapsed-capsule">${busCollapsedCapsuleInner(en.pattern, en.stop, previewStops)}</div>`).join('')}
+            <div class="bus-collapsed-group${patterns[g.dirIdx].active_today === false ? ' inactive' : ''}">
+                <div class="bus-collapsed-dir">${dirLabels[g.dirIdx]}${patterns[g.dirIdx].active_today === false ? '<span class="bus-day-tag off">本日運休</span>' : ''}</div>
+                ${g.items.map(en => `<div class="adv-detail-capsule bus-collapsed-capsule">${busCollapsedCapsuleInner(en.pattern, en.stop, previewStops, timetableOnly)}</div>`).join('')}
             </div>`).join('')}</div>`;
 
     return `
         ${busCardHeaderHtml(busData.routeName || '', busData.label || 'バス', info)}
         <div class="ext-card-message">${info.message}</div>
+        ${shipPortNoteHtml(busData)}
         ${capsHtml}
         ${busCardFooterHtml(busData.fetchedAt)}
     `;
@@ -589,7 +767,12 @@ export function searchBusesDebounced(rawKeyword) {
     // 60 秒內的快取直接渲染，不再請求
     const cached = busSearchCache[keyword];
     if (cached && Date.now() - cached.ts < 60000) {
-        renderBusSearchResults(keyword, cached);
+        // 下拉選單在 filterCards 的最後才顯示：等這一輪結束再補上，
+        // 否則選單還是隱藏狀態，結果會被略過（關閉卡片後再搜同一個字時一筆都不出現）
+        setTimeout(() => {
+            const input = document.getElementById('search-input');
+            if (input && input.value.trim() === keyword) renderBusSearchResults(keyword, cached);
+        }, 0);
         return;
     }
 
@@ -618,10 +801,13 @@ export function searchBusesDebounced(rawKeyword) {
             routesJson.results.forEach(result => {
                 (result.routes || []).slice(0, 6).forEach(officialName => {
                     const half = toHalfWidth(officialName);
+                    const targetId = makeBusTargetId(result.operator, half);
+                    rememberRouteName(targetId, officialName);
                     entry.routeItems.push({
-                        targetId: makeBusTargetId(result.operator, half),
+                        targetId,
                         name: half,
-                        label: result.label
+                        label: result.label,
+                        timetableOnly: isTimetableOnly(result)
                     });
                 });
             });
@@ -672,7 +858,7 @@ function renderBusSearchResults(keyword, entry) {
         // 已有詳細快取時順帶顯示運行台數
         const cached = window.GlobalBusData[routeItem.targetId];
         const busCount = cached ? (cached.patterns || []).reduce((sum, p) => sum + (p.bus_count || 0), 0) : 0;
-        const rightText = busCount > 0 ? `運行中 ${busCount}台` : 'バス路線';
+        const rightText = routeItem.timetableOnly ? '時刻表のみ' : (busCount > 0 ? `運行中 ${busCount}台` : 'バス路線');
 
         const item = document.createElement('div');
         item.className = 'search-result-item bus-search-item';
@@ -706,7 +892,7 @@ function renderBusSearchResults(keyword, entry) {
                     <div class="search-result-title">${data.stopName}</div>
                     <div class="search-result-subtitle">バス停・${data.label}</div>
                 </div>
-                <div class="bus-search-right">${routeCount}路線</div>
+                <div class="bus-search-right">${routeCount}路線${isTimetableOnly(data) ? '・時刻表のみ' : ''}</div>
             </div>
         `;
         item.onclick = () => window.previewBusStopFromSearch(stopKey);
@@ -746,12 +932,11 @@ export async function refreshSavedBusRoutes() {
             const cached = window.GlobalBusData[targetId];
             if (cached && cached.fetchedAt && Date.now() - cached.fetchedAt < BUS_REFRESH_MIN_MS) continue;
 
-            const { route } = parseBusTargetId(targetId);
-            const json = await fetchBusApi(`/route/${encodeURIComponent(route)}`);
+            const json = await fetchBusApi(`/route/${encodeURIComponent(routeQueryName(targetId))}`);
             if (!json || json.error || !Array.isArray(json.results)) continue;
 
             // 依路線分組寫入（一次查詢可能同時更新多條相關路線）
-            const stored = groupAndStoreRouteResults(json);
+            const stored = groupAndStoreRouteResults(json, targetId);
             if (stored.length > 0) changed = true;
         }
     } finally {
@@ -777,6 +962,7 @@ async function refreshOpenBusStop() {
     const tempCard = (window.appRailwayData || []).find(c => c.id === 'temp-search-busstop');
     if (tempCard && window.GlobalBusStopData[key]) tempCard.busStopData = window.GlobalBusStopData[key];
     if (typeof window.__busStopPanelRefresh === 'function') window.__busStopPanelRefresh();
+    if (typeof window.__refreshBusCardFace === 'function') window.__refreshBusCardFace();
 }
 
 // ============================================================================
@@ -797,7 +983,18 @@ export function generateBusDataFormat(targetId) {
         const service = overallServiceState(cached.patterns);
         const isRealtime = (cached.source || '').includes('リアルタイム');
 
-        if (service.state === 'running') {
+        if (isTimetableOnly(cached)) {
+            // 只有時刻表（島嶼巴士）：無法確認實際運行，今天還有班次亮注意燈，沒有則打叉
+            const st = timetableRouteState(cached.patterns);
+            if (st.hasTrip) {
+                flags = [false, false, false, false, false, false, true];
+                const preview = getPreviewStopInfo(targetId, cached);
+                desc = `時刻表のみ・${preview || (st.next ? `次発 ${st.next.text}` : '本日の運行あり')}`;
+            } else {
+                flags = [false, false, false, true, false, false, false];
+                desc = '本日の運行はありません';
+            }
+        } else if (service.state === 'running') {
             // 遅延は全方向をまとめて評価（カード面・パネル徽章・混合カードで同じ判定を共有）
             const d = busDelayInfo(cached.patterns);
             const base = getPreviewStopInfo(targetId, cached) || `${cached.label}（${cached.source || 'データなし'}）`;
@@ -855,7 +1052,9 @@ function getPreviewStopInfo(targetId, busData) {
     if (!stop) stop = pattern.stops[0];
     if (!stop) return '';
 
-    const t = liveEtaTexts(stop);
+    const timetableOnly = isTimetableOnly(busData);
+    if (timetableOnly && pattern.active_today === false) return ''; // 今天不開的港別版本
+    const t = liveEtaTexts(stop, timetableOnly);
     const eta = t.eta ? toHalfWidth(t.eta) : (t.next ? `次発 ${toHalfWidth(t.next).replace('：', ':')}` : '');
     return eta ? `${stop.name}：${eta}` : '';
 }
@@ -869,7 +1068,14 @@ export function generateBusLineSummary(targetId) {
     let status = '更新中...';
     let serviceState = 'unknown';
     let delayInfo = { level: 'none', max: 0, avg: 0, count: 0 };
-    if (hasData) {
+    const timetableOnly = isTimetableOnly(bd);
+    let noServiceToday = false;
+    if (hasData && timetableOnly) {
+        // 只有時刻表：有班次→注意（serviceState 維持 waiting），沒有→打叉
+        noServiceToday = !timetableRouteState(bd.patterns).hasTrip;
+        serviceState = noServiceToday ? 'ended' : 'waiting';
+        status = noServiceToday ? '運行なし' : '時刻表のみ';
+    } else if (hasData) {
         // カード面・パネルと同じく全方向で判定する
         serviceState = overallServiceState(bd.patterns).state;
         delayInfo = busDelayInfo(bd.patterns);
@@ -904,7 +1110,9 @@ export function generateBusLineSummary(targetId) {
         hasData: hasData,
         serviceState: serviceState,
         delayLevel: delayLevel,
-        delayAvg: delayInfo.avg
+        delayAvg: delayInfo.avg,
+        timetableOnly: timetableOnly,
+        noServiceToday: noServiceToday
     };
 }
 
@@ -1456,7 +1664,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
     }
 
     function collapsedCapsuleInner(pattern, stop) {
-        return busCollapsedCapsuleInner(pattern, stop, prefs.previewStops);
+        return busCollapsedCapsuleInner(pattern, stop, prefs.previewStops, isTimetableOnly(data.busData));
     }
 
     // 展開視圖：全停留所與接近站的上色對應
@@ -1532,10 +1740,10 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         if (rows.length !== view.stopsToShow.length) { render(); return; }
 
         // 0. 資訊卡標頭：徽章、訊息與更新時刻就地更新
-        const service = patternServiceState(pattern);
+        const timetableOnly = isTimetableOnly(data.busData);
         const card = container.querySelector('.bus-expanded-card');
         if (!card) { render(); return; }
-        const info = overallServiceInfo(patterns);
+        const info = busServiceInfo(data.busData);
         const badge = card.querySelector('.ext-status-badge');
         if (badge && badge.textContent.trim() !== info.badge) {
             badge.className = `ext-status-badge ${info.cls}`;
@@ -1567,9 +1775,8 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         // 2. 時間膠囊與站名顏色
         view.stopsToShow.forEach((stop, idx) => {
             const row = rows[idx];
-            const t = liveEtaTexts(stop);
-            const isTerminal = stop === pattern.stops[pattern.stops.length - 1];
-            const noneText = service.state === 'ended' ? '終了' : (isTerminal ? '終点' : '--');
+            const t = busStopTimes(pattern, stop, timetableOnly);
+            const noneText = busNoneText(pattern, stop, timetableOnly);
 
             const oldPill = row.querySelector('.bus-eta-pill');
             const tmp = document.createElement('div');
@@ -1599,7 +1806,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         const caps = [...card.querySelectorAll('.bus-collapsed-capsule')];
         if (caps.length !== entries.length) { render(); return; }
 
-        const info = overallServiceInfo(patterns);
+        const info = busServiceInfo(data.busData);
         const badge = card.querySelector('.ext-status-badge');
         if (badge && badge.textContent.trim() !== info.badge) {
             badge.className = `ext-status-badge ${info.cls}`;
@@ -1808,8 +2015,8 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
 
         // --- 展開檢視：與收折卡同語言的資訊卡（列車 extension-route-card 同構） ---
         // 標頭徽章＋訊息取代原本獨立的運行狀態橫幅，方向切換塊與停留所列表都收進卡片內
-        const service = patternServiceState(pattern);
-        const info = overallServiceInfo(patterns);
+        const timetableOnly = isTimetableOnly(busData);
+        const info = busServiceInfo(busData);
 
         listShell = document.createElement('div');
         listShell.className = 'bus-stops-shell';
@@ -1819,6 +2026,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         expCard.innerHTML = `
             ${busCardHeaderHtml(busData.routeName || '', busData.label || 'バス', info)}
             <div class="ext-card-message">${info.message}</div>
+            ${shipPortNoteHtml(busData)}
         `;
 
         // 這次重繪是否來自方向切換（slideDir 稍後會被 swipeArea 區塊清掉，先擷取）
@@ -1835,7 +2043,8 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             const isActive = i === dirIndex;
             // 切換時：新藥丸先以非 active 狀態出現，下一幀再加 active，
             // 讓深色高亮沿 CSS transition 平滑淡入（而非瞬間跳色）
-            btn.className = 'bus-dir-btn' + (isActive && !isDirSwitch ? ' active' : '');
+            btn.className = 'bus-dir-btn' + (isActive && !isDirSwitch ? ' active' : '') +
+                (p.active_today === false ? ' inactive' : ''); // 今天不開的港別版本淡化
             btn.textContent = dirLabels[i];
             btn.onclick = (e) => {
                 e.stopPropagation();
@@ -1938,7 +2147,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
 
         // --- 2. 停留所列表 ---
         const stopsList = document.createElement('div');
-        stopsList.className = 'bus-stops-list';
+        stopsList.className = 'bus-stops-list' + (pattern.active_today === false ? ' inactive' : '');
 
         const view = computeView(pattern);
 
@@ -1951,9 +2160,8 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
             const row = document.createElement('div');
             row.className = 'bus-stop-row';
             row.dataset.stopIndex = String(idx);
-            const t = liveEtaTexts(stop);
-            const isTerminal = stop === pattern.stops[pattern.stops.length - 1];
-            const noneText = service.state === 'ended' ? '終了' : (isTerminal ? '終点' : '--');
+            const t = busStopTimes(pattern, stop, timetableOnly);
+            const noneText = busNoneText(pattern, stop, timetableOnly);
             row.innerHTML = `
                 ${stopNameHtml(stop.name, view.nameClassByName[stop.name] || '')}
                 ${etaPillHtml(t.eta, t.next, noneText, true)}
@@ -1976,6 +2184,9 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
         // 記下目前的巴士位置配置，供就地更新比對
         lastMarkerSig = markerSignature(pattern, view);
 
+        // 班次註記（三宅村的港別版本等）放在列表上方，隨方向切換一起滑動
+        const noteHtml = patternNoteHtml(pattern);
+        if (noteHtml) swipeArea.insertAdjacentHTML('beforeend', noteHtml);
         swipeArea.appendChild(stopsList);
         expCard.insertAdjacentHTML('beforeend', busCardFooterHtml(busData.fetchedAt));
         listShell.appendChild(expCard);
@@ -2129,15 +2340,29 @@ export function renderBusStopPanel(data, scrollWrapper) {
         card.className = 'extension-route-card bus-stopcard';
 
         // 狀態徽章：任一路線有車 → 運行中；只剩表定 → 車両なし；皆無 → 運行終了
+        // 只有時刻表的業者：今天還有班次 → 時刻表のみ；沒有 → 運行なし
+        const timetableOnly = isTimetableOnly(stopData);
         let hasBus = false, hasDep = false;
         poles.forEach(pole => (pole.routes || []).forEach(rt => {
             if ((rt.buses || []).length > 0) hasBus = true;
-            if ((rt.departures_text || []).length > 0) hasDep = true;
+            if (timetableOnly ? upcomingDepartures(rt).length > 0 : (rt.departures_text || []).length > 0) hasDep = true;
         }));
-        const info = hasBus
-            ? { badge: '運行中', cls: 'status-normal' }
-            : (hasDep ? { badge: '車両なし', cls: 'status-attention' } : { badge: '運行終了', cls: 'status-attention' });
+        let info;
+        if (timetableOnly) {
+            info = hasDep ? { badge: '時刻表のみ', cls: 'status-attention' } : { badge: '運行なし', cls: 'status-delayed' };
+        } else {
+            info = hasBus
+                ? { badge: '運行中', cls: 'status-normal' }
+                : (hasDep ? { badge: '車両なし', cls: 'status-attention' } : { badge: '運行終了', cls: 'status-attention' });
+        }
         card.innerHTML = busCardHeaderHtml(stopData.stopName || '', stopData.label || 'バス停', info);
+        if (timetableOnly) {
+            const face = busStopCardFace(stopData);
+            const msg = hasDep
+                ? `リアルタイムの運行情報はありません（時刻表のみ）。${face.desc.replace('時刻表のみ・', '')}の予定です。`
+                : '本日の運行はありません（運行日ではないか、最終便が出発しました）。';
+            card.insertAdjacentHTML('beforeend', `<div class="ext-card-message">${msg}</div>${shipPortNoteHtml(stopData)}`);
+        }
 
         // 實際搭乘時のりば區分意義不大：不顯示「X番のりば」，
         // 各乘車處的路線合併為一份清單（同路線×行き先去重）
@@ -2147,18 +2372,26 @@ export function renderBusStopPanel(data, scrollWrapper) {
 
         poles.forEach(pole => {
             (pole.routes || []).forEach(route => {
-                const dedupeKey = `${route.route}|${route.destination || ''}`;
+                // 三宅村的港別版本路線＋行き先相同、只差 note，要分開列
+                const dedupeKey = `${route.route}|${route.destination || ''}|${route.note || ''}`;
                 if (seen.has(dedupeKey)) return;
                 seen.add(dedupeKey);
 
+                const inactive = timetableOnly && route.active_today === false;
                 const row = document.createElement('div');
-                row.className = 'bus-stop-row bus-route-link';
+                row.className = 'bus-stop-row bus-route-link' + (inactive ? ' inactive' : '');
 
                 // 到站資訊優先序：即時 ETA → 走行中位置 → 表定次発 → 運行終了
+                // 只有時刻表：今天不開 → 運休、今天沒有（剩下的）班次 → 本日なし
                 let pill;
                 const firstBus = (route.buses || [])[0];
-                const firstDep = (route.departures_text || [])[0];
-                if (firstBus && firstBus.eta_text) {
+                const deps = timetableOnly ? upcomingDepartures(route).map(d => d.txt) : (route.departures_text || []);
+                const firstDep = deps[0];
+                if (inactive) {
+                    pill = `<span class="bus-eta-pill chip none">運休</span>`;
+                } else if (timetableOnly && !firstDep) {
+                    pill = `<span class="bus-eta-pill chip none">本日なし</span>`;
+                } else if (firstBus && firstBus.eta_text) {
                     const t = toHalfWidth(firstBus.eta_text);
                     pill = `<span class="bus-eta-pill chip ${etaPillClass(t)}">${t}</span>`;
                 } else if (firstBus && typeof firstBus.stops_away === 'number') {
@@ -2186,6 +2419,14 @@ export function renderBusStopPanel(data, scrollWrapper) {
                         ? `<span class="bus-away">${firstBus.stops_away === 0 ? 'まもなく到着' : `${firstBus.stops_away}停留所前`}</span>`
                         : '';
                     subHtml = `<div class="bus-stoprow-sub">${plate}${busOccHtml(firstBus.occupancy)}${away}</div>`;
+                }
+                // 只有時刻表：班次註記・本日運行／運休標籤、之後的表定時刻
+                if (timetableOnly) {
+                    const later = deps.slice(1);
+                    const left = activeTodayTagHtml(route.active_today) +
+                        (route.note ? `<span class="bus-note-text">※${route.note}</span>` : '');
+                    const right = later.length > 0 ? `<span class="bus-later">以降 ${later.join('・')}</span>` : '';
+                    if (left || right) subHtml = `<div class="bus-stoprow-sub bus-tt-sub"><span class="bus-tt-sub-l">${left}</span>${right}</div>`;
                 }
 
                 row.innerHTML = `
@@ -2259,5 +2500,6 @@ export function openBusStopOverview(stopName, operator) {
         if (typeof window.__busStopPanelRefresh === 'function') {
             window.__busStopPanelRefresh();
         }
+        if (typeof window.__refreshBusCardFace === 'function') window.__refreshBusCardFace();
     });
 }

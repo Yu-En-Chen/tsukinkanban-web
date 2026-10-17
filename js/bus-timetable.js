@@ -9,6 +9,8 @@ const TT_RETRY_MS = 5000;           // 後端初始化中（error 回應）時�
 const TT_CACHE_MS = 30 * 60 * 1000; // 同一站牌 30 分鐘內重開不再抓（today 跨日時也能更新）
 const DAY_KEYS = ['weekday', 'saturday', 'holiday'];
 const DAY_LABELS = { weekday: '平日', saturday: '土曜', holiday: '休日' };
+// 島嶼巴士的「本日の着岸港」：本站沒有船班頁面，連到東海汽船官網的運航情報
+const SHIP_INFO_URL = 'https://www.tokaikisen.co.jp/';
 
 const ttCache = new Map(); // 站牌名 -> { at, data }
 
@@ -39,6 +41,7 @@ function formatUpdated(u) {
     const parts = [];
     if (u.effective_from) parts.push(`${fmtDate(u.effective_from)}改正`);
     else if (u.data_date) parts.push(`データ日付 ${fmtDate(u.data_date)}`);
+    if (u.valid_to) parts.push(`${fmtDate(u.valid_to)}まで有効`); // 島嶼巴士：有效期限
     if (u.fetched_at) parts.push(`データ取得 ${fmtDate(u.fetched_at)}`);
     return parts.join('／');
 }
@@ -87,12 +90,19 @@ function filterResults(data, opts) {
             })).filter(p => !opts.route || p.routes.length > 0);
             // 路線から開いたときは選んだ方向（終点）行きだけにする。
             // 行き先の表記が終点名と合わず一つも残らないときは、方向で絞らず全部見せる
+            // 三宅村的港別版本（行き先相同、note 不同）也照選的方向只留該版本
+            let shown = poles;
             if (opts.dest) {
-                const toDest = poles.map(p => ({ ...p, routes: p.routes.filter(rt => norm(rt.destination).includes(norm(opts.dest))) }))
+                const toDest = shown.map(p => ({ ...p, routes: p.routes.filter(rt => norm(rt.destination).includes(norm(opts.dest))) }))
                     .filter(p => p.routes.length > 0);
-                if (toDest.length > 0) return { ...s, poles: toDest };
+                if (toDest.length > 0) shown = toDest;
             }
-            return { ...s, poles };
+            if (opts.note) {
+                const withNote = shown.map(p => ({ ...p, routes: p.routes.filter(rt => rt.note === opts.note) }))
+                    .filter(p => p.routes.length > 0);
+                if (withNote.length > 0) shown = withNote;
+            }
+            return { ...s, poles: shown };
         });
         return { ...r, stops: shownStops, tooMany: (r.matched || 0) > stops.length };
     });
@@ -112,19 +122,27 @@ function countFor(results, day) {
 const ARROW_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>';
 
 // 路線ブロックの見出し：路線番号＋「→ 行き先」（どの方向の車か一目で分かるように）＋のりば
-function routeHeadHtml(rt, poleNo) {
+// 島嶼巴士：班次註記（※錆ヶ浜港着岸時）、今天的分頁才加「本日運行／本日運休」標籤
+function routeHeadHtml(rt, poleNo, isToday) {
+    let tag = '';
+    if (isToday && rt.active_today === true) tag = '<span class="tt-day-tag on">本日運行</span>';
+    else if (isToday && rt.active_today === false) tag = '<span class="tt-day-tag off">本日運休（着岸港が異なるため）</span>';
     return `<div class="tt-route-head">
         <span class="tt-route-no">${esc(toHalfWidth(rt.route || ''))}</span>
         <span class="tt-route-dest">${ARROW_SVG}${esc(rt.destination || '')}</span>
+        ${rt.note ? `<span class="tt-route-note">※${esc(rt.note)}</span>` : ''}
+        ${tag}
         ${poleNo ? `<span class="tt-route-pole">${esc(poleNo)}番のりば</span>` : ''}
     </div>`;
 }
 
-function routeHtml(rt, day, poleNo) {
+function routeHtml(rt, day, poleNo, isToday) {
     const rows = (rt.timetable && rt.timetable[day]) || [];
-    const head = routeHeadHtml(rt, poleNo);
+    const head = routeHeadHtml(rt, poleNo, isToday);
+    // 今天不開的港別版本：整組淡化，不列入下一班
+    const cls = isToday && rt.active_today === false ? 'tt-route tt-inactive' : 'tt-route';
     if (rows.length === 0) {
-        return `<div class="tt-route">${head}<div class="tt-empty">この日は運行がありません</div></div>`;
+        return `<div class="${cls}">${head}<div class="tt-empty">この日は運行がありません</div></div>`;
     }
     // 伝統的な時刻表：見出し行（時｜日別）と罫線、時の列は色付き、
     // 分は固定幅のマスに並べて行をまたいで縦にそろえる（24 時以降もそのまま表示）
@@ -133,12 +151,38 @@ function routeHtml(rt, day, poleNo) {
             `<span class="tt-min" data-t="${row.hour * 60 + Number(mm)}">${esc(mm)}</span>`).join('');
         return `<tr><th scope="row">${row.hour}</th><td><div class="tt-mins">${mins}</div></td></tr>`;
     }).join('');
-    return `<div class="tt-route">${head}
+    return `<div class="${cls}">${head}
         <table class="tt-table">
             <thead><tr><th scope="col">時</th><th scope="col">${DAY_LABELS[day]}<small>（分）</small></th></tr></thead>
             <tbody>${body}</tbody>
         </table>
         <div class="tt-ended" hidden>本日の運行は終了しました</div></div>`;
+}
+
+// 島嶼巴士：今天靠島的船班與著岸港（東海汽船的運航情報）
+function shipLinkHtml(link) {
+    const sailings = (link && link.sailings) || [];
+    if (sailings.length === 0) return '';
+    const island = link.island ? `${esc(link.island)}` : '';
+    const rows = sailings.map(sl => {
+        const name = [sl.name, sl.ship].filter(Boolean).map(esc).join(' ');
+        const from = sl.from ? `（${esc(sl.from)}発）` : '';
+        return `<li>
+            <span class="tt-ship-time">${sl.arrival_text ? `${esc(sl.arrival_text)}着` : ''}</span>
+            <span class="tt-ship-name">${name}${from}</span>
+            <span class="tt-ship-port${sl.port ? '' : ' unknown'}">${esc(sl.port || '未発表')}</span>
+        </li>`;
+    }).join('');
+    return `<div class="tt-ship">
+        <div class="tt-ship-title">⛴ 本日の${island}着岸港<small>東海汽船 運航情報より</small></div>
+        <ul class="tt-ship-list">${rows}</ul>
+        <a class="tt-ship-link" href="${SHIP_INFO_URL}" target="_blank" rel="noopener noreferrer">船の運航情報を見る</a>
+    </div>`;
+}
+
+// 各業者的「今天」：島嶼巴士帶自己的 today（已判斷祝日），沒有就用整體的 today
+function resultToday(r, data) {
+    return r.today ?? (data && data.today);
 }
 
 function resultsHtml(results, day, opts) {
@@ -151,6 +195,12 @@ function resultsHtml(results, day, opts) {
             ? `<a class="tt-operator" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${label}</a>`
             : `<span class="tt-operator">${label}</span>`;
         const hint = r.tooMany ? '<div class="tt-hint">候補が多すぎます。停留所名をもう少し詳しく入力してください</div>' : '';
+        const today = resultToday(r, opts.data);
+        const isToday = day === today;
+        // 時刻表過期（島嶼巴士）：照常顯示，最上方提示並附業者官網
+        const expired = r.updated && r.updated.expired
+            ? `<div class="tt-expired">時刻表の有効期限が切れています。新しい時刻表の公開を待っています。${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${label}のサイト</a>` : ''}</div>`
+            : '';
 
         const stops = r.stops.map(s => {
             let inner;
@@ -159,7 +209,7 @@ function resultsHtml(results, day, opts) {
                     ? `<div class="tt-empty">この停留所に${esc(opts.route)}の時刻表はありません</div>`
                     : '<div class="tt-empty">この停留所から乗車できる路線はありません</div>';
             } else {
-                inner = s.poles.map(p => p.routes.map(rt => routeHtml(rt, day, p.pole_no)).join('')).join('');
+                inner = s.poles.map(p => p.routes.map(rt => routeHtml(rt, day, p.pole_no, isToday)).join('')).join('');
             }
             return `<div class="tt-stop">
                 <div class="tt-head"><div class="tt-stop-name">${esc(s.name)}<span>時刻表</span></div>${opLink}</div>
@@ -167,7 +217,7 @@ function resultsHtml(results, day, opts) {
         }).join('');
 
         const updated = formatUpdated(r.updated);
-        return `<section class="tt-section">${hint}${stops}${updated ? `<div class="tt-updated">${esc(updated)}</div>` : ''}</section>`;
+        return `<section class="tt-section" data-today="${esc(today || '')}">${expired}${hint}${shipLinkHtml(r.ship_link)}${stops}${updated ? `<div class="tt-updated">${esc(updated)}</div>` : ''}</section>`;
     }).join('');
 
     return `${sections}<p class="tt-credit">公共交通オープンデータセンターのデータを利用しています</p>`;
@@ -233,11 +283,13 @@ function controlsHtml(state) {
 
 // ============================================================================
 // 下一班：只在「顯示中的分頁＝今天」時標示，各路線各自計算。每分鐘重算（不重新抓）
+// 「今天」依各業者區塊（島嶼巴士有自己的 today），今天不開的港別版本不標示
 // ============================================================================
 function updateNext(root, state) {
-    const isToday = state.data && state.day === state.data.today;
     const now = nowInTimetableMinutes();
     root.querySelectorAll('.tt-route').forEach(block => {
+        const sec = block.closest('.tt-section');
+        const isToday = !!state.data && !!sec && state.day === sec.dataset.today && !block.classList.contains('tt-inactive');
         const mins = [...block.querySelectorAll('.tt-min')];
         let next = null;
         mins.forEach(el => {
@@ -266,6 +318,11 @@ function scrollToNext(root) {
 // ============================================================================
 // 主流程
 // ============================================================================
+function currentResults(state) {
+    const d = state.dirs ? state.dirs[state.dir] : null;
+    return filterResults(state.data, { stop: state.stop, route: state.route, operator: state.operator, dest: d ? d.dest : '', note: d ? d.note : '' });
+}
+
 function render(root, state) {
     const picker = controlsHtml(state);
     if (state.error) {
@@ -278,10 +335,9 @@ function render(root, state) {
             <div>時刻表を読み込んでいます<span class="tt-dots"><i>.</i><i>.</i><i>.</i></span></div>
             <div class="tt-sub">初めて表示する停留所は、1分ほどかかる場合があります</div></div>`;
     } else {
-        const dest = state.dirs ? state.dirs[state.dir].dest : '';
-        const results = filterResults(state.data, { stop: state.stop, route: state.route, operator: state.operator, dest });
+        const results = currentResults(state);
         root.innerHTML = `${picker}${results.length > 0 ? tabsHtml(results, state.day) : ''}
-            <div class="tt-body">${resultsHtml(results, state.day, { route: state.route })}</div>`;
+            <div class="tt-body">${resultsHtml(results, state.day, { route: state.route, data: state.data })}</div>`;
         updateNext(root, state);
     }
 }
@@ -305,8 +361,12 @@ async function load(root, state) {
             return;
         }
         state.data = data;
-        // 分頁預設為今天（API 的 today）。使用者自己切過的話維持
-        if (!state.userDay) state.day = DAY_KEYS.includes(data.today) ? data.today : 'weekday';
+        // 分頁預設為今天：業者自己的 today（島嶼巴士）優先，其次 API 整體的 today。使用者自己切過的話維持
+        if (!state.userDay) {
+            const first = currentResults(state)[0];
+            const today = first ? resultToday(first, data) : data.today;
+            state.day = DAY_KEYS.includes(today) ? today : 'weekday';
+        }
         render(root, state);
         scrollToNext(root);
     } catch (e) {
@@ -336,7 +396,7 @@ export function openBusTimetable({ title, stop, route = '', operator = '', dirs 
             state.userDay = true;
             if (navigator.vibrate) navigator.vibrate(8);
             render(root, state);
-            if (state.data && state.day === state.data.today) scrollToNext(root);
+            scrollToNext(root); // 今天的分頁才有下一班，其他分頁不捲動
             return;
         }
         // 停留所の一覧：膠囊で開閉、項目で選択、ほかの場所を押したら閉じる
@@ -408,6 +468,7 @@ function routeDirections(targetId, route) {
         return {
             label: labels[i] || `${names[names.length - 1] || ''}行`,
             dest: names[names.length - 1] || '',
+            note: p.note || '', // 三宅村的港別版本
             stops: names,
             preview: prefs.previewStops.filter(n => names.includes(n))
         };
