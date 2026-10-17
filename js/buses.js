@@ -418,11 +418,23 @@ function busServiceInfo(busData) {
 }
 
 // 「⛴ 本日の着岸港：錆ヶ浜（阿古）港」：島嶼巴士的結果附帶今天靠島船班的著岸港（港未公布顯示「未発表」）
+// 點一下開啟東海汽船的運航情報（bindShipNoteClick）
 function shipPortNoteHtml(data) {
     const sailings = (data && data.ship_link && data.ship_link.sailings) || [];
     if (sailings.length === 0) return '';
     const ports = [...new Set(sailings.map(sl => sl.port || '未発表'))];
-    return `<div class="bus-ship-note">⛴ 本日の着岸港：${ports.join('・')}</div>`;
+    return `<button type="button" class="bus-ship-note" data-date="${data.ship_link.date || ''}">⛴ 本日の着岸港：${ports.join('・')}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>`;
+}
+
+// 著岸港の一行 → 運航情報頁面。收折卡本身「點一下展開」，所以在捕獲階段先攔下
+function bindShipNoteClick(container) {
+    container.addEventListener('click', (e) => {
+        const note = e.target.closest('.bus-ship-note');
+        if (!note || typeof window.openShipSchedule !== 'function') return;
+        e.stopPropagation();
+        if (navigator.vibrate) navigator.vibrate(10);
+        window.openShipSchedule({ date: note.dataset.date });
+    }, true);
 }
 
 // 站牌卡片的卡面（燈號與說明文字）：只處理只有時刻表的業者，其他回傳 null
@@ -1565,6 +1577,7 @@ export function renderBusDetailPanel(data, scrollWrapper, opts = {}) {
     container.className = 'bus-panel-container';
     container.style.cssText = 'display: flex; flex-direction: column; gap: 14px;';
     scrollWrapper.appendChild(container);
+    bindShipNoteClick(container);
 
     // 標記面板開啟中的路線：背景更新會將它納入抓取對象（含預覽卡）
     window.__busPanelTargetId = targetId;
@@ -2298,6 +2311,7 @@ export function renderBusStopPanel(data, scrollWrapper) {
     container.className = 'bus-panel-container';
     container.style.cssText = 'display: flex; flex-direction: column; gap: 14px;';
     scrollWrapper.appendChild(container);
+    bindShipNoteClick(container);
 
     // 開啟中的站牌 key：輪詢器據此重抓該站牌的最新資訊
     const initialStop = data.busStopData || {};

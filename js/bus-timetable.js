@@ -9,8 +9,6 @@ const TT_RETRY_MS = 5000;           // 後端初始化中（error 回應）時�
 const TT_CACHE_MS = 30 * 60 * 1000; // 同一站牌 30 分鐘內重開不再抓（today 跨日時也能更新）
 const DAY_KEYS = ['weekday', 'saturday', 'holiday'];
 const DAY_LABELS = { weekday: '平日', saturday: '土曜', holiday: '休日' };
-// 島嶼巴士的「本日の着岸港」：本站沒有船班頁面，連到東海汽船官網的運航情報
-const SHIP_INFO_URL = 'https://www.tokaikisen.co.jp/';
 
 const ttCache = new Map(); // 站牌名 -> { at, data }
 
@@ -159,7 +157,7 @@ function routeHtml(rt, day, poleNo, isToday) {
         <div class="tt-ended" hidden>本日の運行は終了しました</div></div>`;
 }
 
-// 島嶼巴士：今天靠島的船班與著岸港（東海汽船的運航情報）
+// 島嶼巴士：今天靠島的船班與著岸港（東海汽船的運航情報）。「船の運航情報を見る」→ 運航情報頁面（ship.js）
 function shipLinkHtml(link) {
     const sailings = (link && link.sailings) || [];
     if (sailings.length === 0) return '';
@@ -176,7 +174,7 @@ function shipLinkHtml(link) {
     return `<div class="tt-ship">
         <div class="tt-ship-title">⛴ 本日の${island}着岸港<small>東海汽船 運航情報より</small></div>
         <ul class="tt-ship-list">${rows}</ul>
-        <a class="tt-ship-link" href="${SHIP_INFO_URL}" target="_blank" rel="noopener noreferrer">船の運航情報を見る</a>
+        <button type="button" class="tt-ship-link" data-date="${esc(link.date || '')}">船の運航情報を見る</button>
     </div>`;
 }
 
@@ -428,7 +426,17 @@ export function openBusTimetable({ title, stop, route = '', operator = '', dirs 
             load(root, state);
             return;
         }
-        if (e.target.closest('.tt-retry')) load(root, state);
+        if (e.target.closest('.tt-retry')) { load(root, state); return; }
+
+        // 船の運航情報：返回で同じ方向・停留所のこの時刻表に戻る
+        const ship = e.target.closest('.tt-ship-link');
+        if (ship && typeof window.openShipSchedule === 'function') {
+            if (navigator.vibrate) navigator.vibrate(8);
+            window.openShipSchedule({
+                date: ship.dataset.date,
+                onBack: () => openBusTimetable({ title, stop: state.stop, route, operator, dirs, dir: state.dir, onBack })
+            });
+        }
     });
     // Esc：一覧が開いていれば一覧だけ閉じる（全体の「Esc で通用頁面を閉じる」には伝えない）
     root.addEventListener('keydown', (e) => {

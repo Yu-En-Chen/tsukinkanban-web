@@ -1,0 +1,457 @@
+/* ============================================================================
+   東海汽船 運航情報（ship.js）：通用頁面の中に日付切り替え＋航路別の船便一覧
+   読み込み中・エラー・出典は時刻表（bus.css の .tt-status ほか）と共通
+   ============================================================================ */
+.sh-root {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding-bottom: 12px;
+}
+
+/* --- 日付：一段目に日付、二段目に「‹ 前日｜今日｜翌日 ›」（時刻表の日別分頁と同じ全圓角の切り替え） --- */
+.sh-datehead {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sh-date-text {
+    text-align: center;
+    font-size: 1.05em;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.sh-datebar {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.sh-day-btn,
+.sh-today-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 8px 0;
+    border: none;
+    border-radius: 999px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+}
+
+.sh-day-btn:active,
+.sh-today-btn:not(.active):active {
+    transform: scale(0.96);
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* 今日を表示中：日別分頁の選択中と同じ白い膠囊 */
+.sh-today-btn.active {
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    cursor: default;
+}
+
+/* ほかの日：今日へ戻るボタン（青字） */
+.sh-today-btn:not(.active) {
+    color: #0a84ff;
+}
+
+.sh-day-btn svg,
+.sh-bus-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* --- 提示（運航状況を取得できない） --- */
+.sh-notice {
+    padding: 10px 16px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 700;
+    background: rgba(255, 149, 0, 0.12);
+    color: #c76a00;
+}
+
+.sh-notice a {
+    margin-left: 4px;
+    color: inherit;
+}
+
+/* --- 航路ごとのまとまり --- */
+.sh-list,
+.sh-route {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sh-list {
+    gap: 22px;
+}
+
+.sh-route-name {
+    margin: 0;
+    padding: 0 4px;
+    font-size: 0.95em;
+    font-weight: 800;
+    opacity: 0.7;
+}
+
+/* --- 船便 1 本：時刻と港 → 便名・船名＋状況 → 改港 → 着岸港 → 運航情報 --- */
+.sh-trip {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 24px;
+    background: var(--sh-card-bg);
+    --sh-card-bg: #fafafa;
+}
+
+/* 出発・到着：点と線でつないだ二段。時刻は右寄せで桁をそろえ（「翌」は左にはみ出す）、港名を縦にそろえる */
+.sh-times {
+    position: relative;
+    display: grid;
+    grid-template-columns: 10px auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 10px;
+    row-gap: 6px;
+    min-width: 0;
+}
+
+.sh-times::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 0.9em;
+    bottom: 0.9em;
+    width: 2px;
+    border-radius: 1px;
+    background: currentColor;
+    opacity: 0.18;
+}
+
+.sh-stop {
+    display: contents;
+}
+
+.sh-stop::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    box-sizing: border-box;
+    border-radius: 50%;
+    /* 線が透けないよう、点そのものは不透明（色だけ薄く） */
+    border: 2px solid color-mix(in srgb, currentColor 45%, var(--sh-card-bg, #fafafa));
+    background: var(--sh-card-bg, #fafafa);
+    position: relative;
+    z-index: 1;
+}
+
+.sh-stop.dep::before {
+    background: color-mix(in srgb, currentColor 45%, var(--sh-card-bg, #fafafa));
+}
+
+.sh-time {
+    justify-self: end;
+    font-size: 1.15em;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.sh-nextday {
+    font-size: 0.65em;
+    font-weight: 800;
+    opacity: 0.6;
+}
+
+.sh-pname {
+    min-width: 0;
+    font-weight: 700;
+}
+
+/* 各段の位置を明示（自動配置に任せると点や時刻が別の段に流れる） */
+.sh-stop.dep::before,
+.sh-stop.dep > * {
+    grid-row: 1;
+}
+
+.sh-stop.arr::before,
+.sh-stop.arr > * {
+    grid-row: 2;
+}
+
+.sh-stop::before {
+    grid-column: 1;
+}
+
+.sh-time {
+    grid-column: 2;
+}
+
+.sh-pname {
+    grid-column: 3;
+}
+
+/* 欠航：時刻と港に取り消し線（徽章の赤と合わせて一目で） */
+.sh-trip.is-cancelled .sh-time,
+.sh-trip.is-cancelled .sh-pname {
+    text-decoration: line-through;
+    text-decoration-thickness: 1.5px;
+    opacity: 0.55;
+}
+
+.sh-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.sh-ship {
+    min-width: 0;
+    font-size: 0.85em;
+    font-weight: 600;
+    opacity: 0.65;
+}
+
+.sh-ship span {
+    display: inline-block;
+}
+
+/* 状況の徽章：欠航 赤／就航判断待ち 橙／条件付き・出帆港変更 黄／出帆港未定 灰／運航予定 緑 */
+.sh-badge {
+    flex-shrink: 0;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.8em;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.sh-cancelled {
+    background: rgba(255, 59, 48, 0.14);
+    color: #d70015;
+}
+
+.sh-pending {
+    background: rgba(255, 149, 0, 0.16);
+    color: #c76a00;
+}
+
+.sh-conditional,
+.sh-changed {
+    background: rgba(255, 204, 0, 0.24);
+    color: #8a6a00;
+}
+
+.sh-undecided {
+    background: rgba(120, 120, 128, 0.16);
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.sh-normal {
+    background: rgba(52, 199, 89, 0.15);
+    color: #1f8f3a;
+}
+
+/* 改港：目立つ色で */
+.sh-change {
+    padding: 7px 12px;
+    border-radius: 14px;
+    font-size: 0.85em;
+    font-weight: 800;
+    background: rgba(255, 149, 0, 0.12);
+    color: #c76a00;
+}
+
+/* 着岸港：島ごとの小さな膠囊。巴士資料がある島（大島・三宅島）は押すと巴士時刻表 */
+.sh-ports {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 0.82em;
+}
+
+.sh-ports-label {
+    font-weight: 700;
+    opacity: 0.55;
+}
+
+.sh-port {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.03);
+    color: inherit;
+    font: inherit;
+    font-weight: 700;
+}
+
+.sh-island {
+    font-weight: 600;
+    opacity: 0.55;
+}
+
+.sh-port.sh-bus {
+    border-color: rgba(10, 132, 255, 0.35);
+    color: #0a84ff;
+    cursor: pointer;
+}
+
+.sh-port.sh-bus .sh-island {
+    color: inherit;
+}
+
+.sh-port.sh-bus:active {
+    background: rgba(10, 132, 255, 0.12);
+}
+
+.sh-bus-icon {
+    width: 14px;
+    height: 14px;
+}
+
+/* 運航情報の原文（収合） */
+.sh-msg summary {
+    width: fit-content;
+    font-size: 0.85em;
+    font-weight: 700;
+    opacity: 0.6;
+    cursor: pointer;
+}
+
+.sh-msg p {
+    margin: 8px 0 0;
+    font-size: 0.85em;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.sh-link {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 0.85em;
+    font-weight: 700;
+    color: #0a84ff;
+    text-decoration: none;
+}
+
+/* --- 頁尾：時刻表の改正日・運航情報の更新時刻・公式・出典 --- */
+.sh-foot {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 4px;
+    font-size: 0.75em;
+    opacity: 0.6;
+}
+
+.sh-foot .sh-link {
+    font-size: 1em;
+    opacity: 1;
+}
+
+.sh-foot .tt-credit {
+    padding: 0;
+    opacity: 0.85;
+}
+
+@media (prefers-color-scheme: dark) {
+    .sh-datebar {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .sh-day-btn:active,
+    .sh-today-btn:not(.active):active {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .sh-today-btn.active {
+        background: rgba(255, 255, 255, 0.92);
+        color: #000;
+        box-shadow: none;
+    }
+
+    .sh-today-btn:not(.active) {
+        color: #64a9ff;
+    }
+
+    .sh-notice {
+        background: rgba(255, 159, 10, 0.16);
+        color: #ffb340;
+    }
+
+    .sh-trip {
+        border-color: rgba(255, 255, 255, 0.08);
+        --sh-card-bg: #2a2a2c;
+    }
+
+    .sh-cancelled {
+        background: rgba(255, 69, 58, 0.18);
+        color: #ff6961;
+    }
+
+    .sh-pending {
+        background: rgba(255, 159, 10, 0.18);
+        color: #ffb340;
+    }
+
+    .sh-conditional,
+    .sh-changed {
+        background: rgba(255, 214, 10, 0.16);
+        color: #ffd60a;
+    }
+
+    .sh-undecided {
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.65);
+    }
+
+    .sh-normal {
+        background: rgba(48, 209, 88, 0.16);
+        color: #4cd964;
+    }
+
+    .sh-change {
+        background: rgba(255, 159, 10, 0.16);
+        color: #ffb340;
+    }
+
+    .sh-port {
+        border-color: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .sh-port.sh-bus {
+        border-color: rgba(100, 169, 255, 0.4);
+        color: #64a9ff;
+    }
+
+    .sh-link {
+        color: #64a9ff;
+    }
+}

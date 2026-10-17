@@ -20,6 +20,7 @@ import { initDynamicClock } from './clock.js';
 import { syncAndLoadDictionary } from '../data/dictionary-db.js';
 import { initFlights, searchFlights } from './flights.js';
 import './bus-timetable.js';
+import { openShipSchedule, searchShip } from './ship.js';
 import { initBuses, searchBusesDebounced, refreshSavedBusRoutes, ensureBusRouteData, generateBusDataFormat, generateBusLineSummary, renderBusDetailPanel, renderBusStopPanel, renderBusLineCard, openStopPickerDialog, getBusPrefs, saveBusPrefs, isBusTargetId, getBusOperatorColor, busStopCardFace } from './buses.js';
 import { startRouteEditMode } from './edit-routes.js';
 
@@ -2067,6 +2068,14 @@ function filterCards(keyword) {
                 }
             });
         }
+
+        // D. 船便（東海汽船の運航情報）：東海汽船・船・伊豆諸島の島名など
+        searchShip(lowKeyword).forEach(r => {
+            if (!seenNames.has(r.name)) {
+                seenNames.add(r.name);
+                searchResults.push(r);
+            }
+        });
     });
 
     // 4. 渲染獨立玻璃膠囊
@@ -2087,7 +2096,9 @@ function filterCards(keyword) {
 
             // 航班結果同樣顯示手指游標並綁定點擊事件
             const cursorStyle = 'cursor: pointer;';
-            const clickAction = route.isFlight ? `onclick="window.previewFlightFromSearch('${route.id}')"` : `onclick="window.previewRouteFromSearch('${route.id}')"`;
+            const clickAction = route.isFlight ? `onclick="window.previewFlightFromSearch('${route.id}')"`
+                : route.isShip ? `onclick="window.openShipFromSearch()"`
+                : `onclick="window.previewRouteFromSearch('${route.id}')"`;
 
             // 套用 CSS class，結尾的 customBottomHtml 支援底部排版
             return `
@@ -2098,9 +2109,9 @@ function filterCards(keyword) {
                             <div class="search-result-subtitle">${route.company}</div>
                         </div>
                         <div style="display: flex; flex-direction: column; align-items: flex-end;">
-                            <div class="status-tag" style="position: relative; top: 0; right: 0; transform: none; display: flex; align-items: center;">
+                            ${route.isShip ? '' : `<div class="status-tag" style="position: relative; top: 0; right: 0; transform: none; display: flex; align-items: center;">
                                 ${window.getStatusIconsHTML(route.statusFlags)}
-                            </div>
+                            </div>`}
                             ${delayHtml} 
                         </div>
                     </div>
@@ -2288,6 +2299,24 @@ window.previewBusFromSearch = function (targetId) {
     setTimeout(() => {
         handleCardClick('temp-search-bus');
     }, 250);
+};
+
+// ============================================================================
+// 點擊船便的搜尋結果：關閉搜尋列後開啟東海汽船の運航情報（通用頁面）
+// ============================================================================
+window.openShipFromSearch = function () {
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.blur();
+    }
+    filterCards('');
+
+    const cancelBtn = document.querySelector('.cancel-circle-btn');
+    if (cancelBtn) cancelBtn.click();
+
+    // 等鍵盤收起、搜尋列關閉後再開
+    setTimeout(() => openShipSchedule(), 250);
 };
 
 // ============================================================================
