@@ -2726,6 +2726,8 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                 // 欠航→打叉、条件付き・出帆港変更→三角、判断待ち・未定・情報なし→注意、運航予定→綠、今日便なし→打叉
                 if (isShipTargetId(lineId)) {
                     const shipLine = generateShipLineSummary(lineId);
+                    // 欠航・条件付きなどは公式の運航情報による → 鐵道の公式発表と同じく注意燈も点ける
+                    if (shipLine.hasNotice) hasMessageNote = true;
                     if (shipLine.lamp === 'severe') hasSevere = true;
                     else if (shipLine.lamp === 'none') hasNoService = true;
                     else if (shipLine.lamp === 'minor') hasDelay = true;

@@ -194,11 +194,13 @@ export function initShips() {
 //   全便欠航・一部欠航 → 打叉／条件付き運航・出帆港変更 → 三角／
 //   就航判断待ち・出帆港未定・運航情報なし → 注意／すべて運航予定 → 綠燈／
 //   今天この航路の便がない → 打叉（島嶼巴士と同じ扱い）
+// 欠航・条件付き・出帆港変更は東海汽船の運航情報（公式の告知）によるものなので、
+// 鐵道の「公式発表あり」と同じく注意燈も一緒に点ける（今日便なしは告知ではないので打叉だけ）
 // ============================================================================
 const LAMP_FLAGS = {
-    severe: [false, false, false, true, false, false, false],
+    severe: [false, false, false, true, false, false, true],
     none: [false, false, false, true, false, false, false],
-    minor: [false, false, false, false, true, false, false],
+    minor: [false, false, false, false, true, false, true],
     attention: [false, false, false, false, false, false, true],
     normal: [false, false, false, false, false, true, false]
 };
@@ -293,7 +295,8 @@ export function generateShipLineSummary(targetId) {
         isAttention: info.lamp === 'attention',
         advancedDetails: [],
         isShipLine: true,
-        lamp: info.lamp
+        lamp: info.lamp,
+        hasNotice: info.lamp === 'severe' || info.lamp === 'minor' // 公式の運航情報あり → 注意燈も
     };
 }
 
