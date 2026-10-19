@@ -100,10 +100,15 @@ async function fetchHistoryDaemon() {
                     if (!Array.isArray(records) || records.length === 0) return;
                     const last = records[records.length - 1] || {};
                     if (last.route !== route) return;
+                    // 見出し：「3500便 さるびあ丸」＋「昨日 22:30 東京・竹芝発 → 翌 08:55 八丈島着」（ship.js）
+                    const head = typeof window.shipHistoryTitle === 'function'
+                        ? window.shipHistoryTitle(key, records)
+                        : { title: [last.name, last.ship].filter(Boolean).join(' '), sub: last.departure_text ? `${last.departure_text}発` : '' };
                     fetchTasks.push(Promise.resolve({
                         cardId: card.id,
                         cardName: card.name || card.title || '卡片路線',
-                        name: [last.departure_text, last.name, last.ship].filter(Boolean).join(' '),
+                        name: head.title,
+                        sub: head.sub,
                         isShip: true,
                         shipKey: key,
                         data: records

@@ -27,9 +27,13 @@ const shipCache = new Map(); // 日期 -> { at, data }
 // 今天的運航情報（卡片用，存進 localStorage 讓下次開啟時先有東西可顯示）
 // { date, fetchedAt, data }。牌組の最初の描畫より前に戻しておく（模組載入時）
 window.GlobalShipData = window.GlobalShipData || null;
+// 前日分も一つだけ残す：夜行船（昨日出てまだ航行中）の履歴に出発港・到着港を出すため
+window.GlobalShipDataPrev = window.GlobalShipDataPrev || null;
 try {
     const cached = localStorage.getItem(SHIP_CACHE_KEY);
     if (cached && !window.GlobalShipData) window.GlobalShipData = JSON.parse(cached);
+    const prev = localStorage.getItem(`${SHIP_CACHE_KEY}_Prev`);
+    if (prev && !window.GlobalShipDataPrev) window.GlobalShipDataPrev = JSON.parse(prev);
 } catch (e) { }
 
 function esc(s) {
@@ -121,6 +125,12 @@ async function fetchSchedule(date, force = false) {
 // 今天的運航情報（航路卡片用）：抓到後通知卡片更新（shipDataUpdated）
 // ============================================================================
 function storeToday(date, data) {
+    // 日付が変わった：それまでの「今日」を前日分として残す
+    const old = window.GlobalShipData;
+    if (old && old.date && old.date !== date && old.data && !old.data.error) {
+        window.GlobalShipDataPrev = old;
+        try { localStorage.setItem(`${SHIP_CACHE_KEY}_Prev`, JSON.stringify(old)); } catch (e) { }
+    }
     window.GlobalShipData = { date, fetchedAt: Date.now(), data };
     try { localStorage.setItem(SHIP_CACHE_KEY, JSON.stringify(window.GlobalShipData)); } catch (e) { }
     window.dispatchEvent(new CustomEvent('shipDataUpdated'));
@@ -353,16 +363,15 @@ function historyNote(r, prev) {
 }
 
 // 歷史の時系列：新しい順、左に縦線、古いものは薄く、間に点線（通知・履歴の航班と同じ見せ方）
-// 状況の文字色は運航状況の徽章と同じ（欠航＝赤・条件付き＝黄…）
+// 文字は鐵道・航班の履歴と同じく色を付けない
 export function shipHistoryHtml(records) {
     const list = records || [];
     const items = list.map((r, i) => {
-        const level = SHIP_LEVELS.includes(r.level) ? r.level : 'undecided';
         const hm = Number.isFinite(r.timestamp) ? jstHm(new Date(r.timestamp).toISOString()) : '';
         const note = historyNote(r, list[i - 1]);
         return `<div class="sh-hist-item">
             <div class="sh-hist-head">
-                <span class="sh-hist-text sh-lv-${level}">${esc(r.label || '運航情報')}</span>
+                <span class="sh-hist-text">${esc(r.label || '運航情報')}</span>
                 ${hm ? `<span class="sh-hist-time">${hm}</span>` : ''}
             </div>
             ${note ? `<div class="sh-hist-note">${esc(note)}</div>` : ''}
@@ -370,6 +379,44 @@ export function shipHistoryHtml(records) {
     }).reverse();
     if (items.length > 0) items[0] = items[0].replace('class="sh-hist-item"', 'class="sh-hist-item latest"');
     return `<div class="sh-hist-list">${items.join('')}</div>`;
+}
+
+// history_key から時刻表の便を探す（今日・前日・このページで開いた日付）。港名を出すため
+function tripForHistoryKey(key) {
+    const sources = [window.GlobalShipData, window.GlobalShipDataPrev].filter(Boolean).map(x => x.data);
+    shipCache.forEach(v => sources.push(v.data));
+    for (const data of sources) {
+        for (const r of (data && data.routes) || []) {
+            const t = (r.trips || []).find(x => x.history_key === key);
+            if (t) return t;
+        }
+    }
+    return null;
+}
+
+// 通知・履歴での便の見出し：「3500便 さるびあ丸」と、どの便か分かる二行目
+// 「昨日 22:30 東京・竹芝発 → 翌 08:55 八丈島着」。同じ便名が二つ（昨夜の夜行船と今夜の便）でも区別できるように
+// 港名は時刻表から（無ければ記録の出発日・表定到着だけで「昨日 22:30発 → 翌 08:55着」）
+export function shipHistoryTitle(key, records) {
+    const last = (records && records[records.length - 1]) || {};
+    const trip = tripForHistoryKey(key);
+    const title = [last.name, last.ship].filter(Boolean).join(' ') || '船便';
+    const off = last.date ? dayOffset(last.date) : 0;
+    const day = off === 0 ? '' : off === -1 ? '昨日 ' : `${shortDateJa(last.date)} `;
+    const dep = (trip && trip.departure) || {};
+    const arr = (trip && trip.arrival) || {};
+    const from = `${day}${last.departure_text || dep.text || ''} ${dep.port ? `${dep.port}発` : '発'}`.replace(' 発', '発').trim();
+    let to = '';
+    if (arr.port) {
+        to = `→ ${arr.text ? `${arr.text} ` : ''}${arr.port}着`;
+    } else if (last.arrival_time) {
+        const hm = String(last.arrival_time).slice(11, 16);
+        const nextDay = last.date && String(last.arrival_time).slice(0, 10) > last.date;
+        if (hm) to = `→ ${nextDay ? '翌 ' : ''}${hm}着`;
+    }
+    // 折り返すなら「→」の前で（港名の途中で切らない）
+    const sub = [from, to].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join(' ');
+    return { title: esc(title), sub };
 }
 
 // 便の「運航履歴」：記録があるときだけ（無ければ何も出さない）
@@ -811,3 +858,4 @@ export function searchShip(lowKeyword) {
 
 window.openShipSchedule = openShipSchedule;
 window.shipHistoryHtml = shipHistoryHtml; // 通知・履歴（menu.js）からも同じ見せ方で
+window.shipHistoryTitle = shipHistoryTitle; // 通知・履歴の便の見出し（history-daemon.js）

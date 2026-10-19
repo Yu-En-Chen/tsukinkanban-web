@@ -503,11 +503,25 @@ button.sh-day .sh-day-date {
     gap: 4px;
     padding-bottom: 12px;
     border-bottom: 1px dashed rgba(128, 128, 128, 0.25);
-    opacity: 0.65;
 }
 
-.sh-hist-item.latest {
-    opacity: 1;
+/* 古い記録：航班の履歴と同じく灰色で薄く */
+.sh-hist-item:not(.latest) {
+    opacity: 0.65;
+    color: #8e8e93;
+}
+
+/* 通知・履歴の便の見出しの下：出発日・時刻・港（昨日 22:30 東京・竹芝発 → 翌 08:55 八丈島着） */
+.sh-hist-sub {
+    margin: 2px 0 0 14px;
+    font-size: 0.8em;
+    font-weight: 600;
+    opacity: 0.6;
+    line-height: 1.5;
+}
+
+.sh-hist-sub span {
+    display: inline-block;
 }
 
 .sh-hist-item:last-child {
@@ -525,7 +539,7 @@ button.sh-day .sh-day-date {
 
 .sh-hist-text {
     font-size: 0.95em;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .sh-hist-time {
@@ -542,24 +556,6 @@ button.sh-day .sh-day-date {
     font-weight: 500;
     line-height: 1.5;
     opacity: 0.8;
-}
-
-/* 状況の文字色：運航状況の徽章と同じ */
-.sh-lv-cancelled {
-    color: #d70015;
-}
-
-.sh-lv-pending {
-    color: #c76a00;
-}
-
-.sh-lv-conditional,
-.sh-lv-changed {
-    color: #8a6a00;
-}
-
-.sh-lv-normal {
-    color: #1f8f3a;
 }
 
 /* --- 航路の資訊卡（搜尋預覽卡・混合卡片の中）：各便は卡片の中の一段薄い面 --- */
@@ -650,23 +646,6 @@ button.sh-day .sh-day-date {
 
     .ship-days-btn {
         color: #64a9ff;
-    }
-
-    .sh-lv-cancelled {
-        color: #ff6961;
-    }
-
-    .sh-lv-pending {
-        color: #ffb340;
-    }
-
-    .sh-lv-conditional,
-    .sh-lv-changed {
-        color: #ffd60a;
-    }
-
-    .sh-lv-normal {
-        color: #4cd964;
     }
 
     .sh-hist-count {

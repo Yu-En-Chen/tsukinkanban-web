@@ -310,12 +310,14 @@ function generateHistoryHTML() {
             validRoutes.forEach(info => {
                 // 航路の各便：船頁面の運航履歴と同じ見せ方（ship.js の shipHistoryHtml）
                 if (info.isShip && typeof window.shipHistoryHtml === 'function') {
+                    // 見出し＝便名・船名、その下にどの便か（出発日・時刻・港）を小さく
                     htmlStr += `
                         <div>
-                            <div style="font-weight: 700; font-size: 0.95em; margin-bottom: 2px; display: flex; align-items: center; gap: 8px; color: inherit; opacity: 0.9;">
-                                <span style="width: 6px; height: 6px; background: #0a84ff; border-radius: 50%;"></span>
+                            <div style="font-weight: 700; font-size: 0.95em; display: flex; align-items: center; gap: 8px; color: inherit; opacity: 0.9;">
+                                <span style="width: 6px; height: 6px; background: #0a84ff; border-radius: 50%; flex-shrink: 0;"></span>
                                 ${info.name}
                             </div>
+                            ${info.sub ? `<div class="sh-hist-sub">${info.sub}</div>` : ''}
                             ${window.shipHistoryHtml(info.data)}
                         </div>`;
                     return;
