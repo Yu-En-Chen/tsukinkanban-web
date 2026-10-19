@@ -16,6 +16,9 @@ const SHIP_LEVELS = ['cancelled', 'pending', 'conditional', 'changed', 'undecide
 const SHIP_CACHE_KEY = 'Tsukin_Cached_ShipData';
 const SHIP_COMPANY = '東海汽船';
 const SHIP_COLOR = '#1D5FA8'; // 航路卡片的預設色
+// 運航歷史：與鐵道・航班共用 /api/history/all（Cloudflare 1 分鐘快取），ship 區塊以各便的 history_key 為 key
+const HISTORY_ALL_URL = 'https://api.tsukinkanban.com/api/history/all';
+const HISTORY_FRESH_MS = 60000;
 // 有巴士資料的島（著岸港可直接開該站的巴士時刻表）
 const ISLAND_BUS_OPERATORS = { '大島': 'OshimaBus', '三宅島': 'MiyakeVill' };
 
@@ -301,6 +304,87 @@ export function generateShipLineSummary(targetId) {
 }
 
 // ============================================================================
+// 運航歷史（各便の運航情報の移り変わり）
+// history-daemon.js が毎分 /api/history/all を取得して window.appHistoryAll に置く。
+// 起動直後などまだ無いときだけ、ここで同じ URL を取得する（今日・昨日の便を表示するときだけ）
+// 表示するかどうかは「その便の history_key に記録があるか」だけで決める
+// （船が出たあと公式の告知が下ろされて status が null になっても、記録は残っている）
+// ============================================================================
+let historyPending = null;
+
+export function shipHistoryFor(key) {
+    const all = window.appHistoryAll;
+    const records = key && all && all.ship ? all.ship[key] : null;
+    return Array.isArray(records) ? records : [];
+}
+
+function ensureShipHistory() {
+    if (window.appHistoryAllAt && Date.now() - window.appHistoryAllAt < HISTORY_FRESH_MS) return;
+    if (historyPending) return;
+    historyPending = fetch(HISTORY_ALL_URL)
+        .then(res => (res.ok ? res.json() : null))
+        .then(data => {
+            if (!data) return;
+            window.appHistoryAll = data;
+            window.appHistoryAllAt = Date.now();
+            window.dispatchEvent(new CustomEvent('shipHistoryUpdated'));
+        })
+        .catch(() => { })
+        .finally(() => { historyPending = null; });
+}
+
+// 記録のタグ（状況変更・出帆港決定・出帆港変更・案内変更）は色分けした小さな膠囊で
+const HISTORY_TAG_CLASS = { '状況変更': 'status', '出帆港決定': 'decided', '出帆港変更': 'changed', '案内変更': 'info' };
+
+// 歷史の時系列：新しい順、左に縦線、古いものは薄く、間に点線（通知・履歴の航班と同じ見せ方）
+// 1 件ごと：時刻（timestamp）・状況の徽章（label、色は運航状況と同じ）・タグ／note、着岸港、改港、原文（収合）
+// keyPrefix：開いた原文を再描畫後も開いたままにするための data-key
+export function shipHistoryHtml(records, keyPrefix = '') {
+    const snaps = (records || []).slice().reverse();
+    return `<div class="sh-hist-list">${snaps.map((r, i) => {
+        const level = SHIP_LEVELS.includes(r.level) ? r.level : 'undecided';
+        const badge = r.label ? `<span class="sh-badge sh-${level}">${esc(r.label)}</span>` : '';
+        const tags = (r.tags || []).map(t => `<span class="sh-tag sh-tag-${HISTORY_TAG_CLASS[t] || 'info'}">${esc(t)}</span>`).join('');
+        const note = !tags && r.note ? `<span class="sh-hist-note">${esc(String(r.note).replace(/[【】]/g, ''))}</span>` : '';
+        const hm = Number.isFinite(r.timestamp) ? jstHm(new Date(r.timestamp).toISOString()) : '';
+        const ports = Object.entries(r.ports || {}).map(([island, port]) => `${esc(island)}：${esc(port || '未定')}`).join('　');
+        const changes = (r.changes || []).map(c =>
+            `<div class="sh-change">⚠ ${esc(c.island)}：${esc(c.from || '—')} → ${esc(c.to || '未定')}</div>`).join('');
+        const msgs = (r.messages || []).length > 0
+            ? `<details class="sh-hist-msg" data-key="${esc(`${keyPrefix}:m${r.timestamp}`)}"><summary>運航情報</summary>${r.messages.map(m => `<p>${esc(m)}</p>`).join('')}</details>`
+            : '';
+        return `<div class="sh-hist-item${i === 0 ? ' latest' : ''}">
+            <div class="sh-hist-head">
+                <span class="sh-hist-status">${badge}${tags}${note}</span>
+                ${hm ? `<span class="sh-hist-time">${hm}</span>` : ''}
+            </div>
+            ${ports ? `<div class="sh-hist-ports">${ports}</div>` : ''}
+            ${changes}
+            ${msgs}
+        </div>`;
+    }).join('')}</div>`;
+}
+
+// 便の「運航履歴」：記録があるときだけ（無ければ何も出さない）
+function tripHistoryHtml(trip) {
+    const records = shipHistoryFor(trip.history_key);
+    if (records.length === 0) return '';
+    return `<details class="sh-hist" data-key="${esc(trip.history_key)}">
+        <summary>運航履歴<span class="sh-hist-count">${records.length}件</span></summary>
+        ${shipHistoryHtml(records, trip.history_key)}
+    </details>`;
+}
+
+// 再描畫しても開いていた運航情報・運航履歴は開いたまま
+function openDetailKeys(root) {
+    return new Set([...root.querySelectorAll('details[data-key][open]')].map(d => d.dataset.key));
+}
+
+function restoreDetailKeys(root, open) {
+    root.querySelectorAll('details[data-key]').forEach(d => { if (open.has(d.dataset.key)) d.open = true; });
+}
+
+// ============================================================================
 // 描畫
 // ============================================================================
 const CHEV_L = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>';
@@ -360,7 +444,7 @@ function tripHtml(trip, key) {
     const messages = (st && st.messages) || [];
     const url = st && /^https?:\/\//.test(st.url || '') ? st.url : '';
     const details = messages.length > 0 || url
-        ? `<details class="sh-msg" data-key="${esc(key)}">
+        ? `<details class="sh-msg" data-key="${esc(`${trip.history_key || key}:msg`)}">
             <summary>運航情報</summary>
             ${messages.map(m => `<p>${esc(m)}</p>`).join('')}
             ${url ? `<a class="sh-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">東海汽船の運航情報（公式）</a>` : ''}
@@ -377,6 +461,7 @@ function tripHtml(trip, key) {
         ${changes}
         ${ports ? `<div class="sh-ports"><span class="sh-ports-label">着岸港</span>${ports}</div>` : ''}
         ${details}
+        ${tripHistoryHtml(trip)}
     </div>`;
 }
 
@@ -426,8 +511,8 @@ function scheduleHtml(data, route = '') {
 }
 
 function render(root, state) {
-    // 重繪（5 分ごとの更新など）で開いていた運航情報が閉じないように
-    const open = new Set([...root.querySelectorAll('details.sh-msg[open]')].map(d => d.dataset.key));
+    // 重繪（5 分ごとの更新・歷史の更新など）で開いていた運航情報・運航履歴が閉じないように
+    const open = openDetailKeys(root);
     let body;
     if (state.error) {
         body = `<div class="tt-status"><div>${esc(state.error)}</div>
@@ -442,13 +527,16 @@ function render(root, state) {
         ? `<div class="sh-filter"><span class="sh-filter-name">${esc(state.route)}</span><button type="button" class="sh-filter-clear">すべての航路</button></div>`
         : '';
     root.innerHTML = dateBarHtml(state) + filter + body;
-    root.querySelectorAll('details.sh-msg').forEach(d => { if (open.has(d.dataset.key)) d.open = true; });
+    restoreDetailKeys(root, open);
 }
 
 // silent：今天的定時更新。抓取期間保留目前的清單，失敗也不蓋掉
 async function load(root, state, silent = false) {
     const token = ++state.loadToken;
     const date = state.date;
+    // 歷史があり得るのは今日の便と、昨日出てまだ航行中の夜行船だけ
+    const off = dayOffset(date);
+    if (off === 0 || off === -1) ensureShipHistory();
     clearTimeout(state.refreshTimer);
     if (!silent) {
         state.data = null;
@@ -499,6 +587,18 @@ export function openShipSchedule({ date = '', route = '', onBack = null } = {}) 
         if (content) content.scrollTop = 0;
         load(root, state);
     };
+
+    // 歷史が更新されたら（毎分）表示中のページにも反映。ページを閉じたら外す
+    const onHistory = () => {
+        if (!root.isConnected) {
+            window.removeEventListener('historyDataUpdated', onHistory);
+            window.removeEventListener('shipHistoryUpdated', onHistory);
+            return;
+        }
+        if (state.data) render(root, state);
+    };
+    window.addEventListener('historyDataUpdated', onHistory);
+    window.addEventListener('shipHistoryUpdated', onHistory);
 
     root.addEventListener('click', (e) => {
         const shift = e.target.closest('.sh-day[data-shift]');
@@ -562,10 +662,10 @@ function shipCardHtml(targetId) {
 function fillShipCard(card) {
     const html = shipCardHtml(card.dataset.shipTarget);
     if (card._shipHtml === html) return;
-    const open = new Set([...card.querySelectorAll('details.sh-msg[open]')].map(d => d.dataset.key));
+    const open = openDetailKeys(card);
     card._shipHtml = html;
     card.innerHTML = html;
-    card.querySelectorAll('details.sh-msg').forEach(d => { if (open.has(d.dataset.key)) d.open = true; });
+    restoreDetailKeys(card, open);
 }
 
 export function renderShipLineCard(targetId) {
@@ -590,6 +690,7 @@ export function renderShipLineCard(targetId) {
         }
     });
     ensureShipToday(); // 不足 5 分鐘的資料直接沿用
+    ensureShipHistory(); // 今日の各便の運航履歴（毎分の history-daemon と共用）
     return card;
 }
 
@@ -621,10 +722,10 @@ export function renderShipRoutePanel(data, scrollWrapper, opts = {}) {
     scrollWrapper.appendChild(container);
 }
 
-// 表示中の資訊卡は資料が届いたら差し替え
-window.addEventListener('shipDataUpdated', () => {
+// 表示中の資訊卡は資料・歷史が届いたら差し替え
+['shipDataUpdated', 'historyDataUpdated', 'shipHistoryUpdated'].forEach(ev => window.addEventListener(ev, () => {
     document.querySelectorAll('.ship-route-card').forEach(fillShipCard);
-});
+}));
 
 // 右上の外部サイトボタンに並べる「◯◯航路 運航情報」（ほかの日付・この航路だけ）
 window.getShipEntries = function (card) {
@@ -702,3 +803,4 @@ export function searchShip(lowKeyword) {
 }
 
 window.openShipSchedule = openShipSchedule;
+window.shipHistoryHtml = shipHistoryHtml; // 通知・履歴（menu.js）からも同じ見せ方で

@@ -197,10 +197,15 @@ function generateHistoryHTML() {
             // 判斷這張卡片是否有設定任何路線 (相容鐵道與飛機格式)
             const targetIds = card.targetLineIds || card.targetAirports || card.airports || (card.airport ? [card.airport] : []);
             
+            // 公車路線は履歴の対象外。航路は今日の運航情報があった便だけ記録される
+            const trackedIds = targetIds.filter(id => !String(id).startsWith('bus:'));
             groupedData.set(card.id, {
                 cardName: cardName,
                 routes: [],
-                hasRoutes: targetIds.length > 0 // 標記這張卡片是否為空
+                hasRoutes: targetIds.length > 0, // 標記這張卡片是否為空
+                busOnly: targetIds.length > 0 && trackedIds.length === 0,
+                hasShip: trackedIds.some(id => String(id).startsWith('ship:')),
+                shipOnly: trackedIds.length > 0 && trackedIds.every(id => String(id).startsWith('ship:'))
             });
         });
     }
@@ -229,8 +234,11 @@ function generateHistoryHTML() {
             const latestA = a.data[a.data.length - 1] || {};
             const latestB = b.data[b.data.length - 1] || {};
             
-            const timeA = latestA.update_time || latestA.system_updated || "";
-            const timeB = latestB.update_time || latestB.system_updated || "";
+            // 航路の記録は timestamp（毫秒）しか持たないので日本時間の HH:MM にして並べる
+            const shipHm = (snap) => Number.isFinite(snap.timestamp)
+                ? new Date(snap.timestamp + 9 * 3600000).toISOString().slice(11, 16) : "";
+            const timeA = latestA.update_time || latestA.system_updated || shipHm(latestA) || "";
+            const timeB = latestB.update_time || latestB.system_updated || shipHm(latestB) || "";
             
             // 時間轉換為排序權重
             const getSortWeight = (timeStr) => {
@@ -269,7 +277,21 @@ function generateHistoryHTML() {
                     <div class="history-content">
         `;
 
-        if (!group.hasRoutes) {
+        if (group.busOnly) {
+            // 狀態 A2：公車路線だけのカード（公車は履歴の対象外。同期中のまま回り続けないように）
+            htmlStr += `
+                <div style="text-align: center; padding: 16px 0; color: inherit; opacity: 0.6; font-size: 0.9em; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    バス路線は履歴の対象外です
+                </div>
+            `;
+        } else if (group.shipOnly && validRoutes.length === 0) {
+            // 狀態 A3：航路だけのカードで、今日はまだ運航情報の履歴がない
+            htmlStr += `
+                <div style="text-align: center; padding: 16px 0; color: inherit; opacity: 0.6; font-size: 0.9em; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    本日の運航情報の履歴はありません
+                </div>
+            `;
+        } else if (!group.hasRoutes) {
             // 狀態 A：卡片內沒有任何路線
             htmlStr += `
                 <div style="text-align: center; padding: 16px 0; color: inherit; opacity: 0.6; font-size: 0.9em; display: flex; flex-direction: column; align-items: center; gap: 8px;">
@@ -286,6 +308,18 @@ function generateHistoryHTML() {
             `;
         } else {
             validRoutes.forEach(info => {
+                // 航路の各便：船頁面の運航履歴と同じ見せ方（ship.js の shipHistoryHtml）
+                if (info.isShip && typeof window.shipHistoryHtml === 'function') {
+                    htmlStr += `
+                        <div>
+                            <div style="font-weight: 700; font-size: 0.95em; margin-bottom: 2px; display: flex; align-items: center; gap: 8px; color: inherit; opacity: 0.9;">
+                                <span style="width: 6px; height: 6px; background: #0a84ff; border-radius: 50%;"></span>
+                                ${info.name}
+                            </div>
+                            ${window.shipHistoryHtml(info.data, info.shipKey)}
+                        </div>`;
+                    return;
+                }
                 const snapshots = info.data.slice().reverse();
                 let routeHtml = `
                     <div>
@@ -436,6 +470,7 @@ function generateHistoryHTML() {
         <div style="text-align: center; margin-top: 24px; padding-bottom: 8px; font-size: 0.75em; color: #8e8e93; opacity: 0.8; line-height: 1.6; letter-spacing: 0.02em;">
              各路線の履歴は最新5件まで表示されます。<br>
              鉄道の履歴データは毎日03:00にリセットされます。
+             ${[...groupedData.values()].some(g => g.hasShip) ? '<br>船便の履歴は出発当日の便のみです（夜行船は到着まで）。' : ''}
         </div>
     `;
 

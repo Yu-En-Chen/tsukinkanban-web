@@ -26,6 +26,9 @@ async function fetchHistoryDaemon() {
             const allRes = await fetch('https://api.tsukinkanban.com/api/history/all');
             if (allRes.ok) {
                 allHistoryData = await allRes.json();
+                // 整包原樣留著：船頁面的「運航履歴」以各便の history_key 從 ship 區塊取用
+                window.appHistoryAll = allHistoryData;
+                window.appHistoryAllAt = Date.now();
             }
         } catch (e) {
             console.error("無法獲取整包歷史資料:", e);
@@ -85,8 +88,28 @@ async function fetchHistoryDaemon() {
 
             // 公車路線沒有歷史紀錄資料：混合卡片內的公車路線逐條跳過，
             // 全部都是公車路線的卡片整張跳過
-            const railIds = targetIds.filter(id => !String(id).startsWith('bus:'));
-            if (card.isBusCard === true || (targetIds.length > 0 && railIds.length === 0)) return;
+            // 航路（ship:航路名）は鐵道とは別に、その航路の今日の各便の履歴を拾う
+            const shipIds = targetIds.filter(id => String(id).startsWith('ship:'));
+            const railIds = targetIds.filter(id => !String(id).startsWith('bus:') && !String(id).startsWith('ship:'));
+            if (card.isBusCard === true || (targetIds.length > 0 && railIds.length === 0 && shipIds.length === 0)) return;
+
+            // 航路：history/all の ship（history_key → 記録）から、最新の記録の route がこの航路の便を集める
+            shipIds.forEach(id => {
+                const route = String(id).slice(5);
+                Object.entries(allHistoryData.ship || {}).forEach(([key, records]) => {
+                    if (!Array.isArray(records) || records.length === 0) return;
+                    const last = records[records.length - 1] || {};
+                    if (last.route !== route) return;
+                    fetchTasks.push(Promise.resolve({
+                        cardId: card.id,
+                        cardName: card.name || card.title || '卡片路線',
+                        name: [last.departure_text, last.name, last.ship].filter(Boolean).join(' '),
+                        isShip: true,
+                        shipKey: key,
+                        data: records
+                    }));
+                });
+            });
 
             if (railIds && railIds.length > 0) {
                 railIds.forEach(id => {

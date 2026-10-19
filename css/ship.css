@@ -468,6 +468,134 @@ button.sh-day .sh-day-date {
     opacity: 0.85;
 }
 
+/* --- 運航履歴：通知・履歴の航班と同じ見せ方（左に縦線・新しい順・古いものは薄く・点線で区切る） --- */
+/* 「運航情報」と同じ ▶ 付きの見出し（件数は横の小さな膠囊） */
+.sh-hist > summary {
+    width: fit-content;
+    font-size: 0.85em;
+    font-weight: 700;
+    opacity: 0.6;
+    cursor: pointer;
+}
+
+.sh-hist-count {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: rgba(120, 120, 128, 0.16);
+    font-size: 0.85em;
+    font-variant-numeric: tabular-nums;
+}
+
+.sh-hist-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 10px 0 0 3px;
+    padding-left: 14px;
+    border-left: 2px solid rgba(128, 128, 128, 0.25);
+}
+
+.sh-hist-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed rgba(128, 128, 128, 0.25);
+    opacity: 0.65;
+}
+
+.sh-hist-item.latest {
+    opacity: 1;
+}
+
+.sh-hist-item:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.sh-hist-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.sh-hist-status {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+    min-width: 0;
+}
+
+.sh-hist-time {
+    flex-shrink: 0;
+    padding-top: 3px;
+    font-size: 0.75em;
+    font-weight: 600;
+    opacity: 0.55;
+    font-variant-numeric: tabular-nums;
+}
+
+.sh-hist-note {
+    font-size: 0.8em;
+    font-weight: 700;
+    opacity: 0.7;
+}
+
+/* 記録のタグ：状況変更 青・出帆港決定 緑・出帆港変更 橙・案内変更 灰 */
+.sh-tag {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.72em;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.sh-tag-status {
+    background: rgba(10, 132, 255, 0.12);
+    color: #0a84ff;
+}
+
+.sh-tag-decided {
+    background: rgba(52, 199, 89, 0.14);
+    color: #1f8f3a;
+}
+
+.sh-tag-changed {
+    background: rgba(255, 149, 0, 0.14);
+    color: #c76a00;
+}
+
+.sh-tag-info {
+    background: rgba(120, 120, 128, 0.14);
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.sh-hist-ports {
+    font-size: 0.82em;
+    font-weight: 600;
+    opacity: 0.75;
+    line-height: 1.5;
+}
+
+.sh-hist-msg summary {
+    width: fit-content;
+    font-size: 0.78em;
+    font-weight: 700;
+    opacity: 0.55;
+    cursor: pointer;
+}
+
+.sh-hist-msg p {
+    margin: 6px 0 0;
+    font-size: 0.82em;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
 /* --- 航路の資訊卡（搜尋預覽卡・混合卡片の中）：各便は卡片の中の一段薄い面 --- */
 .sh-card-trips {
     display: flex;
@@ -556,6 +684,30 @@ button.sh-day .sh-day-date {
 
     .ship-days-btn {
         color: #64a9ff;
+    }
+
+    .sh-tag-status {
+        background: rgba(10, 132, 255, 0.2);
+        color: #64a9ff;
+    }
+
+    .sh-tag-decided {
+        background: rgba(48, 209, 88, 0.16);
+        color: #4cd964;
+    }
+
+    .sh-tag-changed {
+        background: rgba(255, 159, 10, 0.18);
+        color: #ffb340;
+    }
+
+    .sh-tag-info {
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.65);
+    }
+
+    .sh-hist-count {
+        background: rgba(255, 255, 255, 0.1);
     }
 
     .sh-cancelled {
