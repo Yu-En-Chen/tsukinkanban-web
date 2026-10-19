@@ -333,36 +333,43 @@ function ensureShipHistory() {
         .finally(() => { historyPending = null; });
 }
 
-// 記録のタグ（状況変更・出帆港決定・出帆港変更・案内変更）は色分けした小さな膠囊で
-const HISTORY_TAG_CLASS = { '状況変更': 'status', '出帆港決定': 'decided', '出帆港変更': 'changed', '案内変更': 'info' };
+// 歷史の 1 件＝航班の履歴と同じく「時刻＋状況」の一行だけ。
+// 二行目は港が決まった・変わったときだけ短く（三宅島：錆ヶ浜（阿古）港に決定／三宅島：三池港 → 錆ヶ浜（阿古）港）。
+// 告知の原文や着岸港の一覧は船頁面の本体にあるので、歷史には出さない
+function historyNote(r, prev) {
+    const tags = r.tags || [];
+    if ((r.changes || []).length > 0) {
+        return r.changes.map(c => `${c.island}：${c.from || '—'} → ${c.to || '未定'}`).join('、');
+    }
+    if (tags.includes('出帆港決定')) {
+        const before = (prev && prev.ports) || {};
+        const decided = Object.entries(r.ports || {})
+            .filter(([island, port]) => port && port !== '未定' && (!before[island] || before[island] === '未定'))
+            .map(([island, port]) => `${island}：${port}に決定`);
+        return decided.join('、') || '出帆港決定';
+    }
+    if (tags.includes('案内変更') && !tags.includes('状況変更')) return '案内の更新';
+    return '';
+}
 
 // 歷史の時系列：新しい順、左に縦線、古いものは薄く、間に点線（通知・履歴の航班と同じ見せ方）
-// 1 件ごと：時刻（timestamp）・状況の徽章（label、色は運航状況と同じ）・タグ／note、着岸港、改港、原文（収合）
-// keyPrefix：開いた原文を再描畫後も開いたままにするための data-key
-export function shipHistoryHtml(records, keyPrefix = '') {
-    const snaps = (records || []).slice().reverse();
-    return `<div class="sh-hist-list">${snaps.map((r, i) => {
+// 状況の文字色は運航状況の徽章と同じ（欠航＝赤・条件付き＝黄…）
+export function shipHistoryHtml(records) {
+    const list = records || [];
+    const items = list.map((r, i) => {
         const level = SHIP_LEVELS.includes(r.level) ? r.level : 'undecided';
-        const badge = r.label ? `<span class="sh-badge sh-${level}">${esc(r.label)}</span>` : '';
-        const tags = (r.tags || []).map(t => `<span class="sh-tag sh-tag-${HISTORY_TAG_CLASS[t] || 'info'}">${esc(t)}</span>`).join('');
-        const note = !tags && r.note ? `<span class="sh-hist-note">${esc(String(r.note).replace(/[【】]/g, ''))}</span>` : '';
         const hm = Number.isFinite(r.timestamp) ? jstHm(new Date(r.timestamp).toISOString()) : '';
-        const ports = Object.entries(r.ports || {}).map(([island, port]) => `${esc(island)}：${esc(port || '未定')}`).join('　');
-        const changes = (r.changes || []).map(c =>
-            `<div class="sh-change">⚠ ${esc(c.island)}：${esc(c.from || '—')} → ${esc(c.to || '未定')}</div>`).join('');
-        const msgs = (r.messages || []).length > 0
-            ? `<details class="sh-hist-msg" data-key="${esc(`${keyPrefix}:m${r.timestamp}`)}"><summary>運航情報</summary>${r.messages.map(m => `<p>${esc(m)}</p>`).join('')}</details>`
-            : '';
-        return `<div class="sh-hist-item${i === 0 ? ' latest' : ''}">
+        const note = historyNote(r, list[i - 1]);
+        return `<div class="sh-hist-item">
             <div class="sh-hist-head">
-                <span class="sh-hist-status">${badge}${tags}${note}</span>
+                <span class="sh-hist-text sh-lv-${level}">${esc(r.label || '運航情報')}</span>
                 ${hm ? `<span class="sh-hist-time">${hm}</span>` : ''}
             </div>
-            ${ports ? `<div class="sh-hist-ports">${ports}</div>` : ''}
-            ${changes}
-            ${msgs}
+            ${note ? `<div class="sh-hist-note">${esc(note)}</div>` : ''}
         </div>`;
-    }).join('')}</div>`;
+    }).reverse();
+    if (items.length > 0) items[0] = items[0].replace('class="sh-hist-item"', 'class="sh-hist-item latest"');
+    return `<div class="sh-hist-list">${items.join('')}</div>`;
 }
 
 // 便の「運航履歴」：記録があるときだけ（無ければ何も出さない）
@@ -371,7 +378,7 @@ function tripHistoryHtml(trip) {
     if (records.length === 0) return '';
     return `<details class="sh-hist" data-key="${esc(trip.history_key)}">
         <summary>運航履歴<span class="sh-hist-count">${records.length}件</span></summary>
-        ${shipHistoryHtml(records, trip.history_key)}
+        ${shipHistoryHtml(records)}
     </details>`;
 }
 

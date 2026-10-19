@@ -316,7 +316,7 @@ function generateHistoryHTML() {
                                 <span style="width: 6px; height: 6px; background: #0a84ff; border-radius: 50%;"></span>
                                 ${info.name}
                             </div>
-                            ${window.shipHistoryHtml(info.data, info.shipKey)}
+                            ${window.shipHistoryHtml(info.data)}
                         </div>`;
                     return;
                 }

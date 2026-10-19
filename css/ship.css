@@ -500,7 +500,7 @@ button.sh-day .sh-day-date {
 .sh-hist-item {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     padding-bottom: 12px;
     border-bottom: 1px dashed rgba(128, 128, 128, 0.25);
     opacity: 0.65;
@@ -515,85 +515,51 @@ button.sh-day .sh-day-date {
     border-bottom: none;
 }
 
+/* 一行目：状況（左）と時刻（右）。航班の履歴と同じ字の大きさ */
 .sh-hist-head {
     display: flex;
-    align-items: flex-start;
+    align-items: baseline;
     justify-content: space-between;
-    gap: 10px;
+    gap: 12px;
 }
 
-.sh-hist-status {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 4px 6px;
-    min-width: 0;
+.sh-hist-text {
+    font-size: 0.95em;
+    font-weight: 600;
 }
 
 .sh-hist-time {
     flex-shrink: 0;
-    padding-top: 3px;
     font-size: 0.75em;
     font-weight: 600;
     opacity: 0.55;
     font-variant-numeric: tabular-nums;
 }
 
+/* 二行目：港の決定・変更だけ */
 .sh-hist-note {
-    font-size: 0.8em;
-    font-weight: 700;
-    opacity: 0.7;
+    font-size: 0.85em;
+    font-weight: 500;
+    line-height: 1.5;
+    opacity: 0.8;
 }
 
-/* 記録のタグ：状況変更 青・出帆港決定 緑・出帆港変更 橙・案内変更 灰 */
-.sh-tag {
-    padding: 2px 8px;
-    border-radius: 999px;
-    font-size: 0.72em;
-    font-weight: 800;
-    white-space: nowrap;
+/* 状況の文字色：運航状況の徽章と同じ */
+.sh-lv-cancelled {
+    color: #d70015;
 }
 
-.sh-tag-status {
-    background: rgba(10, 132, 255, 0.12);
-    color: #0a84ff;
-}
-
-.sh-tag-decided {
-    background: rgba(52, 199, 89, 0.14);
-    color: #1f8f3a;
-}
-
-.sh-tag-changed {
-    background: rgba(255, 149, 0, 0.14);
+.sh-lv-pending {
     color: #c76a00;
 }
 
-.sh-tag-info {
-    background: rgba(120, 120, 128, 0.14);
-    color: rgba(0, 0, 0, 0.6);
+.sh-lv-conditional,
+.sh-lv-changed {
+    color: #8a6a00;
 }
 
-.sh-hist-ports {
-    font-size: 0.82em;
-    font-weight: 600;
-    opacity: 0.75;
-    line-height: 1.5;
-}
-
-.sh-hist-msg summary {
-    width: fit-content;
-    font-size: 0.78em;
-    font-weight: 700;
-    opacity: 0.55;
-    cursor: pointer;
-}
-
-.sh-hist-msg p {
-    margin: 6px 0 0;
-    font-size: 0.82em;
-    line-height: 1.6;
-    white-space: pre-wrap;
+.sh-lv-normal {
+    color: #1f8f3a;
 }
 
 /* --- 航路の資訊卡（搜尋預覽卡・混合卡片の中）：各便は卡片の中の一段薄い面 --- */
@@ -686,24 +652,21 @@ button.sh-day .sh-day-date {
         color: #64a9ff;
     }
 
-    .sh-tag-status {
-        background: rgba(10, 132, 255, 0.2);
-        color: #64a9ff;
+    .sh-lv-cancelled {
+        color: #ff6961;
     }
 
-    .sh-tag-decided {
-        background: rgba(48, 209, 88, 0.16);
-        color: #4cd964;
-    }
-
-    .sh-tag-changed {
-        background: rgba(255, 159, 10, 0.18);
+    .sh-lv-pending {
         color: #ffb340;
     }
 
-    .sh-tag-info {
-        background: rgba(255, 255, 255, 0.1);
-        color: rgba(255, 255, 255, 0.65);
+    .sh-lv-conditional,
+    .sh-lv-changed {
+        color: #ffd60a;
+    }
+
+    .sh-lv-normal {
+        color: #4cd964;
     }
 
     .sh-hist-count {
