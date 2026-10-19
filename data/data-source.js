@@ -146,6 +146,25 @@ export const dataSourceContent = `
                                 </div>
                             </div>
                         </div>
+                        <br>
+                        <div style="margin-bottom: 18px;">
+                            <p style="color: var(--text-main); font-weight: 600; margin: 0 0 4px 0;">船・島しょ部（時刻表・運航情報）</p>
+                            <p style="color: var(--text-secondary); margin: 0 0 10px 0; font-size: 0.8em;">島しょ部のバスは時刻表のみで、走行位置・遅延分数はありません。</p>
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <div>
+                                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">東海汽船</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">伊豆諸島・小笠原航路（時刻表、運航情報、本日の着岸港）</p>
+                                </div>
+                                <div>
+                                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">大島旅客自動車</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">大島バス（時刻表）</p>
+                                </div>
+                                <div>
+                                    <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">三宅村</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">三宅村営バス（時刻表。船の着岸港に応じて当日運行する便を判定）</p>
+                                </div>
+                            </div>
+                        </div>
 
                     </div>
                 </div>
