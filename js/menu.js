@@ -169,6 +169,7 @@ function generateHistoryHTML() {
         </style>
         
         <div style="padding-top: 18px; padding-bottom: 40px;">
+        ${typeof window.getSourceNoticesHtml === 'function' ? window.getSourceNoticesHtml() : ''}
     `;
 
     const groupedData = new Map();

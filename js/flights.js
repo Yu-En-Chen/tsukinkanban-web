@@ -444,7 +444,9 @@ window.generateFlightDataFormat = function(flight, fid) {
             locationName: flight.location, 
             terminal: flight.terminal,
             gate: flight.gate,
-            note: processedNote
+            note: processedNote,
+            // 後端の取得が 15 分以上失敗し、前回の資料を使い回している航班
+            stale: flight.stale === true
         }
     };
 };

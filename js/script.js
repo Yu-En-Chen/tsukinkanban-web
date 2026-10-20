@@ -20,9 +20,24 @@ import { initDynamicClock } from './clock.js';
 import { syncAndLoadDictionary } from '../data/dictionary-db.js';
 import { initFlights, searchFlights } from './flights.js';
 import './bus-timetable.js';
+import { loadDataSources, railwayEndedNotice, flightEndedNotice, sourceNoticeHtml } from './data-sources.js';
 import { openShipSchedule, searchShip, initShips, refreshSavedShips, ensureShipToday, isShipTargetId, generateShipDataFormat, generateShipLineSummary, renderShipRoutePanel, renderShipLineCard, getShipColor } from './ship.js';
 import { initBuses, searchBusesDebounced, refreshSavedBusRoutes, ensureBusRouteData, generateBusDataFormat, generateBusLineSummary, renderBusDetailPanel, renderBusStopPanel, renderBusLineCard, openStopPickerDialog, getBusPrefs, saveBusPrefs, isBusTargetId, getBusOperatorColor, busStopCardFace } from './buses.js';
 import { startRouteEditMode } from './edit-routes.js';
+
+// 鐵道の各路線カード：提供終了（オープンデータチャレンジ終了後）は灰色の ℹ︎ 徽章、
+// 案内文（message）と公式サイトへの連結。誤点の細項は出さない
+const INFO_ICON_SVG = '<svg class="ext-status-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>';
+
+function lineStatusHtml(line) {
+    return line.isEnded ? `${INFO_ICON_SVG}${line.status}` : line.status;
+}
+
+function lineMessageHtml(line) {
+    const link = line.isEnded && /^https?:\/\//.test(line.url || '')
+        ? ` <a class="ext-card-link" href="${line.url}" target="_blank" rel="noopener noreferrer">公式サイト</a>` : '';
+    return `<div class="ext-card-message">${line.message}${link}</div>`;
+}
 
 // 全域變數：整個 App 渲染、搜尋、點擊的唯一資料來源
 window.appRailwayData = [];
@@ -877,7 +892,9 @@ function handleCardClick(id) {
                     </div>
                     <div style="display: flex; flex-direction: column; justify-content: center; align-items: flex-end; gap: 6px;">
                         <div style="font-size: 1.35em; font-weight: 800; letter-spacing: 1px; color: ${data.flightData.statusColor}; text-shadow: ${data.flightData.statusShadow};">${data.flightData.statusText}</div>
-                        <div style="font-size: 0.7em; font-weight: 600; opacity: 0.5;">更新: ${data.flightData.updateTime}</div>
+                        ${data.flightData.stale
+                            ? `<div class="flight-stale">⚠ 情報が古い可能性があります<span>（最終更新 ${data.flightData.updateTime}）</span></div>`
+                            : `<div style="font-size: 0.7em; font-weight: 600; opacity: 0.5;">更新: ${data.flightData.updateTime}</div>`}
                     </div>
                 </div>
             </div>
@@ -968,6 +985,7 @@ function handleCardClick(id) {
                 </div>
             </div>
             ${noteHtml}
+            ${flightEndedNotice() ? sourceNoticeHtml(flightEndedNotice()) : ''}
         `;
 
         // 5. 三個水平排列的玻璃按鈕
@@ -1134,6 +1152,11 @@ function handleCardClick(id) {
             }
         }
 
+        // 運行情報の提供が終了した路線があり、来源も終了している：先頭に案内（/api/sources）
+        if (data.detailedLines && data.detailedLines.some(l => l.isEnded) && railwayEndedNotice()) {
+            scrollWrapper.insertAdjacentHTML('beforeend', sourceNoticeHtml(railwayEndedNotice()));
+        }
+
         if (data.detailedLines && data.detailedLines.length > 0) {
             data.detailedLines.forEach(line => {
                 // 混合卡片內的公車路線：收折資訊卡（點擊跳轉至完整公車面板）
@@ -1190,12 +1213,12 @@ function handleCardClick(id) {
                             <div class="ext-route-company">${line.company}</div>
                         </div>
                         <div class="ext-status-badge ${statusClass}">
-                            ${line.status}
+                            ${lineStatusHtml(line)}
                         </div>
                     </div>
                     <div class="ext-card-divider"></div>
-                    <div class="ext-card-message">${line.message}</div>
-                    ${advancedHtml}
+                    ${lineMessageHtml(line)}
+                    ${line.isEnded ? '' : advancedHtml}
                     <div class="ext-card-footer">
                         <span class="ext-update-time">
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -2062,7 +2085,7 @@ function filterCards(keyword) {
                     isAttention = true; // 「通信エラー」降級為注意狀態
                 } else if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
                     isError = true;
-                } else if (statusInfo.status_type === "非対応" || statusInfo.status_type === "対象外" || statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし" || statusInfo.status_type === "更新中...") {
+                } else if (statusInfo.status_type === "非対応" || statusInfo.status_type === "対象外" || statusInfo.status_type === "提供終了" || statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし" || statusInfo.status_type === "更新中...") {
                     isAttention = true;
                 } else if (delay > 0) {
                     if (delay <= 5) {
@@ -2249,7 +2272,7 @@ window.previewRouteFromSearch = function (routeId) {
         isAttention = true; // 「通信エラー」降級為注意狀態
     } else if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
         isError = true;
-    } else if (statusInfo.status_type === "非対応" || statusInfo.status_type === "対象外" || statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし" || statusInfo.status_type === "更新中...") {
+    } else if (statusInfo.status_type === "非対応" || statusInfo.status_type === "対象外" || statusInfo.status_type === "提供終了" || statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし" || statusInfo.status_type === "更新中...") {
         isAttention = true;
     } else if (delay > 0) {
         if (delay <= 5) {
@@ -2699,6 +2722,7 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
             let hasAttention = false;
             let hasNormal = false;
             let hasNoService = false;   // 只有時刻表的公車今天沒有班次（打叉）
+            let hasEnded = false;       // 運行情報の提供が終了した路線（オープンデータチャレンジ終了後）
             let hasMessageNote = false; // 追蹤這組卡片是否有具體事故文字
 
             // 追蹤這組卡片內的天候與天災狀況
@@ -2781,9 +2805,10 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                     isAttentionLocal = true; hasAttention = true; // 斷線降級為注意狀態，不觸發紅燈
                 } else if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
                     isErrorLocal = true; hasError = true;
-                } else if (statusInfo.status_type === "非対応" || statusInfo.status_type === "対象外" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし" || statusInfo.status_type === "更新中...") {
-                    // 対象外（ODPT がデータを提供していない路線）も非対応と同じく注意燈だけ。綠燈にしない
+                } else if (statusInfo.status_type === "非対応" || statusInfo.status_type === "対象外" || statusInfo.status_type === "提供終了" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし" || statusInfo.status_type === "更新中...") {
+                    // 対象外（ODPT がデータを提供していない路線）・提供終了も非対応と同じく注意燈だけ。綠燈にしない
                     isAttentionLocal = true; hasAttention = true;
+                    if (statusInfo.status_type === "提供終了") hasEnded = true;
                 } else if (delay > 0) {
                     // 有具體延遲分鐘數時：
                     if (delay <= 5) {
@@ -2824,7 +2849,8 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                     // Severe 以 Delayed 傳給詳細卡片，使其顯示紅色
                     isDelayed: isDelayedLocal || isSevereLocal,
                     isError: isErrorLocal, isAttention: isAttentionLocal,
-                    advancedDetails: statusInfo.advanced_details || []
+                    isEnded: statusInfo.status_type === "提供終了",
+                    advancedDetails: statusInfo.status_type === "提供終了" ? [] : (statusInfo.advanced_details || [])
                 });
             });
 
@@ -2848,6 +2874,10 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                 groupDesc = "一部の路線で遅延やダイヤ乱れが発生しています。";
             } else if (hasNoService) {
                 groupDesc = "一部の路線は本日の運行がありません。";
+            } else if (hasEnded) {
+                groupDesc = hasNormal
+                    ? "一部の路線は運行情報の提供が終了しました。公式サイトをご確認ください。"
+                    : "運行情報の提供が終了しました。最新情報は公式サイトをご確認ください。";
             } else if (hasNormal && hasAttention && !hasError && !hasSevere && !hasDelay) {
                 groupDesc = "一部の路線は平常運転、その他は情報確認中です。";
             } else if (hasAttention && !hasNormal && !hasError && !hasSevere && !hasDelay) {
@@ -2984,6 +3014,7 @@ async function initApp() {
         buildAndRender(userPrefs, cachedDict, {}, true);
     }
     initFlights();
+    loadDataSources(); // 資料來源の状態（提供終了の案内用）。頁面載入時に一度だけ、失敗しても影響なし
     initBuses(); // 只還原本地快取，不發送請求
     initShips(); // 航路の輪詢だけ（快取は模組載入時に還原、請求は牌組に航路があるときだけ）
 }
@@ -3864,12 +3895,12 @@ function silentUpdateExtensionPanel(cardId) {
                         <div class="ext-route-company">${line.company}</div>
                     </div>
                     <div class="ext-status-badge ${statusClass}">
-                        ${line.status}
+                        ${lineStatusHtml(line)}
                     </div>
                 </div>
                 <div class="ext-card-divider"></div>
-                <div class="ext-card-message">${line.message}</div>
-                ${advancedHtml}
+                ${lineMessageHtml(line)}
+                ${line.isEnded ? '' : advancedHtml}
                 <div class="ext-card-footer">
                     <span class="ext-update-time">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
