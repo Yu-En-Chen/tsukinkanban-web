@@ -602,13 +602,16 @@ export async function importDataAndOverwrite(jsonString) {
         });
 
         // 強制生成新的排序檔，確保這幾張卡片都在「顯示列」中
+        // IndexedDB 的 keyPath 是 id，少了 id 會在 put 時丟錯、匯入卡住
         newDbData['__DISPLAY_ORDER__'] = {
+            id: '__DISPLAY_ORDER__',
             order: newOrder,
             updatedAt: Date.now()
         };
 
         // 防禦性清除：一併清空隱藏卡片清單
         newDbData['__HIDDEN_CARDS__'] = {
+            id: '__HIDDEN_CARDS__',
             list: [],
             updatedAt: Date.now()
         };
