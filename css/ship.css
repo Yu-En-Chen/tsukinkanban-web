@@ -312,10 +312,17 @@ button.sh-day .sh-day-date {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+}
+
+/* 徽章が長い（一部欠航（新島〜神津島間）など）ときは船名を潰さず、徽章を次の行の右へ */
+.sh-row .sh-badge {
+    margin-left: auto;
 }
 
 .sh-ship {
+    flex: 1 1 9em;
     min-width: 0;
     font-size: 0.85em;
     font-weight: 600;
@@ -347,7 +354,9 @@ button.sh-day .sh-day-date {
 }
 
 .sh-conditional,
-.sh-changed {
+.sh-changed,
+.sh-partial,
+.sh-unknown {
     background: rgba(255, 204, 0, 0.24);
     color: #8a6a00;
 }
@@ -376,6 +385,45 @@ button.sh-day .sh-day-date {
 .sh-normal {
     background: rgba(52, 199, 89, 0.15);
     color: #1f8f3a;
+}
+
+/* 一部欠航：途中の寄港地。今日寄らない港は薄く取り消し線（出発・到着港が寄らないときも同じ） */
+.sh-vias {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 0;
+    font-size: 0.82em;
+}
+
+.sh-vias .sh-ports-label {
+    margin-right: 8px;
+}
+
+.sh-via {
+    font-weight: 700;
+}
+
+/* 区切りの「・」は前の港の後ろに付ける（行頭に「・」が来ないように） */
+.sh-via:not(:last-child)::after {
+    content: '・';
+    display: inline-block;
+    margin: 0 2px;
+    opacity: 0.4;
+}
+
+.sh-via.skipped,
+.sh-pname.skipped {
+    text-decoration: line-through;
+    text-decoration-thickness: 1.5px;
+    opacity: 0.45;
+}
+
+/* 一覧の上の運航状況の件数（欠航 → 一部欠航 → …） */
+.sh-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
 }
 
 /* 改港：目立つ色で */
@@ -679,7 +727,9 @@ button.sh-day .sh-day-date {
     }
 
     .sh-conditional,
-    .sh-changed {
+    .sh-changed,
+    .sh-partial,
+    .sh-unknown {
         background: rgba(255, 214, 10, 0.16);
         color: #ffd60a;
     }

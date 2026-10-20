@@ -12,7 +12,12 @@ const SHIP_TIMEOUT_MS = 30000;
 const SHIP_REFRESH_MS = 5 * 60 * 1000;
 const SHIP_OFFICIAL_URL = 'https://www.tokaikisen.co.jp/';
 const SHIP_STATUS_URL = 'https://www.tokaikisen.co.jp/schedule/';
-const SHIP_LEVELS = ['cancelled', 'pending', 'conditional', 'changed', 'undecided', 'normal'];
+// 運航状況の等級。partial＝一部欠航（一部の区間・港に寄らない）。
+// これ以外の等級（後端が今後追加するもの）は「運航情報あり」△として扱い、運航予定（〇）には落とさない
+const SHIP_LEVELS = ['cancelled', 'partial', 'pending', 'conditional', 'changed', 'undecided', 'normal'];
+// 並び順（欠航 → 一部欠航 → …）と、一覧の上に出す件数の呼び方
+const SHIP_LEVEL_ORDER = ['cancelled', 'partial', 'conditional', 'changed', 'unknown', 'pending', 'undecided'];
+const SHIP_LEVEL_NAMES = { cancelled: '欠航', partial: '一部欠航', conditional: '条件付き運航', changed: '出帆港変更', unknown: '運航情報あり', pending: '就航判断待ち', undecided: '出帆港未定' };
 const SHIP_CACHE_KEY = 'Tsukin_Cached_ShipData';
 const SHIP_COMPANY = '東海汽船';
 const SHIP_COLOR = '#1D5FA8'; // 航路卡片的預設色
@@ -204,7 +209,7 @@ export function initShips() {
 
 // ============================================================================
 // 航路の燈號：今天各便の運航状況から
-//   全便欠航・一部欠航 → 打叉／条件付き運航・出帆港変更 → 三角／
+//   全便欠航・欠航あり → 打叉／一部欠航・条件付き運航・出帆港変更・知らない等級 → 三角／
 //   就航判断待ち・出帆港未定・運航情報なし → 注意／すべて運航予定 → 綠燈／
 //   今天この航路の便がない → 打叉（島嶼巴士と同じ扱い）
 // 欠航・条件付き・出帆港変更は東海汽船の運航情報（公式の告知）によるものなので、
@@ -246,9 +251,12 @@ export function shipRouteInfo(targetId) {
     }
 
     // status が null の便（運航情報なし）は判定から外す。全便 null なら「運航情報なし」
-    const levels = trips.map(t => (t.status ? t.status.level : null)).filter(Boolean);
+    // 知らない等級は unknown にまとめる（運航予定には落とさない）
+    const levels = trips.map(t => (t.status ? t.status.level : null)).filter(Boolean)
+        .map(l => (SHIP_LEVELS.includes(l) ? l : 'unknown'));
     const count = l => levels.filter(x => x === l).length;
     const cancelled = count('cancelled');
+    const partial = count('partial');
     const next = nextTrip(trips);
     const nextText = next ? `次の出航 ${next.departure.text} ${next.departure.port || ''}発` : '本日の出航は終了しました';
 
@@ -259,11 +267,17 @@ export function shipRouteInfo(targetId) {
     } else if (cancelled === trips.length) {
         return { ...base, trips, lamp: 'severe', badge: '全便欠航', cls: 'status-delayed', desc: '本日は全便欠航です', message: `本日の${trips.length}便はすべて欠航です。` };
     } else if (cancelled > 0) {
-        lamp = 'severe'; badge = '一部欠航'; cls = 'status-delayed'; summary = `${cancelled}便欠航`;
+        // 一部の便が欠航（「一部欠航」は一便の中で一部区間を欠航する等級なので、ここでは使わない）
+        lamp = 'severe'; badge = '欠航あり'; cls = 'status-delayed';
+        summary = [`${cancelled}便欠航`, partial ? `${partial}便一部欠航` : ''].filter(Boolean).join('・');
+    } else if (partial > 0) {
+        lamp = 'minor'; badge = '一部欠航'; cls = 'status-delayed-minor'; summary = `${partial}便一部欠航`;
     } else if (count('conditional') > 0) {
         lamp = 'minor'; badge = '条件付き'; cls = 'status-delayed-minor'; summary = '条件付き運航';
     } else if (count('changed') > 0) {
         lamp = 'minor'; badge = '出帆港変更'; cls = 'status-delayed-minor'; summary = '出帆港変更あり';
+    } else if (count('unknown') > 0) {
+        lamp = 'minor'; badge = '運航情報あり'; cls = 'status-delayed-minor'; summary = '運航情報あり';
     } else if (count('pending') > 0) {
         lamp = 'attention'; badge = '判断待ち'; cls = 'status-attention'; summary = '就航判断待ち';
     } else if (count('undecided') > 0) {
@@ -489,12 +503,25 @@ function tripTimes(trip, date) {
 // （リアルタイムの位置情報はないので、あくまで時刻表の時刻による）
 function tripPhase(trip, date) {
     const st = trip.status;
-    if (!st || !['normal', 'conditional', 'changed'].includes(st.level)) return '';
+    if (!st || !['normal', 'conditional', 'changed', 'partial'].includes(st.level)) return '';
     const { dep, arr } = tripTimes(trip, date);
     const now = Date.now();
     if (Number.isFinite(arr) && now >= arr) return 'arrived';
     if (Number.isFinite(dep) && now >= dep) return 'sailing';
     return '';
+}
+
+// 一部欠航の区間：status.skipped（「新島〜神津島」＝区間、「式根島」＝港）→「新島〜神津島間」「式根島」
+function skippedText(st) {
+    return ((st && st.skipped) || []).map(x => (String(x).includes('〜') ? `${x}間` : x)).join('・');
+}
+
+// 状況の徽章の文字：一部欠航は「一部欠航（新島〜神津島間）」
+function statusLabel(st) {
+    if (!st) return '';
+    const label = st.label || SHIP_LEVEL_NAMES[st.level] || '運航情報あり';
+    const skipped = st.level === 'partial' ? skippedText(st) : '';
+    return skipped ? `${label}（${skipped}）` : label;
 }
 
 // date：その便の出発日（時刻表の日付）。today：今日の一覧なら到着済みの便を薄くする
@@ -503,18 +530,27 @@ function tripHtml(trip, key, date = '', today = false) {
     const dep = trip.departure || {};
     const arr = trip.arrival || {};
     // status が null＝運航情報なし（未来の日付など）。停航ではないので徽章を出さない
-    const level = st && SHIP_LEVELS.includes(st.level) ? st.level : 'undecided';
+    // 知らない等級は unknown（黄色の徽章で原文の label をそのまま出す）
+    const level = st ? (SHIP_LEVELS.includes(st.level) ? st.level : 'unknown') : 'undecided';
     const phase = tripPhase(trip, date);
-    let badge = st && st.label ? `<span class="sh-badge sh-${level}">${esc(st.label)}</span>` : '';
-    if (phase === 'sailing') badge = `<span class="sh-badge sh-sailing">${level === 'conditional' ? '出航済み・条件付き' : '出航済み'}</span>`;
-    else if (phase === 'arrived') badge = '<span class="sh-badge sh-arrived">到着済み</span>';
+    let badge = st ? `<span class="sh-badge sh-${level}">${esc(statusLabel(st))}</span>` : '';
+    if (phase === 'sailing') {
+        const extra = level === 'conditional' ? '・条件付き' : level === 'partial' ? '・一部欠航' : '';
+        badge = `<span class="sh-badge sh-sailing">出航済み${extra}</span>`;
+    } else if (phase === 'arrived') {
+        badge = '<span class="sh-badge sh-arrived">到着済み</span>';
+    }
+
+    // 一部欠航：今日寄らない港（stops[].skipped）。着岸港・巴士の連結は出さず、寄港の一覧で取り消し線
+    const stops = trip.stops || [];
+    const skippedPorts = new Set(stops.filter(x => x.skipped).map(x => x.port));
     // 便名と船名はそれぞれ一まとまり（折り返すなら「103便」と「セブンアイランド結」の間で）
     const ship = [trip.name, trip.ship].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join(' ');
 
     const changes = ((st && st.changes) || []).map(c =>
         `<div class="sh-change">⚠ ${esc(c.island)}：${esc(c.from || '—')} → ${esc(c.to || '未定')}</div>`).join('');
 
-    const ports = Object.entries((st && st.ports) || {}).map(([island, port]) => {
+    const ports = Object.entries((st && st.ports) || {}).filter(([island]) => !skippedPorts.has(island)).map(([island, port]) => {
         const stop = busStopFor(island, port);
         const inner = `<span class="sh-island">${esc(island)}</span>${esc(port || '未定')}`;
         return stop
@@ -532,14 +568,25 @@ function tripHtml(trip, key, date = '', today = false) {
         </details>`
         : '';
 
+    // 一部欠航の便だけ、途中の寄港地を並べる（寄らない港は薄く取り消し線）
+    const first = stops[0], last = stops[stops.length - 1];
+    const via = skippedPorts.size > 0
+        ? stops.slice(1, -1).map(x => x.skipped
+            ? `<span class="sh-via skipped" title="本日は寄港しません">${esc(x.port)}</span>`
+            : `<span class="sh-via">${esc(x.port)}</span>`).join('')
+        : '';
+    const depSkipped = first && first.skipped ? ' skipped' : '';
+    const arrSkipped = last && last.skipped ? ' skipped' : '';
+
     // 出発・到着は路線図ふうに二段（点と線でつなぎ、時刻の桁をそろえる）。その下に便名・船名と状況の徽章
     const cls = (level === 'cancelled' && st ? ' is-cancelled' : '') + (today && phase === 'arrived' ? ' is-done' : '');
     return `<div class="sh-trip${cls}">
         <div class="sh-times">
-            <span class="sh-stop dep"><span class="sh-time">${timeHtml(dep.text)}</span> <span class="sh-pname">${esc(dep.port || '')}</span></span>
-            <span class="sh-stop arr"><span class="sh-time">${timeHtml(arr.text)}</span> <span class="sh-pname">${esc(arr.port || '')}</span></span>
+            <span class="sh-stop dep"><span class="sh-time">${timeHtml(dep.text)}</span> <span class="sh-pname${depSkipped}">${esc(dep.port || '')}</span></span>
+            <span class="sh-stop arr"><span class="sh-time">${timeHtml(arr.text)}</span> <span class="sh-pname${arrSkipped}">${esc(arr.port || '')}</span></span>
         </div>
         ${ship || badge ? `<div class="sh-row"><span class="sh-ship">${ship}</span>${badge}</div>` : ''}
+        ${via ? `<div class="sh-vias"><span class="sh-ports-label">寄港</span>${via}</div>` : ''}
         ${changes}
         ${ports ? `<div class="sh-ports"><span class="sh-ports-label">着岸港</span>${ports}</div>` : ''}
         ${details}
@@ -582,6 +629,17 @@ function scheduleHtml(data, route = '') {
 
     // route：航路卡片から開いたときはその航路だけ（「すべての航路」で解除）
     const routes = (data.routes || []).filter(r => (r.trips || []).length > 0 && (!route || r.route === route));
+
+    // 一覧の上に運航状況の件数（欠航 → 一部欠航 → 条件付き … の順、運航予定は出さない）
+    const counts = {};
+    routes.forEach(r => r.trips.forEach(t => {
+        if (!t.status || !t.status.level || t.status.level === 'normal') return;
+        const l = SHIP_LEVELS.includes(t.status.level) ? t.status.level : 'unknown';
+        counts[l] = (counts[l] || 0) + 1;
+    }));
+    const summary = SHIP_LEVEL_ORDER.filter(l => counts[l])
+        .map(l => `<span class="sh-badge sh-${l}">${SHIP_LEVEL_NAMES[l]} ${counts[l]}便</span>`).join('');
+    if (summary) notices.push(`<div class="sh-summary">${summary}</div>`);
     const list = routes.length === 0
         ? `<div class="tt-status">${route ? 'この日はこの航路の運航がありません' : 'この日は運航がありません'}</div>`
         : routes.map((r, ri) => `<section class="sh-route">
