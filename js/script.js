@@ -2062,7 +2062,7 @@ function filterCards(keyword) {
                     isAttention = true; // 「通信エラー」降級為注意狀態
                 } else if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
                     isError = true;
-                } else if (statusInfo.status_type === "非対応" || statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし" || statusInfo.status_type === "更新中...") {
+                } else if (statusInfo.status_type === "非対応" || statusInfo.status_type === "対象外" || statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし" || statusInfo.status_type === "更新中...") {
                     isAttention = true;
                 } else if (delay > 0) {
                     if (delay <= 5) {
@@ -2249,7 +2249,7 @@ window.previewRouteFromSearch = function (routeId) {
         isAttention = true; // 「通信エラー」降級為注意狀態
     } else if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
         isError = true;
-    } else if (statusInfo.status_type === "非対応" || statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし" || statusInfo.status_type === "更新中...") {
+    } else if (statusInfo.status_type === "非対応" || statusInfo.status_type === "対象外" || statusInfo.status_type === "監視中" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし" || statusInfo.status_type === "更新中...") {
         isAttention = true;
     } else if (delay > 0) {
         if (delay <= 5) {
@@ -2781,7 +2781,8 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                     isAttentionLocal = true; hasAttention = true; // 斷線降級為注意狀態，不觸發紅燈
                 } else if (statusInfo.status_type && statusInfo.status_type.includes("エラー")) {
                     isErrorLocal = true; hasError = true;
-                } else if (statusInfo.status_type === "非対応" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし" || statusInfo.status_type === "更新中...") {
+                } else if (statusInfo.status_type === "非対応" || statusInfo.status_type === "対象外" || statusInfo.status_text === "公式発表なし" || statusInfo.status_text === "情報なし" || statusInfo.status_type === "更新中...") {
+                    // 対象外（ODPT がデータを提供していない路線）も非対応と同じく注意燈だけ。綠燈にしない
                     isAttentionLocal = true; hasAttention = true;
                 } else if (delay > 0) {
                     // 有具體延遲分鐘數時：
