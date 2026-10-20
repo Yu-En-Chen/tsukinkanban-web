@@ -474,13 +474,40 @@ function timeHtml(text) {
     return m ? `<small class="sh-nextday">翌</small> ${esc(m[1])}` : esc(t);
 }
 
-function tripHtml(trip, key) {
+// 出航・到着の絶対時刻（日本時間、毫秒）。date は時刻表の日付（出発日）、「翌 08:55」は翌日
+function tripTimes(trip, date) {
+    const at = (text) => {
+        const m = String(text || '').match(/^(翌\s*)?(\d{1,2}):(\d{2})$/);
+        if (!m || !date) return NaN;
+        return Date.parse(`${m[1] ? addDays(date, 1) : date}T${m[2].padStart(2, '0')}:${m[3]}:00+09:00`);
+    };
+    return { dep: at(trip.departure && trip.departure.text), arr: at(trip.arrival && trip.arrival.text) };
+}
+
+// 出航した便：公式の「運航予定」は出航後もそのままなので、時刻表の時刻で「出航済み」「到着済み」に置き換える。
+// 運航すると決まっている便（運航予定・条件付き・出帆港変更）だけ。欠航・判断待ち・未定・情報なしは公式のまま
+// （リアルタイムの位置情報はないので、あくまで時刻表の時刻による）
+function tripPhase(trip, date) {
+    const st = trip.status;
+    if (!st || !['normal', 'conditional', 'changed'].includes(st.level)) return '';
+    const { dep, arr } = tripTimes(trip, date);
+    const now = Date.now();
+    if (Number.isFinite(arr) && now >= arr) return 'arrived';
+    if (Number.isFinite(dep) && now >= dep) return 'sailing';
+    return '';
+}
+
+// date：その便の出発日（時刻表の日付）。today：今日の一覧なら到着済みの便を薄くする
+function tripHtml(trip, key, date = '', today = false) {
     const st = trip.status;
     const dep = trip.departure || {};
     const arr = trip.arrival || {};
     // status が null＝運航情報なし（未来の日付など）。停航ではないので徽章を出さない
     const level = st && SHIP_LEVELS.includes(st.level) ? st.level : 'undecided';
-    const badge = st && st.label ? `<span class="sh-badge sh-${level}">${esc(st.label)}</span>` : '';
+    const phase = tripPhase(trip, date);
+    let badge = st && st.label ? `<span class="sh-badge sh-${level}">${esc(st.label)}</span>` : '';
+    if (phase === 'sailing') badge = `<span class="sh-badge sh-sailing">${level === 'conditional' ? '出航済み・条件付き' : '出航済み'}</span>`;
+    else if (phase === 'arrived') badge = '<span class="sh-badge sh-arrived">到着済み</span>';
     // 便名と船名はそれぞれ一まとまり（折り返すなら「103便」と「セブンアイランド結」の間で）
     const ship = [trip.name, trip.ship].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join(' ');
 
@@ -506,7 +533,8 @@ function tripHtml(trip, key) {
         : '';
 
     // 出発・到着は路線図ふうに二段（点と線でつなぎ、時刻の桁をそろえる）。その下に便名・船名と状況の徽章
-    return `<div class="sh-trip${level === 'cancelled' && st ? ' is-cancelled' : ''}">
+    const cls = (level === 'cancelled' && st ? ' is-cancelled' : '') + (today && phase === 'arrived' ? ' is-done' : '');
+    return `<div class="sh-trip${cls}">
         <div class="sh-times">
             <span class="sh-stop dep"><span class="sh-time">${timeHtml(dep.text)}</span> <span class="sh-pname">${esc(dep.port || '')}</span></span>
             <span class="sh-stop arr"><span class="sh-time">${timeHtml(arr.text)}</span> <span class="sh-pname">${esc(arr.port || '')}</span></span>
@@ -558,7 +586,7 @@ function scheduleHtml(data, route = '') {
         ? `<div class="tt-status">${route ? 'この日はこの航路の運航がありません' : 'この日は運航がありません'}</div>`
         : routes.map((r, ri) => `<section class="sh-route">
             <h3 class="sh-route-name">${esc(r.route || '')}</h3>
-            ${r.trips.map((t, ti) => tripHtml(t, `${ri}:${ti}:${t.name || t.ship || ''}`)).join('')}
+            ${r.trips.map((t, ti) => tripHtml(t, `${ri}:${ti}:${t.name || t.ship || ''}`, data.date, !!data.is_today)).join('')}
         </section>`).join('');
 
     return `${notices.join('')}<div class="sh-list">${list}</div>${footerHtml(data)}`;
@@ -691,7 +719,7 @@ function shipCardHtml(targetId) {
         ? `<div class="sh-notice">運航状況を取得できませんでした。<a href="${SHIP_STATUS_URL}" target="_blank" rel="noopener noreferrer">公式の運航状況を見る</a></div>`
         : '';
     const trips = info.trips.length > 0
-        ? `<div class="sh-card-trips">${info.trips.map((t, i) => tripHtml(t, `${i}:${t.name || t.ship || ''}`)).join('')}</div>`
+        ? `<div class="sh-card-trips">${info.trips.map((t, i) => tripHtml(t, `${i}:${t.name || t.ship || ''}`, info.data && info.data.date, true)).join('')}</div>`
         : '';
     const upd = updateTimeText(info);
     return `

@@ -357,6 +357,22 @@ button.sh-day .sh-day-date {
     color: rgba(0, 0, 0, 0.6);
 }
 
+/* 時刻表の時刻で置き換えた状況：出航済み（青）・到着済み（灰） */
+.sh-sailing {
+    background: rgba(10, 132, 255, 0.12);
+    color: #0a84ff;
+}
+
+.sh-arrived {
+    background: rgba(120, 120, 128, 0.16);
+    color: rgba(0, 0, 0, 0.55);
+}
+
+/* 今日の一覧で到着済みの便は薄く（これから出る便が目に入るように） */
+.sh-trip.is-done {
+    opacity: 0.55;
+}
+
 .sh-normal {
     background: rgba(52, 199, 89, 0.15);
     color: #1f8f3a;
@@ -676,6 +692,16 @@ button.sh-day .sh-day-date {
     .sh-normal {
         background: rgba(48, 209, 88, 0.16);
         color: #4cd964;
+    }
+
+    .sh-sailing {
+        background: rgba(10, 132, 255, 0.2);
+        color: #64a9ff;
+    }
+
+    .sh-arrived {
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.6);
     }
 
     .sh-change {
