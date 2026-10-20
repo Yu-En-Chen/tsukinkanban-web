@@ -3,6 +3,24 @@
 window.appHistoryCache = null;
 window.isFetchingHistory = false;
 
+// 航班歷史的 key 是「Departure_／Arrival_＋實際執飛的便名（fid[0]）」，
+// 到達便或共同運航便名查不到，所以也從各筆紀錄的 fid（含共同運航便名）反查
+function findFlightHistoryKey(flightHistory, id) {
+    const live = (window.GlobalFlights || []).find(f => Array.isArray(f.fid) && f.fid.includes(id));
+    const candidates = [];
+    if (live) candidates.push(`${live.type}_${live.fid[0]}`);
+    candidates.push(`Departure_${id}`, `Arrival_${id}`);
+    const direct = candidates.find(key => Array.isArray(flightHistory[key]));
+    if (direct) return direct;
+    return Object.keys(flightHistory).find(key =>
+        (flightHistory[key] || []).some(r => Array.isArray(r.fid) && r.fid.includes(id))) || null;
+}
+
+// 後端對到達便只放一筆附「到着便の履歴機能はサポートされていません。」的紀錄
+function isUnsupportedFlightHistory(records) {
+    return records.length > 0 && records.every(r => typeof r.note === 'string' && r.note.includes('履歴機能はサポートされていません'));
+}
+
 async function fetchHistoryDaemon() {
     if (window.isFetchingHistory) return;
     window.isFetchingHistory = true;
@@ -21,11 +39,13 @@ async function fetchHistoryDaemon() {
 
         // 迴圈開始前一次載入整包歷史紀錄 (走 Cloudflare 快取)
         let allHistoryData = { railway: {}, flight: {} };
+        let historyLoaded = false; // 這一輪確實拿到整包歷史（用來區分「沒有紀錄」與「還沒同步」）
         try {
             // 刻意不加時間戳參數，以命中 Cloudflare 的 1 分鐘邊緣快取
             const allRes = await fetch('https://api.tsukinkanban.com/api/history/all');
             if (allRes.ok) {
                 allHistoryData = await allRes.json();
+                historyLoaded = true;
                 // 整包原樣留著：船頁面的「運航履歴」以各便の history_key 從 ship 區塊取用
                 window.appHistoryAll = allHistoryData;
                 window.appHistoryAllAt = Date.now();
@@ -120,23 +140,25 @@ async function fetchHistoryDaemon() {
                 railIds.forEach(id => {
                     const type = isFlight ? 'flight' : 'railway';
                     let finalId = id;
-                    
+
                     if (isFlight && !id.includes('Departure_') && !id.includes('Arrival_')) {
-                        finalId = `Departure_${id}`; 
+                        finalId = findFlightHistoryKey(allHistoryData.flight || {}, id) || `Departure_${id}`;
                     }
 
                     let routeName = (window.MasterRouteDictionary && window.MasterRouteDictionary[id]) ? window.MasterRouteDictionary[id].name : id;
                     routeName = routeName.replace('Departure_', '出發 ').replace('Arrival_', '抵達 ');
-                    
+
                     // 不再逐卡發送 fetch，改從整包 allHistoryData 中挑出對應資料
                     const routeHistory = (allHistoryData[type] && allHistoryData[type][finalId]) ? allHistoryData[type][finalId] : [];
 
                     // 以 Promise.resolve() 模擬 fetch 回傳格式，沿用既有的處理流程
-                    const req = Promise.resolve({ 
-                        cardId: card.id, 
+                    const req = Promise.resolve({
+                        cardId: card.id,
                         cardName: card.name || card.title || '卡片路線',
-                        name: routeName, 
+                        name: routeName,
                         isFlight: isFlight,
+                        historyLoaded: historyLoaded,
+                        historyUnsupported: isFlight && isUnsupportedFlightHistory(routeHistory),
                         data: routeHistory // 與原本 json.history 相同的陣列格式
                     });
                     

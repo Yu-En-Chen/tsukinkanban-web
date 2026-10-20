@@ -205,6 +205,7 @@ function generateHistoryHTML() {
                 routes: [],
                 hasRoutes: targetIds.length > 0, // 標記這張卡片是否為空
                 busOnly: targetIds.length > 0 && trackedIds.length === 0,
+                isFlightCard: card.isFlightCard === true,
                 hasShip: trackedIds.some(id => String(id).startsWith('ship:')),
                 shipOnly: trackedIds.length > 0 && trackedIds.every(id => String(id).startsWith('ship:'))
             });
@@ -297,6 +298,20 @@ function generateHistoryHTML() {
             htmlStr += `
                 <div style="text-align: center; padding: 16px 0; color: inherit; opacity: 0.6; font-size: 0.9em; display: flex; flex-direction: column; align-items: center; gap: 8px;">
                     追跡している路線はありません
+                </div>
+            `;
+        } else if (group.isFlightCard && validRoutes.length > 0 && validRoutes.every(info => info.historyUnsupported)) {
+            // 狀態 A4：到達便（後端不提供到達便的歷史）
+            htmlStr += `
+                <div style="text-align: center; padding: 16px 0; color: inherit; opacity: 0.6; font-size: 0.9em; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    到着便は履歴の対象外です
+                </div>
+            `;
+        } else if (group.isFlightCard && validRoutes.length === 0 && group.routes.some(info => info.historyLoaded)) {
+            // 狀態 A5：已拿到整包歷史，但裡面沒有這個航班（不要一直顯示同步中）
+            htmlStr += `
+                <div style="text-align: center; padding: 16px 0; color: inherit; opacity: 0.6; font-size: 0.9em; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    この便の履歴はありません
                 </div>
             `;
         } else if (validRoutes.length === 0) {
