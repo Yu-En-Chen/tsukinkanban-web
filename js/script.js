@@ -14,7 +14,8 @@ try {
 import { bottomCardConfig, railwayData } from '../data/data.js';
 import { initPhysics } from './physics.js';
 import { initHeader } from './header.js';
-import { getAllUserPreferences, restorePreviousPreference } from '../data/db.js';
+import { getAllUserPreferences, restorePreviousPreference, replaceCardRouteIds } from '../data/db.js';
+import { knownRouteIdSet, migrateRouteIds } from '../data/route-id-migration.js';
 import { initPersonalization } from './personalization.js';
 import { initDynamicClock } from './clock.js';
 import { syncAndLoadDictionary } from '../data/dictionary-db.js';
@@ -2617,6 +2618,19 @@ window.undoCardPreference = async function () {
     }
 };
 
+// 已儲存卡片的舊路線 ID：新 ID 已出現在字典或運行狀態時才換掉（去除重複），
+// 有變動的卡片寫回一次；新 ID 還不存在就保留舊 ID
+function applyRouteIdMigration(userPrefs, routeDict, liveStatus) {
+    const knownIds = knownRouteIdSet(routeDict, liveStatus);
+    for (const key in userPrefs) {
+        const pref = userPrefs[key];
+        const migrated = pref ? migrateRouteIds(pref.targetLineIds, knownIds) : null;
+        if (!migrated) continue;
+        pref.targetLineIds = migrated;
+        replaceCardRouteIds(key, migrated).catch(() => { });
+    }
+}
+
 // ============================================================================
 // 資料建構與渲染（支援斷線覆寫與多重燈號共存）
 // ============================================================================
@@ -2957,6 +2971,7 @@ async function initApp() {
             cachedDict = JSON.parse(localStorage.getItem('Tsukin_Cached_Dict') || '{}');
             cachedLiveStatus = JSON.parse(localStorage.getItem('Tsukin_Cached_Status') || '{}');
         } catch (e) { }
+        applyRouteIdMigration(userPrefs, cachedDict, cachedLiveStatus);
 
         // 2. 立即渲染（不帶舊狀態，燈號重置為「更新中」）
         buildAndRender(userPrefs, cachedDict, {}, false);
@@ -2999,6 +3014,7 @@ async function initApp() {
                 console.log("[系統啟動] 偵測到 API 啟動中或無有效資料，維持顯示最後一次成功的快取時間！");
             }
 
+            applyRouteIdMigration(userPrefs, routeDict || cachedDict, liveStatus);
             buildAndRender(userPrefs, routeDict || cachedDict, liveStatus, false);
         } else {
             // API 回傳 500/502 或無回應
@@ -3736,6 +3752,7 @@ window.triggerBackgroundUpdate = async function () {
         const cachedDict = JSON.parse(localStorage.getItem('Tsukin_Cached_Dict') || '{}');
         const userPrefs = await getAllUserPreferences();
         localStorage.setItem('Tsukin_Cached_Status', JSON.stringify(liveStatus));
+        applyRouteIdMigration(userPrefs, cachedDict, liveStatus);
 
         // 1. 更新底層資料與主畫面卡片（局部更新，不閃爍）
         buildAndRender(userPrefs, cachedDict, liveStatus, false);
@@ -4053,6 +4070,7 @@ window.refreshAppAfterEdit = async function () {
         const userPrefs = await getAllUserPreferences();
         const cachedDict = JSON.parse(localStorage.getItem('Tsukin_Cached_Dict') || '{}');
         const cachedLiveStatus = JSON.parse(localStorage.getItem('Tsukin_Cached_Status') || '{}');
+        applyRouteIdMigration(userPrefs, cachedDict, cachedLiveStatus);
 
         buildAndRender(userPrefs, cachedDict, cachedLiveStatus, false);
 

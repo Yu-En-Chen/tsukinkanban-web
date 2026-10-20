@@ -1,5 +1,7 @@
 // db.js - 使用者偏好設定的本地資料庫引擎 (IndexedDB 搭配 LocalStorage 備援)
 
+import { knownRouteIdSet, migrateRouteIds } from './route-id-migration.js';
+
 const DB_NAME = 'TsukinKanbanDB';
 const STORE_NAME = 'userPreferences';
 const DB_VERSION = 1;
@@ -498,6 +500,45 @@ export async function updateCardRoutes(id, newTargetLineIds) {
 }
 
 // ============================================================================
+// 路線 ID 轉換的寫回（只改 targetLineIds，不動 Undo 用的 previousState）
+// ============================================================================
+export async function replaceCardRouteIds(id, newTargetLineIds) {
+    const db = await initDB();
+
+    if (useFallback || !db) {
+        const map = getFallbackData();
+        if (!map[id]) return;
+        map[id].targetLineIds = newTargetLineIds;
+        saveFallbackData(map[id]);
+        return;
+    }
+
+    return new Promise((resolve) => {
+        try {
+            const transaction = db.transaction(STORE_NAME, 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const getRequest = store.get(id);
+
+            getRequest.onsuccess = () => {
+                const currentData = getRequest.result;
+                if (!currentData) return resolve();
+                currentData.targetLineIds = newTargetLineIds;
+
+                const putRequest = store.put(currentData);
+                putRequest.onsuccess = () => {
+                    console.log(`[DB] 路線 ${id} 的路線 ID 已轉換`);
+                    resolve();
+                };
+                putRequest.onerror = () => resolve();
+            };
+            getRequest.onerror = () => resolve();
+        } catch (err) {
+            resolve();
+        }
+    });
+}
+
+// ============================================================================
 // 匯出與匯入 (Data Export / Import)
 // ============================================================================
 
@@ -558,7 +599,14 @@ export async function importDataAndOverwrite(jsonString) {
         if (parsedList.length > 5) throw new Error("インポート失敗：カードは最大5枚までです。(最多 5 張卡片)");
 
         const hexRegex = /^#([0-9A-F]{3}){1,2}$/i;
-        
+
+        // 舊路線 ID 先轉換並去除重複，再檢查 6 條上限
+        const knownIds = knownRouteIdSet(window.MasterRouteDictionary, window.GlobalLiveStatus);
+        parsedList.forEach(item => {
+            const migrated = item ? migrateRouteIds(item.routes, knownIds) : null;
+            if (migrated) item.routes = migrated;
+        });
+
         parsedList.forEach((item, index) => {
             const cardNum = index + 1;
             // 編輯時的上限是 10 字，但從搜尋建立的卡片會直接用路線名（航路名可達 20 字以上），

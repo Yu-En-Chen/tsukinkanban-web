@@ -118,7 +118,7 @@ export const dataSourceContent = `
                             <div style="display: flex; flex-direction: column; gap: 12px;">
                                 <div>
                                     <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">JR東日本</p>
-                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">山手線、中央線快速、中央・総武各駅停車、高崎線、宇都宮線、京浜東北・根岸線、京葉線、埼京・川越線、東海道線、横須賀線、総武快速線、湘南新宿ライン、上野東京ライン、常磐線各駅停車、常磐線快速、青梅線、武蔵野線、南武線、横浜線、相鉄直通線</p>
+                                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.85em; line-height: 1.7;">山手線、中央線快速、中央・総武各駅停車、高崎線、宇都宮線、京浜東北・根岸線、京葉線、埼京・川越線、東海道線、横須賀線、総武快速線、湘南新宿ライン、上野東京ライン、常磐線各駅停車、常磐線快速、青梅線、五日市線、武蔵野線、南武線、横浜線、相鉄直通線</p>
                                 </div>
                                 <div>
                                     <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">東武鉄道</p>
