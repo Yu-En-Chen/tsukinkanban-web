@@ -24,6 +24,7 @@ const BUS_DELAY_AVG_MIN_COUNT = 2;
 // 大きなマイナスはまず班次のずれだから（例：−20分は実際には遅延中の車両）
 const BUS_DIFF_LATE_LIMIT = 30; // これを超える遅れは組み違いとみなす
 const BUS_DIFF_EARLY_LIMIT = 5; // これを超える早発は組み違いとみなす
+const BUS_DELAY_EARLY_HIDE = 3; // 後端の delay_minutes がこれより早発（−3 分未満）は資料の異常とみなして出さない
 
 // 業者識別色
 const OPERATOR_COLORS = {
@@ -565,6 +566,19 @@ function busDiffMinutes(stop) {
     return best;
 }
 
+// その車両の遅れ（分）。判定できなければ null
+// 後端が車両自身の班次から算出した delay_minutes（実際に前の停留所を出た時刻 − 表定）を優先する。
+// null は「算出できない」であって定刻ではないので、そのときは従来どおり停留所の eta と表定時刻から推定
+// （stop はその車両が接近中の停留所。推定は停留所の eta＝先頭の車両についてだけ成り立つ）
+function busDelayOf(bus, stop) {
+    if (bus && Number.isFinite(bus.delay_minutes)) {
+        return bus.delay_minutes < -BUS_DELAY_EARLY_HIDE ? null : bus.delay_minutes;
+    }
+    if (!stop) return null;
+    const diff = busDiffMinutes(stop);
+    return diff !== null && isPlausibleBusDiff(diff) ? diff : null;
+}
+
 // 走行中の各車両の遅れ（分）を集める
 // 偏差は「その停留所の即時 ETA」と「表定時刻」の差＝接近中の先頭車両の遅れ。
 // 同一車両を二重に数えないよう車牌でまとめ、車牌がない場合は停留所を鍵にする
@@ -572,14 +586,15 @@ function collectBusDelays(patterns) {
     const seen = new Map();
     (patterns || []).forEach(p => {
         (p.stops || []).forEach(s => {
-            const bus = (s.buses_approaching || [])[0];
-            if (!bus) return;
-            const diff = busDiffMinutes(s);
-            // 組み違いの疑いがある値は 0 扱いにもせず標本から除外する
-            // （0 として平均に入れると本当の遅れを薄めてしまうため）
-            if (diff === null || !isPlausibleBusDiff(diff)) return;
-            const key = bus.number || `${p.id || ''}#${s.name}`;
-            if (!seen.has(key)) seen.set(key, diff);
+            (s.buses_approaching || []).forEach((bus, i) => {
+                // delay_minutes がある車両はすべて、無い車両は停留所の推定が成り立つ先頭の一台だけ
+                // 組み違いの疑いがある値は 0 扱いにもせず標本から除外する
+                // （0 として平均に入れると本当の遅れを薄めてしまうため）
+                const diff = Number.isFinite(bus.delay_minutes) ? busDelayOf(bus, null) : (i === 0 ? busDelayOf(bus, s) : null);
+                if (diff === null) return;
+                const key = bus.number || `${p.id || ''}#${s.name}#${i}`;
+                if (!seen.has(key)) seen.set(key, diff);
+            });
         });
     });
     return [...seen.values()];
@@ -1176,13 +1191,11 @@ function busOccHtml(occupancy) {
 // 車牌＋表定偏差の膠囊
 function busPlatePillHtml(bus, stop, chip = false) {
     let diffHtml = '';
-    if (stop) {
-        const diff = busDiffMinutes(stop);
-        // 妥当範囲外は next が次便を指す組み違いとみなし、表示しない
-        // （とくに大きなマイナスは実際には遅延中の車両であることが多く誤解を招く）
-        if (diff !== null && diff !== 0 && isPlausibleBusDiff(diff)) {
-            diffHtml = `<span class="bus-delay ${diff > 0 ? 'late' : 'early'}">${diff > 0 ? '+' : ''}${diff}分</span>`;
-        }
+    // 車両自身の delay_minutes を優先、無ければ停留所から推定（妥当範囲外は組み違いとみなし出さない。
+    // とくに大きなマイナスは実際には遅延中の車両であることが多く誤解を招く）
+    const diff = busDelayOf(bus, stop);
+    if (diff !== null && diff !== 0) {
+        diffHtml = `<span class="bus-delay ${diff > 0 ? 'late' : 'early'}">${diff > 0 ? '+' : ''}${diff}分</span>`;
     }
 
     // chip：資訊卡內使用，去掉膠囊外框融入卡片
