@@ -1,6 +1,6 @@
 export const dataSourceContent = `
     <div style="opacity: 0.85; line-height: 1.7;">
-        <p>当サイトの交通データは、公共交通オープンデータ協議会（以下「ODPT」）より提供されています。</p>
+        <p>当サイトは、公共交通オープンデータセンターにおいて提供されるデータを利用しています。データは、必ずしも正確・完全なものとは限りません。</p>
         <p><a href="https://www.odpt.org/" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline; font-weight: 500;">https://www.odpt.org/</a></p>
         <br>
         <p>ODPTデータの配信および処理プロセスの詳細につきましては、以下の公式ページをご参照ください：</p>
@@ -114,7 +114,7 @@ export const dataSourceContent = `
                         <br>
                         <div style="margin-bottom: 18px;">
                             <p style="color: var(--text-main); font-weight: 600; margin: 0 0 4px 0;">ODPTチャレンジ2026限定</p>
-                            <p style="color: var(--text-secondary); margin: 0 0 10px 0; font-size: 0.8em;">2027年2月末まで提供予定。</p>
+                            <p style="color: var(--text-secondary); margin: 0 0 10px 0; font-size: 0.8em;">2027年2月末まで提供予定。JR東日本・東武鉄道は遅延分数も表示します。提供終了後は、該当する路線を「提供終了」と表示します。</p>
                             <div style="display: flex; flex-direction: column; gap: 12px;">
                                 <div>
                                     <p style="color: var(--text-main); font-weight: 600; margin: 0 0 3px 0; font-size: 0.9em;">JR東日本</p>
@@ -182,6 +182,11 @@ export const dataSourceContent = `
             <p style="font-size: 0.9em; opacity: 0.9;">本サービスは個人が開発・運営する非公式のサードパーティアプリであり、ODPT（公共交通オープンデータ協議会）および各鉄道・交通事業者とは<strong>一切関係がありません</strong>。当サイトの機能や表示、データに関するご質問・ご指摘は、ODPTや各交通事業者ではなく、必ず当サイトの開発者まで直接ご連絡ください。<br><br>
             連絡先：<a href="#" data-eu="support" data-ed="tsukinkanban.com" style="color: inherit; text-decoration: underline; font-weight: 500;">お問い合わせ先</a></p>
         </div>
+        <br>
+        <p style="color: var(--text-main); font-weight: 600; margin-bottom: 4px;">データの利用条件</p>
+        <p style="font-size: 0.95em; opacity: 0.9;">各データは、公共交通オープンデータ基本ライセンス、公共交通オープンデータチャレンジ2026の限定提供データの利用条件、またはクリエイティブ・コモンズ 表示 4.0 国際（CC BY 4.0）に基づいて利用しています。</p>
+        <p style="font-size: 0.95em; opacity: 0.9;">三宅村営バスの時刻表データ　出典：三宅村／公共交通オープンデータセンター（CC BY 4.0）。当サイトで加工して表示しています。</p>
+        <p><a href="https://creativecommons.org/licenses/by/4.0/deed.ja" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline; font-weight: 500;">CC BY 4.0 ライセンス本文</a></p>
         <br>
         <p style="color: var(--text-main); font-weight: 600; margin-bottom: 4px;">UI アイコン（SVG）</p>
         <p style="font-size: 0.95em; opacity: 0.9;">当サイトのインターフェースには、美しくオープンソースなアイコンライブラリ「Lucide Icons」を使用しています。</p>
