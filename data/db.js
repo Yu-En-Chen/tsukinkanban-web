@@ -561,7 +561,9 @@ export async function importDataAndOverwrite(jsonString) {
         
         parsedList.forEach((item, index) => {
             const cardNum = index + 1;
-            if (item.name && item.name.length > 10) throw new Error(`${cardNum}枚目のカード名が長すぎます。(名稱過長)`);
+            // 編輯時的上限是 10 字，但從搜尋建立的卡片會直接用路線名（航路名可達 20 字以上），
+            // 匯出的資料要能原樣匯回，這裡放寬到 40 字
+            if (item.name && item.name.length > 40) throw new Error(`${cardNum}枚目のカード名が長すぎます。(名稱過長)`);
             if (item.hex && !hexRegex.test(item.hex)) throw new Error(`${cardNum}枚目のカラーコードが不正です。(色碼格式錯誤)`);
             
             if (item.routes) {
@@ -582,7 +584,8 @@ export async function importDataAndOverwrite(jsonString) {
 // ==========================================
         // 第二階段：準備乾淨的資料與固定 ID
         // ==========================================
-        const FIXED_IDS = ['tokyo', 'kanagawa', 'saitama', 'chiba', 'airport'];
+        // 對應 data.js 的 5 張預設卡片（第 5 張是 personal；寫到不存在的 ID 會整張消失）
+        const FIXED_IDS = ['tokyo', 'kanagawa', 'saitama', 'chiba', 'personal'];
         const newOrder = [];
         const newDbData = {};
 
