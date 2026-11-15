@@ -1,6 +1,5 @@
 // main-menu.js - 獨立主選單的唯一控制中心
 import { menuContents } from '../data/menu-content.js';
-import { initSponsorCarousel } from '../data/sponsors.js';
 
 window.initDynamicMainMenu = function () {
     let container = document.getElementById('dynamic-main-menu');
@@ -73,9 +72,7 @@ window.initDynamicMainMenu = function () {
         window.openUniversalPage(item.text, content);
 
         // 彈出後的事件綁定分發
-        if (item.text === 'サポーター') {
-            setTimeout(() => { initSponsorCarousel(); }, 50);
-        } else if (item.text === '表示設定') {
+        if (item.text === '表示設定') {
             // 給予 50ms 延遲等待 DOM 畫好後，綁定開關點擊事件
             setTimeout(() => { 
                 if (window.initDisplaySettingsEvents) window.initDisplaySettingsEvents(); 
@@ -154,7 +151,7 @@ function updateUniversalFade(el) {
     el.classList.toggle('uni-fade-on', top > 0 || bottom > 0);
 }
 
-// 內容的高度變化（輪播載入、設定項目展開等）也會改變下方剩餘量，捲動以外也要重算
+// 內容的高度變化（設定項目展開等）也會改變下方剩餘量，捲動以外也要重算
 function watchUniversalFade(el) {
     if (typeof ResizeObserver === 'undefined') return;
     const observeAll = () => {
