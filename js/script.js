@@ -19,7 +19,7 @@ import { knownRouteIdSet, migrateRouteIds } from '../data/route-id-migration.js'
 import { initPersonalization } from './personalization.js';
 import { initDynamicClock } from './clock.js';
 import { syncAndLoadDictionary } from '../data/dictionary-db.js';
-import { initFlights, searchFlights } from './flights.js';
+import { initFlights, searchFlights, flightDataState, flightUnconfirmedText, restoreCachedFlights, recordFlights, recordFlightsFailure } from './flights.js';
 import './bus-timetable.js';
 import { loadDataSources, railwayEndedNotice, flightEndedNotice, sourceNoticeHtml } from './data-sources.js';
 import { openShipSchedule, searchShip, initShips, refreshSavedShips, ensureShipToday, isShipTargetId, generateShipDataFormat, generateShipLineSummary, renderShipRoutePanel, renderShipLineCard, getShipColor } from './ship.js';
@@ -605,6 +605,368 @@ function renderCards(data) {
     }
 }
 // ============================================================================
+// 航班卡片的面板（卡面下半＋玻璃面板）
+// 開啟時與航班資料更新時共用：航班資料到了、或變成無法確認時，開著的面板要能原地換掉
+// ============================================================================
+function renderFlightPanel(data, cardContent, scrollWrapper) {
+    const fData = data.flightData;
+    // 'pending'（確認中）／'failed'（連不上伺服器）：無法確認是最新資料，
+    // 只顯示出發／到達與目的地，時刻・狀態・航廈・登機口都不顯示
+    const unconfirmed = fData.unconfirmed || null;
+
+    // 航班卡片排版
+    const isCancelled = data.flightData.isCancelled;
+    const isTimeChangedLocal = data.flightData.scheduled !== data.flightData.latest;
+    const strikeScheduled = isTimeChangedLocal || isCancelled;
+
+    if (unconfirmed) {
+        cardContent.innerHTML = `
+        <div style="display: flex; flex-direction: column; margin-top: 4px;">
+            <div>
+                <div style="font-size: 1.15em; font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+                    ${fData.routeHtml}
+                </div>
+                <div style="font-size: 0.85em; font-weight: 600; opacity: 0.7;">
+                    ${fData.airline}
+                </div>
+            </div>
+
+            <div style="width: 100%; border-top: 1px dashed rgba(255,255,255,0.25); margin: 20px 0;"></div>
+
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div style="font-size: 1.15em; font-weight: 800; letter-spacing: 0.5px;">${flightUnconfirmedText(unconfirmed)}</div>
+                <div style="font-size: 0.75em; font-weight: 600; opacity: 0.6; line-height: 1.5;">${unconfirmed === 'pending'
+                    ? '時刻・ターミナル・搭乗口は確認後に表示します'
+                    : '時刻・ターミナル・搭乗口は表示していません'}</div>
+            </div>
+        </div>
+    `;
+    } else cardContent.innerHTML = `
+        <div style="display: flex; flex-direction: column; margin-top: 4px;">
+            <div>
+                <div style="font-size: 1.15em; font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+                    ${data.flightData.routeHtml}
+                </div>
+                <div style="font-size: 0.85em; font-weight: 600; opacity: 0.7;">
+                    ${data.flightData.airline}
+                </div>
+            </div>
+
+            <div style="width: 100%; border-top: 1px dashed rgba(255,255,255,0.25); margin: 20px 0;"></div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; flex-direction: column; justify-content: center; gap: 4px;">
+                    <div style="display: flex; align-items: baseline; gap: 8px; opacity: ${strikeScheduled ? '0.5' : '0.9'};">
+                        <span style="font-weight: 600; font-size: 1.05em;">定刻</span>
+                        <span style="font-family: monospace; font-size: 1.45em; font-weight: 800; line-height: 1; ${strikeScheduled ? 'text-decoration: line-through;' : ''}">${data.flightData.scheduled}</span>
+                    </div>
+                    ${(!isCancelled && isTimeChangedLocal) ? `
+                    <div style="display: flex; align-items: baseline; gap: 8px;">
+                        <span style="font-weight: 800; color: inherit; text-shadow: none; font-size: 1.05em;">変更</span>
+                        <span style="font-family: monospace; font-size: 1.45em; font-weight: 800; color: inherit; line-height: 1;">${data.flightData.latest}</span>
+                        <span style="font-weight: 800; font-size: 0.95em; color: ${data.flightData.delayColor}; text-shadow: ${data.flightData.delayShadow}; margin-left: 2px;">${data.flightData.delayText}</span>
+                    </div>` : ''}
+                </div>
+                <div style="display: flex; flex-direction: column; justify-content: center; align-items: flex-end; gap: 6px;">
+                    <div style="font-size: 1.35em; font-weight: 800; letter-spacing: 1px; color: ${data.flightData.statusColor}; text-shadow: ${data.flightData.statusShadow};">${data.flightData.statusText}</div>
+                    ${data.flightData.stale
+                        ? `<div class="flight-stale">⚠ 情報が古い可能性があります<span>（最終更新 ${data.flightData.updateTime}）</span></div>`
+                        : `<div style="font-size: 0.7em; font-weight: 600; opacity: 0.5;">更新: ${data.flightData.updateTime}</div>`}
+                </div>
+            </div>
+        </div>
+    `;
+
+    // 內容放入 scrollWrapper
+    // 取得航廈與登機口資訊（API 未提供時顯示 '-'）
+    const isDep = fData.type === 'Departure';
+
+    // 辨識主要機場名稱（HND/NRT 顯示優化）
+    let mainAirport = fData.airport;
+    if (mainAirport === 'HND') mainAirport = '羽田(HND)';
+    else if (mainAirport === 'NRT') mainAirport = '成田(NRT)';
+    else mainAirport = mainAirport || '-';
+
+    const otherAirport = fData.location || '-';
+
+    // 出發與抵達名稱
+    const depAirport = isDep ? mainAirport : otherAirport;
+    const arrAirport = !isDep ? mainAirport : otherAirport;
+
+    // ODPT 通常只提供東京端（主機場）的航廈與登機口資料
+    const depTerminal = isDep ? (fData.terminal || '-') : '-';
+    const depGate = isDep ? (fData.gate || '-') : '-';
+
+    const arrTerminal = !isDep ? (fData.terminal || '-') : '-';
+    const arrGate = !isDep ? (fData.gate || '-') : '-';
+
+    // 航班備註可能來自搜尋預覽卡片的 message，或已儲存卡片的 flightData.note
+    let flightNote = data.message || (fData.note ? fData.note : '');
+    if (flightNote && flightNote.startsWith('⚠️ 備考: ')) {
+        flightNote = flightNote.replace('⚠️ 備考: ', '');
+    }
+
+    let noteHtml = '';
+    if (flightNote) {
+        // SVG 固定在左側 16px
+        const warningSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square-warning-icon lucide-message-square-warning" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); opacity: 0.8;"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/><path d="M12 15h.01"/><path d="M12 7v4"/></svg>`;
+
+        // flex-direction: row 避免外部 CSS 干擾
+        // 內部 div 設 margin: 0 避免預設留白
+        noteHtml = `
+        <div class="extension-route-card" style="position: relative; padding: 16px 16px 16px 54px; min-height: 84px; display: flex; flex-direction: row; align-items: center;">
+            ${warningSvg}
+            <div style="font-weight: 700; font-size: 0.95em; line-height: 1.5; width: 100%; text-align: left; margin: 0;">
+                ${flightNote}
+            </div>
+        </div>
+        `;
+    }
+
+    // 未確認：不放航廈・登機口的雙欄卡片，改放一則說明
+    const unconfirmedSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); opacity: 0.8;"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/><path d="M12 15h.01"/><path d="M12 7v4"/></svg>`;
+    const unconfirmedHtml = unconfirmed ? `
+        <div class="extension-route-card" style="position: relative; padding: 16px 16px 16px 54px; min-height: 84px; display: flex; flex-direction: row; align-items: center;">
+            ${unconfirmedSvg}
+            <div style="font-weight: 700; font-size: 0.95em; line-height: 1.6; width: 100%; text-align: left; margin: 0;">
+                ${unconfirmed === 'pending'
+                    ? '最新の運航情報を確認しています。'
+                    : 'サーバーに接続できないため、時刻・運航状況・ターミナル・搭乗口を表示していません。最新の情報は、空港または航空会社の公式サイトでご確認ください。'}
+            </div>
+        </div>
+    ` : '';
+
+    // 雙欄資訊卡片（以 CSS class 支援深淺模式）
+    scrollWrapper.innerHTML = unconfirmed ? `
+        ${unconfirmedHtml}
+        ${flightEndedNotice() ? sourceNoticeHtml(flightEndedNotice()) : ''}
+    ` : `
+        <div class="extension-route-card" style="padding: 18px 16px;">
+            <div style="font-weight: 800; font-size: 1.05em; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; transform: translateY(-1.5px);"><path d="M12 13v8"/><path d="M12 3v3"/><path d="M2.354 10.354a1.207 1.207 0 0 1 0-1.708l2.06-2.06A2 2 0 0 1 5.828 6h12.344a2 2 0 0 1 1.414.586l2.06 2.06a1.207 1.207 0 0 1 0 1.708l-2.06 2.06a2 2 0 0 1-1.414.586H5.828a2 2 0 0 1-1.414-.586z"/></svg>
+                搭乗口・ターミナル情報（Beta）
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <div class="flight-terminal-block">
+                    <div class="flight-terminal-header">
+                        出発 <span style="font-family: monospace; font-size: 1.15em; opacity: 0.9;">${depAirport}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                        <span style="font-size: 0.85em; font-weight: 600; opacity: 0.8;">ターミナル</span>
+                        <span style="font-weight: 800; font-size: 1.2em; font-family: monospace;">${depTerminal}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                        <span style="font-size: 0.85em; font-weight: 600; opacity: 0.8;">搭乗口</span>
+                        <span style="font-weight: 800; font-size: 1.2em; font-family: monospace;" class="${depGate !== '-' ? 'flight-highlight-gate' : ''}">${depGate}</span>
+                    </div>
+                </div>
+                
+                <div class="flight-terminal-block">
+                    <div class="flight-terminal-header">
+                        到着 <span style="font-family: monospace; font-size: 1.15em; opacity: 0.9;">${arrAirport}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                        <span style="font-size: 0.85em; font-weight: 600; opacity: 0.8;">ターミナル</span>
+                        <span style="font-weight: 800; font-size: 1.2em; font-family: monospace;">${arrTerminal}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                        <span style="font-size: 0.85em; font-weight: 600; opacity: 0.8;">搭乗口</span>
+                        <span style="font-weight: 800; font-size: 1.2em; font-family: monospace;" class="${arrGate !== '-' ? 'flight-highlight-gate' : ''}">${arrGate}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        ${noteHtml}
+        ${flightEndedNotice() ? sourceNoticeHtml(flightEndedNotice()) : ''}
+    `;
+
+    // 5. 三個水平排列的玻璃按鈕
+    const btnContainer = document.createElement('div');
+    btnContainer.className = 'flight-action-buttons-container';
+    // 間距交由外層 Flexbox 的 gap: 16px 處理
+
+    // Google Maps 地標圖示 (Lucide Map-Pin)
+    const iconMapPin = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 92.3 132.3" style="opacity: 0.95; transform: translateY(-1px);"><path fill="#1a73e8" d="M60.2 2.2C55.8.8 51 0 46.1 0 32 0 19.3 6.4 10.8 16.5l21.8 18.3L60.2 2.2z"/><path fill="#ea4335" d="M10.8 16.5C4.1 24.5 0 34.9 0 46.1c0 8.7 1.7 15.7 4.6 22l28-33.3-21.8-18.3z"/><path fill="#4285f4" d="M46.2 28.5c9.8 0 17.7 7.9 17.7 17.7 0 4.3-1.6 8.3-4.2 11.4 0 0 13.9-16.6 27.5-32.7-5.6-10.8-15.3-19-27-22.7L32.6 34.8c3.3-3.8 8.1-6.3 13.6-6.3"/><path fill="#fbbc04" d="M46.2 63.8c-9.8 0-17.7-7.9-17.7-17.7 0-4.3 1.5-8.3 4.1-11.3l-28 33.3c4.8 10.6 12.8 19.2 21 29.9l34.1-40.5c-3.3 3.9-8.1 6.3-13.5 6.3"/><path fill="#34a853" d="M59.1 109.2c15.4-24.1 33.3-35 33.3-63 0-7.7-1.9-14.9-5.2-21.3L25.6 98c2.6 3.4 5.3 7.3 7.9 11.3 9.4 14.5 6.8 23.1 12.8 23.1s3.4-8.7 12.8-23.2"/></svg>`;
+    const iconMap = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg>`;
+    const iconShare = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`;
+
+    // 按鈕工廠函式：第三個參數為 onClickAction
+    const createBtn = (iconHtml, text, onClickAction) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'flight-action-btn';
+        btn.innerHTML = `${iconHtml}<span>${text}</span>`;
+
+        // 有點擊事件則綁定
+        if (onClickAction) {
+            btn.onclick = onClickAction;
+        }
+        return btn;
+    };
+
+    // 組合 Google Maps 搜尋關鍵字
+    let mapQuery = '';
+    if (fData.airport === 'HND') mapQuery = '羽田空港';
+    else if (fData.airport === 'NRT') mapQuery = '成田空港';
+
+    // API 有提供航廈時，直接導航到該航廈，
+    // Google Maps 會開啟該航廈的室內地圖
+    const mainTerminal = isDep ? depTerminal : arrTerminal;
+
+    // 航廈欄位驗證（排除 null、undefined、空白與各種破折號）
+    const isValidTerminal = mainTerminal && !/^-+$/.test(mainTerminal.toString().trim());
+
+    if (mapQuery !== '' && isValidTerminal) {
+        // 加上「第Xターミナル」讓 Google Maps 定位到棟
+        const terminalSuffix = mainTerminal.toString().includes('ターミナル')
+            ? mainTerminal
+            : `${mainTerminal}ターミナル`;
+        mapQuery += ` ${terminalSuffix}`;
+    }
+
+    // Google Maps 點擊事件
+    const handleGoogleMapClick = () => {
+        if (mapQuery) {
+            // Google Maps Universal URL：手機上會開啟原生 App
+            const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
+            window.open(url, '_blank', 'noopener,noreferrer');
+        } else {
+            alert('空港情報がありません');
+        }
+    };
+
+    // 航班卡片的資料繼承（含燈號與航班資料）
+    const handleCreateNewCardClick = () => {
+        if (isAnimating) return;
+
+        // 從暫存卡片取出真實的航班 ID
+        let realFlightId = null;
+        if (data.flightData && data.flightData.id) {
+            realFlightId = data.flightData.id;
+        } else if (data.detailedLines && data.detailedLines.length > 0) {
+            realFlightId = data.detailedLines[0].id;
+        }
+
+        // 從名稱中移除 HTML 標籤圖示，只保留純文字，
+        // 避免進入編輯面板時露出 SVG 原始碼
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = data.name;
+        const cleanName = tempDiv.textContent.trim() || data.name;
+
+        const prefillData = {
+            name: cleanName, // 使用去除標籤後的名稱
+            hex: data.hex,
+            desc: data.desc,
+            detail: data.detail,
+            statusFlags: data.statusFlags || [false, false, false, false, false, false, false],
+
+            // targetLineIds 為空時，補入取得的航班 ID
+            targetLineIds: (data.targetLineIds && data.targetLineIds.length > 0)
+                ? data.targetLineIds
+                : (realFlightId ? [realFlightId] : []),
+
+            detailedLines: data.detailedLines || [],
+            // 一併帶入航班判斷旗標與資料
+            isFlightCard: data.isFlightCard || false,
+            flightData: data.flightData || null
+        };
+
+        closeAllCards(false);
+        setTimeout(() => {
+            if (typeof window.createNewCardAndEdit === 'function') {
+                window.createNewCardAndEdit(prefillData);
+            }
+        }, 450);
+    };
+
+    // 航班 SVG（stroke-width=2.5 與系統圖示一致）
+    const iconPlane = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>`;
+
+    // 依 ID 判斷是搜尋預覽還是已加入主畫面
+    const isPreviewCard = data.id.startsWith('temp-search');
+
+    if (isPreviewCard) {
+        // 預覽模式：保留 Google Maps 與新規カード作成
+        btnContainer.appendChild(createBtn(iconMapPin, 'Google Maps', handleGoogleMapClick));
+        btnContainer.appendChild(createBtn(iconShare, '新規カード作成', handleCreateNewCardClick));
+    } else {
+        // 主畫面模式：換上航班 SVG，依機場提供官網連結
+        const handleOfficialSiteClick = () => {
+            if (isAnimating) return;
+
+            let officialUrl = '';
+            // 依機場代碼對應官方網站
+            if (fData.airport === 'HND') {
+                officialUrl = 'https://tokyo-haneda.com/';
+            } else if (fData.airport === 'NRT') {
+                officialUrl = 'https://www.narita-airport.jp/jp/';
+            }
+
+            if (officialUrl) {
+                // 另開視窗開啟官網
+                window.open(officialUrl, '_blank', 'noopener,noreferrer');
+            } else {
+                // 非羽田/成田的未知機場
+                alert('公式サイトの情報がありません');
+            }
+        };
+
+        btnContainer.appendChild(createBtn(iconMapPin, 'Google Maps', handleGoogleMapClick));
+        btnContainer.appendChild(createBtn(iconPlane, '空港公式サイト', handleOfficialSiteClick));
+    }
+
+    scrollWrapper.appendChild(btnContainer);
+
+    scrollWrapper.dataset.flightSig = flightPanelSignature(data);
+}
+
+// 航班面板內容的指紋：相同就不必重畫
+function flightPanelSignature(data) {
+    return JSON.stringify([data.flightData, data.statusFlags, data.message || '', flightEndedNotice() || '']);
+}
+
+// 開著的航班面板：航班資料更新後原地換成最新內容
+//（剛開啟就點進航班卡時，面板會先是「確認中」，資料到了要換成正式內容；
+//   反過來，開著面板時伺服器連不上超過門檻，也要把時刻・航廈・登機口收掉）
+function refreshOpenFlightPanel() {
+    if (!activeCardId || document.body.classList.contains('universal-active')) return;
+    const data = (window.appRailwayData || []).find(c => c.id === activeCardId);
+    if (!data || !data.isFlightCard || !data.flightData) return;
+
+    // 搜尋預覽卡不在 buildAndRender 的重建範圍內（temp-search 只是原樣保留），這裡自己重算
+    if (String(data.id).startsWith('temp-search') && typeof window.generateFlightDataFormat === 'function') {
+        const fid = data.flightData.id;
+        const flight = (window.GlobalFlights || []).find(f => Array.isArray(f.fid) && f.fid.includes(fid));
+        if (flight) {
+            const fmt = window.generateFlightDataFormat(flight, fid);
+            data.statusFlags = fmt.flags;
+            data.desc = fmt.desc;
+            data.message = fmt.message;
+            data.detail = fmt.detailArray;
+            data.flightData = fmt.flightData;
+        }
+    }
+
+    const scrollWrapper = document.getElementById('card-extension-container');
+    const cardContent = detailContainer.querySelector('.card-content');
+    if (!scrollWrapper || !cardContent) return;
+    if (scrollWrapper.dataset.flightSig === flightPanelSignature(data)) return;
+
+    const tag = detailContainer.querySelector('.status-tag');
+    if (tag) tag.innerHTML = window.getStatusIconsHTML(data.statusFlags || []);
+    renderFlightPanel(data, cardContent, scrollWrapper);
+}
+
+// 航班資料或其新鮮度變了：看板上的航班卡與開著的航班面板一起換
+function repaintFlightViews() {
+    const hasSavedFlight = (window.appRailwayData || []).some(c => c.isFlightCard && !String(c.id).startsWith('temp-search'));
+    if (hasSavedFlight && window.__lastBuildArgs && !document.body.classList.contains('universal-active')) {
+        buildAndRender(...window.__lastBuildArgs);
+    }
+    refreshOpenFlightPanel();
+}
+
+// ============================================================================
 // 點擊卡片展開詳細面板
 // ============================================================================
 function handleCardClick(id) {
@@ -859,271 +1221,7 @@ function handleCardClick(id) {
         });
 
     } else if (data.isFlightCard && data.flightData) {
-        // 航班卡片排版
-        const isCancelled = data.flightData.isCancelled;
-        const isTimeChangedLocal = data.flightData.scheduled !== data.flightData.latest;
-        const strikeScheduled = isTimeChangedLocal || isCancelled;
-
-        cardContent.innerHTML = `
-            <div style="display: flex; flex-direction: column; margin-top: 4px;">
-                <div>
-                    <div style="font-size: 1.15em; font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
-                        ${data.flightData.routeHtml}
-                    </div>
-                    <div style="font-size: 0.85em; font-weight: 600; opacity: 0.7;">
-                        ${data.flightData.airline}
-                    </div>
-                </div>
-
-                <div style="width: 100%; border-top: 1px dashed rgba(255,255,255,0.25); margin: 20px 0;"></div>
-
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; flex-direction: column; justify-content: center; gap: 4px;">
-                        <div style="display: flex; align-items: baseline; gap: 8px; opacity: ${strikeScheduled ? '0.5' : '0.9'};">
-                            <span style="font-weight: 600; font-size: 1.05em;">定刻</span>
-                            <span style="font-family: monospace; font-size: 1.45em; font-weight: 800; line-height: 1; ${strikeScheduled ? 'text-decoration: line-through;' : ''}">${data.flightData.scheduled}</span>
-                        </div>
-                        ${(!isCancelled && isTimeChangedLocal) ? `
-                        <div style="display: flex; align-items: baseline; gap: 8px;">
-                            <span style="font-weight: 800; color: inherit; text-shadow: none; font-size: 1.05em;">変更</span>
-                            <span style="font-family: monospace; font-size: 1.45em; font-weight: 800; color: inherit; line-height: 1;">${data.flightData.latest}</span>
-                            <span style="font-weight: 800; font-size: 0.95em; color: ${data.flightData.delayColor}; text-shadow: ${data.flightData.delayShadow}; margin-left: 2px;">${data.flightData.delayText}</span>
-                        </div>` : ''}
-                    </div>
-                    <div style="display: flex; flex-direction: column; justify-content: center; align-items: flex-end; gap: 6px;">
-                        <div style="font-size: 1.35em; font-weight: 800; letter-spacing: 1px; color: ${data.flightData.statusColor}; text-shadow: ${data.flightData.statusShadow};">${data.flightData.statusText}</div>
-                        ${data.flightData.stale
-                            ? `<div class="flight-stale">⚠ 情報が古い可能性があります<span>（最終更新 ${data.flightData.updateTime}）</span></div>`
-                            : `<div style="font-size: 0.7em; font-weight: 600; opacity: 0.5;">更新: ${data.flightData.updateTime}</div>`}
-                    </div>
-                </div>
-            </div>
-        `;
-
-        // 內容放入 scrollWrapper
-        // 取得航廈與登機口資訊（API 未提供時顯示 '-'）
-        const fData = data.flightData;
-        const isDep = fData.type === 'Departure';
-
-        // 辨識主要機場名稱（HND/NRT 顯示優化）
-        let mainAirport = fData.airport;
-        if (mainAirport === 'HND') mainAirport = '羽田(HND)';
-        else if (mainAirport === 'NRT') mainAirport = '成田(NRT)';
-        else mainAirport = mainAirport || '-';
-
-        const otherAirport = fData.location || '-';
-
-        // 出發與抵達名稱
-        const depAirport = isDep ? mainAirport : otherAirport;
-        const arrAirport = !isDep ? mainAirport : otherAirport;
-
-        // ODPT 通常只提供東京端（主機場）的航廈與登機口資料
-        const depTerminal = isDep ? (fData.terminal || '-') : '-';
-        const depGate = isDep ? (fData.gate || '-') : '-';
-
-        const arrTerminal = !isDep ? (fData.terminal || '-') : '-';
-        const arrGate = !isDep ? (fData.gate || '-') : '-';
-
-        // 航班備註可能來自搜尋預覽卡片的 message，或已儲存卡片的 flightData.note
-        let flightNote = data.message || (fData.note ? fData.note : '');
-        if (flightNote && flightNote.startsWith('⚠️ 備考: ')) {
-            flightNote = flightNote.replace('⚠️ 備考: ', '');
-        }
-
-        let noteHtml = '';
-        if (flightNote) {
-            // SVG 固定在左側 16px
-            const warningSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square-warning-icon lucide-message-square-warning" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); opacity: 0.8;"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/><path d="M12 15h.01"/><path d="M12 7v4"/></svg>`;
-
-            // flex-direction: row 避免外部 CSS 干擾
-            // 內部 div 設 margin: 0 避免預設留白
-            noteHtml = `
-            <div class="extension-route-card" style="position: relative; padding: 16px 16px 16px 54px; min-height: 84px; display: flex; flex-direction: row; align-items: center;">
-                ${warningSvg}
-                <div style="font-weight: 700; font-size: 0.95em; line-height: 1.5; width: 100%; text-align: left; margin: 0;">
-                    ${flightNote}
-                </div>
-            </div>
-            `;
-        }
-
-        // 雙欄資訊卡片（以 CSS class 支援深淺模式）
-        scrollWrapper.innerHTML = `
-            <div class="extension-route-card" style="padding: 18px 16px;">
-                <div style="font-weight: 800; font-size: 1.05em; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8; transform: translateY(-1.5px);"><path d="M12 13v8"/><path d="M12 3v3"/><path d="M2.354 10.354a1.207 1.207 0 0 1 0-1.708l2.06-2.06A2 2 0 0 1 5.828 6h12.344a2 2 0 0 1 1.414.586l2.06 2.06a1.207 1.207 0 0 1 0 1.708l-2.06 2.06a2 2 0 0 1-1.414.586H5.828a2 2 0 0 1-1.414-.586z"/></svg>
-                    搭乗口・ターミナル情報（Beta）
-                </div>
-                <div style="display: flex; gap: 12px;">
-                    <div class="flight-terminal-block">
-                        <div class="flight-terminal-header">
-                            出発 <span style="font-family: monospace; font-size: 1.15em; opacity: 0.9;">${depAirport}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                            <span style="font-size: 0.85em; font-weight: 600; opacity: 0.8;">ターミナル</span>
-                            <span style="font-weight: 800; font-size: 1.2em; font-family: monospace;">${depTerminal}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                            <span style="font-size: 0.85em; font-weight: 600; opacity: 0.8;">搭乗口</span>
-                            <span style="font-weight: 800; font-size: 1.2em; font-family: monospace;" class="${depGate !== '-' ? 'flight-highlight-gate' : ''}">${depGate}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="flight-terminal-block">
-                        <div class="flight-terminal-header">
-                            到着 <span style="font-family: monospace; font-size: 1.15em; opacity: 0.9;">${arrAirport}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                            <span style="font-size: 0.85em; font-weight: 600; opacity: 0.8;">ターミナル</span>
-                            <span style="font-weight: 800; font-size: 1.2em; font-family: monospace;">${arrTerminal}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                            <span style="font-size: 0.85em; font-weight: 600; opacity: 0.8;">搭乗口</span>
-                            <span style="font-weight: 800; font-size: 1.2em; font-family: monospace;" class="${arrGate !== '-' ? 'flight-highlight-gate' : ''}">${arrGate}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            ${noteHtml}
-            ${flightEndedNotice() ? sourceNoticeHtml(flightEndedNotice()) : ''}
-        `;
-
-        // 5. 三個水平排列的玻璃按鈕
-        const btnContainer = document.createElement('div');
-        btnContainer.className = 'flight-action-buttons-container';
-        // 間距交由外層 Flexbox 的 gap: 16px 處理
-
-        // Google Maps 地標圖示 (Lucide Map-Pin)
-        const iconMapPin = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 92.3 132.3" style="opacity: 0.95; transform: translateY(-1px);"><path fill="#1a73e8" d="M60.2 2.2C55.8.8 51 0 46.1 0 32 0 19.3 6.4 10.8 16.5l21.8 18.3L60.2 2.2z"/><path fill="#ea4335" d="M10.8 16.5C4.1 24.5 0 34.9 0 46.1c0 8.7 1.7 15.7 4.6 22l28-33.3-21.8-18.3z"/><path fill="#4285f4" d="M46.2 28.5c9.8 0 17.7 7.9 17.7 17.7 0 4.3-1.6 8.3-4.2 11.4 0 0 13.9-16.6 27.5-32.7-5.6-10.8-15.3-19-27-22.7L32.6 34.8c3.3-3.8 8.1-6.3 13.6-6.3"/><path fill="#fbbc04" d="M46.2 63.8c-9.8 0-17.7-7.9-17.7-17.7 0-4.3 1.5-8.3 4.1-11.3l-28 33.3c4.8 10.6 12.8 19.2 21 29.9l34.1-40.5c-3.3 3.9-8.1 6.3-13.5 6.3"/><path fill="#34a853" d="M59.1 109.2c15.4-24.1 33.3-35 33.3-63 0-7.7-1.9-14.9-5.2-21.3L25.6 98c2.6 3.4 5.3 7.3 7.9 11.3 9.4 14.5 6.8 23.1 12.8 23.1s3.4-8.7 12.8-23.2"/></svg>`;
-        const iconMap = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg>`;
-        const iconShare = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`;
-
-        // 按鈕工廠函式：第三個參數為 onClickAction
-        const createBtn = (iconHtml, text, onClickAction) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'flight-action-btn';
-            btn.innerHTML = `${iconHtml}<span>${text}</span>`;
-
-            // 有點擊事件則綁定
-            if (onClickAction) {
-                btn.onclick = onClickAction;
-            }
-            return btn;
-        };
-
-        // 組合 Google Maps 搜尋關鍵字
-        let mapQuery = '';
-        if (fData.airport === 'HND') mapQuery = '羽田空港';
-        else if (fData.airport === 'NRT') mapQuery = '成田空港';
-
-        // API 有提供航廈時，直接導航到該航廈，
-        // Google Maps 會開啟該航廈的室內地圖
-        const mainTerminal = isDep ? depTerminal : arrTerminal;
-
-        // 航廈欄位驗證（排除 null、undefined、空白與各種破折號）
-        const isValidTerminal = mainTerminal && !/^-+$/.test(mainTerminal.toString().trim());
-
-        if (mapQuery !== '' && isValidTerminal) {
-            // 加上「第Xターミナル」讓 Google Maps 定位到棟
-            const terminalSuffix = mainTerminal.toString().includes('ターミナル')
-                ? mainTerminal
-                : `${mainTerminal}ターミナル`;
-            mapQuery += ` ${terminalSuffix}`;
-        }
-
-        // Google Maps 點擊事件
-        const handleGoogleMapClick = () => {
-            if (mapQuery) {
-                // Google Maps Universal URL：手機上會開啟原生 App
-                const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
-                window.open(url, '_blank', 'noopener,noreferrer');
-            } else {
-                alert('空港情報がありません');
-            }
-        };
-
-        // 航班卡片的資料繼承（含燈號與航班資料）
-        const handleCreateNewCardClick = () => {
-            if (isAnimating) return;
-
-            // 從暫存卡片取出真實的航班 ID
-            let realFlightId = null;
-            if (data.flightData && data.flightData.id) {
-                realFlightId = data.flightData.id;
-            } else if (data.detailedLines && data.detailedLines.length > 0) {
-                realFlightId = data.detailedLines[0].id;
-            }
-
-            // 從名稱中移除 HTML 標籤圖示，只保留純文字，
-            // 避免進入編輯面板時露出 SVG 原始碼
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = data.name;
-            const cleanName = tempDiv.textContent.trim() || data.name;
-
-            const prefillData = {
-                name: cleanName, // 使用去除標籤後的名稱
-                hex: data.hex,
-                desc: data.desc,
-                detail: data.detail,
-                statusFlags: data.statusFlags || [false, false, false, false, false, false, false],
-
-                // targetLineIds 為空時，補入取得的航班 ID
-                targetLineIds: (data.targetLineIds && data.targetLineIds.length > 0)
-                    ? data.targetLineIds
-                    : (realFlightId ? [realFlightId] : []),
-
-                detailedLines: data.detailedLines || [],
-                // 一併帶入航班判斷旗標與資料
-                isFlightCard: data.isFlightCard || false,
-                flightData: data.flightData || null
-            };
-
-            closeAllCards(false);
-            setTimeout(() => {
-                if (typeof window.createNewCardAndEdit === 'function') {
-                    window.createNewCardAndEdit(prefillData);
-                }
-            }, 450);
-        };
-
-        // 航班 SVG（stroke-width=2.5 與系統圖示一致）
-        const iconPlane = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>`;
-
-        // 依 ID 判斷是搜尋預覽還是已加入主畫面
-        const isPreviewCard = data.id.startsWith('temp-search');
-
-        if (isPreviewCard) {
-            // 預覽模式：保留 Google Maps 與新規カード作成
-            btnContainer.appendChild(createBtn(iconMapPin, 'Google Maps', handleGoogleMapClick));
-            btnContainer.appendChild(createBtn(iconShare, '新規カード作成', handleCreateNewCardClick));
-        } else {
-            // 主畫面模式：換上航班 SVG，依機場提供官網連結
-            const handleOfficialSiteClick = () => {
-                if (isAnimating) return;
-
-                let officialUrl = '';
-                // 依機場代碼對應官方網站
-                if (fData.airport === 'HND') {
-                    officialUrl = 'https://tokyo-haneda.com/';
-                } else if (fData.airport === 'NRT') {
-                    officialUrl = 'https://www.narita-airport.jp/jp/';
-                }
-
-                if (officialUrl) {
-                    // 另開視窗開啟官網
-                    window.open(officialUrl, '_blank', 'noopener,noreferrer');
-                } else {
-                    // 非羽田/成田的未知機場
-                    alert('公式サイトの情報がありません');
-                }
-            };
-
-            btnContainer.appendChild(createBtn(iconMapPin, 'Google Maps', handleGoogleMapClick));
-            btnContainer.appendChild(createBtn(iconPlane, '空港公式サイト', handleOfficialSiteClick));
-        }
-
-        scrollWrapper.appendChild(btnContainer);
+        renderFlightPanel(data, cardContent, scrollWrapper);
 
     } else {
         // 鐵道卡片邏輯
@@ -2701,7 +2799,11 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                     if (flightMsg.includes('雪')) { groupFlags[2] = true; groupFlags[6] = true; }
                 } else {
                     // 找不到航班（已落地或 API 異常）：維持航班版型不退回鐵道排版
-                    groupDesc = "フライト情報が終了したか、取得できません";
+                    // 航班清單本身還沒向伺服器確認過（剛開啟、或連不上）時，
+                    // 「找不到」不代表航班已結束，說明文跟著換
+                    const flightState = flightDataState();
+                    const flightUnconfirmed = flightState !== 'fresh';
+                    groupDesc = flightUnconfirmed ? flightUnconfirmedText(flightState) : "フライト情報が終了したか、取得できません";
                     groupFlags = [false, false, false, false, false, false, true]; // 灰色注意燈
                     groupUpdateTime = "--:--";
                     flightDataPayload = {
@@ -2718,7 +2820,8 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                         delayShadow: "none",
                         delayText: "",
                         isCancelled: false,
-                        type: "Unknown", airport: "-", location: "-", terminal: "-", gate: "-"
+                        type: "Unknown", airport: "-", location: "-", terminal: "-", gate: "-",
+                        unconfirmed: flightUnconfirmed ? flightState : null
                     };
                 }
             }
@@ -2953,11 +3056,8 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
 // 系統啟動：快取秒開、背景非同步更新、斷線偵測
 // ============================================================================
 async function initApp() {
-    // 1. 繪圖前先從快取載入航班資料
-    try {
-        const cachedFlights = localStorage.getItem('Tsukin_Cached_Flights');
-        if (cachedFlights) window.GlobalFlights = JSON.parse(cachedFlights);
-    } catch (e) { }
+    // 1. 繪圖前先從快取載入航班資料（連同取得時刻，用來判斷能不能照常顯示）
+    restoreCachedFlights();
 
     let userPrefs = {};
     let cachedDict = {};
@@ -3028,7 +3128,8 @@ async function initApp() {
         // 丟棄舊資料，避免顯示過期的綠燈
         buildAndRender(userPrefs, cachedDict, {}, true);
     }
-    initFlights();
+    // 看板上有航班卡時不延遲：卡面在確認到最新資料前只顯示「確認中」
+    initFlights({ urgent: (window.appRailwayData || []).some(c => c.isFlightCard) });
     loadDataSources(); // 資料來源の状態（提供終了の案内用）。頁面載入時に一度だけ、失敗しても影響なし
     initBuses(); // 只還原本地快取，不發送請求
     initShips(); // 航路の輪詢だけ（快取は模組載入時に還原、請求は牌組に航路があるときだけ）
@@ -3116,6 +3217,15 @@ window.addEventListener('shipDataUpdated', () => {
     const pending = window.appRailwayData.find(c => c.id === 'temp-search-ship');
     if (pending) refreshBusCardData(pending);
     refreshOpenBusCardFace();
+});
+
+// 開啟後第一次的航班請求有結果了（成功或失敗）：
+// 航班卡從「確認中」換成最新資料或「取得できません」，搜尋結果也重查一次
+window.addEventListener('flightDataUpdated', () => {
+    repaintFlightViews();
+    const input = document.getElementById('search-input');
+    const dropdown = document.getElementById('home-search-dropdown');
+    if (input && input.value.trim() && dropdown && dropdown.style.display !== 'none') filterCards(input.value);
 });
 
 // 搜尋中に今日の航路一覧が届いた：同じ語でもう一度検索して航路を出す
@@ -3716,19 +3826,26 @@ window.triggerBackgroundUpdate = async function () {
             fetch(FLIGHTS_API_URL, { cache: 'no-store' }).catch(() => null)
         ]);
 
-        if (!statusRes || !statusRes.ok) return;
-
-        // 航班更新成功時，更新全域變數與快取
+        // 航班：成功就更新全域變數、快取與取得時刻；失敗只記下來
+        //（連續失敗超過門檻後，航班卡會收掉時刻・航廈・登機口）
+        let flightsOk = false;
         if (flightRes && flightRes.ok) {
-            const flightsData = await flightRes.json();
-            if (Array.isArray(flightsData)) {
-                window.GlobalFlights = flightsData;
-                localStorage.setItem('Tsukin_Cached_Flights', JSON.stringify(flightsData));
-            }
+            flightsOk = recordFlights(await flightRes.json().catch(() => null));
+        }
+        if (!flightsOk) recordFlightsFailure();
+
+        // 運行情報拿不到時看板不重建，但航班卡仍要跟上航班自己的狀態
+        //（兩個端點各自獨立：可能只有其中一個連不上）
+        if (!statusRes || !statusRes.ok) {
+            repaintFlightViews();
+            return;
         }
 
         const liveStatus = await statusRes.json();
-        if (liveStatus.error) return;
+        if (liveStatus.error) {
+            repaintFlightViews();
+            return;
+        }
 
         // 確認 API 確實回傳了路線資料
         // 伺服器剛喚醒時通常回傳空物件 {}
@@ -3755,6 +3872,9 @@ window.triggerBackgroundUpdate = async function () {
 
         // 1. 更新底層資料與主畫面卡片（局部更新，不閃爍）
         buildAndRender(userPrefs, cachedDict, liveStatus, false);
+
+        // 開著的航班面板也換成最新內容
+        refreshOpenFlightPanel();
 
         // 2. 使用者操作其他介面時，只在背景替換文字內容
         if (window.activeCardId) {

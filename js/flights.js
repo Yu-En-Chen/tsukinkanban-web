@@ -62,32 +62,85 @@ const landingIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" heigh
 // 日本國內線機場代碼
 const domesticCodes = ['CTS', 'KIX', 'FUK', 'OKA', 'ITM', 'NGO', 'KOJ', 'MYJ', 'TAK', 'KMJ', 'AKJ', 'ASJ', 'ISG', 'KCZ', 'KMI', 'KTI', 'NGS', 'OIT', 'HIJ', 'AOJ', 'AXT', 'HKD', 'KUH', 'MMB', 'SHB', 'SYO', 'TKS', 'WKJ', 'YGJ', 'MBE', 'UKB', 'NKM', 'SDJ', 'GAJ', 'ONJ', 'FKS', 'NTQ', 'FSZ', 'KIJ', 'TOY', 'OIR', 'UBJ', 'TTJ', 'OKI', 'IWJ', 'IZO', 'TNE', 'KUM', 'RNJ', 'UEO', 'KKX', 'KJP', 'MMJ', 'SHI'];
 
-export function initFlights() {
+// ==========================================
+// 航班資料的新鮮度
+// ==========================================
+// 時刻、航廈、登機口隨時會變，所以只在「確認是最新的」時候才顯示。
+// 以最後一次成功向伺服器取得航班的裝置時間判斷：超過 5 分鐘（與左上同步時鐘轉紅的
+// 門檻相同）就只留下便名、出發／到達與目的地，其餘一律不顯示——寧可沒有，也不要給錯的
+const FLIGHT_FRESH_MS = 5 * 60 * 1000;
+const FLIGHTS_CACHE_KEY = 'Tsukin_Cached_Flights';
+const FLIGHTS_AT_KEY = 'Tsukin_Cached_Flights_At';
+let flightsFetchedAt = 0;        // 最後一次成功取得的裝置時間（ms）。0 = 沒有紀錄
+let flightsFetchFailed = false;  // 最近一次請求失敗
+
+// 'fresh'：照常顯示／'pending'：還沒向伺服器確認過（剛開啟）／'failed'：連不上伺服器
+export function flightDataState() {
+    const age = Date.now() - flightsFetchedAt;
+    // age < 0 是裝置時鐘被往回調，無從判斷，同樣當作未確認
+    if (flightsFetchedAt > 0 && age >= 0 && age < FLIGHT_FRESH_MS) return 'fresh';
+    return flightsFetchFailed ? 'failed' : 'pending';
+}
+
+// 未確認時顯示的文字（卡面說明、面板、搜尋結果共用）
+export function flightUnconfirmedText(state) {
+    return state === 'pending' ? '最新情報を確認中...' : '最新情報を取得できません';
+}
+
+// 從快取還原航班清單與取得時刻（繪圖前呼叫）
+export function restoreCachedFlights() {
     try {
-        const cachedFlights = localStorage.getItem('Tsukin_Cached_Flights');
+        const cachedFlights = localStorage.getItem(FLIGHTS_CACHE_KEY);
         if (cachedFlights) window.GlobalFlights = JSON.parse(cachedFlights);
+        flightsFetchedAt = parseInt(localStorage.getItem(FLIGHTS_AT_KEY), 10) || 0;
     } catch (e) {}
+}
+
+// 伺服器回應了航班清單：更新全域變數、快取與取得時刻。不是清單時視為失敗
+export function recordFlights(data) {
+    if (!Array.isArray(data)) {
+        flightsFetchFailed = true;
+        return false;
+    }
+    window.GlobalFlights = data;
+    flightsFetchedAt = Date.now();
+    flightsFetchFailed = false;
+    try {
+        localStorage.setItem(FLIGHTS_CACHE_KEY, JSON.stringify(data));
+        localStorage.setItem(FLIGHTS_AT_KEY, String(flightsFetchedAt));
+    } catch (e) {}
+    return true;
+}
+
+export function recordFlightsFailure() {
+    flightsFetchFailed = true;
+}
+
+// urgent：看板上有航班卡（卡面正顯示「確認中」）時不延遲
+export function initFlights({ urgent = false } = {}) {
+    restoreCachedFlights();
 
     setTimeout(() => {
         console.log("背景延遲載入航班資訊中...");
-        const timestamp = new Date().getTime();
         const FLIGHTS_API_URL = `https://api.tsukinkanban.com/api/flights`;
 
         fetch(FLIGHTS_API_URL, { cache: 'no-store' })
             .then(res => res.json())
             .then(data => {
-                if (Array.isArray(data)) {
-                    window.GlobalFlights = data;
-                    localStorage.setItem('Tsukin_Cached_Flights', JSON.stringify(data));
-                    console.log(`成功載入 ${data.length} 筆航班資訊！`);
-                }
+                if (recordFlights(data)) console.log(`成功載入 ${data.length} 筆航班資訊！`);
             })
-            .catch(e => console.warn("航班資訊獲取失敗"));
-    }, 1500);
+            .catch(e => {
+                recordFlightsFailure();
+                console.warn("航班資訊獲取失敗");
+            })
+            // 成功或失敗都通知：看板上的航班卡要從「確認中」換成最新資料或「取得できません」
+            .finally(() => window.dispatchEvent(new CustomEvent('flightDataUpdated')));
+    }, urgent ? 0 : 1500);
 }
 
 export function searchFlights(lowKeyword) {
     const results = [];
+    const dataState = flightDataState();
     if (window.GlobalFlights && lowKeyword.length > 0) {
         window.GlobalFlights.forEach(f => {
             const flightStr = f.fid.join('').toLowerCase().replace(/[\s-]/g, '');
@@ -226,7 +279,16 @@ export function searchFlights(lowKeyword) {
                         </div>`;
                 }
 
-                
+
+                // 無法確認是最新資料：不顯示時刻與狀態，燈號只留吹き出し
+                if (dataState !== 'fresh') {
+                    flags = [false, false, false, false, false, false, true];
+                    flightTimeHtml = `
+                        <div style="margin-top: 4px; padding-top: 12px; border-top: 1px dashed rgba(128,128,128,0.25); font-size: 0.95em; font-weight: 600; opacity: 0.65;">
+                            ${flightUnconfirmedText(dataState)}
+                        </div>`;
+                }
+
                 const locMatch = f.location.match(/[A-Z]{3}/);
                 const locCode = locMatch ? locMatch[0] : '';
                 const isDomestic = locCode ? domesticCodes.includes(locCode) : false;
@@ -412,6 +474,44 @@ window.generateFlightDataFormat = function(flight, fid) {
         </div>`;
     }
 
+    // 無法確認是最新資料：只留下航空公司、出發／到達與目的地。
+    // 時刻、狀態、航廈、登機口、備註都不放進資料裡，下游（卡面、面板、Google Maps 的
+    // 搜尋關鍵字）就不可能把舊值顯示出來
+    const dataState = flightDataState();
+    if (dataState !== 'fresh') {
+        return {
+            flags: [false, false, false, false, false, false, true],
+            desc: `${flight.airline} ${flightUnconfirmedText(dataState)}`,
+            message: '',
+            detailArray: ['-', '-', '-', '-'],
+            flightData: {
+                id: fid,
+                airline: flight.airline,
+                routeHtml: routeHtml,
+                scheduled: '--:--',
+                latest: '--:--',
+                updateTime: '--:--',
+                statusText: dataState === 'pending' ? '確認中' : '取得不可',
+                statusColor: 'inherit',
+                statusShadow: 'none',
+                delayColor: 'inherit',
+                delayShadow: 'none',
+                delayText: '',
+                isCancelled: false,
+                type: flight.type,
+                airport: rawAirportCode,
+                location: rawLocationCode,
+                airportName: flight.airport,
+                locationName: flight.location,
+                terminal: '',
+                gate: '',
+                note: '',
+                stale: false,
+                unconfirmed: dataState
+            }
+        };
+    }
+
     return {
         flags: flags,
         desc: `${flight.airline} ${statusText} ${delayText}${tAndG_string}`, 
@@ -446,7 +546,8 @@ window.generateFlightDataFormat = function(flight, fid) {
             gate: flight.gate,
             note: processedNote,
             // 後端の取得が 15 分以上失敗し、前回の資料を使い回している航班
-            stale: flight.stale === true
+            stale: flight.stale === true,
+            unconfirmed: null
         }
     };
 };
