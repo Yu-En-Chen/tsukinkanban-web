@@ -477,13 +477,27 @@ function renderCards(data) {
 
     const template = document.getElementById('railway-card-template');
 
-    // 記錄本次的合法卡片 ID，最後清理已刪除的卡片
+    // 記錄本次的合法卡片 ID
     const currentValidIds = data.map(line => `card-${line.id}`);
+
+    // 清理：先移除不在最新資料中的舊卡片，後面排位置時才不會被它們擋住
+    Array.from(mainStack.children).forEach(child => {
+        if (child.classList.contains('card') && !currentValidIds.includes(child.id)) {
+            child.remove();
+        }
+    });
+
+    // 上一張已就位的卡片（排位置用）
+    let prevCard = null;
 
     data.forEach((line, index) => {
         // 比對卡片 DOM 是否已存在
         let card = document.getElementById(`card-${line.id}`);
         let isNewCard = false;
+
+        // 這張卡該在的位置：上一張的正後方；第一張則在堆疊最前面
+        //（置底卡片若在堆疊內，會一直被留在最後）
+        const slot = prevCard ? prevCard.nextElementSibling : mainStack.firstElementChild;
 
         if (!card) {
             // A. 不存在（初次載入或新增）時才建立新節點
@@ -501,22 +515,14 @@ function renderCards(data) {
                 card.style.animationDelay = `${(data.length - index) * 0.08}s`;
             }
 
-            // DOM 順序：新卡片插在置底卡片上方
-            const fixedCard = document.getElementById('fixed-info-card');
-            if (fixedCard) {
-                mainStack.insertBefore(clone, fixedCard);
-            } else {
-                mainStack.appendChild(clone);
-            }
-        } else {
-            // DOM 順序：既有卡片依新陣列順序重排
-            const fixedCard = document.getElementById('fixed-info-card');
-            if (fixedCard) {
-                mainStack.insertBefore(card, fixedCard);
-            } else {
-                mainStack.appendChild(card);
-            }
+            mainStack.insertBefore(clone, slot);
+        } else if (card !== slot) {
+            // DOM 順序：位置不對的既有卡片才移動。
+            // 已在正確位置的卡片不可重新插入——即使插回原位，瀏覽器也會把節點
+            // 視為「移除後再加入」，進場動畫會從透明狀態重播一次（開啟時連閃數下的原因）
+            mainStack.insertBefore(card, slot);
         }
+        prevCard = card;
 
         // B. 資料更新（新舊卡片皆執行，不打斷 CSS 動畫）
 
@@ -560,13 +566,6 @@ function renderCards(data) {
                 row.appendChild(cir);
                 tagsContainer.appendChild(row);
             }
-        }
-    });
-
-    // 清理：移除不在最新資料中的舊卡片
-    Array.from(mainStack.children).forEach(child => {
-        if (child.classList.contains('card') && !currentValidIds.includes(child.id)) {
-            child.remove();
         }
     });
 
@@ -3770,7 +3769,9 @@ window.triggerBackgroundUpdate = async function () {
         }
 
         // 3. 僅在首頁閒置時觸發漣漪進場動畫
-        if (isIdleOnMainPage) {
+        // just-awoke：進場或上一次漣漪還在播（剛開啟就遇到換分、或從背景切回來），
+        // 這時再重播會變成連閃兩次，所以略過
+        if (isIdleOnMainPage && !document.getElementById('main-stack').classList.contains('just-awoke')) {
             const mainStack = document.getElementById('main-stack');
 
             // 動畫期間暫停光影計算與 hover，避免互相干擾
