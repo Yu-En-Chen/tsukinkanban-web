@@ -605,6 +605,72 @@ function renderCards(data) {
     }
 }
 // ============================================================================
+// 鐵道路線的資訊卡（面板內的一列）
+// 開啟面板、編輯路線後的重建、每分鐘更新的原地替換 三處共用
+// ============================================================================
+function buildRailLineRow(line) {
+    let statusClass = 'status-normal';
+    if (line.isError) statusClass = 'status-error';
+    else if (line.isAttention) statusClass = 'status-attention';
+    else if (line.isDelayed) {
+        if (line.delay > 15) {
+            statusClass = 'status-delayed';
+        } else {
+            statusClass = 'status-delayed-minor';
+        }
+    }
+
+    const row = document.createElement('div');
+    row.className = 'extension-route-card';
+
+    let advancedHtml = '';
+    if (line.advancedDetails && line.advancedDetails.length > 0) {
+        advancedHtml = `
+            <div class="adv-details-container">
+                ${line.advancedDetails.map(adv => {
+            let dirDelayHtml = `<span class="adv-normal-text">平常</span>`;
+            if (adv.max_delay > 5) {
+                if (adv.max_delay <= 15) dirDelayHtml = `<span class="adv-delay-minor-text">${adv.max_delay}分遅れ</span>`;
+                else dirDelayHtml = `<span class="adv-delay-text">${adv.max_delay}分遅れ</span>`;
+            }
+            const trainCountHtml = adv.train_count > 0 ? `<span class="adv-train-count">(${adv.train_count}列車)</span>` : '';
+            return `
+                        <div class="adv-detail-capsule">
+                            <span class="adv-dir-name">${adv.direction_name}</span>
+                            <div class="adv-status-group">${trainCountHtml}${dirDelayHtml}</div>
+                        </div>
+                    `;
+        }).join('')}
+            </div>
+        `;
+    }
+
+    row.innerHTML = `
+        <div class="ext-card-header">
+            <div class="ext-card-title-group">
+                <div class="ext-route-name">${line.name}</div>
+                <div class="ext-route-company">${line.company}</div>
+            </div>
+            <div class="ext-status-badge ${statusClass}">
+                ${lineStatusHtml(line)}
+            </div>
+        </div>
+        <div class="ext-card-divider"></div>
+        ${lineMessageHtml(line)}
+        ${line.isEnded ? '' : advancedHtml}
+        <div class="ext-card-footer">
+            <span class="ext-update-time">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                更新: ${line.updateTime}
+            </span>
+        </div>
+    `;
+    // 每分鐘更新時用來找回這一列
+    row.dataset.lineId = line.id;
+    return row;
+}
+
+// ============================================================================
 // 航班卡片的面板（卡面下半＋玻璃面板）
 // 開啟時與航班資料更新時共用：航班資料到了、或變成無法確認時，開著的面板要能原地換掉
 // ============================================================================
@@ -1268,62 +1334,7 @@ function handleCardClick(id) {
                     return;
                 }
 
-                let statusClass = 'status-normal';
-                if (line.isError) statusClass = 'status-error';
-                else if (line.isAttention) statusClass = 'status-attention';
-                else if (line.isDelayed) {
-                    if (line.delay > 15) {
-                        statusClass = 'status-delayed';
-                    } else {
-                        statusClass = 'status-delayed-minor';
-                    }
-                }
-
-                const row = document.createElement('div');
-                row.className = 'extension-route-card';
-
-                let advancedHtml = '';
-                if (line.advancedDetails && line.advancedDetails.length > 0) {
-                    advancedHtml = `
-                        <div class="adv-details-container">
-                            ${line.advancedDetails.map(adv => {
-                        let dirDelayHtml = `<span class="adv-normal-text">平常</span>`;
-                        if (adv.max_delay > 5) {
-                            if (adv.max_delay <= 15) dirDelayHtml = `<span class="adv-delay-minor-text">${adv.max_delay}分遅れ</span>`;
-                            else dirDelayHtml = `<span class="adv-delay-text">${adv.max_delay}分遅れ</span>`;
-                        }
-                        const trainCountHtml = adv.train_count > 0 ? `<span class="adv-train-count">(${adv.train_count}列車)</span>` : '';
-                        return `
-                                    <div class="adv-detail-capsule">
-                                        <span class="adv-dir-name">${adv.direction_name}</span>
-                                        <div class="adv-status-group">${trainCountHtml}${dirDelayHtml}</div>
-                                    </div>
-                                `;
-                    }).join('')}
-                        </div>
-                    `;
-                }
-
-                row.innerHTML = `
-                    <div class="ext-card-header">
-                        <div class="ext-card-title-group">
-                            <div class="ext-route-name">${line.name}</div>
-                            <div class="ext-route-company">${line.company}</div>
-                        </div>
-                        <div class="ext-status-badge ${statusClass}">
-                            ${lineStatusHtml(line)}
-                        </div>
-                    </div>
-                    <div class="ext-card-divider"></div>
-                    ${lineMessageHtml(line)}
-                    ${line.isEnded ? '' : advancedHtml}
-                    <div class="ext-card-footer">
-                        <span class="ext-update-time">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                            更新: ${line.updateTime}
-                        </span>
-                    </div>
-                `;
+                const row = buildRailLineRow(line);
                 scrollWrapper.appendChild(row);
             });
 
@@ -2343,10 +2354,27 @@ window.previewRouteFromSearch = function (routeId) {
     }
 
     // 3. 建立臨時卡片資料，直接交給詳情面板渲染
+    const tempCard = buildRoutePreviewCard(routeId);
+    if (!tempCard) return;
+
+    // 寫入記憶體（未呼叫 renderCards()，首頁不會出現這張卡片）
+    const tempIndex = window.appRailwayData.findIndex(c => c.id === 'temp-search-route');
+    if (tempIndex !== -1) window.appRailwayData[tempIndex] = tempCard;
+    else window.appRailwayData.push(tempCard);
+
+    // 4. 等 250ms 讓鍵盤收起、螢幕高度歸位後再彈出卡片
+    setTimeout(() => {
+        handleCardClick('temp-search-route');
+    }, 250);
+};
+
+// 搜尋預覽卡（單一鐵道路線）的資料：以目前的字典與運行情報計算。
+// 開啟預覽時、以及每分鐘更新後重算開著的預覽卡時共用。字典裡沒有這條路線時回傳 null
+function buildRoutePreviewCard(routeId) {
     const dict = window.MasterRouteDictionary || {};
     const liveStatus = window.GlobalLiveStatus || {};
     const route = dict[routeId];
-    if (!route) return;
+    if (!route) return null;
 
     const statusInfo = liveStatus[routeId] || {
         status_type: "監視中",
@@ -2398,7 +2426,7 @@ window.previewRouteFromSearch = function (routeId) {
     if (msg.includes('雪')) { flags[2] = true; flags[6] = true; }
 
     // 臨時卡片資料
-    const tempCard = {
+    return {
         id: 'temp-search-route',
         name: route.name,
         hex: route.hex || '#2C2C2E',
@@ -2420,17 +2448,47 @@ window.previewRouteFromSearch = function (routeId) {
             advancedDetails: statusInfo.advanced_details || []
         }]
     };
+}
 
-    // 寫入記憶體（未呼叫 renderCards()，首頁不會出現這張卡片）
-    const tempIndex = window.appRailwayData.findIndex(c => c.id === 'temp-search-route');
-    if (tempIndex !== -1) window.appRailwayData[tempIndex] = tempCard;
-    else window.appRailwayData.push(tempCard);
+// ============================================================================
+// 運行情報更新後：開著的鐵道卡片跟上最新資料
+// ============================================================================
+// 只換「卡面的燈號・說明文」與「鐵道路線卡的內容」，而且是原地替換、沒變就不動：
+// ・巴士・航路的資訊卡有自己的資料來源與展開狀態，由各自的模組更新，這裡不碰
+// ・編輯路線中，原本的路線卡只是被隱藏；原地替換內容不會讓它們露出來
+function refreshOpenRailwayCard() {
+    if (!activeCardId) return;
+    const data = (window.appRailwayData || []).find(c => c.id === activeCardId);
+    if (!data || data.isFlightCard || data.isBusCard || data.isShipCard || data.isBusStopCard) return;
 
-    // 4. 等 250ms 讓鍵盤收起、螢幕高度歸位後再彈出卡片
-    setTimeout(() => {
-        handleCardClick('temp-search-route');
-    }, 250);
-};
+    // 搜尋預覽卡不在 buildAndRender 的重建範圍內（temp-search 只是原樣保留），這裡用最新的
+    // 運行情報重算。面板上的按鈕握著這個物件，所以就地覆寫，不換成新物件
+    if (data.id === 'temp-search-route') {
+        const routeId = data.detailedLines && data.detailedLines[0] ? data.detailedLines[0].id : null;
+        const fresh = routeId ? buildRoutePreviewCard(routeId) : null;
+        if (fresh) Object.assign(data, fresh);
+    }
+
+    const wrapper = document.getElementById('card-extension-container');
+    if (wrapper) {
+        (data.detailedLines || []).forEach(line => {
+            if (line.isBusLine || line.isShipLine) return;
+            const row = Array.from(wrapper.children).find(el => el.dataset && el.dataset.lineId === line.id);
+            if (!row) return;
+            const html = buildRailLineRow(line).innerHTML;
+            if (row.innerHTML !== html) row.innerHTML = html;
+        });
+    }
+
+    const tag = detailContainer.querySelector('.status-tag');
+    if (tag) {
+        const probe = document.createElement('div');
+        probe.innerHTML = window.getStatusIconsHTML(data.statusFlags || []);
+        if (tag.innerHTML !== probe.innerHTML) tag.innerHTML = probe.innerHTML;
+    }
+    const descEl = detailContainer.querySelector('.description');
+    if (descEl && data.desc && descEl.textContent !== data.desc) descEl.textContent = data.desc;
+}
 
 // ============================================================================
 // 點擊公車搜尋結果的預覽：以臨時卡片沿用詳情面板
@@ -3121,6 +3179,8 @@ async function initApp() {
             // 丟棄舊資料，進入斷線狀態
             buildAndRender(userPrefs, cachedDict, {}, true);
         }
+        // 回應較慢時，使用者可能已經點開卡片（面板還是「情報なし」）：換成剛拿到的內容
+        refreshOpenRailwayCard();
 
     } catch (error) {
         // 底層錯誤（DNS 失敗、網路斷開等）
@@ -3809,7 +3869,9 @@ document.addEventListener('DOMContentLoaded', initDynamicClock);
 // ============================================================================
 window.triggerBackgroundUpdate = async function () {
     // 判斷是否停留在首頁且閒置：無展開卡片、未開選單、未開搜尋
-    const isIdleOnMainPage = !window.activeCardId &&
+    // activeCardId 是這個模組內的變數，不在 window 上（以前這裡讀 window.activeCardId，
+    // 永遠是 undefined：開著卡片時仍被當成閒置，面板也從來沒有被更新過）
+    const isIdleOnMainPage = !activeCardId &&
         !document.body.classList.contains('menu-open') &&
         !document.body.classList.contains('search-active');
 
@@ -3876,11 +3938,8 @@ window.triggerBackgroundUpdate = async function () {
         // 開著的航班面板也換成最新內容
         refreshOpenFlightPanel();
 
-        // 2. 使用者操作其他介面時，只在背景替換文字內容
-        if (window.activeCardId) {
-            // 背景重繪玻璃面板，保留捲動位置
-            silentUpdateExtensionPanel(window.activeCardId);
-        }
+        // 2. 開著鐵道卡片時，卡面與路線卡原地換成最新內容（捲動位置與展開狀態不變）
+        refreshOpenRailwayCard();
 
         if (document.body.classList.contains('search-active')) {
             // 重新觸發搜尋，更新下拉選單的延誤分鐘數
@@ -3990,62 +4049,7 @@ function silentUpdateExtensionPanel(cardId) {
                 return;
             }
 
-            let statusClass = 'status-normal';
-            if (line.isError) statusClass = 'status-error';
-            else if (line.isAttention) statusClass = 'status-attention';
-            else if (line.isDelayed) {
-                if (line.delay > 15) {
-                    statusClass = 'status-delayed';
-                } else {
-                    statusClass = 'status-delayed-minor';
-                }
-            }
-
-            const row = document.createElement('div');
-            row.className = 'extension-route-card';
-
-            let advancedHtml = '';
-            if (line.advancedDetails && line.advancedDetails.length > 0) {
-                advancedHtml = `
-                    <div class="adv-details-container">
-                        ${line.advancedDetails.map(adv => {
-                    let dirDelayHtml = `<span class="adv-normal-text">平常</span>`;
-                    if (adv.max_delay > 5) {
-                        if (adv.max_delay <= 15) dirDelayHtml = `<span class="adv-delay-minor-text">${adv.max_delay}分遅れ</span>`;
-                        else dirDelayHtml = `<span class="adv-delay-text">${adv.max_delay}分遅れ</span>`;
-                    }
-                    const trainCountHtml = adv.train_count > 0 ? `<span class="adv-train-count">(${adv.train_count}列車)</span>` : '';
-                    return `
-                                <div class="adv-detail-capsule">
-                                    <span class="adv-dir-name">${adv.direction_name}</span>
-                                    <div class="adv-status-group">${trainCountHtml}${dirDelayHtml}</div>
-                                </div>
-                            `;
-                }).join('')}
-                    </div>
-                `;
-            }
-
-            row.innerHTML = `
-                <div class="ext-card-header">
-                    <div class="ext-card-title-group">
-                        <div class="ext-route-name">${line.name}</div>
-                        <div class="ext-route-company">${line.company}</div>
-                    </div>
-                    <div class="ext-status-badge ${statusClass}">
-                        ${lineStatusHtml(line)}
-                    </div>
-                </div>
-                <div class="ext-card-divider"></div>
-                ${lineMessageHtml(line)}
-                ${line.isEnded ? '' : advancedHtml}
-                <div class="ext-card-footer">
-                    <span class="ext-update-time">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        更新: ${line.updateTime}
-                    </span>
-                </div>
-            `;
+            const row = buildRailLineRow(line);
             fragment.appendChild(row);
         });
     } else {
