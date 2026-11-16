@@ -145,6 +145,8 @@ python3 -m http.server 8000
 
 `api.tsukinkanban.com` は本サイト（www.tsukinkanban.com）専用です。ライセンスの対象には含まれません。このコードをもとに別のサイトを公開する場合は、接続先を自分のバックエンドに変更してください（構築方法は [Wiki](https://github.com/Yu-En-Chen/tsukinkanban-web/wiki) をご覧ください）。
 
+国や地方公共団体などの公的機関には、AGPL-3.0 とは別の個別ライセンスを無償で発行しています。詳しくは [NOTICE.md](NOTICE.md#公的機関向けの無償ライセンス) をご覧ください。
+
 ### お問い合わせ
 
 - 開発者: YUEN CHEN（[@yueneuy_c](https://x.com/yueneuy_c)）
@@ -282,6 +284,8 @@ python3 -m http.server 8000
 「通勤看板」的名稱與 Logo 不在授權範圍內。Google Maps 標誌等第三方的標誌與圖示，權利屬於各權利人。詳細內容請見 [NOTICE.md](NOTICE.md)。
 
 `api.tsukinkanban.com` 是本站（www.tsukinkanban.com）專用，不在授權範圍內。用這份程式碼公開其他網站時，請把連線對象換成自己的後端（架設方式請見 [Wiki](https://github.com/Yu-En-Chen/tsukinkanban-web/wiki/%E8%87%AA%E8%A1%8C%E6%9E%B6%E8%A8%AD%E8%AA%AA%E6%98%8E)）。
+
+政府機關等公部門可以免費申請 AGPL-3.0 以外的個別授權，詳見 [NOTICE.md](NOTICE.md#公部門免費授權)。
 
 ### 聯絡方式
 
