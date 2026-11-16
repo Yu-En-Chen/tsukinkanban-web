@@ -143,7 +143,7 @@ python3 -m http.server 8000
 
 「通勤看板」の名称とロゴは、ライセンスの対象外です。Google マップのロゴなど第三者のロゴ・アイコンは、それぞれの権利者に帰属します。詳しくは [NOTICE.md](NOTICE.md) をご覧ください。
 
-`api.tsukinkanban.com` は本サイト（www.tsukinkanban.com）専用です。ライセンスの対象には含まれません。このコードをもとに別のサイトを公開する場合は、接続先を自分のバックエンドに変更してください。
+`api.tsukinkanban.com` は本サイト（www.tsukinkanban.com）専用です。ライセンスの対象には含まれません。このコードをもとに別のサイトを公開する場合は、接続先を自分のバックエンドに変更してください（構築方法は [Wiki](https://github.com/Yu-En-Chen/tsukinkanban-web/wiki) をご覧ください）。
 
 ### お問い合わせ
 
@@ -281,7 +281,7 @@ python3 -m http.server 8000
 
 「通勤看板」的名稱與 Logo 不在授權範圍內。Google Maps 標誌等第三方的標誌與圖示，權利屬於各權利人。詳細內容請見 [NOTICE.md](NOTICE.md)。
 
-`api.tsukinkanban.com` 是本站（www.tsukinkanban.com）專用，不在授權範圍內。用這份程式碼公開其他網站時，請把連線對象換成自己的後端。
+`api.tsukinkanban.com` 是本站（www.tsukinkanban.com）專用，不在授權範圍內。用這份程式碼公開其他網站時，請把連線對象換成自己的後端（架設方式請見 [Wiki](https://github.com/Yu-En-Chen/tsukinkanban-web/wiki/%E8%87%AA%E8%A1%8C%E6%9E%B6%E8%A8%AD%E8%AA%AA%E6%98%8E)）。
 
 ### 聯絡方式
 
