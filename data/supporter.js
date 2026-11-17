@@ -8,21 +8,15 @@ export const supporterContent = `
         <br>
         <p style="color: var(--text-main); font-weight: 600; margin-bottom: 8px;">Ko-fi で開発を応援する</p>
         
-        <a href="https://ko-fi.com/tsukinkanban" target="_blank" rel="noopener noreferrer" style="display: flex; justify-content: center; align-items: center; gap: 8px; background: var(--text-main); color: var(--bg-color); padding: 14px; border-radius: 20px; font-weight: 600; font-size: 1.05em; text-decoration: none; margin-bottom: 8px; transition: transform 0.2s ease, opacity 0.2s ease; transform: translateZ(0); backface-visibility: hidden;">
+        <a href="https://ko-fi.com/tsukinkanban" target="_blank" rel="noopener noreferrer" style="display: flex; justify-content: center; align-items: center; gap: 8px; background: var(--text-main); color: var(--bg-color); padding: 14px; border-radius: 20px; font-weight: 600; font-size: 1.05em; text-decoration: none; margin-bottom: 24px; transition: transform 0.2s ease, opacity 0.2s ease; transform: translateZ(0); backface-visibility: hidden;">
             
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: block; transform: translateZ(0); backface-visibility: hidden; animation: none !important;">
-                <path d="M10 2v2"></path>
-                <path d="M14 2v2"></path>
-                <path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"></path>
-                <path d="M6 2v2"></path>
+                <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+                <line x1="2" x2="22" y1="10" y2="10"></line>
             </svg>
             
-            <span style="transform: translateZ(0);">Ko-fi で支援する</span>
+            <span style="transform: translateZ(0);">支援ページへ進む</span>
         </a>
-
-        <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 24px; color: var(--text-main);">
-            <span style="font-size: 0.85em; font-weight: 600; letter-spacing: 0.5px; opacity: 0.5;">Powered by Ko-fi</span>
-        </div>
 
         <div style="padding: 12px 16px; background: rgba(120, 120, 128, 0.08); border-radius: 20px; margin-bottom: 16px;">
             <p style="font-weight: 600; font-size: 0.9em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
