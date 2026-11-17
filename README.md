@@ -281,11 +281,9 @@ python3 -m http.server 8000
 
 原始碼以 [AGPL-3.0](LICENSE) 公開。修改後再散布，或作為網路服務公開時，請把修改後的原始碼以相同的授權公開。
 
-「通勤看板」的名稱與 Logo 不在授權範圍內。Google Maps 標誌等第三方的標誌與圖示，權利屬於各權利人。詳細內容請見 [NOTICE.md](NOTICE.md)。
+「通勤看板」的名稱與 Logo 不在授權範圍內。Google Maps 標誌等第三方的標誌與圖示，權利屬於各權利人。詳細內容請見 [NOTICE.md](NOTICE.md)（日文）。
 
 `api.tsukinkanban.com` 是本站（www.tsukinkanban.com）專用，不在授權範圍內。用這份程式碼公開其他網站時，請把連線對象換成自己的後端（架設方式請見 [Wiki](https://github.com/Yu-En-Chen/tsukinkanban-web/wiki/%E8%87%AA%E8%A1%8C%E6%9E%B6%E8%A8%AD%E8%AA%AA%E6%98%8E)）。
-
-政府機關等公部門可以免費申請 AGPL-3.0 以外的個別授權，詳見 [NOTICE.md](NOTICE.md#公部門免費授權)。
 
 ### 聯絡方式
 
