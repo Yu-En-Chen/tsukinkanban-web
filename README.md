@@ -296,62 +296,70 @@ python3 -m http.server 8000
 
 ## English
 
-The app's interface is in Japanese.
+**Tsukin Kanban** (通勤看板, roughly "commute board") is a web app (PWA) for checking whether the trips you make regularly in the Tokyo area are running normally today. The interface is in Japanese.
 
-### The problem
+### Why this app exists
 
-Getting around Greater Tokyo usually means several operators and lines in a single trip, thanks to through services and transfers. Service information, however, is published per operator and per line, so you have to piece together "which lines does my trip use, and are they all running fine?" every time.
+Tokyo's rail network is run by dozens of companies: JR East, Tokyo Metro, the city-run Toei Subway, and many private railways. Many trains also run "through" from one company's line onto another's without you changing trains, so a single everyday trip often involves three or four different operators.
 
-Daily life also has regular trips besides the commute: a monthly visit home, the kids' school run, a family member's hospital visits, getting to the airport or out to the islands. These trips get less attention than the commute, and checking on them is easy to put off.
+Each operator publishes its own service updates, line by line. To find out whether your trip is affected, you have to know every line it uses and check each one separately. Transit apps usually follow the same structure, listing status line by line rather than by trip.
 
-What you want to know is not "how is the Yamanote Line right now?" but "can I make this trip smoothly today?" **Tsukin Kanban** is a web app (PWA) that reorganizes service information from "lines" into "your regular trips" (scenes).
+On top of the daily commute, people have other regular trips: a monthly visit to family, a child's school run (children in Tokyo often take the train to school on their own), a parent's hospital visits, or getting to the airport. The Tokyo area also includes the Izu Islands, reachable by ferry, where whether the ship sails depends on the weather.
+
+Tsukin Kanban organizes service information around these trips instead of around lines. You set up a card for each trip, and the board tells you at a glance whether each one is fine today.
 
 ### How it works
 
-- One card = one trip (for example, "Weekday commute", "Kids' school run", "To Izu Oshima")
-- Each card holds up to 6 railway lines, bus routes from different operators, and Tokai Kisen ferry routes, in any mix
-- Flights carry more information, so each flight gets its own card with a dedicated layout (they sit on the same board as railway and bus cards)
-- Lamps on the card face sum up the state of the whole trip as 〇△×
+- One card = one trip (for example, "Weekday commute", "Kid's school run", "Ferry to Izu Oshima")
+- A card can hold up to 6 lines from different operators, mixing trains, buses and ferries
+- Flights get their own card with a layout of their own, on the same board
+- Lamps on the front of each card sum up the whole trip, so you don't need to open it
 
-You can tell at a glance **without opening any card** which of today's trips are running smoothly and which need attention. The board shows up to 5 cards.
-
-The cards and lines you see at first are a demo starter deck. **Card names, lines and colors can all be changed freely**, so you can build a board that fits your own life.
+The board holds up to 5 cards. The cards you see at first are only examples: card names, lines and colors can all be changed to fit your own routine.
 
 ### Reading the lamps
 
+The lamps use 〇, △ and ×, symbols that are widely used in Japan in the same way as a green, yellow and red traffic light.
+
 | Symbol | Meaning |
 |---|---|
-| 〇 | Normal (railways: delays of 5 minutes or less; ferries: scheduled to sail) |
-| △ | Delays (railways: 6–15 minutes), announcements of delays or suspensions; ferries: conditional sailing, change of departure port, partial cancellation |
-| × | Major delays (railways: 16 minutes or more), ferry cancellations, errors fetching information |
-| Speech bubble | Announcements, information being checked, lines whose data feed has ended, etc. |
-| Earthquake / rain and wind / snow | Shown only when the service information mentions them |
+| 〇 | Normal (trains: no more than 5 minutes late; ferries: scheduled to sail) |
+| △ | Some disruption (trains: 6–15 minutes late, or an announced delay or suspension; ferries: sailing subject to conditions, departure port changed, or some stops cancelled) |
+| × | Serious disruption (trains: 16 minutes or more late; ferries: cancelled), or the information couldn't be fetched |
+| Speech bubble | There is an announcement, the information is still being checked, or the data for that line is no longer available |
+| Earthquake / rain and wind / snow | Shown only when the service updates mention them |
 
-The state is also conveyed by the shape of the symbols, how bright each lamp is, and the text next to the lamps, so you never have to rely on color alone.
+The state is also shown by the shape of each symbol, how bright it is, and the text next to it, so color alone is never needed to read it.
 
-For ferries, a cancellation shows ×; conditional sailing, a change of departure port, or a partial cancellation (a cancelled leg or a skipped port) shows △; and a pending decision on sailing or an undecided departure port shows the speech bubble. A route with no sailing today, or a timetable-only bus with no departures today, also shows ×.
+For ferries, × means cancelled; △ means sailing subject to conditions, a change of departure port, or a partial cancellation (some legs or stops skipped); and the speech bubble means the decision to sail is still pending or the departure port hasn't been decided. A ferry route with no sailing today, or a timetable-only bus with no departures left today, also shows ×.
+
+### Who it's for
+
+- **People living or working in the Tokyo area.** This is who the app is designed for. It covers trains across the Tokyo area (Tokyo, Kanagawa, Saitama and Chiba), several bus operators, flights at Haneda and Narita, and ferries to the Izu Islands.
+- **Visitors to Tokyo.** If you are staying in Tokyo, you can set up cards for the trips you make often, such as hotel to office or hotel to the airport, and check them in one place. Keep in mind that the interface is in Japanese.
+- **Outside Japan.** The live data covers only the Tokyo area, so the app itself isn't useful for transit elsewhere. The source code is open, though: the idea of organizing transit information by trip rather than by line, and the front end itself, can be adapted to another city by connecting your own backend (see the [Wiki](https://github.com/Yu-En-Chen/tsukinkanban-web/wiki/Self-Hosting-Guide)).
 
 ### Main features
 
 | Feature | Description |
 |---|---|
-| Scene cards | Combine up to 6 railway lines, bus routes and ferry routes on one card, shown as a card stack. Tap to see the details of each line |
-| Lamps on the card face | See the state of the whole trip from the 〇△× symbols and text, without opening the card |
-| Railway delay minutes | For JR East, Tobu Railway, Toei Subway and Yokohama Municipal Subway, shows delay minutes per direction based on train location data. The Shonan-Shinjuku Line and Ueno-Tokyo Line detect through trains and aggregate by service pattern, showing which section the delay is on |
-| Direction names | Shows destinations such as "toward Omiya / Ueno / Tokyo" instead of "up / down" |
-| Buses | Supports Toei Bus, Yokohama Municipal Bus and Seibu Bus. Stops listed in order, positions of buses on the road and each bus's delay, arrival predictions ("in N min" / "arriving"), and crowding (where provided). The card shows arrival predictions for up to 2 stops you choose |
-| Bus stop search | Search by stop name to list the routes serving that stop and their arrivals |
-| Bus timetables | Full-day weekday, Saturday and holiday timetables for each stop (Toei Bus, Yokohama Municipal Bus, Seibu Bus, Oshima Bus, Miyake Village Bus) |
-| Ferries (Tokai Kisen) | Service status for the Izu Islands and Ogasawara routes (scheduled, conditional, partially cancelled, decision pending, cancelled, etc.), plus today's arrival port and any change of departure port on each island. For partial cancellations, shows which ports are skipped. Routes can be added to cards, and you can switch dates to view the sailing schedule |
-| Island buses | Supports the Oshima Bus and Miyake Village Bus timetables. On Miyakejima, the buses running today are picked automatically based on which port the ferry arrives at that day |
-| Flights | Departures and arrivals at Haneda and Narita. JAL and ANA flights also show gate and terminal information (Beta). If updates stop for 15 minutes or more, the card notes that the information may be out of date |
-| Navigation to the airport | Open Google Maps from a flight card to start directions to the airport or terminal |
-| Shortcuts to official sites | Jump straight to the official sites of the operators of the lines, buses and ferry routes on your cards |
-| Search | Search and add railways, buses, ferries and flights incrementally from the header |
-| Personalization | Customize card names and colors freely (saved on your device). Changes can be undone with one tap |
-| Sync clock | Always shows when the data was last synced, and warns you when syncing stops |
-| History | Look back at past service status over time (for ferries, how today's status changed) |
-| Export / restore settings | Export and import your settings through the clipboard |
+| Trip cards | Group up to 6 train lines, bus routes and ferry routes on one card, shown as a stack of cards. Tap a card to see the details of each line |
+| Lamps on the card | The 〇△× symbols and text show the state of the whole trip without opening the card |
+| Train delays in minutes | For JR East, Tobu Railway, Toei Subway and Yokohama Municipal Subway, shows how late trains are in each direction, based on train location data. For the Shonan-Shinjuku Line and Ueno-Tokyo Line, which run through several other lines, it works out which section the delay is on |
+| Directions by destination | Japanese railways usually label directions as "inbound" and "outbound" (toward or away from central Tokyo). The app shows the destination instead, such as "toward Omiya / Ueno / Tokyo" |
+| Buses | Toei Bus, Yokohama Municipal Bus and Seibu Bus. Shows stops in order, where each bus is and how late it is, arrival predictions ("in 3 min", "arriving"), and how crowded it is where available. A card can show arrivals for up to 2 stops you choose |
+| Bus stop search | Search by stop name to see every route serving that stop and their next arrivals |
+| Bus timetables | Full timetables for weekdays, Saturdays and holidays at each stop (Toei Bus, Yokohama Municipal Bus, Seibu Bus, Oshima Bus, Miyake Village Bus) |
+| Ferries (Tokai Kisen) | Tokai Kisen is the ferry company serving the Izu Islands from Tokyo. Shows the status of sailings on the Izu Islands and Ogasawara routes (scheduled, subject to conditions, partly cancelled, decision pending, cancelled, etc.), and which port the ship uses at each island today. For partial cancellations, shows which stops are skipped. Ferry routes can be added to cards, and you can switch dates to see the sailing schedule |
+| Island buses | Timetables for the buses on Izu Oshima and Miyakejima. On Miyakejima, the ferry uses a different port depending on the weather, and some buses only run to meet it. The app works out which of those buses run today from the port the ferry is using |
+| Flights | Departures and arrivals at Haneda and Narita, Tokyo's two airports. JAL and ANA flights also show the gate and terminal (Beta). If updates stop for 15 minutes or more, the card warns that the information may be out of date |
+| Directions to the airport | Open Google Maps from a flight card to get directions to the airport or terminal |
+| Official sites | Jump straight to the official website of the operator of each line, bus route and ferry route on your cards |
+| Search | Search for and add trains, buses, ferries and flights as you type, from the header |
+| Personalization | Change card names and colors freely (saved on your device). Any change can be undone with one tap |
+| Sync clock | Always shows when the data was last updated, and warns you when updates stop |
+| History | Look back at how a line's status changed over time (for ferries, how today's status changed) |
+| Export / restore settings | Copy your settings out and back in through the clipboard |
 
 ### Privacy
 
@@ -363,7 +371,7 @@ For ferries, a cancellation shows ×; conditional sailing, a change of departure
 
 ### Data sources
 
-This service uses data provided by the Public Transportation Open Data Center. The data is not guaranteed to be accurate or complete. Please do not contact transport operators directly about what this service displays.
+This service uses data provided by the Public Transportation Open Data Center (ODPT), Japan's open data platform for public transport. The data is not guaranteed to be accurate or complete. Please do not contact transport operators directly about what this service displays.
 
 - Some data (service information for JR East, Tobu Railway, Seibu Railway, Keikyu, Keio and Tokyu; train location data for JR East and Tobu Railway; flight information for Narita and Haneda) is provided only for the Open Data Challenge for Public Transportation 2026, and is scheduled to be available until the end of February 2027. After that, the affected lines are shown as "data feed ended", with notice given from 30 days before
 - Ferries and island buses use data from Tokai Kisen (timetables and service status), Oshima Ryokaku Jidosha (Oshima Bus timetables) and Miyake Village (Miyake Village Bus timetables)
