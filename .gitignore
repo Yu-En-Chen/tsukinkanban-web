@@ -1,0 +1,9 @@
+# 建置用（npm install、npm run build で作られる）
+node_modules/
+dist/
+
+# Cloudflare（wrangler）
+.wrangler/
+
+# Claude Code の端末ごとの設定
+.claude/settings.local.json

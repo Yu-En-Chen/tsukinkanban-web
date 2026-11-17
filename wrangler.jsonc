@@ -1,0 +1,9 @@
+// Cloudflare Workers の設定：dist/（npm run build で作る、最小化した網站）だけを公開する
+{
+  // Cloudflare 上の Worker 名と一致させること
+  "name": "tsukinkanban",
+  "compatibility_date": "2026-04-15",
+  "assets": {
+    "directory": "./dist"
+  }
+}
