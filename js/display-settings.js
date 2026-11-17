@@ -68,9 +68,9 @@ window.getDisplaySettingsHTML = function () {
     // 判斷是否需要強制鎖定 (非蘋果設備)
     const isLocked = !isApple;
 
-    // 底部的外部連結（使い方、テーマ集）：網址晚點補上
-    const MANUAL_URL = '#';        // 使い方
-    const COLOR_THEMES_URL = '#';  // テーマ集
+    // 底部的外部連結（使い方、テーマ集）
+    const MANUAL_URL = 'https://drive.google.com/file/d/1RT20BYFanu1ag9do7-0CxUVYT7vEStdt/view?';        // 使い方
+    const COLOR_THEMES_URL = 'https://drive.google.com/drive/folders/1OPu054LckLuE4uw1TMPnh3c2po0j6FyD?';  // テーマ集
 
     // 按鈕樣式以「アバウト」頁的外部連結按鈕為準（data/about.js），圓角改成和本頁其他元件一樣的膠囊形。
     // 外層的 opacity 與行高也照該頁設定
