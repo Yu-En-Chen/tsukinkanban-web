@@ -93,7 +93,7 @@
 ### 技術構成
 
 - **フレームワークなし** — HTML / CSS / JavaScript（ES Modules）のみで構築。動作にビルド工程は不要です
-- **デプロイ** — Cloudflare Workers。公開時に `npm run build`（`scripts/build.mjs`）で JS・CSS を最小化した `dist/` を公開します。リポジトリのソースコードはそのままです
+- **デプロイ** — Cloudflare Pages。公開時に `npm run build`（`scripts/build.mjs`）で JS・CSS を最小化した `dist/` を公開します。リポジトリのソースコードはそのままです
 - **PWA** — `manifest.json` によるホーム画面追加・スタンドアロン表示に対応
 - **状態保存** — IndexedDB（利用できない環境では localStorage）。サーバー側にユーザーデータは保存しません
 - **通信の抑制** — バス・船のデータは、ボードに該当する路線・航路がある場合と検索時にのみ取得します
@@ -234,7 +234,7 @@ python3 -m http.server 8000
 ### 技術架構
 
 - **無框架** — 純 HTML / CSS / JavaScript（ES Modules），執行不需要建置流程
-- **部署** — Cloudflare Workers。部署時以 `npm run build`（`scripts/build.mjs`）將 JS、CSS 最小化後輸出到 `dist/` 再公開，repo 裡的原始碼不變
+- **部署** — Cloudflare Pages。部署時以 `npm run build`（`scripts/build.mjs`）將 JS、CSS 最小化後輸出到 `dist/` 再公開，repo 裡的原始碼不變
 - **PWA** — 透過 `manifest.json` 支援加入主畫面與獨立視窗顯示
 - **狀態儲存** — IndexedDB（無法使用時改用 localStorage），伺服器端不儲存任何使用者資料
 - **減少通訊** — 巴士與船的資料只在看板上有對應路線、航路，或搜尋時才取得
