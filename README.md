@@ -6,7 +6,7 @@
 
 **路線ではなく「いつもの移動」で見る運行情報ボード。**
 
-日本語 | [繁體中文](#繁體中文)
+日本語 | [繁體中文](#繁體中文) | [English](#english)
 
 [www.tsukinkanban.com](https://www.tsukinkanban.com)
 
@@ -291,3 +291,144 @@ python3 -m http.server 8000
 
 - 開發者：YUEN CHEN（[@yueneuy_c](https://x.com/yueneuy_c)）
 - 意見回饋、問題回報：info(at)tsukinkanban.com（請將 (at) 替換為 @）
+
+---
+
+## English
+
+The app's interface is in Japanese.
+
+### The problem
+
+Getting around Greater Tokyo usually means several operators and lines in a single trip, thanks to through services and transfers. Service information, however, is published per operator and per line, so you have to piece together "which lines does my trip use, and are they all running fine?" every time.
+
+Daily life also has regular trips besides the commute: a monthly visit home, the kids' school run, a family member's hospital visits, getting to the airport or out to the islands. These trips get less attention than the commute, and checking on them is easy to put off.
+
+What you want to know is not "how is the Yamanote Line right now?" but "can I make this trip smoothly today?" **Tsukin Kanban** is a web app (PWA) that reorganizes service information from "lines" into "your regular trips" (scenes).
+
+### How it works
+
+- One card = one trip (for example, "Weekday commute", "Kids' school run", "To Izu Oshima")
+- Each card holds up to 6 railway lines, bus routes from different operators, and Tokai Kisen ferry routes, in any mix
+- Flights carry more information, so each flight gets its own card with a dedicated layout (they sit on the same board as railway and bus cards)
+- Lamps on the card face sum up the state of the whole trip as 〇△×
+
+You can tell at a glance **without opening any card** which of today's trips are running smoothly and which need attention. The board shows up to 5 cards.
+
+The cards and lines you see at first are a demo starter deck. **Card names, lines and colors can all be changed freely**, so you can build a board that fits your own life.
+
+### Reading the lamps
+
+| Symbol | Meaning |
+|---|---|
+| 〇 | Normal (railways: delays of 5 minutes or less; ferries: scheduled to sail) |
+| △ | Delays (railways: 6–15 minutes), announcements of delays or suspensions; ferries: conditional sailing, change of departure port, partial cancellation |
+| × | Major delays (railways: 16 minutes or more), ferry cancellations, errors fetching information |
+| Speech bubble | Announcements, information being checked, lines whose data feed has ended, etc. |
+| Earthquake / rain and wind / snow | Shown only when the service information mentions them |
+
+The state is also conveyed by the shape of the symbols, how bright each lamp is, and the text next to the lamps, so you never have to rely on color alone.
+
+For ferries, a cancellation shows ×; conditional sailing, a change of departure port, or a partial cancellation (a cancelled leg or a skipped port) shows △; and a pending decision on sailing or an undecided departure port shows the speech bubble. A route with no sailing today, or a timetable-only bus with no departures today, also shows ×.
+
+### Main features
+
+| Feature | Description |
+|---|---|
+| Scene cards | Combine up to 6 railway lines, bus routes and ferry routes on one card, shown as a card stack. Tap to see the details of each line |
+| Lamps on the card face | See the state of the whole trip from the 〇△× symbols and text, without opening the card |
+| Railway delay minutes | For JR East, Tobu Railway, Toei Subway and Yokohama Municipal Subway, shows delay minutes per direction based on train location data. The Shonan-Shinjuku Line and Ueno-Tokyo Line detect through trains and aggregate by service pattern, showing which section the delay is on |
+| Direction names | Shows destinations such as "toward Omiya / Ueno / Tokyo" instead of "up / down" |
+| Buses | Supports Toei Bus, Yokohama Municipal Bus and Seibu Bus. Stops listed in order, positions of buses on the road and each bus's delay, arrival predictions ("in N min" / "arriving"), and crowding (where provided). The card shows arrival predictions for up to 2 stops you choose |
+| Bus stop search | Search by stop name to list the routes serving that stop and their arrivals |
+| Bus timetables | Full-day weekday, Saturday and holiday timetables for each stop (Toei Bus, Yokohama Municipal Bus, Seibu Bus, Oshima Bus, Miyake Village Bus) |
+| Ferries (Tokai Kisen) | Service status for the Izu Islands and Ogasawara routes (scheduled, conditional, partially cancelled, decision pending, cancelled, etc.), plus today's arrival port and any change of departure port on each island. For partial cancellations, shows which ports are skipped. Routes can be added to cards, and you can switch dates to view the sailing schedule |
+| Island buses | Supports the Oshima Bus and Miyake Village Bus timetables. On Miyakejima, the buses running today are picked automatically based on which port the ferry arrives at that day |
+| Flights | Departures and arrivals at Haneda and Narita. JAL and ANA flights also show gate and terminal information (Beta). If updates stop for 15 minutes or more, the card notes that the information may be out of date |
+| Navigation to the airport | Open Google Maps from a flight card to start directions to the airport or terminal |
+| Shortcuts to official sites | Jump straight to the official sites of the operators of the lines, buses and ferry routes on your cards |
+| Search | Search and add railways, buses, ferries and flights incrementally from the header |
+| Personalization | Customize card names and colors freely (saved on your device). Changes can be undone with one tap |
+| Sync clock | Always shows when the data was last synced, and warns you when syncing stops |
+| History | Look back at past service status over time (for ferries, how today's status changed) |
+| Export / restore settings | Export and import your settings through the clipboard |
+
+### Privacy
+
+- No sign-up, no ads, no third-party cookies
+- Your cards and personalization settings are stored only on your device (in the browser) and are never sent to the server
+- No location data is collected
+- Settings are transferred through the clipboard, not through the server
+- Add it to your home screen to use it like a native app (PWA)
+
+### Data sources
+
+This service uses data provided by the Public Transportation Open Data Center. The data is not guaranteed to be accurate or complete. Please do not contact transport operators directly about what this service displays.
+
+- Some data (service information for JR East, Tobu Railway, Seibu Railway, Keikyu, Keio and Tokyu; train location data for JR East and Tobu Railway; flight information for Narita and Haneda) is provided only for the Open Data Challenge for Public Transportation 2026, and is scheduled to be available until the end of February 2027. After that, the affected lines are shown as "data feed ended", with notice given from 30 days before
+- Ferries and island buses use data from Tokai Kisen (timetables and service status), Oshima Ryokaku Jidosha (Oshima Bus timetables) and Miyake Village (Miyake Village Bus timetables)
+- Miyake Village Bus timetable data: Source: Miyake Village / Public Transportation Open Data Center ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)). Processed by this service for display
+- For the list of supported lines, see the "データ元" (Data sources) page in the app
+
+> This service is an **unofficial** third-party app developed and run by an individual. It is not affiliated with ODPT or with any railway or transport operator.
+
+### Tech stack
+
+- **No framework** — built with plain HTML / CSS / JavaScript (ES Modules). No build step is needed to run it
+- **Deployment** — Cloudflare Pages. On publish, `npm run build` (`scripts/build.mjs`) minifies the JS and CSS into `dist/`, which is what gets served. The source code in the repository is left as is
+- **PWA** — `manifest.json` supports adding to the home screen and standalone display
+- **Storage** — IndexedDB (localStorage where it is unavailable). No user data is stored on the server
+- **Fewer requests** — bus and ferry data is fetched only when the board has a matching route, or while searching
+- **GTFS import** — ferries and island buses use GTFS timetables. The backend checks daily for new versions and switches over automatically on their effective date
+- **Icons** — [Lucide Icons](https://lucide.dev/) (inline SVG)
+
+### Directory structure
+
+```
+tsukinkanban-web/
+├── index.html              # Entry point (app shell)
+├── manifest.json           # PWA manifest
+├── css/                    # Stylesheets (variables, animations, buses, ferries and other UI parts)
+├── js/                     # Application logic
+│   ├── script.js           #   Main engine (card rendering, lamp aggregation, interaction)
+│   ├── header.js           #   Header, search, capsule button modes
+│   ├── buses.js            #   Buses (search, arrival predictions, stop panel)
+│   ├── bus-timetable.js    #   Bus stop timetables
+│   ├── ship.js             #   Ferries (Tokai Kisen route cards and service status)
+│   ├── flights.js          #   Flight cards
+│   ├── add-panel.js        #   Adding cards
+│   ├── edit-routes.js      #   Editing the lines on a card
+│   ├── personalization.js  #   Card customization and undo
+│   ├── history-daemon.js   #   Fetching service history
+│   ├── data-sources.js     #   Data feed status and end-of-feed notices
+│   ├── clock.js            #   Sync clock
+│   └── ...
+├── data/                   # Route dictionary, menu text, on-device database
+└── img/                    # Logo and images
+```
+
+### Running locally
+
+No build is needed. Serve the root directory with any static server.
+
+```bash
+# Option 1: Python
+python3 -m http.server 8000
+
+# Option 2: open index.html with the Live Server extension in VS Code
+```
+
+Open `http://localhost:8000` in your browser (fetching live service data requires a connection to the external API).
+
+### License
+
+The source code is released under [AGPL-3.0](LICENSE). If you redistribute a modified version, or make it available as a web service, please release your modified source code under the same license.
+
+The name "通勤看板" (Tsukin Kanban) and its logo are not covered by the license. Third-party logos and icons, such as the Google Maps logo, belong to their respective owners. See [NOTICE.md](NOTICE.md) (in Japanese) for details.
+
+`api.tsukinkanban.com` is for this site (`www.tsukinkanban.com`) only and is not covered by the license. If you publish another site based on this code, please point it to your own backend (see the [Wiki](https://github.com/Yu-En-Chen/tsukinkanban-web/wiki/Self-Hosting-Guide) for how to set one up).
+
+### Contact
+
+- Developer: YUEN CHEN ([@yueneuy_c](https://x.com/yueneuy_c))
+- Feedback and bug reports: info(at)tsukinkanban.com (replace (at) with @)
