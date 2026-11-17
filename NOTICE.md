@@ -59,7 +59,6 @@ Copyright (C) 2026 YUEN CHEN（通勤看板 開発者）
 | Google マップのロゴ | `js/script.js`（`iconMapPin`） | Google LLC の商標です。Google のブランドガイドラインに従ってください |
 | GitHub のロゴ | `data/about.js` | GitHub, Inc. の商標です |
 | X のロゴ | `data/about.js` | X Corp. の商標です |
-| 「Powered by Stripe」バッジ | `data/supporter.js` | Stripe, Inc. の商標です |
 | Lucide のアイコン（画面上の SVG アイコンの多く） | 各ファイルにインライン SVG として埋め込み | ISC License、Copyright (c) Lucide Icons and Contributors。一部は Feather 由来で、MIT License、Copyright (c) Cole Bemis。全文は末尾に掲載 |
 | Noto Sans JP（フォント） | リポジトリには含まれません。Apple 以外の端末で Google Fonts から読み込みます | SIL Open Font License 1.1 |
 
