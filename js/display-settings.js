@@ -68,15 +68,16 @@ window.getDisplaySettingsHTML = function () {
     // 判斷是否需要強制鎖定 (非蘋果設備)
     const isLocked = !isApple;
 
-    // 底部的外部連結（使用説明書、カラーテーマ集）：網址晚點補上
-    const MANUAL_URL = '#';
-    const COLOR_THEMES_URL = '#';
+    // 底部的外部連結（使い方、テーマ集）：網址晚點補上
+    const MANUAL_URL = '#';        // 使い方
+    const COLOR_THEMES_URL = '#';  // テーマ集
 
-    // 按鈕樣式與「アバウト」頁的外部連結按鈕相同（data/about.js）。外層的 opacity 與行高也照該頁設定
-    const linkButtonStyle = 'flex: 1; display: flex; justify-content: center; align-items: center; gap: 8px; background: rgba(120, 120, 128, 0.08); padding: 14px 12px; border-radius: 20px; text-decoration: none; color: var(--text-main); font-weight: 600; font-size: 0.9em; transition: background 0.2s ease, transform 0.2s ease;';
+    // 按鈕樣式以「アバウト」頁的外部連結按鈕為準（data/about.js），圓角改成和本頁其他元件一樣的膠囊形。
+    // 外層的 opacity 與行高也照該頁設定
+    const linkButtonStyle = 'flex: 1; display: flex; justify-content: center; align-items: center; gap: 8px; background: rgba(120, 120, 128, 0.08); padding: 14px 12px; border-radius: 999px; text-decoration: none; color: var(--text-main); font-weight: 600; font-size: 0.9em; transition: background 0.2s ease, transform 0.2s ease;';
 
     return `
-    <div class="settings-container">
+    <div class="settings-container" style="display: flex; flex-direction: column; min-height: 100%;">
         <p class="settings-description">アプリの動作や視覚効果をカスタマイズできます。</p>
         
         ${browserRecommendationHTML}
@@ -121,14 +122,15 @@ window.getDisplaySettingsHTML = function () {
             </div>
         </div>
 
-        <div style="display: flex; gap: 12px; margin-top: 24px; margin-bottom: 32px; opacity: 0.85; line-height: 1.7;">
+        <!-- 外部連結：內容較少時固定在頁面最下方（margin-top: auto） -->
+        <div style="display: flex; gap: 12px; margin-top: auto; opacity: 0.85; line-height: 1.7;">
             <a href="${MANUAL_URL}" target="_blank" rel="noopener noreferrer" style="${linkButtonStyle}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open-text"><path d="M12 5v16"/><path d="M16 13h2"/><path d="M16 9h2"/><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"/><path d="M6 13h2"/><path d="M6 9h2"/></svg>
-                使用説明書
+                使い方
             </a>
             <a href="${COLOR_THEMES_URL}" target="_blank" rel="noopener noreferrer" style="${linkButtonStyle}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-palette-icon lucide-palette"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg>
-                カラーテーマ集
+                テーマ集
             </a>
         </div>
 
