@@ -85,6 +85,7 @@
 
 - 一部のデータ（JR 東日本・東武鉄道・西武鉄道・京急電鉄・京王電鉄・東急電鉄の運行情報、JR 東日本・東武鉄道の列車ロケーション情報、成田・羽田のフライト情報）は「公共交通オープンデータチャレンジ2026」限定で提供されているもので、2027 年 2 月末まで提供予定です。提供終了後は該当する路線を「提供終了」と表示し、終了の 30 日前から予告します
 - 船・島しょ部のバスは、東海汽船（時刻表・運航情報）、大島旅客自動車（大島バス時刻表）、三宅村（三宅村営バス時刻表）のデータを利用しています
+- 東京都交通局のデータ（都営地下鉄・都電荒川線・日暮里・舎人ライナー・都営バス）　出典：東京都交通局／公共交通オープンデータセンター（[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.ja)）。本サービスで加工して表示しています
 - 三宅村営バスの時刻表データ　出典：三宅村／公共交通オープンデータセンター（[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.ja)）。本サービスで加工して表示しています
 - 対応路線の一覧は、アプリ内「データ元」ページをご覧ください
 
@@ -226,6 +227,7 @@ python3 -m http.server 8000
 
 - 部分資料（JR 東日本、東武鐵道、西武鐵道、京急電鐵、京王電鐵、東急電鐵的運行資訊，JR 東日本、東武鐵道的列車位置資訊，以及成田、羽田的航班資訊）為「公共交通オープンデータチャレンジ2026」限定提供，預定提供至 2027 年 2 月底。提供結束後相關路線會顯示「提供終了」，並於結束前 30 天開始預告
 - 船與離島巴士使用東海汽船（時刻表、運航資訊）、大島旅客自動車（大島巴士時刻表）、三宅村（三宅村營巴士時刻表）的資料
+- 東京都交通局資料（都營地下鐵、都電荒川線、日暮里・舍人線、都營巴士）　出典：東京都交通局／公共交通開放資料中心（[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.ja)），經本服務加工後顯示
 - 三宅村營巴士時刻表資料　出典：三宅村／公共交通開放資料中心（[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.ja)），經本服務加工後顯示
 - 支援路線清單請見 App 內的「データ元」頁面
 
@@ -375,6 +377,7 @@ This service uses data provided by the Public Transportation Open Data Center (O
 
 - Some data (service information for JR East, Tobu Railway, Seibu Railway, Keikyu, Keio and Tokyu; train location data for JR East and Tobu Railway; flight information for Narita and Haneda) is provided only for the Open Data Challenge for Public Transportation 2026, and is scheduled to be available until the end of February 2027. After that, the affected lines are shown as "data feed ended", with notice given from 30 days before
 - Ferries and island buses use data from Tokai Kisen (timetables and service status), Oshima Ryokaku Jidosha (Oshima Bus timetables) and Miyake Village (Miyake Village Bus timetables)
+- Bureau of Transportation, Tokyo Metropolitan Government data (Toei Subway, Toden Arakawa Line, Nippori-Toneri Liner, Toei Bus): Source: Bureau of Transportation, Tokyo Metropolitan Government / Public Transportation Open Data Center ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)). Processed by this service for display
 - Miyake Village Bus timetable data: Source: Miyake Village / Public Transportation Open Data Center ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)). Processed by this service for display
 - For the list of supported lines, see the "データ元" (Data sources) page in the app
 
