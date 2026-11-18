@@ -188,7 +188,7 @@ export const dataSourceContent = `
         <!-- CC BY 4.0 のデータ（公共交通オープンデータセンターの FAQ「改変して利用する場合」の書式）：提供元が増えたら <li> を 1 行追加する -->
         <p style="font-size: 0.95em; opacity: 0.9; margin-bottom: 4px;">このアプリは、以下の著作物を改変して利用しています。</p>
         <ul style="padding-left: 20px; font-size: 0.95em; opacity: 0.9; margin: 0 0 8px 0;">
-            <li style="margin-bottom: 4px;">東京都交通局、都営地下鉄・都電荒川線・日暮里・舎人ライナー・都営バスの関連データ（運行情報、ロケーション情報、時刻表など）、クリエイティブ・コモンズ・ライセンス　表示4.0国際（<a href="https://creativecommons.org/licenses/by/4.0/deed.ja" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline; word-break: break-all;">https://creativecommons.org/licenses/by/4.0/deed.ja</a>）</li>
+            <li style="margin-bottom: 4px;">東京都交通局、「運行情報」「列車ロケーション情報」「バス関連情報」「バスロケーション情報」「バス停情報」「バス路線情報」「バス停時刻表」、クリエイティブ・コモンズ・ライセンス　表示4.0国際（<a href="https://creativecommons.org/licenses/by/4.0/deed.ja" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline; word-break: break-all;">https://creativecommons.org/licenses/by/4.0/deed.ja</a>）</li>
             <li style="margin-bottom: 4px;">三宅村、三宅村営バス 時刻表データ、クリエイティブ・コモンズ・ライセンス　表示4.0国際（<a href="https://creativecommons.org/licenses/by/4.0/deed.ja" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline; word-break: break-all;">https://creativecommons.org/licenses/by/4.0/deed.ja</a>）</li>
         </ul>
         <br>
