@@ -20,7 +20,7 @@
 
 首都圏の移動は、相互直通運転や乗り継ぎによって、一つの移動に複数の事業者・路線が関わります。一方で運行情報は事業者・路線ごとに発信されるため、「自分の移動に関わる路線はどれで、すべて問題ないか」を毎回自分で組み立て直す必要があります。
 
-しかも生活の中には、通勤以外にも決まった移動があります。月に一度の帰省、子どもの通学、家族の通院、空港や島へのアクセス。こうした移動は通勤ほど意識が向かず、確認も後回しにされがちです。
+しかも生活の中には、通勤以外にも決まった移動があります。毎週の買い物、子どもの通学、家族の通院、空港や島へのアクセス。こうした移動は通勤ほど意識が向かず、確認も後回しにされがちです。
 
 知りたいのは「山手線が今どうか」ではなく、「今日、この移動がスムーズにできるか」のはずです。**通勤看板**は、運行情報の単位を「路線」から「いつもの移動（シーン）」に組み替えた Web アプリ（PWA）です。
 
@@ -85,8 +85,9 @@
 
 - 一部のデータ（JR 東日本・東武鉄道・西武鉄道・京急電鉄・京王電鉄・東急電鉄の運行情報、JR 東日本・東武鉄道の列車ロケーション情報、成田・羽田のフライト情報）は「公共交通オープンデータチャレンジ2026」限定で提供されているもので、2027 年 2 月末まで提供予定です。提供終了後は該当する路線を「提供終了」と表示し、終了の 30 日前から予告します
 - 船・島しょ部のバスは、東海汽船（時刻表・運航情報）、大島旅客自動車（大島バス時刻表）、三宅村（三宅村営バス時刻表）のデータを利用しています
-- このサービスは、以下の著作物を改変して利用しています。東京都交通局、「運行情報」「列車ロケーション情報」「バスロケーション情報」「バス停情報」「バス路線情報」「バス時刻表」、クリエイティブ・コモンズ・ライセンス　表示4.0国際（https://creativecommons.org/licenses/by/4.0/deed.ja）
-- このサービスは、以下の著作物を改変して利用しています。三宅村、三宅村営バス 時刻表データ、クリエイティブ・コモンズ・ライセンス　表示4.0国際（https://creativecommons.org/licenses/by/4.0/deed.ja）
+- このサービスは、以下の著作物を改変して利用しています。
+  - 東京都交通局、「運行情報」「列車ロケーション情報」「バスロケーション情報」「バス停情報」「バス路線情報」「バス時刻表」、クリエイティブ・コモンズ・ライセンス　表示4.0国際（https://creativecommons.org/licenses/by/4.0/deed.ja）
+  - 三宅村、三宅村営バス 時刻表データ、クリエイティブ・コモンズ・ライセンス　表示4.0国際（https://creativecommons.org/licenses/by/4.0/deed.ja）
 - 対応路線の一覧は、アプリ内「データ元」ページをご覧ください
 
 > 本サービスは個人が開発・運営する**非公式**のサードパーティアプリであり、ODPT および各鉄道・交通事業者とは一切関係がありません。
@@ -162,7 +163,7 @@ python3 -m http.server 8000
 
 首都圈的移動因為直通運轉與轉乘，一趟移動常牽涉多家業者、多條路線。但運行資訊是依業者、依路線各自發布，使用者每次都得自己重新組合「我這趟會用到哪幾條、是不是全部沒問題」。
 
-而且生活中除了通勤，還有其他固定的移動：每月回老家、小孩通學、家人就醫、前往機場或離島。這些移動不像通勤那樣受到關注，確認也常被往後排。
+而且生活中除了通勤，還有其他固定的移動：每週採買、小孩通學、家人就醫、前往機場或離島。這些移動不像通勤那樣受到關注，確認也常被往後排。
 
 你真正想知道的從來不是「山手線現在怎樣」，而是「我今天這趟，順不順」。**通勤看板**（つうきんかんばん）就是把運行資訊的單位，從「路線」重組成「日常固定的移動（場景）」的行動網頁應用程式（PWA）。
 
@@ -227,8 +228,9 @@ python3 -m http.server 8000
 
 - 部分資料（JR 東日本、東武鐵道、西武鐵道、京急電鐵、京王電鐵、東急電鐵的運行資訊，JR 東日本、東武鐵道的列車位置資訊，以及成田、羽田的航班資訊）為「公共交通オープンデータチャレンジ2026」限定提供，預定提供至 2027 年 2 月底。提供結束後相關路線會顯示「提供終了」，並於結束前 30 天開始預告
 - 船與離島巴士使用東海汽船（時刻表、運航資訊）、大島旅客自動車（大島巴士時刻表）、三宅村（三宅村營巴士時刻表）的資料
-- 本服務改作並使用以下著作物：東京都交通局、「運行情報」「列車ロケーション情報」「バスロケーション情報」「バス停情報」「バス路線情報」「バス時刻表」、Creative Commons 姓名標示 4.0 國際（https://creativecommons.org/licenses/by/4.0/deed.ja）
-- 本服務改作並使用以下著作物：三宅村、三宅村營巴士 時刻表資料、Creative Commons 姓名標示 4.0 國際（https://creativecommons.org/licenses/by/4.0/deed.ja）
+- 本服務改作並使用以下著作物：
+  - 東京都交通局、「運行情報」「列車ロケーション情報」「バスロケーション情報」「バス停情報」「バス路線情報」「バス時刻表」、Creative Commons 姓名標示 4.0 國際（https://creativecommons.org/licenses/by/4.0/deed.ja）
+  - 三宅村、三宅村營巴士 時刻表資料、Creative Commons 姓名標示 4.0 國際（https://creativecommons.org/licenses/by/4.0/deed.ja）
 - 支援路線清單請見 App 內的「データ元」頁面
 
 > 本服務為個人開發、營運的**非官方**第三方應用程式，與 ODPT 及各鐵路、交通業者皆無任何關係。
@@ -306,7 +308,7 @@ Tokyo's rail network is run by dozens of companies: JR East, Tokyo Metro, the ci
 
 Each operator publishes its own service updates, line by line. To find out whether your trip is affected, you have to know every line it uses and check each one separately. Transit apps usually follow the same structure, listing status line by line rather than by trip.
 
-On top of the daily commute, people have other regular trips: a monthly visit to family, a child's school run (children in Tokyo often take the train to school on their own), a parent's hospital visits, or getting to the airport. The Tokyo area also includes the Izu Islands, reachable by ferry, where whether the ship sails depends on the weather.
+On top of the daily commute, people have other regular trips: a weekly trip to the shops, a child's school run (children in Tokyo often take the train to school on their own), a parent's hospital visits, or getting to the airport. The Tokyo area also includes the Izu Islands, reachable by ferry, where whether the ship sails depends on the weather.
 
 Tsukin Kanban organizes service information around these trips instead of around lines. You set up a card for each trip, and the board tells you at a glance whether each one is fine today.
 
@@ -377,8 +379,9 @@ This service uses data provided by the Public Transportation Open Data Center (O
 
 - Some data (service information for JR East, Tobu Railway, Seibu Railway, Keikyu, Keio and Tokyu; train location data for JR East and Tobu Railway; flight information for Narita and Haneda) is provided only for the Open Data Challenge for Public Transportation 2026, and is scheduled to be available until the end of February 2027. After that, the affected lines are shown as "data feed ended", with notice given from 30 days before
 - Ferries and island buses use data from Tokai Kisen (timetables and service status), Oshima Ryokaku Jidosha (Oshima Bus timetables) and Miyake Village (Miyake Village Bus timetables)
-- This service uses the following works in modified form: Bureau of Transportation, Tokyo Metropolitan Government, "Train status information", "Train location information", "Bus location information", "Bus stop information", "Bus route information", "Bus timetable", Creative Commons Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/)
-- This service uses the following works in modified form: Miyake Village, Miyake Village Bus timetable data, Creative Commons Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/)
+- This service uses the following works in modified form:
+  - Bureau of Transportation, Tokyo Metropolitan Government, "Train status information", "Train location information", "Bus location information", "Bus stop information", "Bus route information", "Bus timetable", Creative Commons Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/)
+  - Miyake Village, Miyake Village Bus timetable data, Creative Commons Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/)
 - For the list of supported lines, see the "データ元" (Data sources) page in the app
 
 > This service is an **unofficial** third-party app developed and run by an individual. It is not affiliated with ODPT or with any railway or transport operator.
