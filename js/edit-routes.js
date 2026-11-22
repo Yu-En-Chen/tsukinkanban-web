@@ -228,8 +228,9 @@ export function startRouteEditMode(cardId, currentLineIds) {
         const isShipLine = typeof lineId === 'string' && lineId.startsWith('ship:');
         const lineData = dict[lineId] || (isBusLine
             ? { name: (lineId.split(':').slice(2).join(':') || 'バス路線'), company: 'バス' }
-            : isShipLine ? { name: lineId.slice(5) || '航路', company: '東海汽船' } : null);
-        if (!lineData) return;
+            : isShipLine ? { name: lineId.slice(5) || '航路', company: '東海汽船' }
+            // 字典暫時沒有的鐵道 ID 也要列出：略過的話按「保存」會把它從卡片刪掉
+            : { name: '未知の路線', company: '不明' });
 
         // 1. 生成膠囊（左欄）
         const capsule = document.createElement('div');

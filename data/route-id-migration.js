@@ -7,6 +7,7 @@ export const ROUTE_ID_MIGRATION = {
     'internal.Railway:Tobu.Kameido': 'odpt.Railway:Tobu.Kameido',             // 東武亀戸線
     'internal.Railway:Tobu.Daishi': 'odpt.Railway:Tobu.Daishi',               // 東武大師線
     'internal.Railway:Tobu.Ogose': 'odpt.Railway:Tobu.Ogose',                 // 東武越生線
+    'internal.Railway:Tobu.Kiryu': 'odpt.Railway:Tobu.Kiryu',                 // 東武桐生線
 };
 
 // 後端目前認得的路線 ID：/api/dictionary 的 routes 與 /api/status 的 key
