@@ -120,10 +120,6 @@
     font-size: 0.95em;
 }
 
-.train-time {
-    font-variant-numeric: tabular-nums;
-    flex-shrink: 0;
-}
 
 .train-dest {
     min-width: 0;
@@ -132,20 +128,22 @@
     white-space: nowrap;
 }
 
-.train-capsule.sched-only .train-time {
-    opacity: 0.75;
+/* 一列の膠囊：駅の列（.bus-stop-row）と同じ字級・内距・高さ（1 行のまま広げない） */
+.train-capsule {
+    gap: 12px;
+    font-size: 1em;
+    padding: 9px 16px;
 }
 
-.train-sub {
-    gap: 10px;
-    font-size: 0.85em;
-    font-weight: 700;
+.train-capsule .train-main {
+    flex: 1;
 }
 
-.train-pos {
-    opacity: 0.6;
-    font-weight: 700;
+.train-capsule .bus-eta-pill.chip {
+    font-size: 0.95em;
+    flex-shrink: 0;
 }
+
 
 .train-delay {
     font-weight: 800;
@@ -244,12 +242,6 @@
     margin: 0;
 }
 
-.train-station-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 4px;
-}
-
 .train-station-name {
     flex-grow: 1;
     min-width: 0;
@@ -275,15 +267,15 @@
     color: #ff9500;
 }
 
-
-.train-stopped {
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-}
-
 .train-marker-row .train-main {
     font-size: 1em;
+}
+
+/* この駅に停車中の列車：走行中の膠囊と同じ形で、右に「停車中」 */
+.train-stop-label {
+    flex-shrink: 0;
+    font-weight: 800;
+    color: #ff9500;
 }
 
 /* --- 深色模式 --- */
@@ -355,7 +347,8 @@
         color: #000;
     }
 
-    .train-station-name.approach-next {
+    .train-station-name.approach-next,
+    .train-stop-label {
         color: #ff9f0a;
     }
 

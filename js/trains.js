@@ -174,10 +174,11 @@ function etaPillHtml(text) {
     return text ? `<span class="bus-eta-pill chip ${etaPillClass(text)}">${esc(text)}</span>` : '';
 }
 
-function delayHtml(t) {
+// compact：駅ごとの一列に並べるとき（巴士の偏差と同じ「+3分」）
+function delayHtml(t, compact = false) {
     const d = t && t.delay_minutes;
     if (typeof d !== 'number' || d <= 0) return '';
-    return `<span class="train-delay ${d > 15 ? 'major' : 'minor'}">${d}分遅れ</span>`;
+    return `<span class="train-delay ${d > 15 ? 'major' : 'minor'}">${compact ? `+${d}分` : `${d}分遅れ`}</span>`;
 }
 
 function passesTypeFilter(t, types) {
@@ -214,21 +215,23 @@ function noteHtml(text) {
     return `<div class="train-board-note">${esc(text)}</div>`;
 }
 
-// 駅ごとの一列：［種別］定刻 行き先行 …… 到着予測、下に 停車中・走行位置・遅れ
-function trainCapsuleHtml(t) {
+// 駅ごとの一列（1 行に収める。膠囊を広げて情報を詰めない）：
+// 左＝［種別］行き先行 +遅れ、右＝時刻（到着予測／この駅に停車中なら「停車中」／予測がなければ定刻）
+// 時刻を右にまとめるのは巴士の「あと○分／次HH:MM」と同じ。走行位置は「全駅を表示」で見られるので出さない
+function trainCapsuleHtml(t, showType) {
     const eta = t.realtime === false ? null : liveEtaText(t.eta, t.eta_text);
-    const sub = [];
-    if (t.stopped) sub.push('<span class="train-pos">停車中</span>');
-    else if (t.position && t.position.text) sub.push(`<span class="train-pos">${esc(t.position.text)}</span>`);
-    const d = delayHtml(t);
-    if (d) sub.push(d);
-    return `<div class="adv-detail-capsule bus-collapsed-capsule train-capsule${t.realtime === false ? ' sched-only' : ''}">
-        <div class="bus-collapsed-main">
-            <span class="train-main">${typePillHtml(t)}${t.scheduled_text ? `<span class="train-time">${esc(t.scheduled_text)}</span>` : ''}${t.destination ? `<span class="train-dest">${esc(t.destination)}行</span>` : ''}</span>
-            ${etaPillHtml(eta)}
-        </div>
-        ${sub.length ? `<div class="bus-collapsed-sub train-sub">${sub.join('')}</div>` : ''}
+    const right = t.stopped ? '<span class="bus-eta-pill chip arriving">停車中</span>'
+        : eta ? etaPillHtml(eta)
+            : t.scheduled_text ? `<span class="bus-eta-pill chip sched">${esc(t.scheduled_text)}</span>` : '';
+    return `<div class="adv-detail-capsule train-capsule">
+        <span class="train-main">${showType ? typePillHtml(t) : ''}${t.destination ? `<span class="train-dest">${esc(t.destination)}行</span>` : ''}${delayHtml(t, true)}</span>
+        ${right}
     </div>`;
+}
+
+// 種別を出すのは、この路線で 2 種類以上の種別を見たときだけ（全部「各駅停車」の路線では情報にならない）
+function showTypeFor(board) {
+    return board.knownTypes.size >= 2;
 }
 
 // ============================================================================
@@ -303,6 +306,12 @@ function stationViewHtml(board, prefs, support) {
         parts.push(noteHtml('到着情報を表示する駅を選んでください（最大2駅）'));
     } else {
         const limit = prefs.types.length > 0 ? 10 : 4;
+        // 先に全駅・全方向の種別を集める（描画の途中で種別の表示有無が変わらないように）
+        prefs.stations.forEach(name => {
+            const entry = trainCache.get(stationPath(name, limit));
+            const hit = entry && entry.json ? railwayFromStation(entry.json, name, board.lineId) : null;
+            if (hit) (hit.railway.directions || []).forEach(dir => collectTypes(board, dir.trains || []));
+        });
         prefs.stations.forEach(name => {
             const entry = trainCache.get(stationPath(name, limit));
             if (!entry || (!entry.json && !entry.error)) {
@@ -331,11 +340,10 @@ function stationViewHtml(board, prefs, support) {
             }
             (rw.directions || []).forEach(dir => {
                 const all = dir.trains || [];
-                collectTypes(board, all);
                 const shown = all.filter(t => passesTypeFilter(t, prefs.types)).slice(0, TRAINS_PER_DIRECTION);
                 const title = dir.title || dir.name || '';
                 const body = shown.length > 0
-                    ? shown.map(trainCapsuleHtml).join('')
+                    ? shown.map(tr => trainCapsuleHtml(tr, showTypeFor(board))).join('')
                     : noteHtml(all.length > 0 ? '選んだ種別の列車はしばらくありません' : 'この先の列車はありません');
                 groupsHtml += `<div class="bus-collapsed-group"><div class="bus-collapsed-dir">${esc(hit.stationName || name)}<span class="train-dir-title">${esc(title)}</span></div>${body}</div>`;
             });
@@ -390,25 +398,23 @@ function routeViewHtml(board, prefs, support) {
 
     const rows = stations.map(s => {
         const trains = (s.trains_approaching || []).filter(t => passesTypeFilter(t, prefs.types));
+        // 列車は駅の列に入れず、すべて独立した膠囊にして駅の直前に置く（巴士の車両と同じ）：
+        // 前の駅から走ってくる列車 → この駅に停車中の列車 → 駅 の順
         const moving = trains.filter(t => !t.stopped);
         const stopped = trains.filter(t => t.stopped);
-        const markers = moving.map(t => `<div class="bus-marker-row train-marker-row">
+        const markerHtml = t => `<div class="bus-marker-row train-marker-row${t.stopped ? ' stopped' : ''}">
             <span class="bus-vehicle-icon" aria-hidden="true">${TRAIN_ICON}</span>
-            <span class="bus-vehicle-main train-main">${typePillHtml(t)}${t.destination ? `<span class="train-dest">${esc(t.destination)}行</span>` : ''}</span>
-            ${delayHtml(t)}
-        </div>`).join('');
+            <span class="bus-vehicle-main train-main">${showTypeFor(board) ? typePillHtml(t) : ''}${t.destination ? `<span class="train-dest">${esc(t.destination)}行</span>` : ''}${t.stopped ? delayHtml(t, true) : ''}</span>
+            ${t.stopped ? '<span class="train-stop-label">停車中</span>' : delayHtml(t)}
+        </div>`;
+        const markers = [...moving, ...stopped].map(markerHtml).join('');
         const eta = liveEtaText(s.eta, s.eta_text);
         const right = eta ? etaPillHtml(eta)
             : s.next_text ? `<span class="bus-eta-pill chip sched">次${esc(s.next_text)}</span>`
                 : '<span class="bus-eta-pill chip none">--</span>';
-        const stoppedHtml = stopped.length > 0 ? `<div class="bus-stoprow-sub train-stopped">${stopped.map(t =>
-            `<span class="train-main">${typePillHtml(t)}${t.destination ? `<span class="train-dest">${esc(t.destination)}行</span>` : ''}<span class="train-pos">停車中</span>${delayHtml(t)}</span>`).join('')}</div>` : '';
         return `${markers}<div class="bus-stop-row train-station-row">
-            <div class="bus-stoprow-main">
-                <button type="button" class="train-station-name${moving.length > 0 ? ' approach-next' : ''}" data-action="station" data-name="${esc(s.name)}">${esc(s.name)}</button>
-                ${right}
-            </div>
-            ${stoppedHtml}
+            <button type="button" class="train-station-name${trains.length > 0 ? ' approach-next' : ''}" data-action="station" data-name="${esc(s.name)}">${esc(s.name)}</button>
+            ${right}
         </div>`;
     }).join('');
 
