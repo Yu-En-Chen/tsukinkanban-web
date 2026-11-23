@@ -86,6 +86,40 @@
     cursor: pointer;
 }
 
+.train-board-btn.primary {
+    background: rgba(0, 0, 0, 0.82);
+    border-color: transparent;
+    color: #fff;
+}
+
+/* 駅をまだ選んでいないときの案内（全駅の一覧の上） */
+.train-guide {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px 10px 16px;
+    border-radius: 18px;
+    background: rgba(10, 132, 255, 0.08);
+    border: 1px solid rgba(10, 132, 255, 0.2);
+}
+
+.train-guide-text {
+    flex: 1;
+    font-size: 0.8em;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.train-guide .train-board-btn {
+    flex-shrink: 0;
+}
+
+/* 行き先のない列車（環状線など）の今いる区間 */
+.train-where {
+    font-weight: 600;
+    opacity: 0.7;
+}
+
 .train-board-btn:active,
 .train-type-chip:active,
 .train-mode-btn:active {
@@ -290,6 +324,16 @@
     .train-board-btn {
         border-color: rgba(255, 255, 255, 0.1);
         background: rgba(255, 255, 255, 0.06);
+    }
+
+    .train-board-btn.primary {
+        background: rgba(255, 255, 255, 0.92);
+        color: #000;
+    }
+
+    .train-guide {
+        background: rgba(100, 169, 255, 0.12);
+        border-color: rgba(100, 169, 255, 0.22);
     }
 
     .train-board-time.stale,

@@ -21,7 +21,6 @@ const KNOWN_SUPPORTS = [...BOARD_SUPPORTS, 'none', 'ended'];
 // 種別分類（決定顏色）。不認識的值一律當 other
 const TYPE_CLASSES = ['limited_express', 'express', 'rapid', 'local', 'other'];
 
-const TRAIN_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 11h14"/><path d="M9 14h.01"/><path d="M15 14h.01"/><path d="m8 21 2-4"/><path d="m16 21-2-4"/></svg>';
 
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const hhmm = ms => { const d = new Date(ms); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
@@ -215,16 +214,28 @@ function noteHtml(text) {
     return `<div class="train-board-note">${esc(text)}</div>`;
 }
 
+// 列車の見出し：［種別］行き先行
+// 行き先のない列車（山手線などの環状運転）は左側が空にならないよう、種別を必ず出し、
+// withPosition のときは今いる区間（原宿→代々木）を添える
+function trainLabelHtml(t, showType, withPosition = false) {
+    const hasDest = !!t.destination;
+    let html = (showType || !hasDest) ? typePillHtml(t) : '';
+    if (hasDest) html += `<span class="train-dest">${esc(t.destination)}行</span>`;
+    else if (withPosition && !t.stopped && t.position && t.position.text) html += `<span class="train-dest train-where">${esc(t.position.text)}</span>`;
+    return html || '<span class="train-dest">列車</span>';
+}
+
 // 駅ごとの一列（1 行に収める。膠囊を広げて情報を詰めない）：
 // 左＝［種別］行き先行 +遅れ、右＝時刻（到着予測／この駅に停車中なら「停車中」／予測がなければ定刻）
-// 時刻を右にまとめるのは巴士の「あと○分／次HH:MM」と同じ。走行位置は「全駅を表示」で見られるので出さない
+// 時刻を右にまとめるのは巴士の「あと○分／次HH:MM」と同じ。走行位置は「全駅を表示」で見られるので、
+// 行き先がある列車には出さない
 function trainCapsuleHtml(t, showType) {
     const eta = t.realtime === false ? null : liveEtaText(t.eta, t.eta_text);
     const right = t.stopped ? '<span class="bus-eta-pill chip arriving">停車中</span>'
         : eta ? etaPillHtml(eta)
             : t.scheduled_text ? `<span class="bus-eta-pill chip sched">${esc(t.scheduled_text)}</span>` : '';
     return `<div class="adv-detail-capsule train-capsule">
-        <span class="train-main">${showType ? typePillHtml(t) : ''}${t.destination ? `<span class="train-dest">${esc(t.destination)}行</span>` : ''}${delayHtml(t, true)}</span>
+        <span class="train-main">${trainLabelHtml(t, showType, true)}${delayHtml(t, true)}</span>
         ${right}
     </div>`;
 }
@@ -257,8 +268,11 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden && bo
 function createBoard(row, lineId) {
     const el = document.createElement('div');
     el.className = 'train-board';
-    // 列車位置のみ（positions）の路線は駅ごとの到着がないので、最初から全駅の一覧を開く
-    const board = { el, row, lineId, expanded: trainSupportOf(lineId) === 'positions', knownTypes: new Map(), lastHtml: '' };
+    // 最初から全駅の一覧を開くとき：
+    // ・列車位置のみ（positions）の路線：駅ごとの到着がない
+    // ・駅をまだ選んでいない：まず路線全体を見てもらい、そこから駅を選ぶよう案内する
+    const expanded = trainSupportOf(lineId) === 'positions' || getTrainPrefs(lineId).stations.length === 0;
+    const board = { el, row, lineId, expanded, knownTypes: new Map(), lastHtml: '' };
 
     board.render = () => renderBoard(board);
     board.refresh = async (maxAge = TRAIN_FRESH_MS) => {
@@ -371,19 +385,25 @@ function timeHtml(at) {
 // --- 全駅の一覧（展開）：站序＋區間內／停車中的列車＋各駅の到着予測 ---
 function routeViewHtml(board, prefs, support) {
     const entry = trainCache.get(linePath(board.lineId));
-    const actions = `<div class="train-board-actions">
+    // 駅をまだ選んでいない：一覧の上に案内と「駅を選ぶ」
+    const needsPick = support !== 'positions' && prefs.stations.length === 0;
+    const guide = needsPick ? `<div class="train-guide">
+        <div class="train-guide-text">よく使う駅を選ぶと、その駅の列車だけを表示できます</div>
+        <button type="button" class="train-board-btn primary" data-action="pick">駅を選ぶ</button>
+    </div>` : '';
+    const actions = needsPick ? '' : `<div class="train-board-actions">
         <button type="button" class="train-board-btn" data-action="collapse">${support === 'positions' ? '閉じる' : '選んだ駅だけ表示'}</button>
     </div>`;
 
-    if (!entry || (!entry.json && !entry.error)) return noteHtml('駅の一覧を取得しています...') + actions;
-    if (!entry.json) return noteHtml(entry.error === 'init' ? '到着情報を準備中です。しばらくすると表示されます' : '駅の一覧を取得できません') + actions;
+    if (!entry || (!entry.json && !entry.error)) return guide + noteHtml('駅の一覧を取得しています...') + actions;
+    if (!entry.json) return guide + noteHtml(entry.error === 'init' ? '到着情報を準備中です。しばらくすると表示されます' : '駅の一覧を取得できません') + actions;
 
     const hit = railwayFromLine(entry.json, board.lineId);
-    if (!hit) return noteHtml(isOperatorLoading(entry.json, board.lineId) ? 'この路線の到着情報を準備中です' : 'この路線の駅の一覧はありません') + actions;
+    if (!hit) return guide + noteHtml(isOperatorLoading(entry.json, board.lineId) ? 'この路線の到着情報を準備中です' : 'この路線の駅の一覧はありません') + actions;
 
     const rw = hit.railway;
     const dirs = rw.directions || [];
-    if (dirs.length === 0) return noteHtml('この路線の駅の一覧はありません') + actions;
+    if (dirs.length === 0) return guide + noteHtml('この路線の駅の一覧はありません') + actions;
     const dirIndex = Math.min(prefs.dir || 0, dirs.length - 1);
     const dir = dirs[dirIndex];
     const stations = dir.stations || [];
@@ -403,8 +423,7 @@ function routeViewHtml(board, prefs, support) {
         const moving = trains.filter(t => !t.stopped);
         const stopped = trains.filter(t => t.stopped);
         const markerHtml = t => `<div class="bus-marker-row train-marker-row${t.stopped ? ' stopped' : ''}">
-            <span class="bus-vehicle-icon" aria-hidden="true">${TRAIN_ICON}</span>
-            <span class="bus-vehicle-main train-main">${showTypeFor(board) ? typePillHtml(t) : ''}${t.destination ? `<span class="train-dest">${esc(t.destination)}行</span>` : ''}${t.stopped ? delayHtml(t, true) : ''}</span>
+            <span class="bus-vehicle-main train-main">${trainLabelHtml(t, showTypeFor(board))}${t.stopped ? delayHtml(t, true) : ''}</span>
             ${t.stopped ? '<span class="train-stop-label">停車中</span>' : delayHtml(t)}
         </div>`;
         const markers = [...moving, ...stopped].map(markerHtml).join('');
@@ -418,7 +437,7 @@ function routeViewHtml(board, prefs, support) {
         </div>`;
     }).join('');
 
-    return `${notes.join('')}${typeFilterHtml(board, prefs)}${slider}<div class="bus-stops-list train-route-list">${rows}</div>${actions}${timeHtml(entry.at)}`;
+    return `${guide}${notes.join('')}${typeFilterHtml(board, prefs)}${slider}<div class="bus-stops-list train-route-list">${rows}</div>${actions}${timeHtml(entry.at)}`;
 }
 
 // ============================================================================
@@ -507,7 +526,8 @@ async function openStationPicker(board) {
     const latest = getTrainPrefs(board.lineId);
     latest.stations = picked.slice(0, 2);
     saveTrainPrefs(board.lineId, latest);
-    board.expanded = false;
+    // 駅を選んだら選んだ駅だけの表示へ。全部外したら全駅の一覧（案内つき）に戻る
+    board.expanded = latest.stations.length === 0;
     board.refresh();
 }
 
@@ -542,10 +562,6 @@ function setMode(row, lineId, mode) {
     prefs.mode = mode;
     saveTrainPrefs(lineId, prefs);
     applyMode(row, lineId);
-    if (mode === 'station' && prefs.stations.length === 0 && trainSupportOf(lineId) !== 'positions') {
-        const board = row.__trainBoard;
-        if (board) openStationPicker(board);
-    }
 }
 
 // 切換狀態套到這一列：class（遅れ表示を隠す）・按鈕的 aria-pressed・到着ボードの有無
