@@ -38,6 +38,12 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
+/* 方向別の遅れ：その方向を走る列車がない */
+.adv-none-text {
+    color: rgba(0, 0, 0, 0.45);
+    font-weight: 600;
+}
+
 /* 到着モードでは方向別の遅れ表示を隠す（列の中身は差し替えずに切り替える） */
 .extension-route-card.train-mode-station > .adv-details-container {
     display: none;
@@ -233,7 +239,7 @@
 .train-type-dot.tc-limited_express { background: #ff3b30; }
 .train-type-dot.tc-other { background: transparent; border: 1px solid currentColor; }
 
-/* --- 路線図 --- */
+/* --- 全駅の一覧 --- */
 .train-dir-slider {
     margin: 0;
 }
@@ -269,10 +275,6 @@
     color: #ff9500;
 }
 
-.train-picked {
-    color: #0a84ff;
-    margin-right: 4px;
-}
 
 .train-stopped {
     flex-direction: column;
@@ -286,6 +288,10 @@
 
 /* --- 深色模式 --- */
 @media (prefers-color-scheme: dark) {
+    .adv-none-text {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
     .train-mode-switch {
         background: rgba(255, 255, 255, 0.1);
     }
@@ -353,7 +359,4 @@
         color: #ff9f0a;
     }
 
-    .train-picked {
-        color: #64a9ff;
-    }
 }

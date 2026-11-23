@@ -1,7 +1,7 @@
 // trains.js - 列車の駅ごとの到着情報（/api/train/station・/api/train/line）
 // 鐵道路線卡（buildRailLineRow）的 footer 有「遅れ｜到着」切換：
 // ・遅れ：原本的方向別遅れ（/api/status 的 advanced_details），不另外發送請求
-// ・到着：使用者選的駅（最多 2 個）接下來的列車＝種別・行き先・到着予測；也可以展開成路線圖
+// ・到着：使用者選的駅（最多 2 個）接下來的列車＝種別・行き先・到着予測；也可以展開成全駅の一覧（站序＋列車位置）
 // 只有 /api/status 該路線帶 train_support 時才出現切換；後端加了業者，切換會自動出現。
 // 資料只在卡片開著、而且切到「到着」時才抓，每 60 秒更新一次（後端建議 ≥ 60 秒）。
 
@@ -254,7 +254,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden && bo
 function createBoard(row, lineId) {
     const el = document.createElement('div');
     el.className = 'train-board';
-    // 列車位置のみ（positions）の路線は駅ごとの到着がないので、最初から路線図を開く
+    // 列車位置のみ（positions）の路線は駅ごとの到着がないので、最初から全駅の一覧を開く
     const board = { el, row, lineId, expanded: trainSupportOf(lineId) === 'positions', knownTypes: new Map(), lastHtml: '' };
 
     board.render = () => renderBoard(board);
@@ -298,7 +298,7 @@ function stationViewHtml(board, prefs, support) {
     if (support === 'loading') parts.push(noteHtml('この路線の到着情報を準備中です。しばらくすると表示されます'));
 
     if (support === 'positions') {
-        parts.push(noteHtml('この路線は到着予測がありません。路線図で列車の位置を確認できます'));
+        parts.push(noteHtml('この路線は到着予測がありません。全駅の一覧で列車の位置を確認できます'));
     } else if (prefs.stations.length === 0) {
         parts.push(noteHtml('到着情報を表示する駅を選んでください（最大2駅）'));
     } else {
@@ -348,7 +348,7 @@ function stationViewHtml(board, prefs, support) {
     const filter = support === 'positions' ? '' : typeFilterHtml(board, prefs);
     const actions = `<div class="train-board-actions">
         ${support === 'positions' ? '' : `<button type="button" class="train-board-btn" data-action="pick">${prefs.stations.length > 0 ? '駅を変更' : '駅を選ぶ'}</button>`}
-        <button type="button" class="train-board-btn" data-action="expand">路線図を見る</button>
+        <button type="button" class="train-board-btn" data-action="expand">全駅を表示</button>
     </div>`;
 
     return `${parts.join('')}${filter}${groupsHtml ? `<div class="adv-details-container train-groups">${groupsHtml}</div>` : ''}${actions}${timeHtml(newestAt)}`;
@@ -360,22 +360,22 @@ function timeHtml(at) {
     return `<div class="train-board-time${old ? ' stale' : ''}">${old ? '⚠ ' : ''}到着情報 ${hhmm(at)} 時点</div>`;
 }
 
-// --- 路線図（展開） ---
+// --- 全駅の一覧（展開）：站序＋區間內／停車中的列車＋各駅の到着予測 ---
 function routeViewHtml(board, prefs, support) {
     const entry = trainCache.get(linePath(board.lineId));
     const actions = `<div class="train-board-actions">
-        <button type="button" class="train-board-btn" data-action="collapse">${support === 'positions' ? '閉じる' : '駅ごとの表示に戻る'}</button>
+        <button type="button" class="train-board-btn" data-action="collapse">${support === 'positions' ? '閉じる' : '選んだ駅だけ表示'}</button>
     </div>`;
 
-    if (!entry || (!entry.json && !entry.error)) return noteHtml('路線図を取得しています...') + actions;
-    if (!entry.json) return noteHtml(entry.error === 'init' ? '到着情報を準備中です。しばらくすると表示されます' : '路線図を取得できません') + actions;
+    if (!entry || (!entry.json && !entry.error)) return noteHtml('駅の一覧を取得しています...') + actions;
+    if (!entry.json) return noteHtml(entry.error === 'init' ? '到着情報を準備中です。しばらくすると表示されます' : '駅の一覧を取得できません') + actions;
 
     const hit = railwayFromLine(entry.json, board.lineId);
-    if (!hit) return noteHtml(isOperatorLoading(entry.json, board.lineId) ? 'この路線の到着情報を準備中です' : 'この路線の路線図はありません') + actions;
+    if (!hit) return noteHtml(isOperatorLoading(entry.json, board.lineId) ? 'この路線の到着情報を準備中です' : 'この路線の駅の一覧はありません') + actions;
 
     const rw = hit.railway;
     const dirs = rw.directions || [];
-    if (dirs.length === 0) return noteHtml('この路線の路線図はありません') + actions;
+    if (dirs.length === 0) return noteHtml('この路線の駅の一覧はありません') + actions;
     const dirIndex = Math.min(prefs.dir || 0, dirs.length - 1);
     const dir = dirs[dirIndex];
     const stations = dir.stations || [];
@@ -401,12 +401,11 @@ function routeViewHtml(board, prefs, support) {
         const right = eta ? etaPillHtml(eta)
             : s.next_text ? `<span class="bus-eta-pill chip sched">次${esc(s.next_text)}</span>`
                 : '<span class="bus-eta-pill chip none">--</span>';
-        const isPicked = prefs.stations.includes(s.name);
         const stoppedHtml = stopped.length > 0 ? `<div class="bus-stoprow-sub train-stopped">${stopped.map(t =>
             `<span class="train-main">${typePillHtml(t)}${t.destination ? `<span class="train-dest">${esc(t.destination)}行</span>` : ''}<span class="train-pos">停車中</span>${delayHtml(t)}</span>`).join('')}</div>` : '';
         return `${markers}<div class="bus-stop-row train-station-row">
             <div class="bus-stoprow-main">
-                <button type="button" class="train-station-name${moving.length > 0 ? ' approach-next' : ''}" data-action="station" data-name="${esc(s.name)}">${isPicked ? '<span class="train-picked" aria-label="到着表示中">★</span>' : ''}${esc(s.name)}</button>
+                <button type="button" class="train-station-name${moving.length > 0 ? ' approach-next' : ''}" data-action="station" data-name="${esc(s.name)}">${esc(s.name)}</button>
                 ${right}
             </div>
             ${stoppedHtml}
@@ -506,22 +505,14 @@ async function openStationPicker(board) {
     board.refresh();
 }
 
-// 路線図の駅名をタップ：到着表示への追加・解除、Google マップ
+// 全駅の一覧で駅名をタップ：Google マップ（到着表示の駅は「駅を変更」から選ぶ）
+// 巴士の停留所と同じく選單を挟み、誤タップでいきなりアプリの外へ出ないようにする
 function openStationActions(board, name) {
     if (!window.iosActionSheet || !name) return;
-    const prefs = getTrainPrefs(board.lineId);
-    const picked = prefs.stations.includes(name);
     window.iosActionSheet(name, 'この駅の操作を選択してください', [
-        { text: picked ? '到着表示から外す' : '到着表示に追加', value: 'toggle' },
         { text: 'Google マップで開く', value: 'map' }
     ]).then(choice => {
-        if (choice === 'toggle') {
-            const latest = getTrainPrefs(board.lineId);
-            if (latest.stations.includes(name)) latest.stations = latest.stations.filter(n => n !== name);
-            else { latest.stations = [...latest.stations, name]; if (latest.stations.length > 2) latest.stations.shift(); }
-            saveTrainPrefs(board.lineId, latest);
-            board.render();
-        } else if (choice === 'map') {
+        if (choice === 'map') {
             window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + '駅')}`, '_blank', 'noopener,noreferrer');
         }
     });
