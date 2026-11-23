@@ -1,6 +1,7 @@
 // db.js - 使用者偏好設定的本地資料庫引擎 (IndexedDB 搭配 LocalStorage 備援)
 
-import { knownRouteIdSet, migrateRouteIds } from './route-id-migration.js';
+import { knownRouteIdSet, migrateRouteIds, ROUTE_ID_MIGRATION } from './route-id-migration.js';
+import { collectLineSettings, sanitizeLineSettings, applyLineSettings } from './line-prefs.js';
 
 const DB_NAME = 'TsukinKanbanDB';
 const STORE_NAME = 'userPreferences';
@@ -548,35 +549,8 @@ export async function replaceCardRouteIds(id, newTargetLineIds) {
  */
 export async function exportDataToClipboard() {
     try {
-        const allData = await getAllUserPreferences();
-        const displayOrder = allData['__DISPLAY_ORDER__'];
-        
-        // 1. 取得目前畫面上卡片的 ID 順序
-        let visibleIds = [];
-        if (displayOrder && Array.isArray(displayOrder.order)) {
-            visibleIds = displayOrder.order;
-        } else if (window.appRailwayData) {
-            visibleIds = window.appRailwayData.map(c => c.id);
-        }
-
-        // 2. 轉換為去識別化的結構陣列 (不含 Card ID)
-        const exportList = visibleIds.map(id => {
-            const dbCard = allData[id] || {};
-            const domCard = window.appRailwayData ? window.appRailwayData.find(c => c.id === id) : null;
-            
-            return {
-                name: dbCard.customName || (domCard ? domCard.name : ""),
-                hex: dbCard.customHex || (domCard ? domCard.hex : ""),
-                // 匯出 targetLineIds 並維持其陣列順序
-                routes: dbCard.targetLineIds || (domCard ? domCard.targetLineIds : [])
-            };
-        });
-
-        if (exportList.length === 0) throw new Error("少なくとも5枚のカードが登録されている必要があります。");
-
-        // 3. 複製 JSON 到剪貼簿
-        await navigator.clipboard.writeText(JSON.stringify(exportList));
-        console.log('[DB] 完整設定已匯出 (去識別化):', exportList);
+        const jsonString = await getExportDataString();
+        await navigator.clipboard.writeText(jsonString);
         return true;
     } catch (error) {
         console.error('[DB] 匯出失敗:', error);
@@ -605,6 +579,13 @@ export async function importDataAndOverwrite(jsonString) {
         parsedList.forEach(item => {
             const migrated = item ? migrateRouteIds(item.routes, knownIds) : null;
             if (migrated) item.routes = migrated;
+        });
+
+        // 各路線的顯示設定（公車的預覽停留所等）：只收這張卡片有的路線，格式不對的丟掉
+        const importedLineSettings = {};
+        parsedList.forEach(item => {
+            if (!item) return;
+            Object.assign(importedLineSettings, sanitizeLineSettings(item.lineSettings, item.routes, ROUTE_ID_MIGRATION));
         });
 
         parsedList.forEach((item, index) => {
@@ -679,6 +660,7 @@ export async function importDataAndOverwrite(jsonString) {
         // 模式 A：LocalStorage
         if (useFallback || !db) {
             localStorage.setItem(FALLBACK_KEY, JSON.stringify(newDbData));
+            applyLineSettings(importedLineSettings);
             console.log('[DB-Fallback] 髒資料與隱藏狀態已徹底清除，系統重建完成');
             return parsedList.length;
         }
@@ -702,6 +684,7 @@ export async function importDataAndOverwrite(jsonString) {
                     store.put(newDbData[key]).onsuccess = () => {
                         processed++;
                         if (processed === keys.length) {
+                            applyLineSettings(importedLineSettings);
                             console.log('[DB] 髒資料與隱藏狀態已徹底清除，系統重建完成');
                             resolve(parsedList.length);
                         }
@@ -894,11 +877,16 @@ export async function getExportDataString() {
     const exportList = visibleIds.map(id => {
         const dbCard = allData[id] || {};
         const domCard = window.appRailwayData ? window.appRailwayData.find(c => c.id === id) : null;
-        return {
+        const routes = dbCard.targetLineIds || (domCard ? domCard.targetLineIds : []);
+        const item = {
             name: dbCard.customName || (domCard ? domCard.name : ""),
             hex: dbCard.customHex || (domCard ? domCard.hex : ""),
-            routes: dbCard.targetLineIds || (domCard ? domCard.targetLineIds : [])
+            routes
         };
+        // 各路線的顯示設定（公車的預覽停留所等）。沒有設定時不輸出這個欄位
+        const lineSettings = collectLineSettings(routes);
+        if (lineSettings) item.lineSettings = lineSettings;
+        return item;
     });
 
     if (exportList.length === 0) throw new Error("少なくとも5枚のカードが登録されている必要があります。");
