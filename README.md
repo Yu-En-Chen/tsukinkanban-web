@@ -42,7 +42,7 @@
 | 〇 | 平常（鉄道は遅延 5 分以内、船は運航予定） |
 | △ | 遅れ（鉄道は 6〜15 分）、遅延・見合わせ等の発表、船の条件付き運航・出帆港変更・一部欠航 |
 | × | 大幅な遅れ（鉄道は 16 分以上）、船の欠航、情報取得エラー |
-| 吹き出し | お知らせの発表、情報確認中、データの提供期間が終了した路線など |
+| 吹き出し | お知らせの発表、情報確認中、運行中の列車がない、データの提供期間が終了した路線など |
 | 地震・雨風・雪 | 運行情報に該当する記述があるときのみ表示 |
 
 記号の形、点灯／消灯の明るさ、ランプ横の文章でも状態を伝えるため、色だけに頼らずに読み取れます。
@@ -86,7 +86,7 @@
 - 一部のデータ（JR 東日本・東武鉄道・西武鉄道・京急電鉄・京王電鉄・東急電鉄の運行情報、JR 東日本・東武鉄道の列車ロケーション情報、成田・羽田のフライト情報）は「公共交通オープンデータチャレンジ2026」限定で提供されているもので、2027 年 2 月末まで提供予定です。提供終了後は該当する路線を「提供終了」と表示し、終了の 30 日前から予告します
 - 船・島しょ部のバスは、東海汽船（時刻表・運航情報）、大島旅客自動車（大島バス時刻表）、三宅村（三宅村営バス時刻表）のデータを利用しています
 - このサービスは、以下の著作物を改変して利用しています。
-  - 東京都交通局、「運行情報」「列車ロケーション情報」「バスロケーション情報」「バス停情報」「バス路線情報」「バス時刻表」、クリエイティブ・コモンズ・ライセンス　表示4.0国際（https://creativecommons.org/licenses/by/4.0/deed.ja）
+  - 東京都交通局、「運行情報」「列車ロケーション情報」「列車時刻表」「路線系統情報」「バスロケーション情報」「バス停情報」「バス路線情報」「バス時刻表」、クリエイティブ・コモンズ・ライセンス　表示4.0国際（https://creativecommons.org/licenses/by/4.0/deed.ja）
   - 三宅村、三宅村営バス 時刻表データ、クリエイティブ・コモンズ・ライセンス　表示4.0国際（https://creativecommons.org/licenses/by/4.0/deed.ja）
 - 対応路線の一覧は、アプリ内「データ元」ページをご覧ください
 
@@ -185,7 +185,7 @@ python3 -m http.server 8000
 | 〇 | 正常（鐵道誤點 5 分以內，船預定航行） |
 | △ | 延誤（鐵道 6～15 分）、誤點或停駛等公告、船附條件航行、改港或部分停航 |
 | × | 嚴重延誤（鐵道 16 分以上）、船停航、資料取得錯誤 |
-| 對話框 | 有公告、資訊確認中、資料提供期間已結束的路線等 |
+| 對話框 | 有公告、資訊確認中、目前沒有列車在跑、資料提供期間已結束的路線等 |
 | 地震、雨風、雪 | 只在運行資訊有相關描述時顯示 |
 
 以符號形狀、亮滅明暗、燈號旁的文字說明來傳達狀態，不只依賴顏色。
@@ -229,7 +229,7 @@ python3 -m http.server 8000
 - 部分資料（JR 東日本、東武鐵道、西武鐵道、京急電鐵、京王電鐵、東急電鐵的運行資訊，JR 東日本、東武鐵道的列車位置資訊，以及成田、羽田的航班資訊）為「公共交通オープンデータチャレンジ2026」限定提供，預定提供至 2027 年 2 月底。提供結束後相關路線會顯示「提供終了」，並於結束前 30 天開始預告
 - 船與離島巴士使用東海汽船（時刻表、運航資訊）、大島旅客自動車（大島巴士時刻表）、三宅村（三宅村營巴士時刻表）的資料
 - 本服務改作並使用以下著作物：
-  - 東京都交通局、「運行情報」「列車ロケーション情報」「バスロケーション情報」「バス停情報」「バス路線情報」「バス時刻表」、Creative Commons 姓名標示 4.0 國際（https://creativecommons.org/licenses/by/4.0/deed.ja）
+  - 東京都交通局、「運行情報」「列車ロケーション情報」「列車時刻表」「路線系統情報」「バスロケーション情報」「バス停情報」「バス路線情報」「バス時刻表」、Creative Commons 姓名標示 4.0 國際（https://creativecommons.org/licenses/by/4.0/deed.ja）
   - 三宅村、三宅村營巴士 時刻表資料、Creative Commons 姓名標示 4.0 國際（https://creativecommons.org/licenses/by/4.0/deed.ja）
 - 支援路線清單請見 App 內的「データ元」頁面
 
@@ -330,7 +330,7 @@ The lamps use 〇, △ and ×, symbols that are widely used in Japan in the same
 | 〇 | Normal (trains: no more than 5 minutes late; ferries: scheduled to sail) |
 | △ | Some disruption (trains: 6–15 minutes late, or an announced delay or suspension; ferries: sailing subject to conditions, departure port changed, or some stops cancelled) |
 | × | Serious disruption (trains: 16 minutes or more late; ferries: cancelled), or the information couldn't be fetched |
-| Speech bubble | There is an announcement, the information is still being checked, or the data for that line is no longer available |
+| Speech bubble | There is an announcement, the information is still being checked, no trains are running right now, or the data for that line is no longer available |
 | Earthquake / rain and wind / snow | Shown only when the service updates mention them |
 
 The state is also shown by the shape of each symbol, how bright it is, and the text next to it, so color alone is never needed to read it.
@@ -380,7 +380,7 @@ This service uses data provided by the Public Transportation Open Data Center (O
 - Some data (service information for JR East, Tobu Railway, Seibu Railway, Keikyu, Keio and Tokyu; train location data for JR East and Tobu Railway; flight information for Narita and Haneda) is provided only for the Open Data Challenge for Public Transportation 2026, and is scheduled to be available until the end of February 2027. After that, the affected lines are shown as "data feed ended", with notice given from 30 days before
 - Ferries and island buses use data from Tokai Kisen (timetables and service status), Oshima Ryokaku Jidosha (Oshima Bus timetables) and Miyake Village (Miyake Village Bus timetables)
 - This service uses the following works in modified form:
-  - Bureau of Transportation, Tokyo Metropolitan Government, "Train status information", "Train location information", "Bus location information", "Bus stop information", "Bus route information", "Bus timetable", Creative Commons Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/)
+  - Bureau of Transportation, Tokyo Metropolitan Government, "Train status information", "Train location information", "Train timetable", "Route information", "Bus location information", "Bus stop information", "Bus route information", "Bus timetable", Creative Commons Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/)
   - Miyake Village, Miyake Village Bus timetable data, Creative Commons Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/)
 - For the list of supported lines, see the "データ元" (Data sources) page in the app
 
