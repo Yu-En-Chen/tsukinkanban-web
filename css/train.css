@@ -1,0 +1,359 @@
+/* ============================================================================
+   train.css - 列車の駅ごとの到着情報（鐵道路線卡の「遅れ｜到着」切換と到着ボード）
+   膠囊・時間・方向切換は bus.css の部品をそのまま使い、ここでは列車だけの部分を定義する
+   ============================================================================ */
+
+/* --- footer：左に切換、右に更新時刻 --- */
+.ext-card-footer.has-train-switch {
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 0;
+}
+
+.train-mode-switch {
+    display: inline-flex;
+    padding: 2px;
+    gap: 2px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.06);
+    flex-shrink: 0;
+}
+
+.train-mode-btn {
+    border: none;
+    background: transparent;
+    color: rgba(0, 0, 0, 0.55);
+    font: inherit;
+    font-size: 0.75em;
+    font-weight: 700;
+    padding: 5px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.train-mode-btn[aria-pressed="true"] {
+    background: #fff;
+    color: rgba(0, 0, 0, 0.85);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* 到着モードでは方向別の遅れ表示を隠す（列の中身は差し替えずに切り替える） */
+.extension-route-card.train-mode-station > .adv-details-container {
+    display: none;
+}
+
+/* --- 到着ボード --- */
+.train-board {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.train-board .adv-details-container.train-groups {
+    gap: 14px;
+    margin: 0;
+}
+
+.train-dir-title {
+    margin-left: 8px;
+    font-weight: 600;
+}
+
+.train-board-note {
+    font-size: 0.8em;
+    font-weight: 600;
+    opacity: 0.65;
+    padding: 2px 4px;
+    line-height: 1.5;
+}
+
+.train-board-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.train-board-btn {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(0, 0, 0, 0.04);
+    color: inherit;
+    font: inherit;
+    font-size: 0.8em;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.train-board-btn:active,
+.train-type-chip:active,
+.train-mode-btn:active {
+    transform: scale(0.96);
+}
+
+.train-board-time {
+    font-size: 0.72em;
+    font-weight: 600;
+    opacity: 0.45;
+    text-align: right;
+}
+
+.train-board-time.stale {
+    opacity: 0.8;
+    color: #c28500;
+}
+
+/* --- 一列：［種別］定刻 行き先行 …… 到着予測 --- */
+.train-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    font-weight: 700;
+    font-size: 0.95em;
+}
+
+.train-time {
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+}
+
+.train-dest {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.train-capsule.sched-only .train-time {
+    opacity: 0.75;
+}
+
+.train-sub {
+    gap: 10px;
+    font-size: 0.85em;
+    font-weight: 700;
+}
+
+.train-pos {
+    opacity: 0.6;
+    font-weight: 700;
+}
+
+.train-delay {
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.train-delay.minor {
+    color: #c28500;
+}
+
+.train-delay.major {
+    color: #d70015;
+}
+
+/* --- 種別：色は type_class だけで決める（文字でも区別できるので色だけに頼らない） --- */
+.train-type {
+    flex-shrink: 0;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.8em;
+    font-weight: 800;
+    line-height: 1.4;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+.train-type.tc-local {
+    background: rgba(120, 120, 128, 0.14);
+    color: rgba(0, 0, 0, 0.7);
+}
+
+.train-type.tc-rapid {
+    background: rgba(10, 132, 255, 0.12);
+    color: #0062c4;
+}
+
+.train-type.tc-express {
+    background: rgba(255, 149, 0, 0.15);
+    color: #a65a00;
+}
+
+.train-type.tc-limited_express {
+    background: rgba(255, 59, 48, 0.12);
+    color: #c4001a;
+}
+
+.train-type.tc-other {
+    background: transparent;
+    border-color: rgba(0, 0, 0, 0.2);
+    color: rgba(0, 0, 0, 0.7);
+}
+
+/* --- 種別で絞り込む --- */
+.train-type-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.train-type-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.55);
+    color: rgba(0, 0, 0, 0.75);
+    font: inherit;
+    font-size: 0.78em;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.train-type-chip.active {
+    background: rgba(0, 0, 0, 0.82);
+    border-color: transparent;
+    color: #fff;
+}
+
+.train-type-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.train-type-dot.tc-local { background: rgba(120, 120, 128, 0.8); }
+.train-type-dot.tc-rapid { background: #0a84ff; }
+.train-type-dot.tc-express { background: #ff9500; }
+.train-type-dot.tc-limited_express { background: #ff3b30; }
+.train-type-dot.tc-other { background: transparent; border: 1px solid currentColor; }
+
+/* --- 路線図 --- */
+.train-dir-slider {
+    margin: 0;
+}
+
+.train-station-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+}
+
+.train-station-name {
+    flex-grow: 1;
+    min-width: 0;
+    border: none;
+    background: none;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    font-weight: 700;
+    font-size: 0.95em;
+    text-align: left;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.train-station-name:active {
+    opacity: 0.6;
+}
+
+.train-station-name.approach-next {
+    color: #ff9500;
+}
+
+.train-picked {
+    color: #0a84ff;
+    margin-right: 4px;
+}
+
+.train-stopped {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.train-marker-row .train-main {
+    font-size: 1em;
+}
+
+/* --- 深色模式 --- */
+@media (prefers-color-scheme: dark) {
+    .train-mode-switch {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .train-mode-btn {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .train-mode-btn[aria-pressed="true"] {
+        background: rgba(255, 255, 255, 0.92);
+        color: #000;
+    }
+
+    .train-board-btn {
+        border-color: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.06);
+    }
+
+    .train-board-time.stale,
+    .train-delay.minor {
+        color: #ffd60a;
+    }
+
+    .train-delay.major {
+        color: #ff453a;
+    }
+
+    .train-type.tc-local {
+        background: rgba(174, 174, 178, 0.2);
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+    .train-type.tc-rapid {
+        background: rgba(100, 169, 255, 0.2);
+        color: #8cc1ff;
+    }
+
+    .train-type.tc-express {
+        background: rgba(255, 159, 10, 0.2);
+        color: #ffb340;
+    }
+
+    .train-type.tc-limited_express {
+        background: rgba(255, 69, 58, 0.2);
+        color: #ff7a70;
+    }
+
+    .train-type.tc-other {
+        border-color: rgba(255, 255, 255, 0.3);
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .train-type-chip {
+        background: rgba(30, 30, 32, 0.65);
+        border-color: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .train-type-chip.active {
+        background: rgba(255, 255, 255, 0.92);
+        color: #000;
+    }
+
+    .train-station-name.approach-next {
+        color: #ff9f0a;
+    }
+
+    .train-picked {
+        color: #64a9ff;
+    }
+}

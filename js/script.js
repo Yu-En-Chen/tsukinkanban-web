@@ -16,6 +16,7 @@ import { initPhysics } from './physics.js';
 import { initHeader } from './header.js';
 import { getAllUserPreferences, restorePreviousPreference, replaceCardRouteIds } from '../data/db.js';
 import { knownRouteIdSet, migrateRouteIds } from '../data/route-id-migration.js';
+import { trainSupportOf, isTrainBoardSupport, trainModeSwitchHtml, mountTrainBoard, syncTrainBoard } from './trains.js';
 import { initPersonalization } from './personalization.js';
 import { initDynamicClock } from './clock.js';
 import { syncAndLoadDictionary } from '../data/dictionary-db.js';
@@ -607,8 +608,11 @@ function renderCards(data) {
 // ============================================================================
 // 鐵道路線的資訊卡（面板內的一列）
 // 開啟面板、編輯路線後的重建、每分鐘更新的原地替換 三處共用
+// 後端有列車到着資料（/api/status 的 train_support）的路線：footer 加「遅れ｜到着」切換，
+// 到着模式的內容（trains.js 的到着ボード）放在 footer 上方。
+// opts.live === false：只拿來比對 HTML 的列（每分鐘更新），不接到着ボード
 // ============================================================================
-function buildRailLineRow(line) {
+function buildRailLineRow(line, opts = {}) {
     let statusClass = 'status-normal';
     if (line.isError) statusClass = 'status-error';
     else if (line.isAttention) statusClass = 'status-attention';
@@ -645,6 +649,8 @@ function buildRailLineRow(line) {
         `;
     }
 
+    const trainCapable = !line.isEnded && isTrainBoardSupport(trainSupportOf(line.id));
+
     row.innerHTML = `
         <div class="ext-card-header">
             <div class="ext-card-title-group">
@@ -658,7 +664,8 @@ function buildRailLineRow(line) {
         <div class="ext-card-divider"></div>
         ${lineMessageHtml(line)}
         ${line.isEnded ? '' : advancedHtml}
-        <div class="ext-card-footer">
+        <div class="ext-card-footer${trainCapable ? ' has-train-switch' : ''}">
+            ${trainCapable ? trainModeSwitchHtml(line.id) : ''}
             <span class="ext-update-time">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 更新: ${line.updateTime}
@@ -667,7 +674,27 @@ function buildRailLineRow(line) {
     `;
     // 每分鐘更新時用來找回這一列
     row.dataset.lineId = line.id;
+    if (trainCapable && opts.live !== false) mountTrainBoard(row, line.id);
     return row;
+}
+
+// 每分鐘更新：路線卡的內容沒變就不動；有變只換狀態的部分，到着ボード留在原地
+// （ボードを抜き差しすると中のアニメーションや捲動位置がリセットされるため）
+function refreshRailLineRow(row, line) {
+    const fresh = buildRailLineRow(line, { live: false });
+    const boardEl = row.__trainBoard && row.__trainBoard.el.parentNode === row ? row.__trainBoard.el : null;
+    const current = [...row.children].filter(c => c !== boardEl).map(c => c.outerHTML).join('');
+    const next = [...fresh.children].map(c => c.outerHTML).join('');
+    if (current !== next) {
+        [...row.childNodes].forEach(n => { if (n !== boardEl) n.remove(); });
+        let afterFooter = false;
+        [...fresh.childNodes].forEach(n => {
+            if (n.nodeType === 1 && n.classList.contains('ext-card-footer')) afterFooter = true;
+            if (boardEl && !afterFooter) row.insertBefore(n, boardEl);
+            else row.appendChild(n);
+        });
+    }
+    syncTrainBoard(row, line.id);
 }
 
 // ============================================================================
@@ -2475,8 +2502,7 @@ function refreshOpenRailwayCard() {
             if (line.isBusLine || line.isShipLine) return;
             const row = Array.from(wrapper.children).find(el => el.dataset && el.dataset.lineId === line.id);
             if (!row) return;
-            const html = buildRailLineRow(line).innerHTML;
-            if (row.innerHTML !== html) row.innerHTML = html;
+            refreshRailLineRow(row, line);
         });
     }
 
