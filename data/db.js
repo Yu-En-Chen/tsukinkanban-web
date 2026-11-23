@@ -543,6 +543,22 @@ export async function replaceCardRouteIds(id, newTargetLineIds) {
 // 匯出與匯入 (Data Export / Import)
 // ============================================================================
 
+// 看板上實際顯示的卡片 ID（與 script.js 的 buildAndRender 相同：排除隱藏的卡片與搜尋預覽，順序＝看板順序）。
+// 排序檔（__DISPLAY_ORDER__）可能還留著已隱藏的卡片，直接用的話會匯出超過 5 張、匯入時被擋下
+function boardCardIds(allData) {
+    let hiddenIds = [];
+    try { hiddenIds = JSON.parse(localStorage.getItem('TsukinKanban_HiddenCards') || '[]'); } catch (e) { }
+    if (!Array.isArray(hiddenIds)) hiddenIds = [];
+    const onBoard = id => typeof id === 'string' && !hiddenIds.includes(id) &&
+        !id.startsWith('temp-search') && !id.startsWith('__') && id !== 'fixed-bottom';
+
+    const shown = (window.appRailwayData || []).filter(c => c && !c.isTemporarySearch && onBoard(c.id)).map(c => c.id);
+    if (shown.length > 0) return shown;
+
+    const displayOrder = allData['__DISPLAY_ORDER__'];
+    return (displayOrder && Array.isArray(displayOrder.order) ? displayOrder.order : []).filter(onBoard);
+}
+
 /**
  * 匯出「去識別化」的完整資料陣列 (僅限目前可見卡片)
  * 包含：顯示名稱、色碼、追蹤路線及其順序
@@ -570,7 +586,7 @@ export async function importDataAndOverwrite(jsonString) {
         // 第一階段：全域與格式嚴格驗證 (Fail-Fast)
         // ==========================================
         if (!Array.isArray(parsedList)) throw new Error("フォーマットエラー：無効なバックアップデータです。");
-        if (parsedList.length > 5) throw new Error("インポート失敗：カードは最大5枚までです。(最多 5 張卡片)");
+        if (parsedList.length > 5) throw new Error("インポート失敗：カードは最大5枚までです。");
 
         const hexRegex = /^#([0-9A-F]{3}){1,2}$/i;
 
@@ -592,12 +608,12 @@ export async function importDataAndOverwrite(jsonString) {
             const cardNum = index + 1;
             // 編輯時的上限是 10 字，但從搜尋建立的卡片會直接用路線名（航路名可達 20 字以上），
             // 匯出的資料要能原樣匯回，這裡放寬到 40 字
-            if (item.name && item.name.length > 40) throw new Error(`${cardNum}枚目のカード名が長すぎます。(名稱過長)`);
-            if (item.hex && !hexRegex.test(item.hex)) throw new Error(`${cardNum}枚目のカラーコードが不正です。(色碼格式錯誤)`);
+            if (item.name && item.name.length > 40) throw new Error(`${cardNum}枚目のカード名が長すぎます。`);
+            if (item.hex && !hexRegex.test(item.hex)) throw new Error(`${cardNum}枚目のカラーコードが不正です。`);
             
             if (item.routes) {
                 // 驗證：每張卡片最多 6 條追蹤路線
-                if (item.routes.length > 6) throw new Error(`${cardNum}枚目の追跡路線は最大6つまでです。(路線不可超過6條)`);
+                if (item.routes.length > 6) throw new Error(`${cardNum}枚目の追跡路線は最大6つまでです。`);
                 
                 // 驗證：航班不可與鐵道混合
                 // 無 ':' 或 '.' 的通常是航班 (如 CI100)，有的是 ODPT 鐵道 ID
@@ -605,7 +621,7 @@ export async function importDataAndOverwrite(jsonString) {
                 const hasTrain = item.routes.some(r => r.includes(':') || r.includes('.'));
                 
                 if (hasFlight && hasTrain) {
-                    throw new Error(`${cardNum}枚目のカード：飛行機の便と鉄道を同じカードに混ぜることはできません。(飛機與鐵道不可混搭)`);
+                    throw new Error(`${cardNum}枚目のカード：飛行機の便と鉄道を同じカードに混ぜることはできません。`);
                 }
             }
         });
@@ -692,7 +708,7 @@ export async function importDataAndOverwrite(jsonString) {
                 });
             };
             
-            clearReq.onerror = () => reject(new Error("古いデータのクリアに失敗しました。(舊資料清空失敗)"));
+            clearReq.onerror = () => reject(new Error("古いデータのクリアに失敗しました。"));
         });
 
     } catch (error) {
@@ -710,17 +726,10 @@ export async function importDataAndOverwrite(jsonString) {
 export async function exportColorsToClipboard() {
     try {
         const allData = await getAllUserPreferences();
-        const displayOrder = allData['__DISPLAY_ORDER__'];
-        const colorTheme = []; 
+        const colorTheme = [];
 
-        // 獲取目前畫面上卡片的 ID 陣列
-        let visibleCardIds = [];
-        if (displayOrder && Array.isArray(displayOrder.order)) {
-            visibleCardIds = displayOrder.order;
-        } else if (window.appRailwayData && window.appRailwayData.length > 0) {
-            // 如果沒排序過，直接從畫面的全域變數抓取
-            visibleCardIds = window.appRailwayData.map(card => card.id);
-        }
+        // 目前看板上的卡片（不含隱藏的卡片）
+        const visibleCardIds = boardCardIds(allData);
 
         // 遍歷卡片，抓出使用者自訂顏色，若無自訂則抓取預設顏色
         visibleCardIds.forEach(cardId => {
@@ -770,17 +779,11 @@ export async function importColorsOnly(jsonString) {
 
         const db = await initDB();
         const allData = await getAllUserPreferences();
-        const displayOrder = allData['__DISPLAY_ORDER__'];
-        
-        // 取得畫面上可見的卡片順序（全新狀態下也能找到卡片）
-        let visibleCardIds = [];
-        if (displayOrder && Array.isArray(displayOrder.order)) {
-            visibleCardIds = displayOrder.order;
-        } else if (window.appRailwayData && window.appRailwayData.length > 0) {
-            // 從 script.js 的全域變數取得畫面上的卡片順序
-            visibleCardIds = window.appRailwayData.map(card => card.id);
-        } else {
-            visibleCardIds = Object.keys(allData).filter(k => k !== '__DISPLAY_ORDER__').slice(0, 5);
+
+        // 看板上的卡片順序（不含隱藏的卡片；全新狀態下也能找到卡片）
+        let visibleCardIds = boardCardIds(allData);
+        if (visibleCardIds.length === 0) {
+            visibleCardIds = Object.keys(allData).filter(k => !k.startsWith('__')).slice(0, 5);
         }
 
         let updatedCount = 0;
@@ -865,14 +868,7 @@ export async function importColorsOnly(jsonString) {
 // 取得完整設定的 JSON 字串 (但不直接複製)
 export async function getExportDataString() {
     const allData = await getAllUserPreferences();
-    const displayOrder = allData['__DISPLAY_ORDER__'];
-    
-    let visibleIds = [];
-    if (displayOrder && Array.isArray(displayOrder.order)) {
-        visibleIds = displayOrder.order;
-    } else if (window.appRailwayData) {
-        visibleIds = window.appRailwayData.map(c => c.id);
-    }
+    const visibleIds = boardCardIds(allData);
 
     const exportList = visibleIds.map(id => {
         const dbCard = allData[id] || {};
@@ -896,15 +892,8 @@ export async function getExportDataString() {
 // 取得顏色主題的 JSON 字串 (但不直接複製)
 export async function getExportColorsString() {
     const allData = await getAllUserPreferences();
-    const displayOrder = allData['__DISPLAY_ORDER__'];
-    const colorTheme = []; 
-
-    let visibleCardIds = [];
-    if (displayOrder && Array.isArray(displayOrder.order)) {
-        visibleCardIds = displayOrder.order;
-    } else if (window.appRailwayData && window.appRailwayData.length > 0) {
-        visibleCardIds = window.appRailwayData.map(card => card.id);
-    }
+    const colorTheme = [];
+    const visibleCardIds = boardCardIds(allData);
 
     visibleCardIds.forEach(cardId => {
         const dbCard = allData[cardId];
