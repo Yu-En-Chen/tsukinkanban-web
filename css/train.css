@@ -114,10 +114,25 @@
     flex-shrink: 0;
 }
 
-/* 行き先のない列車（環状線など）の今いる区間 */
+/* 行き先のない列車（環状線など）の今いる場所：「次は新宿」「代々木 停車中」 */
 .train-where {
+    display: flex;
+    min-width: 0;
+    white-space: nowrap;
+    font-size: 0.9em;
     font-weight: 600;
-    opacity: 0.7;
+    opacity: 0.75;
+}
+
+.train-where-gap {
+    flex-shrink: 0;
+    width: 0.3em;
+}
+
+.train-where-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .train-board-btn:active,

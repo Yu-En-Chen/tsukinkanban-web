@@ -215,34 +215,36 @@ function noteHtml(text) {
 }
 
 // 列車の見出し：［種別］行き先行
-// 行き先のない列車（山手線などの環状運転）は左側が空にならないよう、種別を必ず出し、
-// withPosition のときは今いる区間（原宿→代々木）を添える
-function trainLabelHtml(t, showType, withPosition = false) {
-    const hasDest = !!t.destination;
-    let html = (showType || !hasDest) ? typePillHtml(t) : '';
-    if (hasDest) html += `<span class="train-dest">${esc(t.destination)}行</span>`;
-    else if (withPosition && !t.stopped && t.position && t.position.text) html += `<span class="train-dest train-where">${esc(t.position.text)}</span>`;
-    return html || '<span class="train-dest">列車</span>';
+// 種別は種類が 1 つしかない路線（山手線の各駅停車など）でも必ず出す：駅の列と見分けがつくように。
+// 種別がない列車は「列車」の札にする。
+// 行き先のない列車（環状運転など）は withPosition のとき、どこにいるかを短く添える：
+// 走行中「次は新宿」、ほかの駅に停車中「代々木 停車中」（後端の position.text と同じ書き方。この駅に停車中なら右側が「停車中」）
+function trainLabelHtml(t, withPosition = false) {
+    let html = typePillHtml(t) || '<span class="train-type tc-other">列車</span>';
+    if (t.destination) {
+        html += `<span class="train-dest">${esc(t.destination)}行</span>`;
+    } else if (withPosition && !t.stopped && t.position) {
+        // 狭い画面では駅名だけを省略し、「次は」「停車中」は必ず見えるようにする
+        const st = name => `<span class="train-where-name">${esc(name)}</span>`;
+        if (t.position.to) html += `<span class="train-where">次は${st(t.position.to)}</span>`;
+        else if (t.position.from) html += `<span class="train-where">${st(t.position.from)}<span class="train-where-gap"></span>停車中</span>`;
+    }
+    return html;
 }
 
 // 駅ごとの一列（1 行に収める。膠囊を広げて情報を詰めない）：
 // 左＝［種別］行き先行 +遅れ、右＝時刻（到着予測／この駅に停車中なら「停車中」／予測がなければ定刻）
 // 時刻を右にまとめるのは巴士の「あと○分／次HH:MM」と同じ。走行位置は「全駅を表示」で見られるので、
 // 行き先がある列車には出さない
-function trainCapsuleHtml(t, showType) {
+function trainCapsuleHtml(t) {
     const eta = t.realtime === false ? null : liveEtaText(t.eta, t.eta_text);
     const right = t.stopped ? '<span class="bus-eta-pill chip arriving">停車中</span>'
         : eta ? etaPillHtml(eta)
             : t.scheduled_text ? `<span class="bus-eta-pill chip sched">${esc(t.scheduled_text)}</span>` : '';
     return `<div class="adv-detail-capsule train-capsule">
-        <span class="train-main">${trainLabelHtml(t, showType, true)}${delayHtml(t, true)}</span>
+        <span class="train-main">${trainLabelHtml(t, true)}${delayHtml(t, true)}</span>
         ${right}
     </div>`;
-}
-
-// 種別を出すのは、この路線で 2 種類以上の種別を見たときだけ（全部「各駅停車」の路線では情報にならない）
-function showTypeFor(board) {
-    return board.knownTypes.size >= 2;
 }
 
 // ============================================================================
@@ -357,7 +359,7 @@ function stationViewHtml(board, prefs, support) {
                 const shown = all.filter(t => passesTypeFilter(t, prefs.types)).slice(0, TRAINS_PER_DIRECTION);
                 const title = dir.title || dir.name || '';
                 const body = shown.length > 0
-                    ? shown.map(tr => trainCapsuleHtml(tr, showTypeFor(board))).join('')
+                    ? shown.map(trainCapsuleHtml).join('')
                     : noteHtml(all.length > 0 ? '選んだ種別の列車はしばらくありません' : 'この先の列車はありません');
                 groupsHtml += `<div class="bus-collapsed-group"><div class="bus-collapsed-dir">${esc(hit.stationName || name)}<span class="train-dir-title">${esc(title)}</span></div>${body}</div>`;
             });
@@ -423,7 +425,7 @@ function routeViewHtml(board, prefs, support) {
         const moving = trains.filter(t => !t.stopped);
         const stopped = trains.filter(t => t.stopped);
         const markerHtml = t => `<div class="bus-marker-row train-marker-row${t.stopped ? ' stopped' : ''}">
-            <span class="bus-vehicle-main train-main">${trainLabelHtml(t, showTypeFor(board))}${t.stopped ? delayHtml(t, true) : ''}</span>
+            <span class="bus-vehicle-main train-main">${trainLabelHtml(t)}${t.stopped ? delayHtml(t, true) : ''}</span>
             ${t.stopped ? '<span class="train-stop-label">停車中</span>' : delayHtml(t)}
         </div>`;
         const markers = [...moving, ...stopped].map(markerHtml).join('');
