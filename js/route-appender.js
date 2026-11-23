@@ -31,9 +31,9 @@ window.RouteAppender = {
 
         if (homeCards.length === 0) {
             if (window.iosConfirm) {
-                window.iosConfirm('エラー', '首頁目前沒有可供加入的卡片！\n請先使用「新規カード作成」建立一張。', 'OK', null);
+                window.iosConfirm('エラー', '追加できるカードがありません。\n先に「新規カード作成」でカードを作成してください。', 'OK', null);
             } else {
-                alert("首頁目前沒有可供加入的卡片！\n請先使用「新規カード作成」建立一張。");
+                alert("追加できるカードがありません。\n先に「新規カード作成」でカードを作成してください。");
             }
             return;
         }

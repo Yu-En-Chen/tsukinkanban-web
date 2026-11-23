@@ -1427,7 +1427,7 @@ function handleCardClick(id) {
                         window.RouteAppender.openPicker(routeData);
                     } else {
                         console.error("[系統錯誤] 找不到 RouteAppender，請確認 index.html 有無引入");
-                        alert("系統模組載入失敗，請重新整理網頁");
+                        alert("読み込みに失敗しました。ページを再読み込みしてください。");
                     }
                 }, 300);
             };

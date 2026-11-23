@@ -1945,7 +1945,7 @@ window.handlePasteAction = function(e, type, element) {
 
         if (!val) {
             resType = 'error';
-            errorMsg = '剪貼簿無內容';
+            errorMsg = 'データなし';
         } else {
             val = val.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
                 return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);

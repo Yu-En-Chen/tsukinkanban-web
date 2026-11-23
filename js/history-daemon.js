@@ -126,7 +126,7 @@ async function fetchHistoryDaemon() {
                         : { title: [last.name, last.ship].filter(Boolean).join(' '), sub: last.departure_text ? `${last.departure_text}発` : '' };
                     fetchTasks.push(Promise.resolve({
                         cardId: card.id,
-                        cardName: card.name || card.title || '卡片路線',
+                        cardName: card.name || card.title || 'その他の路線',
                         name: head.title,
                         sub: head.sub,
                         isShip: true,
@@ -154,7 +154,7 @@ async function fetchHistoryDaemon() {
                     // 以 Promise.resolve() 模擬 fetch 回傳格式，沿用既有的處理流程
                     const req = Promise.resolve({
                         cardId: card.id,
-                        cardName: card.name || card.title || '卡片路線',
+                        cardName: card.name || card.title || 'その他の路線',
                         name: routeName,
                         isFlight: isFlight,
                         historyLoaded: historyLoaded,
