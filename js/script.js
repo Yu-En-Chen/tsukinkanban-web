@@ -40,6 +40,16 @@ function lineMessageHtml(line) {
     return `<div class="ext-card-message">${line.message}${link}</div>`;
 }
 
+// 公式発表は平常でも、列車位置のデータ（advanced_details の train_count）で全方向 0 本のとき＝運行中の列車なし。
+// 巴士の「車両なし」と同じく緑ではなく注意燈にする（深夜・始発前など）。
+// advanced_details が空・本数の欄がない路線は判定しない（データがないのか本当に 0 本なのか区別できないため）
+const NO_TRAIN_STATUS = '列車なし';
+const NO_TRAIN_MESSAGE = '現在、運行中の列車はありません。';
+function noTrainsRunning(statusInfo) {
+    const adv = statusInfo && statusInfo.advanced_details;
+    return Array.isArray(adv) && adv.length > 0 && adv.every(a => a && a.train_count === 0 && !(a.max_delay > 5));
+}
+
 // 全域變數：整個 App 渲染、搜尋、點擊的唯一資料來源
 window.appRailwayData = [];
 
@@ -632,6 +642,9 @@ function buildRailLineRow(line) {
             if (adv.max_delay > 5) {
                 if (adv.max_delay <= 15) dirDelayHtml = `<span class="adv-delay-minor-text">${adv.max_delay}分遅れ</span>`;
                 else dirDelayHtml = `<span class="adv-delay-text">${adv.max_delay}分遅れ</span>`;
+            } else if (adv.train_count === 0) {
+                // この方向を走っている列車がない（「平常」と出すと走っているように見える）
+                dirDelayHtml = `<span class="adv-none-text">列車なし</span>`;
             }
             const trainCountHtml = adv.train_count > 0 ? `<span class="adv-train-count">(${adv.train_count}列車)</span>` : '';
             return `
@@ -2411,6 +2424,9 @@ function buildRoutePreviewCard(routeId) {
     } else if (isTextAbnormal) {
         isDelayed = true; // 無明確分鐘數時降為黃燈
     }
+    // 平常だが走っている列車がない（看板のカードと同じ扱い）
+    const isNoTrain = !isError && !isAttention && !isDelayed && !isSevere && delay === 0 && isNormalMsg && noTrainsRunning(statusInfo);
+    if (isNoTrain) isAttention = true;
 
     // 燈號指派：支援多重燈號共存
     let flags = [false, false, false, false, false, false, false];
@@ -2430,7 +2446,7 @@ function buildRoutePreviewCard(routeId) {
         id: 'temp-search-route',
         name: route.name,
         hex: route.hex || '#2C2C2E',
-        desc: statusInfo.message || "現在監視中、または公式情報がありません。",
+        desc: isNoTrain ? NO_TRAIN_MESSAGE : (statusInfo.message || "現在監視中、または公式情報がありません。"),
         statusFlags: flags,
         isTemporarySearch: true, // 臨時搜尋卡片：面板會加上「新增」按鈕
         detail: ['検索結果', '-', '-', '-'], // 佔位資料，用於撐住面板高度
@@ -2438,8 +2454,8 @@ function buildRoutePreviewCard(routeId) {
             id: routeId,
             name: route.name,
             company: route.company,
-            status: statusInfo.status_type || "情報なし",
-            message: msg,
+            status: isNoTrain ? NO_TRAIN_STATUS : (statusInfo.status_type || "情報なし"),
+            message: isNoTrain ? NO_TRAIN_MESSAGE : msg,
             delay: statusInfo.delay_minutes || 0,
             updateTime: statusInfo.update_time || "--:--",
             isDelayed: isDelayed,
@@ -2897,6 +2913,7 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
             let hasNormal = false;
             let hasNoService = false;   // 只有時刻表的公車今天沒有班次（打叉）
             let hasEnded = false;       // 運行情報の提供が終了した路線（オープンデータチャレンジ終了後）
+            let hasNoTrain = false;     // 公式発表は平常だが、運行中の列車がない路線
             let hasMessageNote = false; // 追蹤這組卡片是否有具體事故文字
 
             // 追蹤這組卡片內的天候與天災狀況
@@ -2969,6 +2986,7 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                 let isSevereLocal = false;
                 let isErrorLocal = false;
                 let isAttentionLocal = false;
+                let isNoTrainLocal = false;
                 let delay = statusInfo.delay_minutes || 0;
 
                 // 判斷是否為「無回報時間，但文字顯示異常/停駛」
@@ -3000,6 +3018,10 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                 } else if (isTextAbnormal) {
                     isDelayedLocal = true; // 子路線記住黃燈狀態
                     hasDelay = true; // 無具體分鐘數的公告一律亮黃燈
+                } else if (isNormalMsg && noTrainsRunning(statusInfo)) {
+                    // 平常だが走っている列車がない：巴士の「車両なし」と同じく注意燈
+                    isAttentionLocal = true; hasAttention = true;
+                    isNoTrainLocal = true; hasNoTrain = true;
                 } else {
                     hasNormal = true;
                 }
@@ -3017,7 +3039,8 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
 
                 detailedLines.push({
                     id: lineId, name: dictInfo.name, company: dictInfo.company,
-                    status: statusInfo.status_type || "情報なし", message: msg,
+                    status: isNoTrainLocal ? NO_TRAIN_STATUS : (statusInfo.status_type || "情報なし"),
+                    message: isNoTrainLocal ? NO_TRAIN_MESSAGE : msg,
                     delay: delay, updateTime: timeStr, url: statusInfo.url || dictInfo.url || "",
 
                     // Severe 以 Delayed 傳給詳細卡片，使其顯示紅色
@@ -3052,6 +3075,8 @@ function buildAndRender(userPrefs, routeDict, liveStatus, isOffline = false) {
                 groupDesc = hasNormal
                     ? "一部の路線は運行情報の提供が終了しました。公式サイトをご確認ください。"
                     : "運行情報の提供が終了しました。最新情報は公式サイトをご確認ください。";
+            } else if (hasNoTrain && !hasError && !hasSevere && !hasDelay) {
+                groupDesc = hasNormal ? "一部の路線は現在、運行中の列車がありません。" : NO_TRAIN_MESSAGE;
             } else if (hasNormal && hasAttention && !hasError && !hasSevere && !hasDelay) {
                 groupDesc = "一部の路線は平常運転、その他は情報確認中です。";
             } else if (hasAttention && !hasNormal && !hasError && !hasSevere && !hasDelay) {

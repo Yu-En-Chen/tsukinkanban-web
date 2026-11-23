@@ -2893,6 +2893,12 @@ body.use-system-cursor .custom-cursor {
     font-weight: 600;
 }
 
+/* 方向別：その方向を走る列車がない（train_count が 0） */
+.adv-none-text {
+    color: rgba(0, 0, 0, 0.45);
+    font-weight: 600;
+}
+
 /* =========================================
    深色模式自動覆蓋 (Dark Mode)
    ========================================= */
@@ -2961,6 +2967,10 @@ body.use-system-cursor .custom-cursor {
 
     .adv-normal-text {
         color: #30d158;
+    }
+
+    .adv-none-text {
+        color: rgba(255, 255, 255, 0.5);
     }
 }
 
