@@ -316,8 +316,9 @@ function stationViewHtml(board, prefs, support) {
     let newestAt = 0;
     let anyLiveError = false;
     let groupsHtml = '';
-    // 方面ごとの列。どの駅・どの方面にも列車がないときは、駅ごとに並べず 1 行の案内にまとめる
+    // 方面ごとの列。どの駅・どの方面にも列車がないときは、方面の列や案内を出さず、選んだ駅名だけ並べる
     const dirGroups = [];
+    const okStations = [];   // 到着情報を取れた駅（駅名だけ並べるときに使う）
     let otherGroups = 0;
 
     if (support === 'loading') parts.push(noteHtml('この路線の到着情報を準備中です。しばらくすると表示されます'));
@@ -364,6 +365,7 @@ function stationViewHtml(board, prefs, support) {
                 otherGroups++;
                 return;
             }
+            okStations.push(hit.stationName || name);
             (rw.directions || []).forEach(dir => {
                 const all = dir.trains || [];
                 const shown = all.filter(t => passesTypeFilter(t, prefs.types)).slice(0, TRAINS_PER_DIRECTION);
@@ -372,17 +374,18 @@ function stationViewHtml(board, prefs, support) {
                     ? shown.map(trainCapsuleHtml).join('')
                     : noteHtml(all.length > 0 ? '選んだ種別の列車はしばらくありません' : 'この先の列車はありません');
                 const html = `<div class="bus-collapsed-group"><div class="bus-collapsed-dir">${esc(hit.stationName || name)}<span class="train-dir-title">${esc(title)}</span></div>${body}</div>`;
-                dirGroups.push({ html, empty: shown.length === 0, filteredOut: all.length > 0 });
+                dirGroups.push({ empty: shown.length === 0, filteredOut: all.length > 0 });
                 groupsHtml += html;
             });
         });
 
-        // 選んだ駅のどの方面にも列車がない（深夜など）：駅・方面を並べず、1 行で伝える
-        if (dirGroups.length > 0 && otherGroups === 0 && dirGroups.every(g => g.empty)) {
-            groupsHtml = '';
-            parts.push(noteHtml(dirGroups.some(g => g.filteredOut)
-                ? '選んだ種別の列車はしばらくありません'
-                : '現在、選んだ駅に来る列車はありません'));
+        // 選んだ駅のどの方面にも列車がない（深夜など）：運行情報の「運行中の列車はありません」と
+        // 同じことを繰り返さないよう、案内は出さずに選んだ駅名だけ並べる
+        //（種別で絞って空になったときだけ、そのことを 1 行で伝える）
+        if (okStations.length > 0 && otherGroups === 0 && dirGroups.every(g => g.empty)) {
+            if (dirGroups.some(g => g.filteredOut)) parts.push(noteHtml('選んだ種別の列車はしばらくありません'));
+            groupsHtml = [...new Set(okStations)]
+                .map(n => `<div class="bus-collapsed-group"><div class="bus-collapsed-dir">${esc(n)}</div></div>`).join('');
         }
     }
 
