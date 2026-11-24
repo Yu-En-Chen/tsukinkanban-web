@@ -15,10 +15,11 @@
 // 描画モード：
 // ・品質：境目をぼかし（路線の編集と同じ遮罩）、残った部分の形の影を出す
 // ・軽量（非蘋果裝置は常にこちら）：ぼかしと影を省き、元の上端で角丸のまま切る。
-//   毎コマ描き直すもの（遮罩・大きな影）をなくし、動かすだけで済むようにする
+//   毎コマ描き直すもの（遮罩・大きな影）をなくし、動かすだけで済むようにする。
+//   押し上げきったとき、カード名・燈號の上と下の余白が同じになるところで止める
 
 const FEATHER = 45;      // ぼかしの幅（路線の編集と同じ）
-const KEEP = 10;         // 押し上げきったとき、カード名と燈號の下に残す余白
+const KEEP = 10;         // 押し上げきったとき、カード名と燈號の下に残す余白（品質）
 const MIN_SAVING = 24;   // これより押し上げられないカードでは何もしない
 const ANIM_MS = 420;
 // 滾輪のときにカードがパネルを追う速さ：最高この速さで、近づくと緩やかに
@@ -53,7 +54,9 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
 
     let d = 0;            // カードを押し上げた量（px）
     let p = 0;            // パネルを上げた量（px）。捲動からそのまま決まり、d はこれを追う
-    let dMax = 0;
+    let dMaxQ = 0;        // 押し上げの最大（品質：カード名・燈號の下に KEEP の余白）
+    let dMaxL = 0;        // 押し上げの最大（軽量：カード名・燈號の上下の余白を同じに）
+    let shownD = 0;       // カードに今かけている押し上げ量（測るときの補正用）
     let H = 0;
     let radius = '32px';
     let lastS = scrollWrapper.scrollTop;
@@ -81,14 +84,31 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
 
     scrollWrapper.style.overflowAnchor = 'none';
 
-    const clamp = v => Math.max(0, Math.min(dMax, v));
+    const maxNow = () => (isLiteMode() ? dMaxL : dMaxQ);
+    const clamp = v => Math.max(0, Math.min(maxNow(), v));
 
     function measure() {
         H = inner.offsetHeight;
-        // カード名・燈號の下端（カードの上端から）。開く動きの途中でも同じ移動を受けるので差で測る
-        const headerBottom = header.getBoundingClientRect().bottom - inner.getBoundingClientRect().top + d;
-        dMax = Math.max(0, H - (headerBottom + KEEP));
-        if (dMax < MIN_SAVING) dMax = 0;
+        // カードの上端からの位置で測る（開く動き・押し上げの移動は差を取って打ち消す）
+        const ir = inner.getBoundingClientRect();
+        const hr = header.getBoundingClientRect();
+        const off = hr.top - ir.top - shownD;
+        const headerBottom = off + hr.height;
+        // カード名・燈號そのもの（余白を除いた）上端・下端
+        let top = Infinity, bottom = -Infinity;
+        for (const el of header.children) {
+            const r = el.getBoundingClientRect();
+            if (r.height <= 0) continue;
+            top = Math.min(top, r.top - hr.top);
+            bottom = Math.max(bottom, r.bottom - hr.top);
+        }
+        if (top === Infinity) { top = 0; bottom = hr.height; }
+        const contentTop = off + top;
+        const contentBottom = off + bottom;
+        const fit = v => (v < MIN_SAVING ? 0 : v);
+        dMaxQ = fit(Math.max(0, H - (headerBottom + KEEP)));
+        // 軽量は元の上端で切るので、残す高さ ＝ 上の余白 ＋ 中身 ＋ 下の余白（上と同じ）
+        dMaxL = fit(Math.max(0, H - (contentBottom + contentTop)));
         const cs = getComputedStyle(inner);
         radius = cs.borderTopLeftRadius || '32px';
         Object.assign(shadow.style, {
@@ -116,6 +136,8 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
             for (const k of INNER_PROPS) inner.style[k] = '';
             shadow.classList.remove('on');
             cardWasOn = false;
+            d = clamp(d);   // 最大の量はモードごとに違う
+            p = clamp(p);
         }
 
         // カード本体（d）
@@ -142,6 +164,7 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
             shadow.classList.remove('on');
         }
         cardWasOn = cardOn;
+        shownD = cardOn ? d : 0;
         if (cardOn) {
             // カードを上へ、カード名・燈號は同じだけ下げて元の位置に
             inner.style.translate = `0 ${-d}px`;
@@ -241,7 +264,7 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
         const s = scrollWrapper.scrollTop;
         const delta = s - lastS;
         lastS = s;
-        if (suspended || flipSuspended || dragging || animRaf || !dMax || delta === 0) return;
+        if (suspended || flipSuspended || dragging || animRaf || !maxNow() || delta === 0) return;
         if (s <= 0) p = 0;
         else if (delta > 0) p = clamp(p + delta);
         else if (p > s) p = s;
@@ -291,7 +314,7 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
 
     return {
         getD: () => d,
-        isActive: () => !suspended && !flipSuspended && dMax > 0,
+        isActive: () => !suspended && !flipSuspended && maxNow() > 0,
         // 押し上げたカードを指で引くとき：指に合わせて動かす（パネルも同じ割合で一緒に戻る）
         beginDrag() { stopAnim(); dragging = true; dragD0 = d; dragP0 = p; },
         dragTo(v) {
