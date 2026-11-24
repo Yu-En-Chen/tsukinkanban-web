@@ -15,9 +15,13 @@ const TRAIN_TICK_MS = 15000;   // 巡迴：重算倒數（あと○分）＋超�
 const TRAIN_STALE_NOTE_MS = 3 * 60000; // 最後一次成功超過這個時間 → 提示資料可能較舊
 const TRAINS_PER_DIRECTION = 2;
 
-// 有切換按鈕的支援程度（ended・none 沒有到着資料，不顯示切換）
-const BOARD_SUPPORTS = ['realtime', 'timetable', 'positions', 'loading'];
-const KNOWN_SUPPORTS = [...BOARD_SUPPORTS, 'none', 'ended'];
+// 有切換按鈕的支援程度。即時の列車位置がある路線だけ：
+// ・timetable（時刻表のみ：東武桐生線・都電荒川線・日暮里・舎人ライナーなど）は到着予測にならないので出さない
+//   （時刻表を到着情報として混ぜない。今後 timetable の路線が増えても自動的に除外される）
+// ・ended・none は到着の資料がない
+const BOARD_SUPPORTS = ['realtime', 'positions', 'loading'];
+const NO_BOARD_SUPPORTS = ['timetable', 'none', 'ended'];
+const KNOWN_SUPPORTS = [...BOARD_SUPPORTS, ...NO_BOARD_SUPPORTS];
 // 種別分類（決定顏色）。不認識的值一律當 other
 const TYPE_CLASSES = ['limited_express', 'express', 'rapid', 'local', 'other'];
 
@@ -311,7 +315,6 @@ function stationViewHtml(board, prefs, support) {
     const parts = [];
     let newestAt = 0;
     let anyLiveError = false;
-    let anyTimetableOnly = support === 'timetable';
     let groupsHtml = '';
 
     if (support === 'loading') parts.push(noteHtml('この路線の到着情報を準備中です。しばらくすると表示されます'));
@@ -348,8 +351,8 @@ function stationViewHtml(board, prefs, support) {
             }
             const rw = hit.railway;
             if (hit.live && hit.live.state === 'error') anyLiveError = true;
-            if (rw.support === 'timetable') anyTimetableOnly = true;
-            if (rw.support === 'none' || rw.support === 'ended' || rw.support === 'loading') {
+            // 駅の結果側で時刻表のみ・資料なしの路線：時刻表の時刻は出さず、案内だけ
+            if (NO_BOARD_SUPPORTS.includes(rw.support) || rw.support === 'loading') {
                 const msg = rw.support === 'ended' ? '到着情報の提供は終了しました' : rw.support === 'loading' ? 'この路線の到着情報を準備中です' : 'この路線の到着情報はありません';
                 groupsHtml += `<div class="bus-collapsed-group"><div class="bus-collapsed-dir">${esc(name)}</div>${noteHtml(msg)}</div>`;
                 return;
@@ -367,7 +370,6 @@ function stationViewHtml(board, prefs, support) {
     }
 
     if (anyLiveError) parts.push(noteHtml('リアルタイム情報を取得できません。時刻表の時刻を表示しています'));
-    else if (anyTimetableOnly && prefs.stations.length > 0) parts.push(noteHtml('この路線はリアルタイム情報がないため、時刻表の時刻を表示しています'));
 
     const filter = support === 'positions' ? '' : typeFilterHtml(board, prefs);
     const actions = `<div class="train-board-actions">
@@ -404,6 +406,7 @@ function routeViewHtml(board, prefs, support) {
     if (!hit) return guide + noteHtml(isOperatorLoading(entry.json, board.lineId) ? 'この路線の到着情報を準備中です' : 'この路線の駅の一覧はありません') + actions;
 
     const rw = hit.railway;
+    if (NO_BOARD_SUPPORTS.includes(rw.support)) return noteHtml(rw.support === 'ended' ? '到着情報の提供は終了しました' : 'この路線の到着情報はありません') + actions;
     const dirs = rw.directions || [];
     if (dirs.length === 0) return guide + noteHtml('この路線の駅の一覧はありません') + actions;
     const dirIndex = Math.min(prefs.dir || 0, dirs.length - 1);
