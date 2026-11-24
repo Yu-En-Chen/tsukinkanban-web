@@ -9,8 +9,9 @@
 // ・押し上げたカードを押すと戻り、引き下ろすと指に合わせて戻る（script.js の手勢から操作）
 // 動きは 2 つに分ける：
 // ・パネル（枠・捲る範囲・内容の補正）：捲った位置からそのまま決め、遅れなしで動く
-// ・カード本体：指で捲るときはパネルと同じく指に 1:1。マウスの滾輪のときだけ
-//   速さの上限つきで追う（1 回で 100px 前後飛ぶので、一瞬で出入りしないように）。
+// ・カード本体：指で捲るときはパネルと一緒に、指の動きの半分だけ遅れなしで動く
+//  （押し上げきるまでに捲る距離を倍にして、少しの捲りで大きく出入りしないように）。
+//   マウスの滾輪のときは捲った分だけ、ただし速さの上限つきで追う（1 回で 100px 前後飛ぶので）。
 //   追いつくまでの間、パネルはカードの下にもぐる（カードを上の層にする）
 // 描画モード：
 // ・品質：境目をぼかし（路線の編集と同じ遮罩）、残った部分の形の影を出す
@@ -26,6 +27,9 @@ const ANIM_MS = 420;
 const FOLLOW_SNAP = 24;        // 差がこれ以下（タッチパッドの細かい捲り）は遅れなしでそのまま
 const FOLLOW_MAX_SPEED = 0.45; // px/ms（押し上げきるまで約 0.35 秒）
 const FOLLOW_TAU = 70;         // 近づいたときの減速の時定数（ms）
+// 指で捲るとき：カードとパネルは指の動きのこの割合だけ動く（指には遅れずに付いてくるが、
+// 1:1 だと少し捲るだけで大きく出入りして落ち着かないので、捲った量より控えめにする）
+const TOUCH_RATIO = 0.5;
 
 // 路線の編集と同じ遮罩（多段の透明度で境目の縞を出さない）
 const MASK = `linear-gradient(to bottom,
@@ -265,9 +269,12 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
         const delta = s - lastS;
         lastS = s;
         if (suspended || flipSuspended || dragging || animRaf || !maxNow() || delta === 0) return;
+        const r = byTouch ? TOUCH_RATIO : 1;
         if (s <= 0) p = 0;
-        else if (delta > 0) p = clamp(p + delta);
-        else if (p > s) p = s;
+        else if (delta > 0) p = clamp(p + delta * r);
+        // 上へ：先頭に近づいたら「押し上げ量 ≦ 捲った位置 × 割合」で戻す（先頭で 0）。
+        // 滾輪から指に替わった直後などで既にこれを超えているときは、跳ばずに先頭へ向けて比例で減らす
+        else if (p > s * r) p = Math.max(s * r, p * s / (s - delta));
         if (byTouch) { stopFollow(); d = p; }
         else follow();
         schedule();
