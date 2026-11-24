@@ -2897,11 +2897,16 @@ body.use-system-cursor .custom-cursor {
 .adv-dir-name {
     color: rgba(0, 0, 0, 0.85);
     font-weight: 600;
+    /* 方面名が長いときは方面名の側で折り返す（本数・状態は 1 行のまま） */
+    min-width: 0;
 }
 
 .adv-status-group {
     display: flex;
     align-items: center;
+    flex-shrink: 0;
+    white-space: nowrap;
+    margin-left: 10px;
 }
 
 .adv-train-count {
