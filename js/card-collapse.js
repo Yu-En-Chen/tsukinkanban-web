@@ -1,24 +1,28 @@
 // card-collapse.js - 開いたカードの「押し上げ」（航班カード以外）
 // 下のパネルを捲ると、路線の編集と同じようにカード全体が上へ押し上げられ、
-// 上側はぼかしの境目（カードの元の上端）の向こうへ消えていく。下縁だけが残り、
-// カード名と燈號はその上に元の位置のまま表示される。空いた分だけパネルが広くなる。
+// 上側はカードの元の上端の向こうへ消えていく。下縁だけが残り、
+// カード名と燈號は元の位置のまま表示される。空いた分だけパネルが広くなる。
 // ・カードの形は変えない（角丸・質感はそのまま、上が境目で消えるだけ）
-// ・カード名と燈號は別の層に写して元の位置に置く（本来のものはカードと一緒に上がるので隠す）
-// ・カードの影は遮罩で消えるので、押し上げている間は残った部分の形の影の層に任せる
+// ・カード名と燈號（.card-header）はカードの中のまま、上がった分だけ下げて元の位置に留める
+//  （写しを作らないので、燈號の更新・色・毛玻璃はふだんと同じ）
 // ・捲り下げると押し上がり、上へ戻して先頭に近づくと戻る（先頭では必ず元の位置）
 // ・押し上げたカードを押すと戻り、引き下ろすと指に合わせて戻る（script.js の手勢から操作）
 // 動きは 2 つに分ける：
-// ・パネル（枠・捲る範囲・内容の補正）：捲った位置からそのまま決め、遅れなしで動く。
-//   内容は捲動と 1:1 なので、枠も同じだけ動けば枠と内容がずれない（揺れない）
-// ・カード本体：パネルの量を速さの上限つきで追う（マウスの滾輪で一瞬で出入りしないように）。
+// ・パネル（枠・捲る範囲・内容の補正）：捲った位置からそのまま決め、遅れなしで動く
+// ・カード本体：指で捲るときはパネルと同じく指に 1:1。マウスの滾輪のときだけ
+//   速さの上限つきで追う（1 回で 100px 前後飛ぶので、一瞬で出入りしないように）。
 //   追いつくまでの間、パネルはカードの下にもぐる（カードを上の層にする）
+// 描画モード：
+// ・品質：境目をぼかし（路線の編集と同じ遮罩）、残った部分の形の影を出す
+// ・軽量（非蘋果裝置は常にこちら）：ぼかしと影を省き、元の上端で角丸のまま切る。
+//   毎コマ描き直すもの（遮罩・大きな影）をなくし、動かすだけで済むようにする
 
 const FEATHER = 45;      // ぼかしの幅（路線の編集と同じ）
 const KEEP = 10;         // 押し上げきったとき、カード名と燈號の下に残す余白
 const MIN_SAVING = 24;   // これより押し上げられないカードでは何もしない
 const ANIM_MS = 420;
-// カードがパネルを追う速さ：滾輪は 1 回で 100px 前後飛ぶので、最高この速さで、近づくと緩やかに
-const FOLLOW_SNAP = 24;        // 差がこれ以下（指でゆっくり捲るとき）は遅れなしでそのまま
+// 滾輪のときにカードがパネルを追う速さ：最高この速さで、近づくと緩やかに
+const FOLLOW_SNAP = 24;        // 差がこれ以下（タッチパッドの細かい捲り）は遅れなしでそのまま
 const FOLLOW_MAX_SPEED = 0.45; // px/ms（押し上げきるまで約 0.35 秒）
 const FOLLOW_TAU = 70;         // 近づいたときの減速の時定数（ms）
 
@@ -36,6 +40,12 @@ const MASK = `linear-gradient(to bottom,
     black ${FEATHER}px,
     black 100%)`;
 
+const INNER_PROPS = ['webkitMaskImage', 'maskImage', 'webkitMaskSize', 'maskSize', 'webkitMaskRepeat', 'maskRepeat',
+    'webkitMaskPosition', 'maskPosition', 'webkitClipPath', 'clipPath', 'boxShadow', 'translate', 'zIndex'];
+const HEADER_PROPS = ['translate', 'zIndex', 'willChange'];
+
+const isLiteMode = () => document.documentElement.classList.contains('is-android-fallback');
+
 export function attachCardCollapse({ container, inner, extension, scrollWrapper }) {
     if (!container || !inner || !extension || !scrollWrapper) return null;
     const header = inner.querySelector('.card-header');
@@ -45,6 +55,7 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
     let p = 0;            // パネルを上げた量（px）。捲動からそのまま決まり、d はこれを追う
     let dMax = 0;
     let H = 0;
+    let radius = '32px';
     let lastS = scrollWrapper.scrollTop;
     let suspended = false;
     let flipSuspended = false;
@@ -54,20 +65,15 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
     let animRaf = null;
     let renderRaf = null;
     let followRaf = null;
-    let followLast = 0;
+    let followLast = null;
     let cardWasOn = false;
+    let panelWasOn = false;
+    let lite = false;
+    // 最後の入力が指か（指：カードも 1:1、滾輪・マウス：速さの上限つき）
+    let byTouch = window.matchMedia ? window.matchMedia('(pointer: coarse)').matches : false;
     const origHeight = scrollWrapper.style.height;
 
-    // 元の位置に残すカード名と燈號（本来のものの写し）
-    const pinned = document.createElement('div');
-    pinned.className = 'card-collapse-header';
-    pinned.innerHTML = header.outerHTML;
-    inner.after(pinned);
-    const syncHeader = () => { pinned.innerHTML = header.outerHTML; };
-    const headerObserver = new MutationObserver(syncHeader);
-    headerObserver.observe(header, { subtree: true, childList: true, characterData: true });
-
-    // 残った部分の形の影（カードの後ろ。透明な箱の外側にだけ影が出る）
+    // 残った部分の形の影（品質のみ。カードの後ろ、透明な箱の外側にだけ影が出る）
     const shadow = document.createElement('div');
     shadow.className = 'card-collapse-shadow';
     shadow.setAttribute('aria-hidden', 'true');
@@ -79,25 +85,25 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
 
     function measure() {
         H = inner.offsetHeight;
-        dMax = Math.max(0, H - (header.offsetHeight + KEEP));
+        // カード名・燈號の下端（カードの上端から）。開く動きの途中でも同じ移動を受けるので差で測る
+        const headerBottom = header.getBoundingClientRect().bottom - inner.getBoundingClientRect().top + d;
+        dMax = Math.max(0, H - (headerBottom + KEEP));
         if (dMax < MIN_SAVING) dMax = 0;
         const cs = getComputedStyle(inner);
+        radius = cs.borderTopLeftRadius || '32px';
         Object.assign(shadow.style, {
             top: `${inner.offsetTop}px`,
             height: `${H}px`,
-            borderRadius: cs.borderTopLeftRadius || '32px',
+            borderRadius: radius,
             boxShadow: cs.boxShadow
         });
-        pinned.style.top = `${inner.offsetTop}px`;
     }
 
-    // カードの色（文字色などの変数）と暗色時の filter を写しに合わせる
-    function matchTheme() {
-        for (let i = 0; i < inner.style.length; i++) {
-            const prop = inner.style[i];
-            if (prop.startsWith('--')) pinned.style.setProperty(prop, inner.style.getPropertyValue(prop), inner.style.getPropertyPriority(prop));
-        }
-        pinned.style.filter = getComputedStyle(inner).filter;
+    // パネルの内容を、パネルが上がった分だけ下げる（内容は捲動と 1:1）
+    // 子ごとに直接 translate を置く（変数で渡すと内容全体の style を毎コマ計算し直すことになる）
+    function placeContent() {
+        const v = p > 0.5 ? `0 ${p}px` : '';
+        for (const c of scrollWrapper.children) if (c.style.translate !== v) c.style.translate = v;
     }
 
     function render() {
@@ -105,34 +111,53 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
         const cardOn = d > 0.5;
         const panelOn = p > 0.5;
 
+        // 押し上げ中に描画モードが切り替わったとき：いったん外してから新しいモードで付け直す
+        if (cardOn && cardWasOn && isLiteMode() !== lite) {
+            for (const k of INNER_PROPS) inner.style[k] = '';
+            shadow.classList.remove('on');
+            cardWasOn = false;
+        }
+
         // カード本体（d）
         if (cardOn && !cardWasOn) {
-            matchTheme();
-            syncHeader();
-            inner.style.webkitMaskImage = MASK;
-            inner.style.maskImage = MASK;
-            inner.style.webkitMaskSize = '100% 3000px';
-            inner.style.maskSize = '100% 3000px';
-            inner.style.webkitMaskRepeat = 'no-repeat';
-            inner.style.maskRepeat = 'no-repeat';
-            inner.style.boxShadow = 'none';
-            header.style.opacity = '0';
-            pinned.classList.add('on');
-            shadow.classList.add('on');
+            lite = isLiteMode();
+            if (lite) {
+                inner.style.boxShadow = 'none';
+            } else {
+                inner.style.webkitMaskImage = MASK;
+                inner.style.maskImage = MASK;
+                inner.style.webkitMaskSize = '100% 3000px';
+                inner.style.maskSize = '100% 3000px';
+                inner.style.webkitMaskRepeat = 'no-repeat';
+                inner.style.maskRepeat = 'no-repeat';
+                inner.style.boxShadow = 'none';
+                shadow.classList.add('on');
+            }
+            // カード名・燈號はカードの内容より上の層に（内容はその下を通って消える）
+            header.style.zIndex = '3';
+            header.style.willChange = 'translate';
         } else if (!cardOn && cardWasOn) {
-            for (const k of ['webkitMaskImage', 'maskImage', 'webkitMaskSize', 'maskSize', 'webkitMaskRepeat', 'maskRepeat', 'webkitMaskPosition', 'maskPosition', 'boxShadow', 'translate']) inner.style[k] = '';
-            header.style.opacity = '';
-            pinned.classList.remove('on');
+            for (const k of INNER_PROPS) inner.style[k] = '';
+            for (const k of HEADER_PROPS) header.style[k] = '';
             shadow.classList.remove('on');
         }
         cardWasOn = cardOn;
         if (cardOn) {
-            // カードを上へ。境目（カードの元の上端）より上はぼかして消す（路線の編集と同じ）
+            // カードを上へ、カード名・燈號は同じだけ下げて元の位置に
             inner.style.translate = `0 ${-d}px`;
-            const maskPos = `0px ${d - FEATHER}px`;
-            inner.style.webkitMaskPosition = maskPos;
-            inner.style.maskPosition = maskPos;
-            shadow.style.height = `${H - d}px`;
+            header.style.translate = `0 ${d}px`;
+            if (lite) {
+                // 元の上端で角丸のまま切る
+                const clip = `inset(${d}px 0 0 0 round ${radius})`;
+                inner.style.webkitClipPath = clip;
+                inner.style.clipPath = clip;
+            } else {
+                // 境目（カードの元の上端）より上はぼかして消す（路線の編集と同じ）
+                const maskPos = `0px ${d - FEATHER}px`;
+                inner.style.webkitMaskPosition = maskPos;
+                inner.style.maskPosition = maskPos;
+                shadow.style.height = `${H - d}px`;
+            }
         }
         // パネルがカードより先に上がったとき、カードの下にもぐるように（カードと影を上の層に）
         const lift = cardOn || panelOn;
@@ -141,10 +166,12 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
 
         // パネル（p）：枠を上げた分、捲る範囲の高さを足し、内容を同じだけ下げる
         //（内容は捲動と 1:1、枠も同じ量で動くので枠と内容がずれない）
-        extension.style.translate = panelOn ? `0 ${-p}px` : '';
-        scrollWrapper.style.height = panelOn && origHeight ? `calc(${origHeight} + ${p}px)` : origHeight;
-        scrollWrapper.style.setProperty('--cc-comp', `${panelOn ? p : 0}px`);
-        scrollWrapper.classList.toggle('cc-on', panelOn);
+        if (panelOn || panelWasOn) {
+            extension.style.translate = panelOn ? `0 ${-p}px` : '';
+            scrollWrapper.style.height = panelOn && origHeight ? `calc(${origHeight} + ${p}px)` : origHeight;
+            placeContent();
+        }
+        panelWasOn = panelOn;
     }
 
     function schedule() {
@@ -168,7 +195,7 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
         stopFollow();
     }
 
-    // カードがパネルを追う：小さな差はそのまま、大きな差は速さの上限つきで滑らかに
+    // 滾輪のとき、カードがパネルを追う：小さな差はそのまま、大きな差は速さの上限つきで滑らかに
     function follow() {
         if (followRaf) return;
         if (Math.abs(p - d) <= FOLLOW_SNAP) { d = p; return; }
@@ -218,9 +245,13 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
         if (s <= 0) p = 0;
         else if (delta > 0) p = clamp(p + delta);
         else if (p > s) p = s;
-        follow();
+        if (byTouch) { stopFollow(); d = p; }
+        else follow();
         schedule();
     }
+
+    const markTouch = () => { byTouch = true; };
+    const markMouse = e => { if (e.type !== 'pointerdown' || e.pointerType === 'mouse') byTouch = false; };
 
     // カードを押したとき（マウス）：押し上げていれば戻す
     function onCardClick(e) {
@@ -242,14 +273,20 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
             lastS = scrollWrapper.scrollTop;
         }
     });
+    // パネルの内容が入れ替わったとき、新しい列にも補正を
+    const contentObserver = new MutationObserver(() => { if (panelWasOn) placeContent(); });
 
     const onResize = () => { stopAnim(); setBoth(0, true); requestAnimationFrame(measure); };
 
     measure();
     scrollWrapper.addEventListener('scroll', onScroll, { passive: true });
+    scrollWrapper.addEventListener('touchstart', markTouch, { passive: true });
+    scrollWrapper.addEventListener('wheel', markMouse, { passive: true });
+    scrollWrapper.addEventListener('pointerdown', markMouse, { passive: true });
+    window.addEventListener('keydown', markMouse);
     inner.addEventListener('click', onCardClick);
-    pinned.addEventListener('click', onCardClick);
     flipObserver.observe(inner, { attributes: true, attributeFilter: ['class'] });
+    contentObserver.observe(scrollWrapper, { childList: true });
     window.addEventListener('resize', onResize);
 
     return {
@@ -282,13 +319,17 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
             stopAnim();
             if (renderRaf) cancelAnimationFrame(renderRaf);
             scrollWrapper.removeEventListener('scroll', onScroll);
+            scrollWrapper.removeEventListener('touchstart', markTouch);
+            scrollWrapper.removeEventListener('wheel', markMouse);
+            scrollWrapper.removeEventListener('pointerdown', markMouse);
+            window.removeEventListener('keydown', markMouse);
             inner.removeEventListener('click', onCardClick);
             window.removeEventListener('resize', onResize);
             flipObserver.disconnect();
-            headerObserver.disconnect();
-            pinned.remove();
+            contentObserver.disconnect();
             shadow.remove();
-            inner.style.zIndex = '';
+            for (const k of INNER_PROPS) inner.style[k] = '';
+            for (const k of HEADER_PROPS) header.style[k] = '';
         }
     };
 }

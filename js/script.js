@@ -1743,7 +1743,7 @@ function handleOverlayClick(e) {
     if (isAnimating) return;
 
     // 點擊處既非主卡片（含押し上げ中のカード名・燈號）也非延伸面板時才關閉
-    if (!e.target.closest('.detail-card-inner') && !e.target.closest('.card-collapse-header') && !e.target.closest('.detail-extension-card')) {
+    if (!e.target.closest('.detail-card-inner') && !e.target.closest('.detail-extension-card')) {
         closeAllCards(false);
     }
 }
@@ -1926,7 +1926,7 @@ function initOverlayGestures() {
 
         // 判斷是否點在主卡片上（押し上げ中のカード名・燈號も含む）
         const targetElement = e.target;
-        const isClickingInnerCard = targetElement.closest('.detail-card-inner, .card-collapse-header');
+        const isClickingInnerCard = targetElement.closest('.detail-card-inner');
 
         overlayMoved = false;
         const cc = window.__cardCollapse;
