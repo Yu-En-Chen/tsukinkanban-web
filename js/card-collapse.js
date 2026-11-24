@@ -5,16 +5,14 @@
 // ・カードの形は変えない（角丸・質感はそのまま、上が境目で消えるだけ）
 // ・カード名と燈號（.card-header）はカードの中のまま、上がった分だけ下げて元の位置に留める
 //  （写しを作らないので、燈號の更新・色・毛玻璃はふだんと同じ）
-// ・押し上げたカードを押すと戻り、引き下ろすと指に合わせて戻る（script.js の手勢から操作）
-// 指（觸控）：
-// ・パネルに指を置いて捲る間だけ、カードとパネルは指に 1:1 で付いてくる（自動では動かない）
-// ・押し上げきったらそこで固定（その後は内容だけ捲れる。先頭へ戻しても勝手には戻らない）
-// ・途中で指を離したら、指の向き（ゆっくりなら近いほう）へ収まって固定。離した後の慣性では動かさない
-// ・戻すとき：カードを押す・引き下ろす、または内容の先頭でさらに引き下ろす（指に合わせて戻る）
-// マウスの滾輪：
 // ・捲り下げると押し上がり、上へ戻して先頭に近づくと戻る（先頭では必ず元の位置）
-// ・パネル（枠・捲る範囲・内容の補正）は捲った位置からそのまま決め、遅れなしで動く
-// ・カード本体はそれを速さの上限つきで追う（1 回で 100px 前後飛ぶので）。
+// ・押し上げたカードを押すと戻り、引き下ろすと指に合わせて戻る（script.js の手勢から操作）
+// 動きは 2 つに分ける：
+// ・パネル（枠・捲る範囲・内容の補正）：捲った位置からそのまま決め、遅れなしで動く
+// ・カード本体：指で捲るときはパネルと一緒に、指の動きの半分だけ遅れなしで動く
+//  （押し上げきるまでに捲る距離を倍にして、少しの捲りで大きく出入りしないように）。
+//   指の小さな揺れでは動かさない（動き出し・向きを変えるときは少し捲ってから付いてくる）。
+//   マウスの滾輪のときは捲った分だけ、ただし速さの上限つきで追う（1 回で 100px 前後飛ぶので）。
 //   追いつくまでの間、パネルはカードの下にもぐる（カードを上の層にする）
 // 描画モード：
 // ・品質：境目をぼかし（路線の編集と同じ遮罩）、残った部分の形の影を出す
@@ -30,8 +28,12 @@ const ANIM_MS = 420;
 const FOLLOW_SNAP = 24;        // 差がこれ以下（タッチパッドの細かい捲り）は遅れなしでそのまま
 const FOLLOW_MAX_SPEED = 0.45; // px/ms（押し上げきるまで約 0.35 秒）
 const FOLLOW_TAU = 70;         // 近づいたときの減速の時定数（ms）
-// 指を離したときの収まり先：この速さ（px/ms）より速ければ指の向きへ、遅ければ近いほうへ
-const RELEASE_FLICK = 0.2;
+// 指で捲るとき：カードとパネルは指の動きのこの割合だけ動く（指には遅れずに付いてくるが、
+// 1:1 だと少し捲るだけで大きく出入りして落ち着かないので、捲った量より控えめにする）
+const TOUCH_RATIO = 0.5;
+// 指の揺れの許容：捲る位置がこれだけ動くまではカードを動かさない（向きを変えたときは往復で倍）。
+// 指を止めたつもりの小さな揺れで、カードが上下に細かく動かないように
+const TOUCH_JITTER = 6;
 
 // 路線の編集と同じ遮罩（多段の透明度で境目の縞を出さない）
 const MASK = `linear-gradient(to bottom,
@@ -60,15 +62,14 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
 
     let d = 0;            // カードを押し上げた量（px）
     let p = 0;            // パネルを上げた量（px）。捲動からそのまま決まり、d はこれを追う
-    // 内容を下げる量（px、0〜p）。p と同じなら内容は捲動と 1:1（枠だけが動く）、
-    // 0 なら内容は枠にくっついて一緒に動く（指で押し上げて固定した後は、捲る位置に移して 0 にする）
-    let comp = 0;
     let dMaxQ = 0;        // 押し上げの最大（品質：カード名・燈號の下に KEEP の余白）
     let dMaxL = 0;        // 押し上げの最大（軽量：カード名・燈號の上下の余白を同じに）
     let shownD = 0;       // カードに今かけている押し上げ量（測るときの補正用）
     let H = 0;
     let radius = '32px';
     let lastS = scrollWrapper.scrollTop;
+    // 指のとき、揺れを除いた捲る位置（捲る位置から TOUCH_JITTER 以上離れたときだけ、その差を保って付いていく）
+    let steadyS = lastS;
     let suspended = false;
     let flipSuspended = false;
     let dragging = false;
@@ -128,10 +129,10 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
         });
     }
 
-    // パネルの内容を comp だけ下げる
+    // パネルの内容を、パネルが上がった分だけ下げる（内容は捲動と 1:1）
     // 子ごとに直接 translate を置く（変数で渡すと内容全体の style を毎コマ計算し直すことになる）
     function placeContent() {
-        const v = comp > 0.5 ? `0 ${comp}px` : '';
+        const v = p > 0.5 ? `0 ${p}px` : '';
         for (const c of scrollWrapper.children) if (c.style.translate !== v) c.style.translate = v;
     }
 
@@ -146,7 +147,7 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
             shadow.classList.remove('on');
             cardWasOn = false;
             d = clamp(d);   // 最大の量はモードごとに違う
-            setP(p, false);
+            p = clamp(p);
         }
 
         // カード本体（d）
@@ -196,8 +197,9 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
         inner.style.zIndex = lift ? '2' : '';
         shadow.style.zIndex = lift ? '1' : '';
 
-        // パネル（p）：枠を上げた分、捲る範囲の高さを足し、内容を comp だけ下げる
-        if (panelOn || panelWasOn || comp > 0.5) {
+        // パネル（p）：枠を上げた分、捲る範囲の高さを足し、内容を同じだけ下げる
+        //（内容は捲動と 1:1、枠も同じ量で動くので枠と内容がずれない）
+        if (panelOn || panelWasOn) {
             extension.style.translate = panelOn ? `0 ${-p}px` : '';
             scrollWrapper.style.height = panelOn && origHeight ? `calc(${origHeight} + ${p}px)` : origHeight;
             placeContent();
@@ -211,17 +213,8 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
 
     // カードとパネルを同じ量にそろえる（押したとき・引いたとき・止めるとき）
     function setBoth(v, now = false) {
-        d = clamp(v);
-        setP(d, false);
+        d = p = clamp(v);
         if (now) render(); else schedule();
-    }
-
-    // パネルの量を変える。keepContent：内容を画面上で動かさない（捲動と 1:1。下げる量も同じだけ変える）。
-    // そうでなければ内容は枠と一緒に動く（下げる量は p を超えない範囲でそのまま）
-    function setP(v, keepContent) {
-        const np = clamp(v);
-        comp = keepContent ? Math.max(0, Math.min(np, comp + (np - p))) : Math.min(comp, np);
-        p = np;
     }
 
     function stopFollow() {
@@ -260,14 +253,14 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
         stopAnim();
         const dest = clamp(to);
         const d0 = d, p0 = p;
-        const finish = () => { animRaf = null; lastS = scrollWrapper.scrollTop; if (done) done(); };
+        const finish = () => { animRaf = null; resetScrollBase(); if (done) done(); };
         if (Math.abs(d0 - dest) < 0.5 && Math.abs(p0 - dest) < 0.5) { setBoth(dest); finish(); return; }
         const t0 = performance.now();
         const ease = t => 1 - Math.pow(1 - t, 3);
         const step = now => {
             const k = ease(Math.min(1, (now - t0) / ANIM_MS));
             d = clamp(d0 + (dest - d0) * k);
-            setP(p0 + (dest - p0) * k, false);
+            p = clamp(p0 + (dest - p0) * k);
             render();
             if (k < 1) animRaf = requestAnimationFrame(step);
             else finish();
@@ -275,131 +268,42 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
         animRaf = requestAnimationFrame(step);
     }
 
-    // 捲動（どれもブラウザの捲動のまま）
+    // 捲動（指・滾輪・捲軸、どれもブラウザの捲動のまま）：
+    // 下へは捲った分だけパネルを上げ、上へは「上げた量 ≦ 捲った位置」を保つ（先頭に近づくと戻る）
     function onScroll() {
         const s = scrollWrapper.scrollTop;
         const delta = s - lastS;
         lastS = s;
         if (suspended || flipSuspended || dragging || animRaf || !maxNow() || delta === 0) return;
+        const r = byTouch ? TOUCH_RATIO : 1;
+        // 指：揺れを除いた位置の動きだけを使う（許容の範囲内の揺れではカードを動かさない）
+        let move = delta;
         if (byTouch) {
-            // 指：指が触れている間だけ、捲った分を 1:1 で（離した後の慣性・自動の捲動では動かさない）。
-            // 押し上げきったら固定（その後は内容だけ捲れる）
-            if (!touching || pulling || d >= maxNow() - 0.5) { scheduleRebase(); return; }
-            setP(s <= 0 ? 0 : p + delta, true);
-            stopFollow();
-            d = p;
-            schedule();
-            return;
+            const prev = steadyS;
+            if (s <= 0) steadyS = 0;   // 先頭では揺れの基準も先頭に
+            else if (s > steadyS + TOUCH_JITTER) steadyS = s - TOUCH_JITTER;
+            else if (s < steadyS - TOUCH_JITTER) steadyS = s + TOUCH_JITTER;
+            move = steadyS - prev;
+            if (move === 0 && s > 0) return;
+        } else {
+            steadyS = s;
         }
-        // 滾輪：下へは捲った分だけパネルを上げ、上へは「上げた量 ≦ 捲った位置」を保つ（先頭に近づくと戻る）。
-        // 既にこれを超えているとき（指から替わった直後など）は、跳ばずに先頭へ向けて比例で減らす
-        if (s <= 0) setP(0, true);
-        else if (delta > 0) setP(p + delta, true);
-        else if (p > s) setP(Math.max(s, p * s / (s - delta)), true);
-        follow();
+        if (s <= 0) p = 0;
+        else if (move > 0) p = clamp(p + move * r);
+        // 上へ：先頭に近づいたら「押し上げ量 ≦ 捲った位置 × 割合」で戻す（先頭で 0）。
+        // 既にこれを超えているとき（滾輪から指に替わった直後・揺れの許容の後など）は、跳ばずに先頭へ向けて比例で減らす
+        else if (p > s * r) p = Math.max(s * r, p * s / (s - move));
+        if (byTouch) { stopFollow(); d = p; }
+        else follow();
         schedule();
     }
 
-    // 指で押し上げて固定した後、捲動が止まったら：内容を下げている分を捲る位置へ移す（見た目は変わらない）。
-    // こうしておくと、内容の先頭へ戻したとき枠の上に空きができず、先頭で引き下ろすと内容も枠と一緒に動く。
-    // 先頭まで戻していて移しきれない分は、内容を枠の上端へ寄せる
-    let rebaseTimer = null;
-    function scheduleRebase() {
-        if (rebaseTimer) clearTimeout(rebaseTimer);
-        rebaseTimer = setTimeout(rebase, 150);
-    }
-    function rebase() {
-        rebaseTimer = null;
-        if (!byTouch || touching || dragging || animRaf || suspended || flipSuspended || comp < 0.5) return;
-        if (d < maxNow() - 0.5) return;
-        const s = scrollWrapper.scrollTop;
-        const k = Math.min(comp, s);
-        if (k >= 0.5) {
-            comp -= k;
-            lastS = s - k;
-            scrollWrapper.scrollTop = s - k;
-            render();
-        }
-        if (comp >= 0.5) settleContent();
-    }
-    function settleContent() {
-        const c0 = comp;
-        const t0 = performance.now();
-        const step = now => {
-            if (touching || dragging) { animRaf = null; return; }
-            const k = Math.min(1, (now - t0) / 260);
-            comp = c0 * (1 - (1 - Math.pow(1 - k, 3)));
-            render();
-            if (k < 1) animRaf = requestAnimationFrame(step);
-            else { animRaf = null; comp = 0; render(); lastS = scrollWrapper.scrollTop; }
-        };
-        animRaf = requestAnimationFrame(step);
+    // 捲る位置の基準を今の位置に（揺れの許容も今の位置から数え直す）
+    function resetScrollBase() {
+        lastS = steadyS = scrollWrapper.scrollTop;
     }
 
-    // ---- 指 ----
-    let touching = false;
-    let pulling = false;        // 内容の先頭で引き下ろして、押し上げたカードを戻しているところ
-    let pullCandidate = false;
-    let touchStartY = 0;
-    let touchLastY = 0;
-    let moves = [];             // 指を離したときの速さを出すための直近の位置
-
-    function fingerVelocity(at) {
-        // 直近 100ms の指の速さ（px/ms、下向きが正）。止めてから離したときは 0
-        const last = moves[moves.length - 1];
-        if (!last || at - last.t > 80) return 0;
-        const first = moves.find(m => last.t - m.t <= 100) || last;
-        const dt = last.t - first.t;
-        return dt > 0 ? (last.y - first.y) / dt : 0;
-    }
-
-    function onTouchStart(e) {
-        byTouch = true;
-        if (e.touches.length > 1) return;
-        touching = true;
-        pulling = false;
-        touchStartY = touchLastY = e.touches[0].clientY;
-        moves = [{ t: e.timeStamp, y: touchStartY }];
-        // 収まる途中で触れたら、そこで止めて指に任せる
-        if (animRaf || followRaf) stopAnim();
-        lastS = scrollWrapper.scrollTop;
-        pullCandidate = scrollWrapper.scrollTop <= 0 && d > 0.5 && !suspended && !flipSuspended && !dragging;
-    }
-
-    function onTouchMove(e) {
-        if (!touching) return;
-        if (e.touches.length > 1) { touching = false; pulling = false; pullCandidate = false; return; }
-        const y = e.touches[0].clientY;
-        const dy = y - touchLastY;
-        touchLastY = y;
-        moves.push({ t: e.timeStamp, y });
-        if (moves.length > 12) moves.shift();
-        // 内容の先頭で最初に下へ引いたら、カードを戻す手勢（内容は捲らない）
-        if (pullCandidate && y !== touchStartY) {
-            pullCandidate = false;
-            pulling = y > touchStartY && scrollWrapper.scrollTop <= 0 && e.cancelable;
-        }
-        if (pulling) {
-            if (e.cancelable) e.preventDefault();
-            setBoth(d - dy);
-        }
-    }
-
-    // 指を離したとき：途中なら指の向き（ゆっくりなら近いほう）へ収めて固定
-    function onTouchEnd(e) {
-        if (e.touches && e.touches.length > 0) return;
-        if (!touching) return;
-        touching = false;
-        pulling = false;
-        pullCandidate = false;
-        if (!byTouch || suspended || flipSuspended || dragging || animRaf) return;
-        const max = maxNow();
-        if (!(d > 0.5 && d < max - 0.5)) { scheduleRebase(); return; }
-        const v = fingerVelocity(e.timeStamp);
-        const to = v < -RELEASE_FLICK ? max : v > RELEASE_FLICK ? 0 : (d > max / 2 ? max : 0);
-        animateTo(to, scheduleRebase);
-    }
-
+    const markTouch = () => { byTouch = true; steadyS = scrollWrapper.scrollTop; };
     const markMouse = e => { if (e.type !== 'pointerdown' || e.pointerType === 'mouse') byTouch = false; };
 
     // カードを押したとき（マウス）：押し上げていれば戻す
@@ -419,7 +323,7 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
             setBoth(0, true);
         } else if (!flipping && flipSuspended) {
             flipSuspended = false;
-            lastS = scrollWrapper.scrollTop;
+            resetScrollBase();
         }
     });
     // 描画モードが切り替わったら、押し上げ中ならすぐ付け直す
@@ -431,11 +335,7 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
 
     measure();
     scrollWrapper.addEventListener('scroll', onScroll, { passive: true });
-    scrollWrapper.addEventListener('touchstart', onTouchStart, { passive: true });
-    // 先頭で引き下ろすときだけ捲動を止めるので passive にしない（処理は軽い）
-    scrollWrapper.addEventListener('touchmove', onTouchMove, { passive: false });
-    scrollWrapper.addEventListener('touchend', onTouchEnd, { passive: true });
-    scrollWrapper.addEventListener('touchcancel', onTouchEnd, { passive: true });
+    scrollWrapper.addEventListener('touchstart', markTouch, { passive: true });
     scrollWrapper.addEventListener('wheel', markMouse, { passive: true });
     scrollWrapper.addEventListener('pointerdown', markMouse, { passive: true });
     window.addEventListener('keydown', markMouse);
@@ -452,7 +352,7 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
         beginDrag() { stopAnim(); dragging = true; dragD0 = d; dragP0 = p; },
         dragTo(v) {
             d = clamp(v);
-            setP(dragD0 > 0.5 ? dragP0 * (d / dragD0) : d, false);
+            p = dragD0 > 0.5 ? clamp(dragP0 * (d / dragD0)) : d;
             schedule();
         },
         endDrag(to) { dragging = false; animateTo(to); },
@@ -468,18 +368,14 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
         },
         resume() {
             suspended = false;
-            lastS = scrollWrapper.scrollTop;
+            resetScrollBase();
             measure();
         },
         destroy() {
             stopAnim();
-            if (rebaseTimer) clearTimeout(rebaseTimer);
             if (renderRaf) cancelAnimationFrame(renderRaf);
             scrollWrapper.removeEventListener('scroll', onScroll);
-            scrollWrapper.removeEventListener('touchstart', onTouchStart);
-            scrollWrapper.removeEventListener('touchmove', onTouchMove);
-            scrollWrapper.removeEventListener('touchend', onTouchEnd);
-            scrollWrapper.removeEventListener('touchcancel', onTouchEnd);
+            scrollWrapper.removeEventListener('touchstart', markTouch);
             scrollWrapper.removeEventListener('wheel', markMouse);
             scrollWrapper.removeEventListener('pointerdown', markMouse);
             window.removeEventListener('keydown', markMouse);
