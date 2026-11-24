@@ -8,16 +8,18 @@
 // ・パネルは押し上げた分だけ上がり、内容は指の動きと 1:1 で動く（二重に動かないよう補正する）
 // ・捲り下げると押し上がり、上へ戻して先頭に近づくと戻る（先頭では必ず元の位置）
 // ・押し上げたカードを押すと戻り、引き下ろすと指に合わせて戻る（script.js の手勢から操作）
+// ・マウスの滾輪：押し上げ・戻しの範囲では、ブラウザに捲らせず自前で滑らかに捲る。
+//   ブラウザの捲動は描画とは別に先に進むため、カードとパネルの位置が 1〜2 コマ遅れて枠が揺れて見える。
+//   自前で捲ると、捲る位置とカード・パネルの位置を同じコマで更新できる（速さの上限もここで決める）
 
 const FEATHER = 45;      // ぼかしの幅（路線の編集と同じ）
 const KEEP = 10;         // 押し上げきったとき、カード名と燈號の下に残す余白
 const MIN_SAVING = 24;   // これより押し上げられないカードでは何もしない
 const ANIM_MS = 420;
-// 捲動に合わせて動くときの速さの上限：マウスの滾輪は 1 回で 100px 前後飛ぶので、
-// そのまま追うとカードが一瞬で出入りして見える。目標まで最高この速さで、近づくと緩やかに追う
-const FOLLOW_SNAP = 24;       // 1 回の変化がこれ以下（指でゆっくり捲るとき）は遅れなしでそのまま追う
-const FOLLOW_MAX_SPEED = 0.45; // px/ms（押し上げきるまで約 0.35 秒）
-const FOLLOW_TAU = 70;        // 近づいたときの減速の時定数（ms）
+// 滾輪を自前で捲るとき：1 回で 100px 前後飛ぶので、最高この速さで、近づくと緩やかに
+const WHEEL_SNAP = 24;         // これ以下の量（タッチパッドの細かい捲り）はそのまま捲る
+const WHEEL_MAX_SPEED = 0.45;  // px/ms（押し上げきるまで約 0.35 秒）
+const WHEEL_TAU = 70;          // 近づいたときの減速の時定数（ms）
 
 // 路線の編集と同じ遮罩（多段の透明度で境目の縞を出さない）
 const MASK = `linear-gradient(to bottom,
@@ -49,9 +51,9 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
     let applyRaf = null;
     let pendingD = null;
     let wasOn = false;
-    let target = 0;       // 捲動から決まる目標の押し上げ量（実際の量 d はこれを速さの上限つきで追う）
-    let followRaf = null;
-    let followLast = 0;
+    let wheelTarget = null;  // 自前で捲るときの目標の捲る位置
+    let wheelRaf = null;
+    let wheelLast = 0;
     const origHeight = scrollWrapper.style.height;
 
     // 元の位置に残すカード名と燈號（本来のものの写し）
@@ -146,7 +148,6 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
 
     function applyNow(v) {
         d = Math.max(0, Math.min(dMax, v));
-        target = d;
         pendingD = d;
         if (applyRaf) { cancelAnimationFrame(applyRaf); applyRaf = null; }
         render();
@@ -155,60 +156,103 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
     function stopAnim() {
         if (animRaf) cancelAnimationFrame(animRaf);
         animRaf = null;
-        stopFollow();
+        stopWheel();
     }
 
-    function stopFollow() {
-        if (followRaf) cancelAnimationFrame(followRaf);
-        followRaf = null;
+    function stopWheel() {
+        if (wheelRaf) cancelAnimationFrame(wheelRaf);
+        wheelRaf = null;
+        wheelTarget = null;
     }
 
-    // 目標へ向かう：小さな変化はそのまま、大きな変化は速さの上限つきで滑らかに
-    function follow() {
-        if (!followRaf && Math.abs(target - d) <= FOLLOW_SNAP) { apply(target); return; }
-        if (followRaf) return;
-        followLast = performance.now();
+    // 捲る位置 s から押し上げ量を決める：下へは捲った分だけ、上へは「押し上げ量 ≦ 捲った位置」を保つ
+    function nextD(s, delta) {
+        if (s <= 0) return 0;
+        if (delta > 0) return Math.min(dMax, d + delta);
+        if (d > s) return s;
+        return d;
+    }
+
+    // 自前で捲る：捲る位置を動かし、同じコマでカード・パネルも更新する
+    function setScrollNow(s) {
+        const before = scrollWrapper.scrollTop;
+        scrollWrapper.scrollTop = s;
+        const after = scrollWrapper.scrollTop;   // 端では丸められる
+        lastS = after;                           // このあと届く scroll は差 0 で何もしない
+        applyNow(nextD(after, after - before));
+        return after;
+    }
+
+    function maxScroll() {
+        return Math.max(0, scrollWrapper.scrollHeight - scrollWrapper.clientHeight);
+    }
+
+    // 捲る位置は小数で持つ（scrollTop は整数に丸められるので、毎コマ読み直すと少しずつしか進まない）
+    let wheelPos = 0;
+    function runWheel() {
+        if (wheelRaf) return;
+        wheelPos = scrollWrapper.scrollTop;
+        wheelLast = null;
         const step = now => {
-            const dt = Math.min(64, now - followLast);
-            followLast = now;
-            const diff = target - d;
+            const dt = wheelLast === null ? 16 : Math.min(64, Math.max(1, now - wheelLast));
+            wheelLast = now;
+            const diff = wheelTarget - wheelPos;
             const dist = Math.abs(diff);
-            if (dist < 0.5) { apply(target); followRaf = null; return; }
-            const ease = dist * (1 - Math.exp(-dt / FOLLOW_TAU));
-            const move = Math.min(dist, FOLLOW_MAX_SPEED * dt, Math.max(ease, 0.02 * dt));
-            apply(d + Math.sign(diff) * move);
-            followRaf = requestAnimationFrame(step);
+            if (dist < 0.5) { setScrollNow(wheelTarget); wheelRaf = null; wheelTarget = null; return; }
+            const ease = dist * (1 - Math.exp(-dt / WHEEL_TAU));
+            const move = Math.min(dist, WHEEL_MAX_SPEED * dt, Math.max(ease, 0.02 * dt));
+            wheelPos += Math.sign(diff) * move;
+            const got = setScrollNow(wheelPos);
+            // 内容が減ったなどで、その位置まで捲れなかった：そこで止める
+            if (Math.abs(got - wheelPos) > 2) { wheelRaf = null; wheelTarget = null; return; }
+            wheelRaf = requestAnimationFrame(step);
         };
-        followRaf = requestAnimationFrame(step);
+        wheelRaf = requestAnimationFrame(step);
+    }
+
+    // 滾輪：押し上げ・戻しに関わる範囲だけ自前で捲る（それ以外はブラウザの捲動のまま）
+    function onWheel(e) {
+        if (suspended || flipSuspended || dragging || animRaf || !dMax || e.ctrlKey) return;
+        let dy = e.deltaY;
+        if (e.deltaMode === 1) dy *= 16;
+        else if (e.deltaMode === 2) dy *= scrollWrapper.clientHeight;
+        if (!dy || Math.abs(e.deltaX) > Math.abs(dy)) return;
+        const base = wheelTarget !== null ? wheelTarget : scrollWrapper.scrollTop;
+        const dest = Math.max(0, Math.min(maxScroll(), base + dy));
+        const involved = wheelRaf
+            || (dy > 0 && d < dMax - 0.5)                 // まだ押し上げきっていない
+            || (dy < 0 && d > 0.5 && dest < d + 1);       // 戻し始める位置まで上がる
+        if (!involved) return;
+        e.preventDefault();
+        if (!wheelRaf && Math.abs(dest - base) <= WHEEL_SNAP) { setScrollNow(dest); return; }
+        wheelTarget = dest;
+        runWheel();
     }
 
     function animateTo(target, done) {
         stopAnim();
         const from = d;
         const to = Math.max(0, Math.min(dMax, target));
-        if (Math.abs(from - to) < 0.5) { apply(to); target = d; lastS = scrollWrapper.scrollTop; if (done) done(); return; }
+        if (Math.abs(from - to) < 0.5) { apply(to); lastS = scrollWrapper.scrollTop; if (done) done(); return; }
         const t0 = performance.now();
         const ease = t => 1 - Math.pow(1 - t, 3);
         const step = now => {
             const p = Math.min(1, (now - t0) / ANIM_MS);
             apply(from + (to - from) * ease(p));
             if (p < 1) animRaf = requestAnimationFrame(step);
-            else { animRaf = null; target = d; lastS = scrollWrapper.scrollTop; if (done) done(); }
+            else { animRaf = null; lastS = scrollWrapper.scrollTop; if (done) done(); }
         };
         animRaf = requestAnimationFrame(step);
     }
 
-    // 捲動：下へは捲った分だけ押し上げ、上へは「押し上げ量 ≦ 捲った位置」を保つ（先頭に近づくと戻る）
-    // 決めるのは目標だけで、実際の動きは follow() が速さの上限つきで追う
+    // 捲動（指・捲軸・鍵盤など、ブラウザが捲ったとき）：捲った分だけそのまま（1:1）
     function onScroll() {
         const s = scrollWrapper.scrollTop;
         const delta = s - lastS;
         lastS = s;
-        if (suspended || flipSuspended || dragging || animRaf || !dMax) return;
-        if (s <= 0) target = 0;
-        else if (delta > 0) target = Math.min(dMax, target + delta);
-        else if (target > s) target = s;
-        follow();
+        if (suspended || flipSuspended || dragging || animRaf || wheelRaf || !dMax) return;
+        if (delta === 0) return;
+        apply(nextD(s, delta));
     }
 
     // カードを押したとき（マウス）：押し上げていれば戻す
@@ -236,6 +280,7 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
 
     measure();
     scrollWrapper.addEventListener('scroll', onScroll, { passive: true });
+    scrollWrapper.addEventListener('wheel', onWheel, { passive: false });
     inner.addEventListener('click', onCardClick);
     pinned.addEventListener('click', onCardClick);
     flipObserver.observe(inner, { attributes: true, attributeFilter: ['class'] });
@@ -246,7 +291,7 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
         isActive: () => !suspended && !flipSuspended && dMax > 0,
         // 押し上げたカードを指で引くとき：指に合わせて動かす
         beginDrag() { stopAnim(); dragging = true; },
-        dragTo(v) { apply(v); target = d; },
+        dragTo(v) { apply(v); },
         endDrag(target) { dragging = false; animateTo(target); },
         expand() { animateTo(0); },
         // 路線の編集など、カードを別の動きで使う間は止めて元の位置に戻す
@@ -267,6 +312,7 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
             stopAnim();
             if (applyRaf) cancelAnimationFrame(applyRaf);
             scrollWrapper.removeEventListener('scroll', onScroll);
+            scrollWrapper.removeEventListener('wheel', onWheel);
             inner.removeEventListener('click', onCardClick);
             window.removeEventListener('resize', onResize);
             flipObserver.disconnect();

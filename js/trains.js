@@ -316,6 +316,9 @@ function stationViewHtml(board, prefs, support) {
     let newestAt = 0;
     let anyLiveError = false;
     let groupsHtml = '';
+    // 方面ごとの列。どの駅・どの方面にも列車がないときは、駅ごとに並べず 1 行の案内にまとめる
+    const dirGroups = [];
+    let otherGroups = 0;
 
     if (support === 'loading') parts.push(noteHtml('この路線の到着情報を準備中です。しばらくすると表示されます'));
 
@@ -335,11 +338,13 @@ function stationViewHtml(board, prefs, support) {
             const entry = trainCache.get(stationPath(name, limit));
             if (!entry || (!entry.json && !entry.error)) {
                 groupsHtml += `<div class="bus-collapsed-group"><div class="bus-collapsed-dir">${esc(name)}</div>${noteHtml('到着情報を取得しています...')}</div>`;
+                otherGroups++;
                 return;
             }
             if (!entry.json) {
                 const msg = entry.error === 'init' ? '到着情報を準備中です。しばらくすると表示されます' : '到着情報を取得できません';
                 groupsHtml += `<div class="bus-collapsed-group"><div class="bus-collapsed-dir">${esc(name)}</div>${noteHtml(msg)}</div>`;
+                otherGroups++;
                 return;
             }
             if (entry.at > newestAt) newestAt = entry.at;
@@ -347,6 +352,7 @@ function stationViewHtml(board, prefs, support) {
             if (!hit) {
                 const msg = isOperatorLoading(entry.json, board.lineId) ? 'この路線の到着情報を準備中です' : `${name}駅の情報が見つかりません`;
                 groupsHtml += `<div class="bus-collapsed-group"><div class="bus-collapsed-dir">${esc(name)}</div>${noteHtml(msg)}</div>`;
+                otherGroups++;
                 return;
             }
             const rw = hit.railway;
@@ -355,6 +361,7 @@ function stationViewHtml(board, prefs, support) {
             if (NO_BOARD_SUPPORTS.includes(rw.support) || rw.support === 'loading') {
                 const msg = rw.support === 'ended' ? '到着情報の提供は終了しました' : rw.support === 'loading' ? 'この路線の到着情報を準備中です' : 'この路線の到着情報はありません';
                 groupsHtml += `<div class="bus-collapsed-group"><div class="bus-collapsed-dir">${esc(name)}</div>${noteHtml(msg)}</div>`;
+                otherGroups++;
                 return;
             }
             (rw.directions || []).forEach(dir => {
@@ -364,9 +371,19 @@ function stationViewHtml(board, prefs, support) {
                 const body = shown.length > 0
                     ? shown.map(trainCapsuleHtml).join('')
                     : noteHtml(all.length > 0 ? '選んだ種別の列車はしばらくありません' : 'この先の列車はありません');
-                groupsHtml += `<div class="bus-collapsed-group"><div class="bus-collapsed-dir">${esc(hit.stationName || name)}<span class="train-dir-title">${esc(title)}</span></div>${body}</div>`;
+                const html = `<div class="bus-collapsed-group"><div class="bus-collapsed-dir">${esc(hit.stationName || name)}<span class="train-dir-title">${esc(title)}</span></div>${body}</div>`;
+                dirGroups.push({ html, empty: shown.length === 0, filteredOut: all.length > 0 });
+                groupsHtml += html;
             });
         });
+
+        // 選んだ駅のどの方面にも列車がない（深夜など）：駅・方面を並べず、1 行で伝える
+        if (dirGroups.length > 0 && otherGroups === 0 && dirGroups.every(g => g.empty)) {
+            groupsHtml = '';
+            parts.push(noteHtml(dirGroups.some(g => g.filteredOut)
+                ? '選んだ種別の列車はしばらくありません'
+                : '現在、選んだ駅に来る列車はありません'));
+        }
     }
 
     if (anyLiveError) parts.push(noteHtml('リアルタイム情報を取得できません。時刻表の時刻を表示しています'));
