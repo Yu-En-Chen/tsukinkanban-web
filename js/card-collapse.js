@@ -13,6 +13,11 @@ const FEATHER = 45;      // ぼかしの幅（路線の編集と同じ）
 const KEEP = 10;         // 押し上げきったとき、カード名と燈號の下に残す余白
 const MIN_SAVING = 24;   // これより押し上げられないカードでは何もしない
 const ANIM_MS = 420;
+// 捲動に合わせて動くときの速さの上限：マウスの滾輪は 1 回で 100px 前後飛ぶので、
+// そのまま追うとカードが一瞬で出入りして見える。目標まで最高この速さで、近づくと緩やかに追う
+const FOLLOW_SNAP = 24;       // 1 回の変化がこれ以下（指でゆっくり捲るとき）は遅れなしでそのまま追う
+const FOLLOW_MAX_SPEED = 0.45; // px/ms（押し上げきるまで約 0.35 秒）
+const FOLLOW_TAU = 70;        // 近づいたときの減速の時定数（ms）
 
 // 路線の編集と同じ遮罩（多段の透明度で境目の縞を出さない）
 const MASK = `linear-gradient(to bottom,
@@ -44,6 +49,9 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
     let applyRaf = null;
     let pendingD = null;
     let wasOn = false;
+    let target = 0;       // 捲動から決まる目標の押し上げ量（実際の量 d はこれを速さの上限つきで追う）
+    let followRaf = null;
+    let followLast = 0;
     const origHeight = scrollWrapper.style.height;
 
     // 元の位置に残すカード名と燈號（本来のものの写し）
@@ -138,6 +146,7 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
 
     function applyNow(v) {
         d = Math.max(0, Math.min(dMax, v));
+        target = d;
         pendingD = d;
         if (applyRaf) { cancelAnimationFrame(applyRaf); applyRaf = null; }
         render();
@@ -146,33 +155,60 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
     function stopAnim() {
         if (animRaf) cancelAnimationFrame(animRaf);
         animRaf = null;
+        stopFollow();
+    }
+
+    function stopFollow() {
+        if (followRaf) cancelAnimationFrame(followRaf);
+        followRaf = null;
+    }
+
+    // 目標へ向かう：小さな変化はそのまま、大きな変化は速さの上限つきで滑らかに
+    function follow() {
+        if (!followRaf && Math.abs(target - d) <= FOLLOW_SNAP) { apply(target); return; }
+        if (followRaf) return;
+        followLast = performance.now();
+        const step = now => {
+            const dt = Math.min(64, now - followLast);
+            followLast = now;
+            const diff = target - d;
+            const dist = Math.abs(diff);
+            if (dist < 0.5) { apply(target); followRaf = null; return; }
+            const ease = dist * (1 - Math.exp(-dt / FOLLOW_TAU));
+            const move = Math.min(dist, FOLLOW_MAX_SPEED * dt, Math.max(ease, 0.02 * dt));
+            apply(d + Math.sign(diff) * move);
+            followRaf = requestAnimationFrame(step);
+        };
+        followRaf = requestAnimationFrame(step);
     }
 
     function animateTo(target, done) {
         stopAnim();
         const from = d;
         const to = Math.max(0, Math.min(dMax, target));
-        if (Math.abs(from - to) < 0.5) { apply(to); lastS = scrollWrapper.scrollTop; if (done) done(); return; }
+        if (Math.abs(from - to) < 0.5) { apply(to); target = d; lastS = scrollWrapper.scrollTop; if (done) done(); return; }
         const t0 = performance.now();
         const ease = t => 1 - Math.pow(1 - t, 3);
         const step = now => {
             const p = Math.min(1, (now - t0) / ANIM_MS);
             apply(from + (to - from) * ease(p));
             if (p < 1) animRaf = requestAnimationFrame(step);
-            else { animRaf = null; lastS = scrollWrapper.scrollTop; if (done) done(); }
+            else { animRaf = null; target = d; lastS = scrollWrapper.scrollTop; if (done) done(); }
         };
         animRaf = requestAnimationFrame(step);
     }
 
     // 捲動：下へは捲った分だけ押し上げ、上へは「押し上げ量 ≦ 捲った位置」を保つ（先頭に近づくと戻る）
+    // 決めるのは目標だけで、実際の動きは follow() が速さの上限つきで追う
     function onScroll() {
         const s = scrollWrapper.scrollTop;
         const delta = s - lastS;
         lastS = s;
         if (suspended || flipSuspended || dragging || animRaf || !dMax) return;
-        if (s <= 0) { if (d > 0) apply(0); return; }
-        if (delta > 0) apply(Math.min(dMax, d + delta));
-        else if (d > s) apply(s);
+        if (s <= 0) target = 0;
+        else if (delta > 0) target = Math.min(dMax, target + delta);
+        else if (target > s) target = s;
+        follow();
     }
 
     // カードを押したとき（マウス）：押し上げていれば戻す
@@ -210,7 +246,7 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
         isActive: () => !suspended && !flipSuspended && dMax > 0,
         // 押し上げたカードを指で引くとき：指に合わせて動かす
         beginDrag() { stopAnim(); dragging = true; },
-        dragTo(v) { apply(v); },
+        dragTo(v) { apply(v); target = d; },
         endDrag(target) { dragging = false; animateTo(target); },
         expand() { animateTo(0); },
         // 路線の編集など、カードを別の動きで使う間は止めて元の位置に戻す
