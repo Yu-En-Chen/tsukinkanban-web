@@ -8,7 +8,7 @@
 // ・捲り下げると押し上がり、上へ戻して先頭に近づくと戻る（先頭では必ず元の位置）
 // ・押し上げたカードを押すと戻り、引き下ろすと指に合わせて戻る（script.js の手勢から操作）
 // 動きは 2 つに分ける：
-// ・パネル（枠・捲る範囲・内容の補正）：捲った位置からそのまま決め、遅れなしで動く
+// ・パネル（枠）：捲った位置からそのまま決め、遅れなしで動く（捲る範囲は画面上で動かさず、大きさも変えない）
 // ・カード本体：指で捲るときはパネルと一緒に、指の動きの半分だけ遅れなしで動く
 //  （押し上げきるまでに捲る距離を倍にして、少しの捲りで大きく出入りしないように）。
 //   指の小さな揺れでは動かさない（動き出し・向きを変えるときは少し捲ってから付いてくる）。
@@ -52,6 +52,7 @@ const MASK = `linear-gradient(to bottom,
 const INNER_PROPS = ['webkitMaskImage', 'maskImage', 'webkitMaskSize', 'maskSize', 'webkitMaskRepeat', 'maskRepeat',
     'webkitMaskPosition', 'maskPosition', 'webkitClipPath', 'clipPath', 'boxShadow', 'translate', 'zIndex'];
 const HEADER_PROPS = ['translate', 'zIndex', 'willChange'];
+const SHADOW_PAD = 120;  // 影の層の外側の余白（影の広がりより大きく）
 
 const isLiteMode = () => document.documentElement.classList.contains('is-android-fallback');
 
@@ -84,12 +85,20 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
     let lite = false;
     // 最後の入力が指か（指：カードも 1:1、滾輪・マウス：速さの上限つき）
     let byTouch = window.matchMedia ? window.matchMedia('(pointer: coarse)').matches : false;
-    const origHeight = scrollWrapper.style.height;
+    // 捲る範囲の形（押し上げ中は変えない。下の setGeometry を参照）
+    const orig = { height: scrollWrapper.style.height, marginTop: scrollWrapper.style.marginTop, paddingTop: scrollWrapper.style.paddingTop };
+    const basePadTop = parseFloat(getComputedStyle(scrollWrapper).paddingTop) || 0;
+    let spacer = 0;
 
-    // 残った部分の形の影（品質のみ。カードの後ろ、透明な箱の外側にだけ影が出る）
+    // カードの影（品質のみ。カードの後ろ、透明な箱の外側にだけ影が出る）
+    // 外側（shadow）は動かない枠で、元の上端より上を遮罩でぼかして消す（遮罩は毎コマ変えない）。
+    // 中の影（shadowBox）はカードと同じ大きさのまま一緒に上げるだけ（毎コマ影を描き直さない）
     const shadow = document.createElement('div');
     shadow.className = 'card-collapse-shadow';
     shadow.setAttribute('aria-hidden', 'true');
+    const shadowBox = document.createElement('div');
+    shadowBox.className = 'card-collapse-shadow-box';
+    shadow.appendChild(shadowBox);
     inner.before(shadow);
 
     scrollWrapper.style.overflowAnchor = 'none';
@@ -121,19 +130,45 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
         dMaxL = fit(Math.max(0, H - (contentBottom + contentTop)));
         const cs = getComputedStyle(inner);
         radius = cs.borderTopLeftRadius || '32px';
+        // 影が広がる分の余白（SHADOW_PAD）を四方に取った枠。上は元の上端の FEATHER 上から元の上端までで消していく
+        const fade = `linear-gradient(to bottom, transparent ${SHADOW_PAD - FEATHER}px, black ${SHADOW_PAD}px)`;
         Object.assign(shadow.style, {
-            top: `${inner.offsetTop}px`,
+            top: `${inner.offsetTop - SHADOW_PAD}px`,
+            left: `${inner.offsetLeft - SHADOW_PAD}px`,
+            width: `${inner.offsetWidth + SHADOW_PAD * 2}px`,
+            height: `${H + SHADOW_PAD * 2}px`,
+            webkitMaskImage: fade,
+            maskImage: fade
+        });
+        Object.assign(shadowBox.style, {
+            top: `${SHADOW_PAD}px`,
+            left: `${SHADOW_PAD}px`,
+            width: `${inner.offsetWidth}px`,
             height: `${H}px`,
             borderRadius: radius,
             boxShadow: cs.boxShadow
         });
     }
 
-    // パネルの内容を、パネルが上がった分だけ下げる（内容は捲動と 1:1）
-    // 子ごとに直接 translate を置く（変数で渡すと内容全体の style を毎コマ計算し直すことになる）
-    function placeContent() {
-        const v = p > 0.5 ? `0 ${p}px` : '';
-        for (const c of scrollWrapper.children) if (c.style.translate !== v) c.style.translate = v;
+    // 捲る範囲を、押し上げきったときのパネルの上端まで先に広げておく（上へ spacer だけ伸ばし、
+    // 同じだけ上の余白を足すので、内容の位置・捲る位置・捲れる量は変わらない）。
+    // 伸ばした部分はパネル（overflow: hidden）の外なので見えない。押し上げるときは
+    // パネルを上げて、捲る範囲を同じだけ下げる（画面上は動かない）だけで、上に伸ばした部分が見えてくる。
+    // 捲っている最中に捲る範囲の大きさ・内容の位置を変えると（特に iOS で）捲動自体がぎくしゃくするので、
+    // 押し上げ中に変えるのは transform だけにする
+    function setGeometry(on) {
+        const want = on ? Math.ceil(Math.max(dMaxQ, dMaxL)) : 0;
+        if (want === spacer) return;
+        spacer = want;
+        if (spacer > 0) {
+            scrollWrapper.style.marginTop = `${-spacer}px`;
+            scrollWrapper.style.paddingTop = `${basePadTop + spacer}px`;
+            if (orig.height) scrollWrapper.style.height = `calc(${orig.height} + ${spacer}px)`;
+        } else {
+            scrollWrapper.style.marginTop = orig.marginTop;
+            scrollWrapper.style.paddingTop = orig.paddingTop;
+            scrollWrapper.style.height = orig.height;
+        }
     }
 
     function render() {
@@ -144,6 +179,7 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
         // 押し上げ中に描画モードが切り替わったとき：いったん外してから新しいモードで付け直す
         if (cardOn && cardWasOn && isLiteMode() !== lite) {
             for (const k of INNER_PROPS) inner.style[k] = '';
+            shadowBox.style.translate = '';
             shadow.classList.remove('on');
             cardWasOn = false;
             d = clamp(d);   // 最大の量はモードごとに違う
@@ -171,6 +207,7 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
         } else if (!cardOn && cardWasOn) {
             for (const k of INNER_PROPS) inner.style[k] = '';
             for (const k of HEADER_PROPS) header.style[k] = '';
+            shadowBox.style.translate = '';
             shadow.classList.remove('on');
         }
         cardWasOn = cardOn;
@@ -189,7 +226,8 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
                 const maskPos = `0px ${d - FEATHER}px`;
                 inner.style.webkitMaskPosition = maskPos;
                 inner.style.maskPosition = maskPos;
-                shadow.style.height = `${H - d}px`;
+                // 影はカードと一緒に上げるだけ（上側は外側の遮罩で消える）
+                shadowBox.style.translate = `0 ${-d}px`;
             }
         }
         // パネルがカードより先に上がったとき、カードの下にもぐるように（カードと影を上の層に）
@@ -197,12 +235,10 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
         inner.style.zIndex = lift ? '2' : '';
         shadow.style.zIndex = lift ? '1' : '';
 
-        // パネル（p）：枠を上げた分、捲る範囲の高さを足し、内容を同じだけ下げる
-        //（内容は捲動と 1:1、枠も同じ量で動くので枠と内容がずれない）
+        // パネル（p）：枠を上げ、捲る範囲は同じだけ下げて画面上の位置を保つ（内容は捲動と 1:1）
         if (panelOn || panelWasOn) {
             extension.style.translate = panelOn ? `0 ${-p}px` : '';
-            scrollWrapper.style.height = panelOn && origHeight ? `calc(${origHeight} + ${p}px)` : origHeight;
-            placeContent();
+            scrollWrapper.style.translate = panelOn ? `0 ${p}px` : '';
         }
         panelWasOn = panelOn;
     }
@@ -328,12 +364,11 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
     });
     // 描画モードが切り替わったら、押し上げ中ならすぐ付け直す
     const modeObserver = new MutationObserver(() => { if (cardWasOn && isLiteMode() !== lite) render(); });
-    // パネルの内容が入れ替わったとき、新しい列にも補正を
-    const contentObserver = new MutationObserver(() => { if (panelWasOn) placeContent(); });
 
-    const onResize = () => { stopAnim(); setBoth(0, true); requestAnimationFrame(measure); };
+    const onResize = () => { stopAnim(); setBoth(0, true); requestAnimationFrame(() => { measure(); setGeometry(!suspended); }); };
 
     measure();
+    setGeometry(true);
     scrollWrapper.addEventListener('scroll', onScroll, { passive: true });
     scrollWrapper.addEventListener('touchstart', markTouch, { passive: true });
     scrollWrapper.addEventListener('wheel', markMouse, { passive: true });
@@ -341,7 +376,6 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
     window.addEventListener('keydown', markMouse);
     inner.addEventListener('click', onCardClick);
     flipObserver.observe(inner, { attributes: true, attributeFilter: ['class'] });
-    contentObserver.observe(scrollWrapper, { childList: true });
     modeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     window.addEventListener('resize', onResize);
 
@@ -359,17 +393,20 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
         expand() { animateTo(0); },
         // 路線の編集など、カードを別の動きで使う間は止めて元の位置に戻す
         // animated：押し上げていれば滑らかに戻してから resolve（すぐに次の動きへ移らないとき）
+        // 止めている間は捲る範囲の形も元に戻す（路線の編集などがふだんの形で使えるように）
         suspend(animated = false) {
             suspended = true;
-            if (animated && (d > 0.5 || p > 0.5)) return new Promise(resolve => animateTo(0, resolve));
+            if (animated && (d > 0.5 || p > 0.5)) return new Promise(resolve => animateTo(0, () => { setGeometry(false); resolve(); }));
             stopAnim();
             setBoth(0, true);
+            setGeometry(false);
             return Promise.resolve();
         },
         resume() {
             suspended = false;
-            resetScrollBase();
             measure();
+            setGeometry(true);
+            resetScrollBase();
         },
         destroy() {
             stopAnim();
@@ -382,9 +419,9 @@ export function attachCardCollapse({ container, inner, extension, scrollWrapper 
             inner.removeEventListener('click', onCardClick);
             window.removeEventListener('resize', onResize);
             flipObserver.disconnect();
-            contentObserver.disconnect();
             modeObserver.disconnect();
             shadow.remove();
+            setGeometry(false);
             for (const k of INNER_PROPS) inner.style[k] = '';
             for (const k of HEADER_PROPS) header.style[k] = '';
         }

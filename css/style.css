@@ -1204,20 +1204,21 @@ body.enable-bottom-preview .card-stack:not(.has-active) .card:last-child .card-c
    開いたカードの押し上げ（js/card-collapse.js）
    カード本体は translate で上がり、上側は遮罩（品質）か角丸の切り取り（軽量）で消える。
    カード名と燈號はカードの中のまま、同じだけ下げて元の位置に留める（inline style で設定）。
-   ・影の層（品質のみ）：残った部分の形に合わせた影（カード自身の影は遮罩で消えるため）
+   ・影の層（品質のみ）：カードと同じ大きさの影を一緒に上げ、元の上端より上は動かない外側の遮罩で消す
+     （カード自身の影は遮罩で消えるため。毎コマ影の大きさを変えて描き直さないように）
    出入りはカード本体と同じ動き（transform）。押し上げの量は translate で重ねる
    ========================================================================== */
 .card-collapse-shadow {
-    position: absolute;
-    left: 0;
-    right: 0;
-    margin: 0 auto;
-    width: var(--card-width);
-    max-width: 420px;
+    position: absolute;   /* 位置と大きさは JS（カードに合わせ、影の広がる余白を四方に取る） */
     opacity: 0;
     pointer-events: none;
     transform: translate3d(0, 100vh, 0);
     transition: transform 0.55s var(--spring-release);
+}
+
+.card-collapse-shadow-box {
+    position: absolute;
+    will-change: translate;
 }
 
 .card-collapse-shadow.on {
