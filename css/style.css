@@ -1201,6 +1201,55 @@ body.enable-bottom-preview .card-stack:not(.has-active) .card:last-child .card-c
 }
 
 /* ==========================================================================
+   開いたカードの押し上げ（js/card-collapse.js）
+   カード本体は translate で上がり、上側は遮罩で消える（inline style で設定）。
+   ・カード名と燈號の写し：元の位置に置く。カードと同じ文字色の変数を JS が写す
+   ・影の層：残った部分の形に合わせた影（カード自身の影は遮罩で消えるため）
+   出入りはカード本体と同じ動き（transform）。押し上げの量は translate で重ねる
+   ========================================================================== */
+.card-collapse-header,
+.card-collapse-shadow {
+    position: absolute;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    width: var(--card-width);
+    max-width: 420px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate3d(0, 100vh, 0);
+    transition: transform 0.55s var(--spring-release);
+}
+
+.card-collapse-header {
+    z-index: 3;
+    color: var(--card-text-color);
+    text-shadow: var(--text-shadow-subtle);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.card-collapse-header.on {
+    opacity: 1;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.card-collapse-shadow.on {
+    opacity: 1;
+}
+
+.detail-overlay.active .card-collapse-header,
+.detail-overlay.active .card-collapse-shadow {
+    transform: translate3d(0, 0, 0);
+}
+
+/* パネルが上がった分、内容を同じだけ下げる（内容は指と 1:1 で動く） */
+#card-extension-container.cc-on > * {
+    translate: 0 var(--cc-comp, 0px);
+}
+
+/* ==========================================================================
    互動提示圖標 (Dismiss Icon)
    ========================================================================== */
 .dismiss-icon {

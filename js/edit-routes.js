@@ -18,6 +18,9 @@ export function startRouteEditMode(cardId, currentLineIds) {
         editGestureAbortController.abort();
     }
     editGestureAbortController = new AbortController();
+
+    // カードの押し上げ（card-collapse.js）は編集中は止めて、元の位置で計算する
+    if (window.__cardCollapse) window.__cardCollapse.suspend();
     const { signal } = editGestureAbortController;
 
     const innerCard = document.querySelector('#detail-card-container .detail-card-inner');
@@ -487,6 +490,9 @@ export function startRouteEditMode(cardId, currentLineIds) {
                 editGestureAbortController.abort();
                 editGestureAbortController = null;
             }
+
+            // カードの押し上げを再開
+            if (window.__cardCollapse) window.__cardCollapse.resume();
 
         }, 850);
     };

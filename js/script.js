@@ -26,6 +26,7 @@ import { loadDataSources, railwayEndedNotice, flightEndedNotice, sourceNoticeHtm
 import { openShipSchedule, searchShip, initShips, refreshSavedShips, ensureShipToday, isShipTargetId, generateShipDataFormat, generateShipLineSummary, renderShipRoutePanel, renderShipLineCard, getShipColor } from './ship.js';
 import { initBuses, searchBusesDebounced, refreshSavedBusRoutes, ensureBusRouteData, generateBusDataFormat, generateBusLineSummary, renderBusDetailPanel, renderBusStopPanel, renderBusLineCard, openStopPickerDialog, getBusPrefs, saveBusPrefs, isBusTargetId, getBusOperatorColor, busStopCardFace } from './buses.js';
 import { startRouteEditMode } from './edit-routes.js';
+import { attachCardCollapse } from './card-collapse.js';
 
 // 鐵道の各路線カード：提供終了（オープンデータチャレンジ終了後）は灰色の ℹ︎ 徽章、
 // 案内文（message）と公式サイトへの連結。誤点の細項は出さない
@@ -1098,6 +1099,12 @@ function handleCardClick(id) {
     isAnimating = true;
     history.pushState({ cardActive: true }, '');
 
+    // 前のカードの押し上げの処理を外す
+    if (window.__cardCollapse) {
+        window.__cardCollapse.destroy();
+        window.__cardCollapse = null;
+    }
+
     // 展開前清空殘留位移，確保從原點出發
     detailContainer.innerHTML = '';
     detailContainer.style.transition = 'none';
@@ -1508,7 +1515,7 @@ function handleCardClick(id) {
             const iconEdit = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-chevrons-up-down-icon lucide-list-chevrons-up-down"><path d="M3 5h8"/><path d="M3 12h8"/><path d="M3 19h8"/><path d="m15 8 3-3 3 3"/><path d="m15 16 3 3 3-3"/></svg>`;
             const iconAdd = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-plus-icon lucide-list-plus"><path d="M16 5H3"/><path d="M11 12H3"/><path d="M16 19H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></svg>`;
 
-            const createBtn = (iconHtml, text, onClickAction) => {
+            const createBtn = (iconHtml, text, onClickAction, prepare = null) => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'flight-action-btn';
@@ -1517,6 +1524,7 @@ function handleCardClick(id) {
                 btn.onclick = (e) => {
                     e.stopPropagation();
                     if (navigator.vibrate) navigator.vibrate(50);
+                    if (prepare) prepare();
 
                     // 捲動偵測
                     const isAtBottom = Math.abs(scrollWrapper.scrollHeight - scrollWrapper.scrollTop - scrollWrapper.clientHeight) <= 5;
@@ -1580,7 +1588,10 @@ function handleCardClick(id) {
                 }, 500); // 500ms 確保 Z-index 退場，避免動畫衝突
             };
 
-            btnContainer.appendChild(createBtn(iconEdit, '路線を編集', handleEditRoutes));
+            // 編集はカード全体を動かすので、押し上げていれば先に滑らかに戻す（捲る動きと同時に）
+            btnContainer.appendChild(createBtn(iconEdit, '路線を編集', handleEditRoutes, () => {
+                if (window.__cardCollapse) window.__cardCollapse.suspend(true);
+            }));
             btnContainer.appendChild(createBtn(iconAdd, '路線を追加', handleAddRouteClick));
 
             scrollWrapper.appendChild(btnContainer);
@@ -1593,6 +1604,16 @@ function handleCardClick(id) {
 
     // 一次掛載整組內容
     detailContainer.appendChild(clone);
+
+    // 下のパネルを捲るとカードが上へ押し上げられる（名前と燈號は元の位置に残す）。航班カードは対象外
+    if (!data.isFlightCard) {
+        window.__cardCollapse = attachCardCollapse({
+            container: detailContainer,
+            inner: detailContainer.querySelector('.detail-card-inner'),
+            extension: detailContainer.querySelector('.detail-extension-card'),
+            scrollWrapper: document.getElementById('card-extension-container')
+        });
+    }
 
     const capsule = document.getElementById('action-capsule');
     if (capsule) capsule.classList.add('detail-active');
@@ -1721,8 +1742,8 @@ function handleBottomCardClick() {
 function handleOverlayClick(e) {
     if (isAnimating) return;
 
-    // 點擊處既非主卡片也非延伸面板時才關閉
-    if (!e.target.closest('.detail-card-inner') && !e.target.closest('.detail-extension-card')) {
+    // 點擊處既非主卡片（含押し上げ中のカード名・燈號）也非延伸面板時才關閉
+    if (!e.target.closest('.detail-card-inner') && !e.target.closest('.card-collapse-header') && !e.target.closest('.detail-extension-card')) {
         closeAllCards(false);
     }
 }
@@ -1885,6 +1906,10 @@ function initOverlayGestures() {
     let defaultIcons = document.querySelectorAll('#action-capsule .icon-default, #search-trigger .icon-default');
     let hiddenIcons = document.querySelectorAll('#action-capsule .icon-hidden, #search-trigger .icon-hidden');
 
+    // 押し上げたカードを引き下ろすとき：まず押し上げを戻し（指と 1:1）、残りの距離を閉じる手勢に使う
+    let collapseDragStart = 0;
+    let overlayMoved = false;
+
     // =====================================================================
     // 詳情面板下拉手勢（JS 狀態機、多點觸控防護）
     // =====================================================================
@@ -1899,9 +1924,15 @@ function initOverlayGestures() {
 
         overlayStartY = e.touches[0].pageY;
 
-        // 判斷是否點在主卡片上
+        // 判斷是否點在主卡片上（押し上げ中のカード名・燈號も含む）
         const targetElement = e.target;
-        const isClickingInnerCard = targetElement.closest('.detail-card-inner');
+        const isClickingInnerCard = targetElement.closest('.detail-card-inner, .card-collapse-header');
+
+        overlayMoved = false;
+        const cc = window.__cardCollapse;
+        collapseDragStart = (isClickingInnerCard && cc && cc.isActive()) ? cc.getD() : 0;
+        if (collapseDragStart > 0.5) cc.beginDrag();
+        else collapseDragStart = 0;
 
         if (isClickingInnerCard) {
             isClosingGestureAllowed = true;
@@ -1932,6 +1963,8 @@ function initOverlayGestures() {
             // 滑動中則強制中斷並回彈
             if (isClosingGestureAllowed) {
                 isClosingGestureAllowed = false;
+                if (collapseDragStart > 0 && window.__cardCollapse) window.__cardCollapse.endDrag(collapseDragStart);
+                collapseDragStart = 0;
 
                 // 回彈至原位
                 detailContainer.style.transition = 'transform 0.55s var(--spring-release)';
@@ -1962,7 +1995,17 @@ function initOverlayGestures() {
         // 手勢已中止時不執行位移
         if (!isClosingGestureAllowed) return;
 
-        const rawMoveY = e.touches[0].pageY - overlayStartY;
+        let rawMoveY = e.touches[0].pageY - overlayStartY;
+        if (Math.abs(rawMoveY) > 6) overlayMoved = true;
+
+        // 押し上げたカード：引いた分だけ戻し、戻りきった後の距離で閉じる手勢へ
+        if (collapseDragStart > 0) {
+            if (rawMoveY > 0 && e.cancelable) e.preventDefault();
+            const consumed = Math.max(0, Math.min(rawMoveY, collapseDragStart));
+            if (window.__cardCollapse) window.__cardCollapse.dragTo(collapseDragStart - consumed);
+            rawMoveY -= collapseDragStart;
+            if (rawMoveY <= 0) return;
+        }
 
         if (rawMoveY > 0) {
             if (rawMoveY > 10 && e.cancelable) e.preventDefault();
@@ -1998,6 +2041,17 @@ function initOverlayGestures() {
 
     // touchend 與 touchcancel 統一處理
     const handleTouchEnd = e => {
+        // 押し上げたカード：押しただけ、またはある程度引いたら元に戻す。少ししか引いていなければそのまま
+        if (collapseDragStart > 0) {
+            const cc = window.__cardCollapse;
+            if (cc && !isAnimating && activeCardId) {
+                const pulled = collapseDragStart - cc.getD();
+                const expand = !overlayMoved || pulled > Math.min(40, collapseDragStart * 0.3);
+                cc.endDrag(expand ? 0 : collapseDragStart);
+            }
+            collapseDragStart = 0;
+        }
+
         // 手勢已被中止時不做任何處理
         if (isAnimating || !activeCardId || !isClosingGestureAllowed) return;
 
@@ -2049,6 +2103,13 @@ function initOverlayGestures() {
         }
 
         e.preventDefault();
+
+        // 押し上げたカードの上で下へ引く操作（上向きの滾輪）：まず元の位置に戻す
+        const cc = window.__cardCollapse;
+        if (cc && cc.isActive() && cc.getD() > 0.5) {
+            if (e.deltaY < 0) cc.expand();
+            return;
+        }
         overlayWheelSum -= e.deltaY;
         if (overlayWheelSum < 0) overlayWheelSum = 0;
         const resistedY = overlayWheelSum * 0.2;
