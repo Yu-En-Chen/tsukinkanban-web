@@ -2090,15 +2090,13 @@ function initOverlayGestures() {
     detailOverlay.ontouchcancel = handleTouchEnd;
 
     // 桌面版滾輪邏輯（同樣區分觸發區域）
-    // 滾輪・タッチパッドは「押している／離した」が分からず、離した後の慣性も届くので、指のように付いて動かさない：
-    // ・押し上げたカードの上で下へ引く → 元の位置へ戻す（自動）
-    // ・カードの上で下へ十分引く → 閉じる（自動。途中で付いて動かさない）
-    // 一続きの滾輪（間が WHEEL_GAP 空くまで）では 1 つの操作だけ（戻した同じ流れのまま閉じない）
-    const WHEEL_GAP = 200;      // ms：これだけ滾輪が来なければ、次の操作
-    const WHEEL_CLOSE = 160;    // px：一続きでこれだけ下へ引いたら閉じる（滾輪 2 段ほど）
     let overlayWheelSum = 0;
-    let overlayWheelDone = false;   // この流れではもう操作した
-    let overlayWheelIdle;
+    let overlayWheelTimer;
+    // 押し上げたカードを滾輪で戻したとき、同じ一続きの滾輪（タッチパッドの慣性を含む）は
+    // そこで止め、閉じる手勢へ進めない（間が WHEEL_GAP 空いたら次の操作として受け付ける）
+    const WHEEL_GAP = 200;
+    let overlayWheelHold = false;
+    let overlayWheelHoldTimer;
     detailOverlay.onwheel = e => {
         if (isAnimating || !activeCardId) return;
 
@@ -2111,31 +2109,73 @@ function initOverlayGestures() {
 
         e.preventDefault();
 
-        clearTimeout(overlayWheelIdle);
-        overlayWheelIdle = setTimeout(() => { overlayWheelSum = 0; overlayWheelDone = false; }, WHEEL_GAP);
-        if (overlayWheelDone) return;
-
-        let dy = e.deltaY;
-        if (e.deltaMode === 1) dy *= 16;
-        else if (e.deltaMode === 2) dy *= window.innerHeight;
-
-        // 押し上げたカードの上で下へ引く操作（上向きの滾輪）：元の位置に戻す
-        const cc = window.__cardCollapse;
-        if (cc && cc.isActive() && cc.getD() > 0.5) {
-            if (dy < 0) {
-                cc.expand();
-                overlayWheelDone = true;
-            }
+        if (overlayWheelHold) {
+            clearTimeout(overlayWheelHoldTimer);
+            overlayWheelHoldTimer = setTimeout(() => { overlayWheelHold = false; }, WHEEL_GAP);
             return;
         }
 
-        if (dy >= 0) { overlayWheelSum = 0; return; }
-        overlayWheelSum -= dy;
-        if (overlayWheelSum >= WHEEL_CLOSE) {
-            overlayWheelSum = 0;
-            overlayWheelDone = true;
-            closeAllCards(false);
+        // 押し上げたカードの上で下へ引く操作（上向きの滾輪）：元の位置に戻す（付いて動かさず自動で）
+        const cc = window.__cardCollapse;
+        if (cc && cc.isActive() && cc.getD() > 0.5) {
+            if (e.deltaY < 0) {
+                cc.expand();
+                overlayWheelHold = true;
+                clearTimeout(overlayWheelHoldTimer);
+                overlayWheelHoldTimer = setTimeout(() => { overlayWheelHold = false; }, WHEEL_GAP);
+            }
+            return;
         }
+        overlayWheelSum -= e.deltaY;
+        if (overlayWheelSum < 0) overlayWheelSum = 0;
+        const resistedY = overlayWheelSum * 0.2;
+
+        detailContainer.style.transition = 'none';
+        detailContainer.style.transform = `translate3d(0, ${resistedY}px, 0)`;
+
+        extraElements.forEach(el => el.style.transition = 'none');
+
+        if (dismissIcon) {
+            dismissIcon.style.transition = 'none';
+            dismissIcon.style.removeProperty('opacity');
+            const dismissSvg = dismissIcon.querySelector('svg');
+            if (dismissSvg) {
+                dismissSvg.style.removeProperty('transform');
+                dismissSvg.style.removeProperty('transition');
+            }
+            dismissIcon.style.opacity = Math.max(0, 1 - (overlayWheelSum / 150));
+        }
+
+        let textOpacity = 1;
+        if (overlayWheelSum > 100) {
+            textOpacity = Math.max(0, 1 - ((overlayWheelSum - 100) / 100));
+        }
+        extraElements.forEach(el => el.style.opacity = textOpacity);
+
+        if (overlayWheelSum > 200) {
+            closeAllCards(false);
+            overlayWheelSum = 0;
+            return;
+        }
+
+        clearTimeout(overlayWheelTimer);
+        overlayWheelTimer = setTimeout(() => {
+            if (activeCardId && overlayWheelSum <= 200) {
+                detailContainer.style.transition = 'transform 0.6s var(--active-bounce)';
+                detailContainer.style.transform = 'translate3d(0, 0, 0)';
+
+                extraElements.forEach(el => {
+                    el.style.transition = 'opacity 0.3s ease';
+                    el.style.opacity = '1';
+                });
+
+                if (dismissIcon) {
+                    dismissIcon.style.transition = 'opacity 0.3s ease';
+                    dismissIcon.style.opacity = '1';
+                }
+            }
+            overlayWheelSum = 0;
+        }, 150);
     };
 }
 
