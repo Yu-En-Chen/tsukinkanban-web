@@ -2092,11 +2092,17 @@ function initOverlayGestures() {
     // 桌面版滾輪邏輯（同樣區分觸發區域）
     let overlayWheelSum = 0;
     let overlayWheelTimer;
-    // 押し上げたカードを滾輪で戻したとき、同じ一続きの滾輪（タッチパッドの慣性を含む）は
-    // そこで止め、閉じる手勢へ進めない（間が WHEEL_GAP 空いたら次の操作として受け付ける）
+    // 押し上げたカードを滾輪で戻したとき、その続き（タッチパッドの慣性）は閉じる手勢へ進めない。
+    // 次の操作として受け付けるのは：
+    // ・滾輪が WHEEL_GAP 来なかったとき
+    // ・戻す動きが終わった後で、新しく捲り始めたと分かるとき（慣性は少しずつ弱まるだけなので、
+    //   量が増えた＝もう一度払った。滾輪の段（大きく同じ量）が続く＝滾輪を回し続けている）
     const WHEEL_GAP = 200;
+    const WHEEL_HOLD_MS = 420;    // 戻す動きの長さ（card-collapse.js の ANIM_MS）
     let overlayWheelHold = false;
     let overlayWheelHoldTimer;
+    let overlayWheelHoldUntil = 0;
+    let overlayWheelLast = 0;     // 直前の量（絶対値）
     detailOverlay.onwheel = e => {
         if (isAnimating || !activeCardId) return;
 
@@ -2110,9 +2116,17 @@ function initOverlayGestures() {
         e.preventDefault();
 
         if (overlayWheelHold) {
+            const a = Math.abs(e.deltaY);
+            const fresh = performance.now() >= overlayWheelHoldUntil
+                && (a > overlayWheelLast * 1.2 + 1 || (a >= 40 && a >= overlayWheelLast));
+            overlayWheelLast = a;
+            if (!fresh) {
+                clearTimeout(overlayWheelHoldTimer);
+                overlayWheelHoldTimer = setTimeout(() => { overlayWheelHold = false; }, WHEEL_GAP);
+                return;
+            }
+            overlayWheelHold = false;
             clearTimeout(overlayWheelHoldTimer);
-            overlayWheelHoldTimer = setTimeout(() => { overlayWheelHold = false; }, WHEEL_GAP);
-            return;
         }
 
         // 押し上げたカードの上で下へ引く操作（上向きの滾輪）：元の位置に戻す（付いて動かさず自動で）
@@ -2121,6 +2135,8 @@ function initOverlayGestures() {
             if (e.deltaY < 0) {
                 cc.expand();
                 overlayWheelHold = true;
+                overlayWheelHoldUntil = performance.now() + WHEEL_HOLD_MS;
+                overlayWheelLast = Math.abs(e.deltaY);
                 clearTimeout(overlayWheelHoldTimer);
                 overlayWheelHoldTimer = setTimeout(() => { overlayWheelHold = false; }, WHEEL_GAP);
             }
