@@ -107,30 +107,67 @@ function fetchTrain(path, maxAge = TRAIN_FRESH_MS) {
     return p;
 }
 
-// 從 /api/train/line 的回應找出這條路線
-function railwayFromLine(json, lineId) {
-    if (!json || !Array.isArray(json.results)) return null;
+// 從 /api/train/line 的回應找出這條路線。
+// 同じ id が複数並ぶ路線がある（上野東京ラインは系統ごとに 3 つ：group が Takasaki／Utsunomiya／Joban、name も別）：
+// すべて順に返す（最初の 1 つだけにしない）
+function railwaysFromLine(json, lineId) {
+    const out = [];
+    if (!json || !Array.isArray(json.results)) return out;
     for (const result of json.results) {
-        const rw = (result.railways || []).find(r => r.id === lineId);
-        if (rw) return { railway: rw, live: result.live || null };
+        for (const rw of (result.railways || [])) {
+            if (rw.id === lineId) out.push({ railway: rw, live: result.live || null });
+        }
     }
-    return null;
+    return out;
 }
 
-// 從 /api/train/station 的回應找出「這個駅的這條路線」（站名完全一致優先）
+// 同じ駅に同じ id の路線が複数あるとき（系統ごと）：方面ごとに列車をまとめた 1 つの路線にする
+function mergeRailways(list) {
+    if (list.length === 1) return list[0];
+    const boardable = list.find(rw => !NO_BOARD_SUPPORTS.includes(rw.support) && rw.support !== 'loading');
+    const base = boardable || list[0];
+    const dirs = [];
+    const byKey = new Map();
+    const seen = new Set();
+    list.forEach(rw => {
+        if (rw !== base && (NO_BOARD_SUPPORTS.includes(rw.support) || rw.support === 'loading')) return;
+        (rw.directions || []).forEach(d => {
+            const key = d.title || d.name || d.id || '';
+            let dir = byKey.get(key);
+            if (!dir) { dir = Object.assign({}, d, { trains: [] }); byKey.set(key, dir); dirs.push(dir); }
+            (d.trains || []).forEach(t => {
+                const k = `${t.train_number || ''}|${t.scheduled || ''}|${t.destination || ''}|${t.type || ''}`;
+                if (seen.has(k)) return;
+                seen.add(k);
+                dir.trains.push(t);
+            });
+        });
+    });
+    // 系統をまたいで時刻順に（この駅に停車中の列車が先）
+    const when = t => { const v = Date.parse(t.eta || t.scheduled || ''); return isNaN(v) ? Infinity : v; };
+    dirs.forEach(d => d.trains.sort((a, b) => (b.stopped ? 1 : 0) - (a.stopped ? 1 : 0) || when(a) - when(b)));
+    return Object.assign({}, base, { directions: dirs });
+}
+
+// 從 /api/train/station 的回應找出「這個駅的這條路線」（站名完全一致優先。同じ id が複数あればまとめる）
 function railwayFromStation(json, stationName, lineId) {
     if (!json || !Array.isArray(json.results)) return null;
+    let exact = null;
     let fallback = null;
     for (const result of json.results) {
         for (const st of (result.stations || [])) {
-            const rw = (st.railways || []).find(r => r.id === lineId);
-            if (!rw) continue;
-            const hit = { railway: rw, live: result.live || null, stationName: st.name };
-            if (st.name === stationName) return hit;
-            if (!fallback) fallback = hit;
+            const rws = (st.railways || []).filter(r => r.id === lineId);
+            if (rws.length === 0) continue;
+            if (st.name === stationName) {
+                if (!exact) exact = { railways: [], live: result.live || null, stationName: st.name };
+                exact.railways.push(...rws);
+            } else if (!fallback) {
+                fallback = { railways: rws, live: result.live || null, stationName: st.name };
+            }
         }
     }
-    return fallback;
+    const hit = exact || fallback;
+    return hit ? { railway: mergeRailways(hit.railways), live: hit.live, stationName: hit.stationName } : null;
 }
 
 // 後端還在下載這條路線所屬業者的時刻表
@@ -422,26 +459,38 @@ function routeViewHtml(board, prefs, support) {
     if (!entry || (!entry.json && !entry.error)) return guide + noteHtml('駅の一覧を取得しています...') + actions;
     if (!entry.json) return guide + noteHtml(entry.error === 'init' ? '到着情報を準備中です。しばらくすると表示されます' : '駅の一覧を取得できません') + actions;
 
-    const hit = railwayFromLine(entry.json, board.lineId);
-    if (!hit) return guide + noteHtml(isOperatorLoading(entry.json, board.lineId) ? 'この路線の到着情報を準備中です' : 'この路線の駅の一覧はありません') + actions;
+    const hits = railwaysFromLine(entry.json, board.lineId);
+    if (hits.length === 0) return guide + noteHtml(isOperatorLoading(entry.json, board.lineId) ? 'この路線の到着情報を準備中です' : 'この路線の駅の一覧はありません') + actions;
 
-    const rw = hit.railway;
-    if (NO_BOARD_SUPPORTS.includes(rw.support)) return noteHtml(rw.support === 'ended' ? '到着情報の提供は終了しました' : 'この路線の到着情報はありません') + actions;
-    const dirs = rw.directions || [];
-    if (dirs.length === 0) return guide + noteHtml('この路線の駅の一覧はありません') + actions;
-    const dirIndex = Math.min(prefs.dir || 0, dirs.length - 1);
-    const dir = dirs[dirIndex];
-    const stations = dir.stations || [];
-    stations.forEach(s => collectTypes(board, s.trains_approaching || []));
+    // 系統（同じ id が複数）は順にすべて並べる。方面の切り替えは共通（同じ番目の方面）
+    const shown = hits.filter(h => !NO_BOARD_SUPPORTS.includes(h.railway.support));
+    if (shown.length === 0) {
+        const rw = hits[0].railway;
+        return noteHtml(rw.support === 'ended' ? '到着情報の提供は終了しました' : 'この路線の到着情報はありません') + actions;
+    }
+    const dirCount = Math.max(...shown.map(h => (h.railway.directions || []).length));
+    if (dirCount === 0) return guide + noteHtml('この路線の駅の一覧はありません') + actions;
+    const dirIndex = Math.min(prefs.dir || 0, dirCount - 1);
+    const dirOf = rw => { const ds = rw.directions || []; return ds.length ? ds[Math.min(dirIndex, ds.length - 1)] : null; };
+    shown.forEach(h => { const d = dirOf(h.railway); if (d) (d.stations || []).forEach(s => collectTypes(board, s.trains_approaching || [])); });
 
     const notes = [];
-    if (hit.live && hit.live.state === 'error') notes.push(noteHtml('リアルタイム情報を取得できません'));
-    if (prefs.types.length > 0 && rw.support === 'realtime') notes.push(noteHtml('右側の到着予測は、種別に関係なく最も早い列車です'));
+    if (shown.some(h => h.live && h.live.state === 'error')) notes.push(noteHtml('リアルタイム情報を取得できません'));
+    if (prefs.types.length > 0 && shown.some(h => h.railway.support === 'realtime')) notes.push(noteHtml('右側の到着予測は、種別に関係なく最も早い列車です'));
 
-    const slider = dirs.length > 1 ? `<div class="bus-dir-slider train-dir-slider">${dirs.map((d, i) =>
-        `<button type="button" class="bus-dir-btn${i === dirIndex ? ' active' : ''}" data-action="dir" data-dir="${i}" aria-pressed="${i === dirIndex}">${esc(d.title || d.name || '')}</button>`).join('')}</div>` : '';
+    // 方面の名前：系統で同じならその名前、違えば「上り／下り」などの共通の名前、それもなければ最初の系統のもの
+    const dirLabel = i => {
+        const pick = key => [...new Set(shown.map(h => ((h.railway.directions || [])[i] || {})[key]).filter(Boolean))];
+        const titles = pick('title');
+        if (titles.length === 1) return titles[0];
+        const names = pick('name');
+        if (names.length === 1) return names[0];
+        return titles[0] || names[0] || '';
+    };
+    const slider = dirCount > 1 ? `<div class="bus-dir-slider train-dir-slider">${Array.from({ length: dirCount }, (_, i) =>
+        `<button type="button" class="bus-dir-btn${i === dirIndex ? ' active' : ''}" data-action="dir" data-dir="${i}" aria-pressed="${i === dirIndex}">${esc(dirLabel(i))}</button>`).join('')}</div>` : '';
 
-    const rows = stations.map(s => {
+    const stationRows = stations => stations.map(s => {
         const trains = (s.trains_approaching || []).filter(t => passesTypeFilter(t, prefs.types));
         // 列車は駅の列に入れず、すべて独立した膠囊にして駅の直前に置く（巴士の車両と同じ）：
         // 前の駅から走ってくる列車 → この駅に停車中の列車 → 駅 の順
@@ -462,7 +511,29 @@ function routeViewHtml(board, prefs, support) {
         </div>`;
     }).join('');
 
-    return `${guide}${notes.join('')}${typeFilterHtml(board, prefs)}${slider}<div class="bus-stops-list train-route-list">${rows}</div>${actions}${timeHtml(entry.at)}`;
+    let lists;
+    if (shown.length === 1) {
+        const d = dirOf(shown[0].railway);
+        lists = `<div class="bus-stops-list train-route-list">${stationRows((d && d.stations) || [])}</div>`;
+    } else {
+        // 系統ごとの見出し：name（同じ name が並ぶときは group も添える）。方面名が共通の名前と違えば添える
+        const names = shown.map(h => h.railway.name || h.railway.group || '');
+        const dupName = n => names.filter(x => x === n).length > 1;
+        const common = dirLabel(dirIndex);
+        lists = shown.map(h => {
+            const rw = h.railway;
+            const d = dirOf(rw);
+            const name = rw.name || rw.group || '';
+            const label = dupName(name) && rw.group ? `${name}（${rw.group}）` : name;
+            const dirTitle = d && d.title && d.title !== common ? `<span class="train-dir-title">${esc(d.title)}</span>` : '';
+            return `<div class="train-route-group">
+                <div class="bus-collapsed-dir train-route-group-title">${esc(label)}${dirTitle}</div>
+                <div class="bus-stops-list train-route-list">${stationRows((d && d.stations) || [])}</div>
+            </div>`;
+        }).join('');
+    }
+
+    return `${guide}${notes.join('')}${typeFilterHtml(board, prefs)}${slider}${lists}${actions}${timeHtml(entry.at)}`;
 }
 
 // ============================================================================
@@ -503,10 +574,11 @@ function onBoardClick(board, e) {
 
 async function lineStationNames(lineId) {
     const entry = await fetchTrain(linePath(lineId), 10 * 60000); // 站序很少變，10 分以內的資料就沿用
-    const hit = entry && entry.json ? railwayFromLine(entry.json, lineId) : null;
-    if (!hit) return null;
+    const hits = entry && entry.json ? railwaysFromLine(entry.json, lineId) : [];
+    if (hits.length === 0) return null;
+    // 系統が複数あるときは、すべての系統の駅を順に（重複は 1 つ）
     const names = [];
-    (hit.railway.directions || []).forEach(d => (d.stations || []).forEach(s => { if (s.name && !names.includes(s.name)) names.push(s.name); }));
+    hits.forEach(h => (h.railway.directions || []).forEach(d => (d.stations || []).forEach(s => { if (s.name && !names.includes(s.name)) names.push(s.name); })));
     return names;
 }
 

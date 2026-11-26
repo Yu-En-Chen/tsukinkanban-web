@@ -402,3 +402,12 @@
     }
 
 }
+
+/* 全駅の一覧：同じ路線の系統が複数あるとき（上野東京ラインの高崎線・宇都宮線・常磐線など）、系統ごとに見出しを付けて順に並べる */
+.train-route-group + .train-route-group {
+    margin-top: 16px;
+}
+
+.train-route-group-title {
+    margin-bottom: 6px;
+}
